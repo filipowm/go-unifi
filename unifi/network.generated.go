@@ -231,7 +231,7 @@ type Network struct {
 	WANSmartqUpRate                               int                             `json:"wan_smartq_up_rate,omitempty"` // [0-9]{1,6}|1000000
 	WANType                                       string                          `json:"wan_type,omitempty"`           // disabled|dhcp|static|pppoe|dslite
 	WANTypeV6                                     string                          `json:"wan_type_v6,omitempty"`        // disabled|slaac|dhcpv6|static
-	WANUsername                                   string                          `json:"wan_username"`                 // [^"' ]+|^$
+	WANUsername                                   string                          `json:"wan_username,omitempty"`       // [^"' ]+|^$
 	WANVLAN                                       int                             `json:"wan_vlan,omitempty"`           // [0-9]|[1-9][0-9]{1,2}|[1-3][0-9]{3}|40[0-8][0-9]|409[0-4]|^$
 	WANVLANEnabled                                bool                            `json:"wan_vlan_enabled"`
 	WireguardClientConfigurationFile              string                          `json:"wireguard_client_configuration_file,omitempty"`
@@ -257,7 +257,7 @@ type Network struct {
 	XServerKey                                    string                          `json:"x_server_key,omitempty"`
 	XSharedClientCrt                              string                          `json:"x_shared_client_crt,omitempty"`
 	XSharedClientKey                              string                          `json:"x_shared_client_key,omitempty"`
-	XWANPassword                                  string                          `json:"x_wan_password"` // [^"' ]+|^$
+	XWANPassword                                  string                          `json:"x_wan_password,omitempty"` // [^"' ]+|^$
 	XWireguardPrivateKey                          string                          `json:"x_wireguard_private_key,omitempty"`
 }
 

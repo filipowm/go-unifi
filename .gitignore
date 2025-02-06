@@ -3,3 +3,6 @@
 
 # goreleaser
 /dist/
+
+.idea
+*.iml

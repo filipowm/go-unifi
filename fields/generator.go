@@ -431,6 +431,8 @@ func generateCode(fieldsDir string, outDir string) error {
 						f.CustomUnmarshalType = "*bool"
 						f.CustomUnmarshalFunc = "emptyBoolToTrue"
 					}
+				case "WANUsername", "XWANPassword":
+					f.OmitEmpty = true
 				}
 				return nil
 			}
