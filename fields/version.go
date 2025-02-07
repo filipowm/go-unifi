@@ -106,6 +106,6 @@ const UnifiVersion = %q
 }
 
 func writeVersionRepoMarkerFile(version *version.Version, outDir string) error {
-	versionRepoMarker := []byte(fmt.Sprintf(`%s`, version.Core()))
+	versionRepoMarker := []byte(version.Core().String())
 	return os.WriteFile(filepath.Join(outDir, ".unifi-version"), versionRepoMarker, 0o644)
 }
