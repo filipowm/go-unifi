@@ -104,3 +104,8 @@ const UnifiVersion = %q
 
 	return os.WriteFile(filepath.Join(outDir, "version.generated.go"), versionGo, 0o644)
 }
+
+func writeVersionRepoMarkerFile(version *version.Version, outDir string) error {
+	versionRepoMarker := []byte(fmt.Sprintf(`%s`, version.Core()))
+	return os.WriteFile(filepath.Join(outDir, ".unifi-version"), versionRepoMarker, 0o644)
+}

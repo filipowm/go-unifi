@@ -87,5 +87,12 @@ func main() {
 		panic(err)
 	}
 
+	workingDir, _ := os.Getwd()
+	basepath := filepath.Dir(workingDir)
+	if err = writeVersionRepoMarkerFile(unifiVersion.Version, basepath); err != nil {
+		log.Fatalf("failed to write version file to %s", basepath)
+		panic(err)
+	}
+
 	log.Infof("Generated resources in %s", outDir)
 }
