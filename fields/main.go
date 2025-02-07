@@ -18,13 +18,15 @@ func usage() {
 	flag.PrintDefaults()
 }
 
-func setupLogging(debugEnabled bool) {
+func setupLogging(debugEnabled, traceEnabled bool) {
 	log.SetFormatter(&log.TextFormatter{
 		DisableTimestamp:       true,
 		DisableLevelTruncation: true,
 		FullTimestamp:          false,
 	})
-	if debugEnabled {
+	if traceEnabled {
+		log.SetLevel(log.TraceLevel)
+	} else if debugEnabled {
 		log.SetLevel(log.DebugLevel)
 	} else {
 		log.SetLevel(log.InfoLevel)
@@ -36,18 +38,19 @@ func main() {
 
 	versionBaseDirFlag := flag.String("version-base-dir", ".", "The base directory for version JSON files")
 	outputDirFlag := flag.String("output-dir", ".", "The output directory of the generated Go code")
-	downloadOnly := flag.Bool("download-only", false, "Only download and build the fields JSON directory, do not generate")
+	downloadOnly := flag.Bool("download-only", false, "Only download and build the API structures JSON directory, do not generate")
 	debugFlag := flag.Bool("debug", false, "Enable debug logging")
+	traceFlag := flag.Bool("trace", false, "Enable trace logging")
 
 	flag.Parse()
-	setupLogging(*debugFlag)
+	setupLogging(*debugFlag, *traceFlag)
 	specifiedVersion := strings.TrimSpace(flag.Arg(0))
 	if specifiedVersion == "" {
 		specifiedVersion = LatestVersionMarker // default to latest version
 	}
 	unifiVersion, err := determineUnifiVersion(specifiedVersion)
 	if err != nil {
-		log.Fatalf("unable to determine version and download URL for Unifi version %s", specifiedVersion)
+		log.Fatalf("unable to determine version and download URL for Unifi version %s: %s", specifiedVersion, err)
 		panic(err)
 	}
 
@@ -56,41 +59,40 @@ func main() {
 
 	wd, err := os.Getwd()
 	if err != nil {
-		log.Fatalln("unable to determine working directory")
+		log.Fatalf("unable to determine working directory: %s", err)
 		panic(err)
 	}
 
-	fieldsDir := filepath.Join(wd, *versionBaseDirFlag, fmt.Sprintf("v%s", unifiVersion.Version))
-	log.Infoln("Downloading UniFi Controller field definitions...")
-	err = DownloadAndExtract(*unifiVersion.DownloadUrl, fieldsDir)
+	structuresDir := filepath.Join(wd, *versionBaseDirFlag, fmt.Sprintf("v%s", unifiVersion.Version))
+	log.Infoln("Downloading UniFi Controller API structures definitions...")
+	err = DownloadAndExtract(*unifiVersion.DownloadUrl, structuresDir)
 	if err != nil {
-		log.Fatalf("unable to download and extract UniFi Controller field definitions: %s", err)
+		log.Fatalf("unable to download and extract UniFi Controller API structures definitions: %s", err)
 		panic(err)
 	}
-	log.Infof("Downloaded UniFi Controller field definitions in %s", fieldsDir)
+	log.Infof("Downloaded UniFi Controller API structures definitions in %s", structuresDir)
 
 	if *downloadOnly {
-		log.Infoln("Fields JSON ready!")
+		log.Infoln("Structure JSONs ready!")
 		os.Exit(0)
 	}
 
 	log.Infoln("Generating resources code...")
 	outDir := filepath.Join(wd, *outputDirFlag)
-	if err = generateCode(fieldsDir, outDir); err != nil {
-		log.Fatalln("unable to generate resources code")
+	if err = generateCode(structuresDir, outDir); err != nil {
+		log.Fatalf("unable to generate resources code: %s", err)
 		panic(err)
 	}
 
 	log.Infof("Writing version file...")
 	if err = writeVersionFile(unifiVersion.Version, outDir); err != nil {
-		log.Fatalf("failed to write version file to %s", outDir)
+		log.Fatalf("failed to write version file to %s: %s", outDir, err)
 		panic(err)
 	}
 
-	workingDir, _ := os.Getwd()
-	basepath := filepath.Dir(workingDir)
+	basepath := filepath.Dir(wd)
 	if err = writeVersionRepoMarkerFile(unifiVersion.Version, basepath); err != nil {
-		log.Fatalf("failed to write version file to %s", basepath)
+		log.Fatalf("failed to write version file to %s: %s", basepath, err)
 		panic(err)
 	}
 

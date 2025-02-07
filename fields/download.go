@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
 	"net/url"
@@ -19,24 +20,6 @@ import (
 	"github.com/ulikunitz/xz"
 	"github.com/xor-gate/ar"
 )
-
-func sanitizeExtractedPath(filePath, destinationDir string) (string, error) {
-	absDestinationDir, err := filepath.Abs(destinationDir)
-	if err != nil {
-		return "", err
-	}
-
-	absFilePath, err := filepath.Abs(filepath.Join(destinationDir, filePath))
-	if err != nil {
-		return "", err
-	}
-
-	if !strings.HasPrefix(absFilePath, absDestinationDir) {
-		return "", fmt.Errorf("invalid file path: %s", filePath)
-	}
-
-	return absFilePath, nil
-}
 
 func DownloadAndExtract(downloadUrl url.URL, outputDir string) error {
 	targetInfo, err := os.Stat(outputDir)
@@ -51,16 +34,19 @@ func DownloadAndExtract(downloadUrl url.URL, outputDir string) error {
 		}
 
 		// download fields, create
+		log.Debugf("downloading UniFi Controller package from: %s", downloadUrl.String())
 		jarFile, err := downloadJar(downloadUrl, outputDir)
 		if err != nil {
 			return err
 		}
 
+		log.Debugf("extracting JSON files with API structures from: %s to: %s", jarFile, outputDir)
 		err = extractJSON(jarFile, outputDir)
 		if err != nil {
 			return err
 		}
 
+		log.Debugf("JSON files extracted to: %s", outputDir)
 		targetInfo, err = os.Stat(outputDir)
 		if err != nil {
 			return err
@@ -113,6 +99,7 @@ func downloadJar(downloadUrl url.URL, outputDir string) (string, error) {
 
 	var aceJar *os.File
 
+	log.Debugln("extracting ace.jar from downloaded controller package")
 	for {
 		header, err := tarReader.Next()
 		if errors.Is(err, io.EOF) {
@@ -142,8 +129,26 @@ func downloadJar(downloadUrl url.URL, outputDir string) (string, error) {
 	}
 
 	defer aceJar.Close()
-
+	log.Debugf("ace.jar extracted to: %s", aceJar.Name())
 	return aceJar.Name(), nil
+}
+
+func sanitizeExtractedPath(filePath, destinationDir string) (string, error) {
+	absDestinationDir, err := filepath.Abs(destinationDir)
+	if err != nil {
+		return "", err
+	}
+
+	absFilePath, err := filepath.Abs(filepath.Join(destinationDir, filepath.Base(filePath)))
+	if err != nil {
+		return "", err
+	}
+
+	if !strings.HasPrefix(absFilePath, absDestinationDir) {
+		return "", fmt.Errorf("invalid file path: %s", filePath)
+	}
+
+	return absFilePath, nil
 }
 
 func extractJSON(jarFile, fieldsDir string) error {
@@ -153,6 +158,7 @@ func extractJSON(jarFile, fieldsDir string) error {
 	}
 	defer jarZip.Close()
 
+	log.Tracef("opened jar %s with %d files", jarFile, len(jarZip.File))
 	for _, f := range jarZip.File {
 		if !strings.HasPrefix(f.Name, "api/fields/") || path.Ext(f.Name) != ".json" {
 			// skip file
@@ -160,11 +166,11 @@ func extractJSON(jarFile, fieldsDir string) error {
 		}
 
 		err = func() error {
+			log.Tracef("extracting %s", f.Name)
 			src, err := f.Open()
 			if err != nil {
 				return err
 			}
-
 			dstPath, err := sanitizeExtractedPath(f.Name, fieldsDir)
 			if err != nil {
 				return err
@@ -177,6 +183,7 @@ func extractJSON(jarFile, fieldsDir string) error {
 			defer dst.Close()
 
 			_, err = io.Copy(dst, src)
+			log.Debugf("extracted %s", f.Name)
 			if err != nil {
 				return err
 			}
@@ -202,18 +209,22 @@ func extractJSON(jarFile, fieldsDir string) error {
 		return fmt.Errorf("unable to unmarshal settings: %w", err)
 	}
 
-	for k, v := range settings {
-		fileName := fmt.Sprintf("Setting%s.json", strcase.ToCamel(k))
+	log.Debugf("splitting Settings.json into individual setting files")
+	for settingKey, settingValue := range settings {
+		settingName := strcase.ToCamel(settingKey)
+		fileName := fmt.Sprintf("Setting%s.json", settingName)
+		log.Tracef("splitting %s", fileName)
 
-		data, err := json.MarshalIndent(v, "", "  ")
+		data, err := json.MarshalIndent(settingValue, "", "  ")
 		if err != nil {
-			return fmt.Errorf("unable to marshal setting %q: %w", k, err)
+			return fmt.Errorf("unable to marshal setting %q: %w", settingKey, err)
 		}
 
 		err = os.WriteFile(filepath.Join(fieldsDir, fileName), data, 0o755)
 		if err != nil {
 			return fmt.Errorf("unable to write new settings file: %w", err)
 		}
+		log.Tracef("splitted %s into %s", settingKey, fileName)
 	}
 
 	// TODO: cleanup JSON
