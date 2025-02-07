@@ -19,7 +19,7 @@ jobs:
       - uses: 'actions/setup-go@v5'
       - run: 'go build ./...'
 
-  generate:
+  stringer:
     needs: 'build'
     runs-on: 'ubuntu-latest'
     steps:
@@ -49,3 +49,10 @@ jobs:
     steps:
       - uses: 'actions/checkout@v4'
       - uses: 'ibiqlik/action-yamllint@v3'
+
+  test-codegen:
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: "actions/checkout@v4"
+      - uses: "actions/setup-go@v5"
+      - run: "go generate unifi/codegen.go"
