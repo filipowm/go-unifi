@@ -22,6 +22,7 @@ func setupLogging(debugEnabled, traceEnabled bool) {
 	log.SetFormatter(&log.TextFormatter{
 		DisableTimestamp:       true,
 		DisableLevelTruncation: true,
+		ForceColors:            true,
 		FullTimestamp:          false,
 	})
 	if traceEnabled {

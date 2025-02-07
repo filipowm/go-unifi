@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
 	"net/url"
@@ -17,6 +16,7 @@ import (
 	"strings"
 
 	"github.com/iancoleman/strcase"
+	log "github.com/sirupsen/logrus"
 	"github.com/ulikunitz/xz"
 	"github.com/xor-gate/ar"
 )
