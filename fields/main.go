@@ -64,7 +64,7 @@ func main() {
 	log.Infoln("Downloading UniFi Controller field definitions...")
 	err = DownloadAndExtract(*unifiVersion.DownloadUrl, fieldsDir)
 	if err != nil {
-		log.Fatalln("unable to download and extract UniFi Controller field definitions")
+		log.Fatalf("unable to download and extract UniFi Controller field definitions: %s", err)
 		panic(err)
 	}
 	log.Infof("Downloaded UniFi Controller field definitions in %s", fieldsDir)

@@ -1,13 +1,12 @@
 ---
+name: "Generate Unifi structures"
 on:
   schedule:
     - cron: "0 0 * * *"
   workflow_dispatch: {}
   pull_request: {}
 
-permissions:
-  contents: "write"
-  pull-requests: "write"
+permissions: "write-all"
 
 jobs:
   fields:
@@ -23,10 +22,10 @@ jobs:
 
       - name: "Read Unifi version marker"
         id: "unifi_version"
-        uses: 'juliangruber/read-file-action@v1'
+        uses: "juliangruber/read-file-action@v1"
         with:
-          path: "./unifi-version"
-          trim: 'true'
+          path: "./.unifi-version"
+          trim: "true"
 
       # TODO: Automatically merge the PR if tests pass.
       - uses: "peter-evans/create-pull-request@v7"
