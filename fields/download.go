@@ -20,6 +20,24 @@ import (
 	"github.com/xor-gate/ar"
 )
 
+func sanitizeExtractedPath(filePath, destinationDir string) (string, error) {
+	absDestinationDir, err := filepath.Abs(destinationDir)
+	if err != nil {
+		return "", err
+	}
+
+	absFilePath, err := filepath.Abs(filepath.Join(destinationDir, filePath))
+	if err != nil {
+		return "", err
+	}
+
+	if !strings.HasPrefix(absFilePath, absDestinationDir) {
+		return "", fmt.Errorf("invalid file path: %s", filePath)
+	}
+
+	return absFilePath, nil
+}
+
 func DownloadAndExtract(downloadUrl url.URL, outputDir string) error {
 	targetInfo, err := os.Stat(outputDir)
 	if err != nil {
@@ -147,7 +165,12 @@ func extractJSON(jarFile, fieldsDir string) error {
 				return err
 			}
 
-			dst, err := os.Create(filepath.Join(fieldsDir, filepath.Base(f.Name)))
+			dstPath, err := sanitizeExtractedPath(f.Name, fieldsDir)
+			if err != nil {
+				return err
+			}
+
+			dst, err := os.Create(dstPath)
 			if err != nil {
 				return err
 			}
