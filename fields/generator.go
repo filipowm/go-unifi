@@ -278,7 +278,7 @@ func (r *Resource) fieldInfoFromValidation(name string, validation interface{}) 
 			}
 		}
 		if validation != "" && normalized != "" {
-			log.Debugf("normalize %q to %q", validation, normalized)
+			log.Tracef("normalize %q to %q", validation, normalized)
 		}
 
 		omitEmpty = omitEmpty || (!strings.Contains(validation, "^$") && !strings.HasSuffix(fieldName, "ID"))
