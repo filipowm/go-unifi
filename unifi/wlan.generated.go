@@ -468,11 +468,11 @@ func (dst *WLANVenueName) UnmarshalJSON(b []byte) error {
 
 func (c *Client) listWLAN(ctx context.Context, site string) ([]WLAN, error) {
 	var respBody struct {
-		Meta meta   `json:"meta"`
+		Meta Meta   `json:"meta"`
 		Data []WLAN `json:"data"`
 	}
 
-	err := c.do(ctx, "GET", fmt.Sprintf("s/%s/rest/wlanconf", site), nil, &respBody)
+	err := c.Get(ctx, fmt.Sprintf("s/%s/rest/wlanconf", site), nil, &respBody)
 	if err != nil {
 		return nil, err
 	}
@@ -482,17 +482,17 @@ func (c *Client) listWLAN(ctx context.Context, site string) ([]WLAN, error) {
 
 func (c *Client) getWLAN(ctx context.Context, site, id string) (*WLAN, error) {
 	var respBody struct {
-		Meta meta   `json:"meta"`
+		Meta Meta   `json:"meta"`
 		Data []WLAN `json:"data"`
 	}
 
-	err := c.do(ctx, "GET", fmt.Sprintf("s/%s/rest/wlanconf/%s", site, id), nil, &respBody)
+	err := c.Get(ctx, fmt.Sprintf("s/%s/rest/wlanconf/%s", site, id), nil, &respBody)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, &NotFoundError{}
+		return nil, NotFoundError
 	}
 
 	d := respBody.Data[0]
@@ -500,7 +500,7 @@ func (c *Client) getWLAN(ctx context.Context, site, id string) (*WLAN, error) {
 }
 
 func (c *Client) deleteWLAN(ctx context.Context, site, id string) error {
-	err := c.do(ctx, "DELETE", fmt.Sprintf("s/%s/rest/wlanconf/%s", site, id), struct{}{}, nil)
+	err := c.Delete(ctx, fmt.Sprintf("s/%s/rest/wlanconf/%s", site, id), struct{}{}, nil)
 	if err != nil {
 		return err
 	}
@@ -509,17 +509,17 @@ func (c *Client) deleteWLAN(ctx context.Context, site, id string) error {
 
 func (c *Client) createWLAN(ctx context.Context, site string, d *WLAN) (*WLAN, error) {
 	var respBody struct {
-		Meta meta   `json:"meta"`
+		Meta Meta   `json:"meta"`
 		Data []WLAN `json:"data"`
 	}
 
-	err := c.do(ctx, "POST", fmt.Sprintf("s/%s/rest/wlanconf", site), d, &respBody)
+	err := c.Post(ctx, fmt.Sprintf("s/%s/rest/wlanconf", site), d, &respBody)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, &NotFoundError{}
+		return nil, NotFoundError
 	}
 
 	new := respBody.Data[0]
@@ -529,17 +529,17 @@ func (c *Client) createWLAN(ctx context.Context, site string, d *WLAN) (*WLAN, e
 
 func (c *Client) updateWLAN(ctx context.Context, site string, d *WLAN) (*WLAN, error) {
 	var respBody struct {
-		Meta meta   `json:"meta"`
+		Meta Meta   `json:"meta"`
 		Data []WLAN `json:"data"`
 	}
 
-	err := c.do(ctx, "PUT", fmt.Sprintf("s/%s/rest/wlanconf/%s", site, d.ID), d, &respBody)
+	err := c.Put(ctx, fmt.Sprintf("s/%s/rest/wlanconf/%s", site, d.ID), d, &respBody)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, &NotFoundError{}
+		return nil, NotFoundError
 	}
 
 	new := respBody.Data[0]

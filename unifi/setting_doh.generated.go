@@ -72,17 +72,17 @@ func (dst *SettingDohCustomServers) UnmarshalJSON(b []byte) error {
 
 func (c *Client) getSettingDoh(ctx context.Context, site string) (*SettingDoh, error) {
 	var respBody struct {
-		Meta meta         `json:"meta"`
+		Meta Meta         `json:"meta"`
 		Data []SettingDoh `json:"data"`
 	}
 
-	err := c.do(ctx, "GET", fmt.Sprintf("s/%s/get/setting/doh", site), nil, &respBody)
+	err := c.Get(ctx, fmt.Sprintf("s/%s/get/setting/doh", site), nil, &respBody)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, &NotFoundError{}
+		return nil, NotFoundError
 	}
 
 	d := respBody.Data[0]
@@ -91,18 +91,18 @@ func (c *Client) getSettingDoh(ctx context.Context, site string) (*SettingDoh, e
 
 func (c *Client) updateSettingDoh(ctx context.Context, site string, d *SettingDoh) (*SettingDoh, error) {
 	var respBody struct {
-		Meta meta         `json:"meta"`
+		Meta Meta         `json:"meta"`
 		Data []SettingDoh `json:"data"`
 	}
 
 	d.Key = "doh"
-	err := c.do(ctx, "PUT", fmt.Sprintf("s/%s/set/setting/doh", site), d, &respBody)
+	err := c.Put(ctx, fmt.Sprintf("s/%s/set/setting/doh", site), d, &respBody)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, &NotFoundError{}
+		return nil, NotFoundError
 	}
 
 	new := respBody.Data[0]

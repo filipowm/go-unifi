@@ -28,7 +28,7 @@ type APGroup struct {
 func (c *Client) ListAPGroup(ctx context.Context, site string) ([]APGroup, error) {
 	var respBody []APGroup
 
-	err := c.do(ctx, "GET", fmt.Sprintf("%s/site/%s/apgroups", c.apiV2Path, site), nil, &respBody)
+	err := c.Get(ctx, fmt.Sprintf("%s/site/%s/apgroups", c.apiPaths.ApiV2Path, site), nil, &respBody)
 	if err != nil {
 		return nil, err
 	}
@@ -38,17 +38,17 @@ func (c *Client) ListAPGroup(ctx context.Context, site string) ([]APGroup, error
 
 // func (c *Client) getWLANGroup(ctx context.Context, site, id string) (*WLANGroup, error) {
 // 	var respBody struct {
-// 		Meta meta        `json:"meta"`
+// 		Meta Meta        `json:"Meta"`
 // 		Data []WLANGroup `json:"data"`
 // 	}
 
-// 	err := c.do(ctx, "GET", fmt.Sprintf("s/%s/rest/wlangroup/%s", site, id), nil, &respBody)
+// 	err := c.Get(ctx, fmt.Sprintf("s/%s/rest/wlangroup/%s", site, id), nil, &respBody)
 // 	if err != nil {
 // 		return nil, err
 // 	}
 
 // 	if len(respBody.Data) != 1 {
-// 		return nil, &NotFoundError{}
+// 		return nil, NotFoundError
 // 	}
 
 // 	d := respBody.Data[0]
@@ -56,7 +56,7 @@ func (c *Client) ListAPGroup(ctx context.Context, site string) ([]APGroup, error
 // }
 
 // func (c *Client) deleteWLANGroup(ctx context.Context, site, id string) error {
-// 	err := c.do(ctx, "DELETE", fmt.Sprintf("s/%s/rest/wlangroup/%s", site, id), struct{}{}, nil)
+// 	err := c.Delete(ctx, fmt.Sprintf("s/%s/rest/wlangroup/%s", site, id), struct{}{}, nil)
 // 	if err != nil {
 // 		return err
 // 	}
@@ -66,7 +66,7 @@ func (c *Client) ListAPGroup(ctx context.Context, site string) ([]APGroup, error
 func (c *Client) CreateAPGroup(ctx context.Context, site string, d *APGroup) (*APGroup, error) {
 	var respBody APGroup
 
-	err := c.do(ctx, "POST", fmt.Sprintf("%s/site/%s/apgroups", c.apiV2Path, site), d, &respBody)
+	err := c.Post(ctx, fmt.Sprintf("%s/site/%s/apgroups", c.apiPaths.ApiV2Path, site), d, &respBody)
 	if err != nil {
 		return nil, err
 	}
@@ -76,17 +76,17 @@ func (c *Client) CreateAPGroup(ctx context.Context, site string, d *APGroup) (*A
 
 // func (c *Client) updateWLANGroup(ctx context.Context, site string, d *WLANGroup) (*WLANGroup, error) {
 // 	var respBody struct {
-// 		Meta meta        `json:"meta"`
+// 		Meta Meta        `json:"Meta"`
 // 		Data []WLANGroup `json:"data"`
 // 	}
 
-// 	err := c.do(ctx, "PUT", fmt.Sprintf("s/%s/rest/wlangroup/%s", site, d.ID), d, &respBody)
+// 	err := c.Put(ctx, fmt.Sprintf("s/%s/rest/wlangroup/%s", site, d.ID), d, &respBody)
 // 	if err != nil {
 // 		return nil, err
 // 	}
 
 // 	if len(respBody.Data) != 1 {
-// 		return nil, &NotFoundError{}
+// 		return nil, NotFoundError
 // 	}
 
 // 	new := respBody.Data[0]

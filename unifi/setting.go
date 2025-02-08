@@ -81,11 +81,11 @@ func (s *Setting) newFields() (interface{}, error) {
 
 func (c *Client) GetSetting(ctx context.Context, site, key string) (*Setting, interface{}, error) {
 	var respBody struct {
-		Meta meta              `json:"meta"`
+		Meta Meta              `json:"Meta"`
 		Data []json.RawMessage `json:"data"`
 	}
 
-	err := c.do(ctx, "GET", fmt.Sprintf("s/%s/get/setting", site), nil, &respBody)
+	err := c.Get(ctx, fmt.Sprintf("s/%s/get/setting", site), nil, &respBody)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -103,7 +103,7 @@ func (c *Client) GetSetting(ctx context.Context, site, key string) (*Setting, in
 		}
 	}
 	if setting == nil {
-		return nil, nil, &NotFoundError{}
+		return nil, nil, NotFoundError
 	}
 
 	fields, err := setting.newFields()

@@ -55,7 +55,7 @@ func (c *Client) GetDevice(ctx context.Context, site, id string) (*Device, error
 		}
 	}
 
-	return nil, &NotFoundError{}
+	return nil, NotFoundError
 }
 
 func (c *Client) AdoptDevice(ctx context.Context, site, mac string) error {
@@ -68,10 +68,10 @@ func (c *Client) AdoptDevice(ctx context.Context, site, mac string) error {
 	}
 
 	var respBody struct {
-		Meta meta `json:"meta"`
+		Meta Meta `json:"Meta"`
 	}
 
-	err := c.do(ctx, "POST", fmt.Sprintf("s/%s/cmd/devmgr", site), reqBody, &respBody)
+	err := c.Post(ctx, fmt.Sprintf("s/%s/cmd/devmgr", site), reqBody, &respBody)
 	if err != nil {
 		return err
 	}
@@ -89,11 +89,11 @@ func (c *Client) ForgetDevice(ctx context.Context, site, mac string) error {
 	}
 
 	var respBody struct {
-		Meta meta     `json:"meta"`
+		Meta Meta     `json:"Meta"`
 		Data []Device `json:"data"`
 	}
 
-	err := c.do(ctx, "POST", fmt.Sprintf("s/%s/cmd/sitemgr", site), reqBody, &respBody)
+	err := c.Post(ctx, fmt.Sprintf("s/%s/cmd/sitemgr", site), reqBody, &respBody)
 	if err != nil {
 		return err
 	}

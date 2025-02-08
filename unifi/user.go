@@ -11,17 +11,17 @@ import (
 // by this method.
 func (c *Client) GetUserByMAC(ctx context.Context, site, mac string) (*User, error) {
 	var respBody struct {
-		Meta meta   `json:"meta"`
+		Meta Meta   `json:"Meta"`
 		Data []User `json:"data"`
 	}
 
-	err := c.do(ctx, "GET", fmt.Sprintf("s/%s/stat/user/%s", site, mac), nil, &respBody)
+	err := c.Get(ctx, fmt.Sprintf("s/%s/stat/user/%s", site, mac), nil, &respBody)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, &NotFoundError{}
+		return nil, NotFoundError
 	}
 
 	d := respBody.Data[0]
@@ -42,14 +42,14 @@ func (c *Client) CreateUser(ctx context.Context, site string, d *User) (*User, e
 	}
 
 	var respBody struct {
-		Meta meta `json:"meta"`
+		Meta Meta `json:"Meta"`
 		Data []struct {
-			Meta meta   `json:"meta"`
+			Meta Meta   `json:"Meta"`
 			Data []User `json:"data"`
 		} `json:"data"`
 	}
 
-	err := c.do(ctx, "POST", fmt.Sprintf("s/%s/group/user", site), reqBody, &respBody)
+	err := c.Post(ctx, fmt.Sprintf("s/%s/group/user", site), reqBody, &respBody)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +63,7 @@ func (c *Client) CreateUser(ctx context.Context, site string, d *User) (*User, e
 	}
 
 	if len(respBody.Data[0].Data) != 1 {
-		return nil, &NotFoundError{}
+		return nil, NotFoundError
 	}
 
 	user := respBody.Data[0].Data[0]
@@ -81,11 +81,11 @@ func (c *Client) stamgr(ctx context.Context, site, cmd string, data map[string]i
 	reqBody["cmd"] = cmd
 
 	var respBody struct {
-		Meta meta   `json:"meta"`
+		Meta Meta   `json:"Meta"`
 		Data []User `json:"data"`
 	}
 
-	err := c.do(ctx, "POST", fmt.Sprintf("s/%s/cmd/stamgr", site), reqBody, &respBody)
+	err := c.Post(ctx, fmt.Sprintf("s/%s/cmd/stamgr", site), reqBody, &respBody)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +101,7 @@ func (c *Client) BlockUserByMAC(ctx context.Context, site, mac string) error {
 		return err
 	}
 	if len(users) != 1 {
-		return &NotFoundError{}
+		return NotFoundError
 	}
 	return nil
 }
@@ -114,7 +114,7 @@ func (c *Client) UnblockUserByMAC(ctx context.Context, site, mac string) error {
 		return err
 	}
 	if len(users) != 1 {
-		return &NotFoundError{}
+		return NotFoundError
 	}
 	return nil
 }
@@ -127,7 +127,7 @@ func (c *Client) DeleteUserByMAC(ctx context.Context, site, mac string) error {
 		return err
 	}
 	if len(users) != 1 {
-		return &NotFoundError{}
+		return NotFoundError
 	}
 	return nil
 }
@@ -140,7 +140,7 @@ func (c *Client) KickUserByMAC(ctx context.Context, site, mac string) error {
 		return err
 	}
 	if len(users) != 1 {
-		return &NotFoundError{}
+		return NotFoundError
 	}
 	return nil
 }
@@ -165,7 +165,7 @@ func (c *Client) OverrideUserFingerprint(ctx context.Context, site, mac string, 
 		SearchQuery   string `json:"search_query"`
 	}
 
-	err := c.do(ctx, reqMethod, fmt.Sprintf("%s/site/%s/station/%s/fingerprint_override", c.apiV2Path, site, mac), reqBody, &respBody)
+	err := c.Do(ctx, reqMethod, fmt.Sprintf("%s/site/%s/station/%s/fingerprint_override", c.apiPaths.ApiV2Path, site, mac), reqBody, &respBody)
 	if err != nil {
 		return err
 	}

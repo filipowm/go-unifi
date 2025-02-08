@@ -429,11 +429,11 @@ func (dst *Hotspot2ConfVenueName) UnmarshalJSON(b []byte) error {
 
 func (c *Client) listHotspot2Conf(ctx context.Context, site string) ([]Hotspot2Conf, error) {
 	var respBody struct {
-		Meta meta           `json:"meta"`
+		Meta Meta           `json:"meta"`
 		Data []Hotspot2Conf `json:"data"`
 	}
 
-	err := c.do(ctx, "GET", fmt.Sprintf("s/%s/rest/hotspot2conf", site), nil, &respBody)
+	err := c.Get(ctx, fmt.Sprintf("s/%s/rest/hotspot2conf", site), nil, &respBody)
 	if err != nil {
 		return nil, err
 	}
@@ -443,17 +443,17 @@ func (c *Client) listHotspot2Conf(ctx context.Context, site string) ([]Hotspot2C
 
 func (c *Client) getHotspot2Conf(ctx context.Context, site, id string) (*Hotspot2Conf, error) {
 	var respBody struct {
-		Meta meta           `json:"meta"`
+		Meta Meta           `json:"meta"`
 		Data []Hotspot2Conf `json:"data"`
 	}
 
-	err := c.do(ctx, "GET", fmt.Sprintf("s/%s/rest/hotspot2conf/%s", site, id), nil, &respBody)
+	err := c.Get(ctx, fmt.Sprintf("s/%s/rest/hotspot2conf/%s", site, id), nil, &respBody)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, &NotFoundError{}
+		return nil, NotFoundError
 	}
 
 	d := respBody.Data[0]
@@ -461,7 +461,7 @@ func (c *Client) getHotspot2Conf(ctx context.Context, site, id string) (*Hotspot
 }
 
 func (c *Client) deleteHotspot2Conf(ctx context.Context, site, id string) error {
-	err := c.do(ctx, "DELETE", fmt.Sprintf("s/%s/rest/hotspot2conf/%s", site, id), struct{}{}, nil)
+	err := c.Delete(ctx, fmt.Sprintf("s/%s/rest/hotspot2conf/%s", site, id), struct{}{}, nil)
 	if err != nil {
 		return err
 	}
@@ -470,17 +470,17 @@ func (c *Client) deleteHotspot2Conf(ctx context.Context, site, id string) error 
 
 func (c *Client) createHotspot2Conf(ctx context.Context, site string, d *Hotspot2Conf) (*Hotspot2Conf, error) {
 	var respBody struct {
-		Meta meta           `json:"meta"`
+		Meta Meta           `json:"meta"`
 		Data []Hotspot2Conf `json:"data"`
 	}
 
-	err := c.do(ctx, "POST", fmt.Sprintf("s/%s/rest/hotspot2conf", site), d, &respBody)
+	err := c.Post(ctx, fmt.Sprintf("s/%s/rest/hotspot2conf", site), d, &respBody)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, &NotFoundError{}
+		return nil, NotFoundError
 	}
 
 	new := respBody.Data[0]
@@ -490,17 +490,17 @@ func (c *Client) createHotspot2Conf(ctx context.Context, site string, d *Hotspot
 
 func (c *Client) updateHotspot2Conf(ctx context.Context, site string, d *Hotspot2Conf) (*Hotspot2Conf, error) {
 	var respBody struct {
-		Meta meta           `json:"meta"`
+		Meta Meta           `json:"meta"`
 		Data []Hotspot2Conf `json:"data"`
 	}
 
-	err := c.do(ctx, "PUT", fmt.Sprintf("s/%s/rest/hotspot2conf/%s", site, d.ID), d, &respBody)
+	err := c.Put(ctx, fmt.Sprintf("s/%s/rest/hotspot2conf/%s", site, d.ID), d, &respBody)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, &NotFoundError{}
+		return nil, NotFoundError
 	}
 
 	new := respBody.Data[0]

@@ -67,11 +67,11 @@ func (dst *User) UnmarshalJSON(b []byte) error {
 
 func (c *Client) listUser(ctx context.Context, site string) ([]User, error) {
 	var respBody struct {
-		Meta meta   `json:"meta"`
+		Meta Meta   `json:"meta"`
 		Data []User `json:"data"`
 	}
 
-	err := c.do(ctx, "GET", fmt.Sprintf("s/%s/rest/user", site), nil, &respBody)
+	err := c.Get(ctx, fmt.Sprintf("s/%s/rest/user", site), nil, &respBody)
 	if err != nil {
 		return nil, err
 	}
@@ -81,17 +81,17 @@ func (c *Client) listUser(ctx context.Context, site string) ([]User, error) {
 
 func (c *Client) getUser(ctx context.Context, site, id string) (*User, error) {
 	var respBody struct {
-		Meta meta   `json:"meta"`
+		Meta Meta   `json:"meta"`
 		Data []User `json:"data"`
 	}
 
-	err := c.do(ctx, "GET", fmt.Sprintf("s/%s/rest/user/%s", site, id), nil, &respBody)
+	err := c.Get(ctx, fmt.Sprintf("s/%s/rest/user/%s", site, id), nil, &respBody)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, &NotFoundError{}
+		return nil, NotFoundError
 	}
 
 	d := respBody.Data[0]
@@ -99,7 +99,7 @@ func (c *Client) getUser(ctx context.Context, site, id string) (*User, error) {
 }
 
 func (c *Client) deleteUser(ctx context.Context, site, id string) error {
-	err := c.do(ctx, "DELETE", fmt.Sprintf("s/%s/rest/user/%s", site, id), struct{}{}, nil)
+	err := c.Delete(ctx, fmt.Sprintf("s/%s/rest/user/%s", site, id), struct{}{}, nil)
 	if err != nil {
 		return err
 	}
@@ -108,17 +108,17 @@ func (c *Client) deleteUser(ctx context.Context, site, id string) error {
 
 func (c *Client) createUser(ctx context.Context, site string, d *User) (*User, error) {
 	var respBody struct {
-		Meta meta   `json:"meta"`
+		Meta Meta   `json:"meta"`
 		Data []User `json:"data"`
 	}
 
-	err := c.do(ctx, "POST", fmt.Sprintf("s/%s/rest/user", site), d, &respBody)
+	err := c.Post(ctx, fmt.Sprintf("s/%s/rest/user", site), d, &respBody)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, &NotFoundError{}
+		return nil, NotFoundError
 	}
 
 	new := respBody.Data[0]
@@ -128,17 +128,17 @@ func (c *Client) createUser(ctx context.Context, site string, d *User) (*User, e
 
 func (c *Client) updateUser(ctx context.Context, site string, d *User) (*User, error) {
 	var respBody struct {
-		Meta meta   `json:"meta"`
+		Meta Meta   `json:"meta"`
 		Data []User `json:"data"`
 	}
 
-	err := c.do(ctx, "PUT", fmt.Sprintf("s/%s/rest/user/%s", site, d.ID), d, &respBody)
+	err := c.Put(ctx, fmt.Sprintf("s/%s/rest/user/%s", site, d.ID), d, &respBody)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, &NotFoundError{}
+		return nil, NotFoundError
 	}
 
 	new := respBody.Data[0]

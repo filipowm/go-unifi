@@ -62,11 +62,11 @@ func (dst *Account) UnmarshalJSON(b []byte) error {
 
 func (c *Client) listAccount(ctx context.Context, site string) ([]Account, error) {
 	var respBody struct {
-		Meta meta      `json:"meta"`
+		Meta Meta      `json:"meta"`
 		Data []Account `json:"data"`
 	}
 
-	err := c.do(ctx, "GET", fmt.Sprintf("s/%s/rest/account", site), nil, &respBody)
+	err := c.Get(ctx, fmt.Sprintf("s/%s/rest/account", site), nil, &respBody)
 	if err != nil {
 		return nil, err
 	}
@@ -76,17 +76,17 @@ func (c *Client) listAccount(ctx context.Context, site string) ([]Account, error
 
 func (c *Client) getAccount(ctx context.Context, site, id string) (*Account, error) {
 	var respBody struct {
-		Meta meta      `json:"meta"`
+		Meta Meta      `json:"meta"`
 		Data []Account `json:"data"`
 	}
 
-	err := c.do(ctx, "GET", fmt.Sprintf("s/%s/rest/account/%s", site, id), nil, &respBody)
+	err := c.Get(ctx, fmt.Sprintf("s/%s/rest/account/%s", site, id), nil, &respBody)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, &NotFoundError{}
+		return nil, NotFoundError
 	}
 
 	d := respBody.Data[0]
@@ -94,7 +94,7 @@ func (c *Client) getAccount(ctx context.Context, site, id string) (*Account, err
 }
 
 func (c *Client) deleteAccount(ctx context.Context, site, id string) error {
-	err := c.do(ctx, "DELETE", fmt.Sprintf("s/%s/rest/account/%s", site, id), struct{}{}, nil)
+	err := c.Delete(ctx, fmt.Sprintf("s/%s/rest/account/%s", site, id), struct{}{}, nil)
 	if err != nil {
 		return err
 	}
@@ -103,17 +103,17 @@ func (c *Client) deleteAccount(ctx context.Context, site, id string) error {
 
 func (c *Client) createAccount(ctx context.Context, site string, d *Account) (*Account, error) {
 	var respBody struct {
-		Meta meta      `json:"meta"`
+		Meta Meta      `json:"meta"`
 		Data []Account `json:"data"`
 	}
 
-	err := c.do(ctx, "POST", fmt.Sprintf("s/%s/rest/account", site), d, &respBody)
+	err := c.Post(ctx, fmt.Sprintf("s/%s/rest/account", site), d, &respBody)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, &NotFoundError{}
+		return nil, NotFoundError
 	}
 
 	new := respBody.Data[0]
@@ -123,17 +123,17 @@ func (c *Client) createAccount(ctx context.Context, site string, d *Account) (*A
 
 func (c *Client) updateAccount(ctx context.Context, site string, d *Account) (*Account, error) {
 	var respBody struct {
-		Meta meta      `json:"meta"`
+		Meta Meta      `json:"meta"`
 		Data []Account `json:"data"`
 	}
 
-	err := c.do(ctx, "PUT", fmt.Sprintf("s/%s/rest/account/%s", site, d.ID), d, &respBody)
+	err := c.Put(ctx, fmt.Sprintf("s/%s/rest/account/%s", site, d.ID), d, &respBody)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, &NotFoundError{}
+		return nil, NotFoundError
 	}
 
 	new := respBody.Data[0]

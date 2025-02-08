@@ -53,11 +53,11 @@ func (dst *DynamicDNS) UnmarshalJSON(b []byte) error {
 
 func (c *Client) listDynamicDNS(ctx context.Context, site string) ([]DynamicDNS, error) {
 	var respBody struct {
-		Meta meta         `json:"meta"`
+		Meta Meta         `json:"meta"`
 		Data []DynamicDNS `json:"data"`
 	}
 
-	err := c.do(ctx, "GET", fmt.Sprintf("s/%s/rest/dynamicdns", site), nil, &respBody)
+	err := c.Get(ctx, fmt.Sprintf("s/%s/rest/dynamicdns", site), nil, &respBody)
 	if err != nil {
 		return nil, err
 	}
@@ -67,17 +67,17 @@ func (c *Client) listDynamicDNS(ctx context.Context, site string) ([]DynamicDNS,
 
 func (c *Client) getDynamicDNS(ctx context.Context, site, id string) (*DynamicDNS, error) {
 	var respBody struct {
-		Meta meta         `json:"meta"`
+		Meta Meta         `json:"meta"`
 		Data []DynamicDNS `json:"data"`
 	}
 
-	err := c.do(ctx, "GET", fmt.Sprintf("s/%s/rest/dynamicdns/%s", site, id), nil, &respBody)
+	err := c.Get(ctx, fmt.Sprintf("s/%s/rest/dynamicdns/%s", site, id), nil, &respBody)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, &NotFoundError{}
+		return nil, NotFoundError
 	}
 
 	d := respBody.Data[0]
@@ -85,7 +85,7 @@ func (c *Client) getDynamicDNS(ctx context.Context, site, id string) (*DynamicDN
 }
 
 func (c *Client) deleteDynamicDNS(ctx context.Context, site, id string) error {
-	err := c.do(ctx, "DELETE", fmt.Sprintf("s/%s/rest/dynamicdns/%s", site, id), struct{}{}, nil)
+	err := c.Delete(ctx, fmt.Sprintf("s/%s/rest/dynamicdns/%s", site, id), struct{}{}, nil)
 	if err != nil {
 		return err
 	}
@@ -94,17 +94,17 @@ func (c *Client) deleteDynamicDNS(ctx context.Context, site, id string) error {
 
 func (c *Client) createDynamicDNS(ctx context.Context, site string, d *DynamicDNS) (*DynamicDNS, error) {
 	var respBody struct {
-		Meta meta         `json:"meta"`
+		Meta Meta         `json:"meta"`
 		Data []DynamicDNS `json:"data"`
 	}
 
-	err := c.do(ctx, "POST", fmt.Sprintf("s/%s/rest/dynamicdns", site), d, &respBody)
+	err := c.Post(ctx, fmt.Sprintf("s/%s/rest/dynamicdns", site), d, &respBody)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, &NotFoundError{}
+		return nil, NotFoundError
 	}
 
 	new := respBody.Data[0]
@@ -114,17 +114,17 @@ func (c *Client) createDynamicDNS(ctx context.Context, site string, d *DynamicDN
 
 func (c *Client) updateDynamicDNS(ctx context.Context, site string, d *DynamicDNS) (*DynamicDNS, error) {
 	var respBody struct {
-		Meta meta         `json:"meta"`
+		Meta Meta         `json:"meta"`
 		Data []DynamicDNS `json:"data"`
 	}
 
-	err := c.do(ctx, "PUT", fmt.Sprintf("s/%s/rest/dynamicdns/%s", site, d.ID), d, &respBody)
+	err := c.Put(ctx, fmt.Sprintf("s/%s/rest/dynamicdns/%s", site, d.ID), d, &respBody)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, &NotFoundError{}
+		return nil, NotFoundError
 	}
 
 	new := respBody.Data[0]

@@ -40,7 +40,7 @@ func (c *Client) ReorderFirewallRules(ctx context.Context, site, ruleset string,
 		Ruleset: ruleset,
 		Rules:   reorder,
 	}
-	err := c.do(ctx, "POST", fmt.Sprintf("s/%s/cmd/firewall", site), reqBody, nil)
+	err := c.Post(ctx, fmt.Sprintf("s/%s/cmd/firewall", site), reqBody, nil)
 	if err != nil {
 		return err
 	}

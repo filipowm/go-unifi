@@ -59,17 +59,17 @@ func (dst *SettingSuperSmtp) UnmarshalJSON(b []byte) error {
 
 func (c *Client) getSettingSuperSmtp(ctx context.Context, site string) (*SettingSuperSmtp, error) {
 	var respBody struct {
-		Meta meta               `json:"meta"`
+		Meta Meta               `json:"meta"`
 		Data []SettingSuperSmtp `json:"data"`
 	}
 
-	err := c.do(ctx, "GET", fmt.Sprintf("s/%s/get/setting/super_smtp", site), nil, &respBody)
+	err := c.Get(ctx, fmt.Sprintf("s/%s/get/setting/super_smtp", site), nil, &respBody)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, &NotFoundError{}
+		return nil, NotFoundError
 	}
 
 	d := respBody.Data[0]
@@ -78,18 +78,18 @@ func (c *Client) getSettingSuperSmtp(ctx context.Context, site string) (*Setting
 
 func (c *Client) updateSettingSuperSmtp(ctx context.Context, site string, d *SettingSuperSmtp) (*SettingSuperSmtp, error) {
 	var respBody struct {
-		Meta meta               `json:"meta"`
+		Meta Meta               `json:"meta"`
 		Data []SettingSuperSmtp `json:"data"`
 	}
 
 	d.Key = "super_smtp"
-	err := c.do(ctx, "PUT", fmt.Sprintf("s/%s/set/setting/super_smtp", site), d, &respBody)
+	err := c.Put(ctx, fmt.Sprintf("s/%s/set/setting/super_smtp", site), d, &respBody)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, &NotFoundError{}
+		return nil, NotFoundError
 	}
 
 	new := respBody.Data[0]

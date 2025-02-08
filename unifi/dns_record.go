@@ -1,4 +1,4 @@
-// Custom package for handling DNS records in Unifi Controller
+// Custom package for handling DNS records in Client Controller
 
 package unifi
 
@@ -54,7 +54,7 @@ func (dst *DNSRecord) UnmarshalJSON(b []byte) error {
 func (c *Client) ListDNSRecord(ctx context.Context, site string) ([]DNSRecord, error) {
 	var respBody []DNSRecord
 
-	err := c.do(ctx, "GET", fmt.Sprintf("%s/site/%s/static-dns", c.apiV2Path, site), nil, &respBody)
+	err := c.Get(ctx, fmt.Sprintf("%s/site/%s/static-dns", c.apiPaths.ApiV2Path, site), nil, &respBody)
 	if err != nil {
 		return nil, err
 	}
@@ -65,20 +65,20 @@ func (c *Client) ListDNSRecord(ctx context.Context, site string) ([]DNSRecord, e
 func (c *Client) GetDNSRecord(ctx context.Context, site, id string) (*DNSRecord, error) {
 	var respBody DNSRecord
 
-	err := c.do(ctx, "GET", fmt.Sprintf("%s/site/%s/static-dns/%s", c.apiV2Path, site, id), nil, &respBody)
+	err := c.Get(ctx, fmt.Sprintf("%s/site/%s/static-dns/%s", c.apiPaths.ApiV2Path, site, id), nil, &respBody)
 	if err != nil {
 		return nil, err
 	}
 
 	if respBody.ID == "" {
-		return nil, &NotFoundError{}
+		return nil, NotFoundError
 	}
 
 	return &respBody, nil
 }
 
 func (c *Client) DeleteDNSRecord(ctx context.Context, site, id string) error {
-	err := c.do(ctx, "DELETE", fmt.Sprintf("%s/site/%s/static-dns/%s", c.apiV2Path, site, id), struct{}{}, nil)
+	err := c.Delete(ctx, fmt.Sprintf("%s/site/%s/static-dns/%s", c.apiPaths.ApiV2Path, site, id), struct{}{}, nil)
 	if err != nil {
 		return err
 	}
@@ -87,7 +87,7 @@ func (c *Client) DeleteDNSRecord(ctx context.Context, site, id string) error {
 
 func (c *Client) CreateDNSRecord(ctx context.Context, site string, d *DNSRecord) (*DNSRecord, error) {
 	var respBody DNSRecord
-	err := c.do(ctx, "POST", fmt.Sprintf("%s/site/%s/static-dns", c.apiV2Path, site), d, &respBody)
+	err := c.Post(ctx, fmt.Sprintf("%s/site/%s/static-dns", c.apiPaths.ApiV2Path, site), d, &respBody)
 	if err != nil {
 		return nil, err
 	}
@@ -97,13 +97,13 @@ func (c *Client) CreateDNSRecord(ctx context.Context, site string, d *DNSRecord)
 func (c *Client) UpdateDNSRecord(ctx context.Context, site string, d *DNSRecord) (*DNSRecord, error) {
 	var respBody DNSRecord
 
-	err := c.do(ctx, "PUT", fmt.Sprintf("%s/site/%s/static-dns/%s", c.apiV2Path, site, d.ID), d, &respBody)
+	err := c.Put(ctx, fmt.Sprintf("%s/site/%s/static-dns/%s", c.apiPaths.ApiV2Path, site, d.ID), d, &respBody)
 	if err != nil {
 		return nil, err
 	}
 
 	// if len(respBody) != nil {
-	// 	return nil, &NotFoundError{}
+	// 	return nil, NotFoundError
 	// }
 
 	return &respBody, nil

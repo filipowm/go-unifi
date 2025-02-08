@@ -53,11 +53,11 @@ func (dst *UserGroup) UnmarshalJSON(b []byte) error {
 
 func (c *Client) listUserGroup(ctx context.Context, site string) ([]UserGroup, error) {
 	var respBody struct {
-		Meta meta        `json:"meta"`
+		Meta Meta        `json:"meta"`
 		Data []UserGroup `json:"data"`
 	}
 
-	err := c.do(ctx, "GET", fmt.Sprintf("s/%s/rest/usergroup", site), nil, &respBody)
+	err := c.Get(ctx, fmt.Sprintf("s/%s/rest/usergroup", site), nil, &respBody)
 	if err != nil {
 		return nil, err
 	}
@@ -67,17 +67,17 @@ func (c *Client) listUserGroup(ctx context.Context, site string) ([]UserGroup, e
 
 func (c *Client) getUserGroup(ctx context.Context, site, id string) (*UserGroup, error) {
 	var respBody struct {
-		Meta meta        `json:"meta"`
+		Meta Meta        `json:"meta"`
 		Data []UserGroup `json:"data"`
 	}
 
-	err := c.do(ctx, "GET", fmt.Sprintf("s/%s/rest/usergroup/%s", site, id), nil, &respBody)
+	err := c.Get(ctx, fmt.Sprintf("s/%s/rest/usergroup/%s", site, id), nil, &respBody)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, &NotFoundError{}
+		return nil, NotFoundError
 	}
 
 	d := respBody.Data[0]
@@ -85,7 +85,7 @@ func (c *Client) getUserGroup(ctx context.Context, site, id string) (*UserGroup,
 }
 
 func (c *Client) deleteUserGroup(ctx context.Context, site, id string) error {
-	err := c.do(ctx, "DELETE", fmt.Sprintf("s/%s/rest/usergroup/%s", site, id), struct{}{}, nil)
+	err := c.Delete(ctx, fmt.Sprintf("s/%s/rest/usergroup/%s", site, id), struct{}{}, nil)
 	if err != nil {
 		return err
 	}
@@ -94,17 +94,17 @@ func (c *Client) deleteUserGroup(ctx context.Context, site, id string) error {
 
 func (c *Client) createUserGroup(ctx context.Context, site string, d *UserGroup) (*UserGroup, error) {
 	var respBody struct {
-		Meta meta        `json:"meta"`
+		Meta Meta        `json:"meta"`
 		Data []UserGroup `json:"data"`
 	}
 
-	err := c.do(ctx, "POST", fmt.Sprintf("s/%s/rest/usergroup", site), d, &respBody)
+	err := c.Post(ctx, fmt.Sprintf("s/%s/rest/usergroup", site), d, &respBody)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, &NotFoundError{}
+		return nil, NotFoundError
 	}
 
 	new := respBody.Data[0]
@@ -114,17 +114,17 @@ func (c *Client) createUserGroup(ctx context.Context, site string, d *UserGroup)
 
 func (c *Client) updateUserGroup(ctx context.Context, site string, d *UserGroup) (*UserGroup, error) {
 	var respBody struct {
-		Meta meta        `json:"meta"`
+		Meta Meta        `json:"meta"`
 		Data []UserGroup `json:"data"`
 	}
 
-	err := c.do(ctx, "PUT", fmt.Sprintf("s/%s/rest/usergroup/%s", site, d.ID), d, &respBody)
+	err := c.Put(ctx, fmt.Sprintf("s/%s/rest/usergroup/%s", site, d.ID), d, &respBody)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, &NotFoundError{}
+		return nil, NotFoundError
 	}
 
 	new := respBody.Data[0]
