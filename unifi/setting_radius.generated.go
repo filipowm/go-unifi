@@ -62,17 +62,17 @@ func (dst *SettingRadius) UnmarshalJSON(b []byte) error {
 
 func (c *Client) getSettingRadius(ctx context.Context, site string) (*SettingRadius, error) {
 	var respBody struct {
-		Meta meta            `json:"meta"`
+		Meta Meta            `json:"meta"`
 		Data []SettingRadius `json:"data"`
 	}
 
-	err := c.do(ctx, "GET", fmt.Sprintf("s/%s/get/setting/radius", site), nil, &respBody)
+	err := c.Get(ctx, fmt.Sprintf("s/%s/get/setting/radius", site), nil, &respBody)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, &NotFoundError{}
+		return nil, NotFoundError
 	}
 
 	d := respBody.Data[0]
@@ -81,18 +81,18 @@ func (c *Client) getSettingRadius(ctx context.Context, site string) (*SettingRad
 
 func (c *Client) updateSettingRadius(ctx context.Context, site string, d *SettingRadius) (*SettingRadius, error) {
 	var respBody struct {
-		Meta meta            `json:"meta"`
+		Meta Meta            `json:"meta"`
 		Data []SettingRadius `json:"data"`
 	}
 
 	d.Key = "radius"
-	err := c.do(ctx, "PUT", fmt.Sprintf("s/%s/set/setting/radius", site), d, &respBody)
+	err := c.Put(ctx, fmt.Sprintf("s/%s/set/setting/radius", site), d, &respBody)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, &NotFoundError{}
+		return nil, NotFoundError
 	}
 
 	new := respBody.Data[0]

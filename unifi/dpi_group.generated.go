@@ -48,11 +48,11 @@ func (dst *DpiGroup) UnmarshalJSON(b []byte) error {
 
 func (c *Client) listDpiGroup(ctx context.Context, site string) ([]DpiGroup, error) {
 	var respBody struct {
-		Meta meta       `json:"meta"`
+		Meta Meta       `json:"meta"`
 		Data []DpiGroup `json:"data"`
 	}
 
-	err := c.do(ctx, "GET", fmt.Sprintf("s/%s/rest/dpigroup", site), nil, &respBody)
+	err := c.Get(ctx, fmt.Sprintf("s/%s/rest/dpigroup", site), nil, &respBody)
 	if err != nil {
 		return nil, err
 	}
@@ -62,17 +62,17 @@ func (c *Client) listDpiGroup(ctx context.Context, site string) ([]DpiGroup, err
 
 func (c *Client) getDpiGroup(ctx context.Context, site, id string) (*DpiGroup, error) {
 	var respBody struct {
-		Meta meta       `json:"meta"`
+		Meta Meta       `json:"meta"`
 		Data []DpiGroup `json:"data"`
 	}
 
-	err := c.do(ctx, "GET", fmt.Sprintf("s/%s/rest/dpigroup/%s", site, id), nil, &respBody)
+	err := c.Get(ctx, fmt.Sprintf("s/%s/rest/dpigroup/%s", site, id), nil, &respBody)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, &NotFoundError{}
+		return nil, NotFoundError
 	}
 
 	d := respBody.Data[0]
@@ -80,7 +80,7 @@ func (c *Client) getDpiGroup(ctx context.Context, site, id string) (*DpiGroup, e
 }
 
 func (c *Client) deleteDpiGroup(ctx context.Context, site, id string) error {
-	err := c.do(ctx, "DELETE", fmt.Sprintf("s/%s/rest/dpigroup/%s", site, id), struct{}{}, nil)
+	err := c.Delete(ctx, fmt.Sprintf("s/%s/rest/dpigroup/%s", site, id), struct{}{}, nil)
 	if err != nil {
 		return err
 	}
@@ -89,17 +89,17 @@ func (c *Client) deleteDpiGroup(ctx context.Context, site, id string) error {
 
 func (c *Client) createDpiGroup(ctx context.Context, site string, d *DpiGroup) (*DpiGroup, error) {
 	var respBody struct {
-		Meta meta       `json:"meta"`
+		Meta Meta       `json:"meta"`
 		Data []DpiGroup `json:"data"`
 	}
 
-	err := c.do(ctx, "POST", fmt.Sprintf("s/%s/rest/dpigroup", site), d, &respBody)
+	err := c.Post(ctx, fmt.Sprintf("s/%s/rest/dpigroup", site), d, &respBody)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, &NotFoundError{}
+		return nil, NotFoundError
 	}
 
 	new := respBody.Data[0]
@@ -109,17 +109,17 @@ func (c *Client) createDpiGroup(ctx context.Context, site string, d *DpiGroup) (
 
 func (c *Client) updateDpiGroup(ctx context.Context, site string, d *DpiGroup) (*DpiGroup, error) {
 	var respBody struct {
-		Meta meta       `json:"meta"`
+		Meta Meta       `json:"meta"`
 		Data []DpiGroup `json:"data"`
 	}
 
-	err := c.do(ctx, "PUT", fmt.Sprintf("s/%s/rest/dpigroup/%s", site, d.ID), d, &respBody)
+	err := c.Put(ctx, fmt.Sprintf("s/%s/rest/dpigroup/%s", site, d.ID), d, &respBody)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, &NotFoundError{}
+		return nil, NotFoundError
 	}
 
 	new := respBody.Data[0]

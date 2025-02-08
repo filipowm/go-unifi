@@ -21,11 +21,11 @@ type Site struct {
 
 func (c *Client) ListSites(ctx context.Context) ([]Site, error) {
 	var respBody struct {
-		Meta meta   `json:"meta"`
+		Meta Meta   `json:"Meta"`
 		Data []Site `json:"data"`
 	}
 
-	err := c.do(ctx, "GET", "self/sites", nil, &respBody)
+	err := c.Get(ctx, "self/sites", nil, &respBody)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +45,7 @@ func (c *Client) GetSite(ctx context.Context, id string) (*Site, error) {
 		}
 	}
 
-	return nil, &NotFoundError{}
+	return nil, NotFoundError
 }
 
 func (c *Client) CreateSite(ctx context.Context, description string) ([]Site, error) {
@@ -58,11 +58,11 @@ func (c *Client) CreateSite(ctx context.Context, description string) ([]Site, er
 	}
 
 	var respBody struct {
-		Meta meta   `json:"meta"`
+		Meta Meta   `json:"Meta"`
 		Data []Site `json:"data"`
 	}
 
-	err := c.do(ctx, "POST", "s/default/cmd/sitemgr", reqBody, &respBody)
+	err := c.Post(ctx, "s/default/cmd/sitemgr", reqBody, &respBody)
 	if err != nil {
 		return nil, err
 	}
@@ -80,11 +80,11 @@ func (c *Client) DeleteSite(ctx context.Context, id string) ([]Site, error) {
 	}
 
 	var respBody struct {
-		Meta meta   `json:"meta"`
+		Meta Meta   `json:"Meta"`
 		Data []Site `json:"data"`
 	}
 
-	err := c.do(ctx, "POST", "s/default/cmd/sitemgr", reqBody, &respBody)
+	err := c.Post(ctx, "s/default/cmd/sitemgr", reqBody, &respBody)
 	if err != nil {
 		return nil, err
 	}
@@ -102,11 +102,11 @@ func (c *Client) UpdateSite(ctx context.Context, name, description string) ([]Si
 	}
 
 	var respBody struct {
-		Meta meta   `json:"meta"`
+		Meta Meta   `json:"Meta"`
 		Data []Site `json:"data"`
 	}
 
-	err := c.do(ctx, "POST", fmt.Sprintf("s/%s/cmd/sitemgr", name), reqBody, &respBody)
+	err := c.Post(ctx, fmt.Sprintf("s/%s/cmd/sitemgr", name), reqBody, &respBody)
 	if err != nil {
 		return nil, err
 	}

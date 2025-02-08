@@ -51,17 +51,17 @@ func (dst *SettingBaresip) UnmarshalJSON(b []byte) error {
 
 func (c *Client) getSettingBaresip(ctx context.Context, site string) (*SettingBaresip, error) {
 	var respBody struct {
-		Meta meta             `json:"meta"`
+		Meta Meta             `json:"meta"`
 		Data []SettingBaresip `json:"data"`
 	}
 
-	err := c.do(ctx, "GET", fmt.Sprintf("s/%s/get/setting/baresip", site), nil, &respBody)
+	err := c.Get(ctx, fmt.Sprintf("s/%s/get/setting/baresip", site), nil, &respBody)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, &NotFoundError{}
+		return nil, NotFoundError
 	}
 
 	d := respBody.Data[0]
@@ -70,18 +70,18 @@ func (c *Client) getSettingBaresip(ctx context.Context, site string) (*SettingBa
 
 func (c *Client) updateSettingBaresip(ctx context.Context, site string, d *SettingBaresip) (*SettingBaresip, error) {
 	var respBody struct {
-		Meta meta             `json:"meta"`
+		Meta Meta             `json:"meta"`
 		Data []SettingBaresip `json:"data"`
 	}
 
 	d.Key = "baresip"
-	err := c.do(ctx, "PUT", fmt.Sprintf("s/%s/set/setting/baresip", site), d, &respBody)
+	err := c.Put(ctx, fmt.Sprintf("s/%s/set/setting/baresip", site), d, &respBody)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, &NotFoundError{}
+		return nil, NotFoundError
 	}
 
 	new := respBody.Data[0]

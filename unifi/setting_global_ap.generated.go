@@ -70,17 +70,17 @@ func (dst *SettingGlobalAp) UnmarshalJSON(b []byte) error {
 
 func (c *Client) getSettingGlobalAp(ctx context.Context, site string) (*SettingGlobalAp, error) {
 	var respBody struct {
-		Meta meta              `json:"meta"`
+		Meta Meta              `json:"meta"`
 		Data []SettingGlobalAp `json:"data"`
 	}
 
-	err := c.do(ctx, "GET", fmt.Sprintf("s/%s/get/setting/global_ap", site), nil, &respBody)
+	err := c.Get(ctx, fmt.Sprintf("s/%s/get/setting/global_ap", site), nil, &respBody)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, &NotFoundError{}
+		return nil, NotFoundError
 	}
 
 	d := respBody.Data[0]
@@ -89,18 +89,18 @@ func (c *Client) getSettingGlobalAp(ctx context.Context, site string) (*SettingG
 
 func (c *Client) updateSettingGlobalAp(ctx context.Context, site string, d *SettingGlobalAp) (*SettingGlobalAp, error) {
 	var respBody struct {
-		Meta meta              `json:"meta"`
+		Meta Meta              `json:"meta"`
 		Data []SettingGlobalAp `json:"data"`
 	}
 
 	d.Key = "global_ap"
-	err := c.do(ctx, "PUT", fmt.Sprintf("s/%s/set/setting/global_ap", site), d, &respBody)
+	err := c.Put(ctx, fmt.Sprintf("s/%s/set/setting/global_ap", site), d, &respBody)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, &NotFoundError{}
+		return nil, NotFoundError
 	}
 
 	new := respBody.Data[0]

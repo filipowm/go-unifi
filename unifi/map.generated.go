@@ -63,11 +63,11 @@ func (dst *Map) UnmarshalJSON(b []byte) error {
 
 func (c *Client) listMap(ctx context.Context, site string) ([]Map, error) {
 	var respBody struct {
-		Meta meta  `json:"meta"`
+		Meta Meta  `json:"meta"`
 		Data []Map `json:"data"`
 	}
 
-	err := c.do(ctx, "GET", fmt.Sprintf("s/%s/rest/map", site), nil, &respBody)
+	err := c.Get(ctx, fmt.Sprintf("s/%s/rest/map", site), nil, &respBody)
 	if err != nil {
 		return nil, err
 	}
@@ -77,17 +77,17 @@ func (c *Client) listMap(ctx context.Context, site string) ([]Map, error) {
 
 func (c *Client) getMap(ctx context.Context, site, id string) (*Map, error) {
 	var respBody struct {
-		Meta meta  `json:"meta"`
+		Meta Meta  `json:"meta"`
 		Data []Map `json:"data"`
 	}
 
-	err := c.do(ctx, "GET", fmt.Sprintf("s/%s/rest/map/%s", site, id), nil, &respBody)
+	err := c.Get(ctx, fmt.Sprintf("s/%s/rest/map/%s", site, id), nil, &respBody)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, &NotFoundError{}
+		return nil, NotFoundError
 	}
 
 	d := respBody.Data[0]
@@ -95,7 +95,7 @@ func (c *Client) getMap(ctx context.Context, site, id string) (*Map, error) {
 }
 
 func (c *Client) deleteMap(ctx context.Context, site, id string) error {
-	err := c.do(ctx, "DELETE", fmt.Sprintf("s/%s/rest/map/%s", site, id), struct{}{}, nil)
+	err := c.Delete(ctx, fmt.Sprintf("s/%s/rest/map/%s", site, id), struct{}{}, nil)
 	if err != nil {
 		return err
 	}
@@ -104,17 +104,17 @@ func (c *Client) deleteMap(ctx context.Context, site, id string) error {
 
 func (c *Client) createMap(ctx context.Context, site string, d *Map) (*Map, error) {
 	var respBody struct {
-		Meta meta  `json:"meta"`
+		Meta Meta  `json:"meta"`
 		Data []Map `json:"data"`
 	}
 
-	err := c.do(ctx, "POST", fmt.Sprintf("s/%s/rest/map", site), d, &respBody)
+	err := c.Post(ctx, fmt.Sprintf("s/%s/rest/map", site), d, &respBody)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, &NotFoundError{}
+		return nil, NotFoundError
 	}
 
 	new := respBody.Data[0]
@@ -124,17 +124,17 @@ func (c *Client) createMap(ctx context.Context, site string, d *Map) (*Map, erro
 
 func (c *Client) updateMap(ctx context.Context, site string, d *Map) (*Map, error) {
 	var respBody struct {
-		Meta meta  `json:"meta"`
+		Meta Meta  `json:"meta"`
 		Data []Map `json:"data"`
 	}
 
-	err := c.do(ctx, "PUT", fmt.Sprintf("s/%s/rest/map/%s", site, d.ID), d, &respBody)
+	err := c.Put(ctx, fmt.Sprintf("s/%s/rest/map/%s", site, d.ID), d, &respBody)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, &NotFoundError{}
+		return nil, NotFoundError
 	}
 
 	new := respBody.Data[0]

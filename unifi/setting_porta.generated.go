@@ -48,17 +48,17 @@ func (dst *SettingPorta) UnmarshalJSON(b []byte) error {
 
 func (c *Client) getSettingPorta(ctx context.Context, site string) (*SettingPorta, error) {
 	var respBody struct {
-		Meta meta           `json:"meta"`
+		Meta Meta           `json:"meta"`
 		Data []SettingPorta `json:"data"`
 	}
 
-	err := c.do(ctx, "GET", fmt.Sprintf("s/%s/get/setting/porta", site), nil, &respBody)
+	err := c.Get(ctx, fmt.Sprintf("s/%s/get/setting/porta", site), nil, &respBody)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, &NotFoundError{}
+		return nil, NotFoundError
 	}
 
 	d := respBody.Data[0]
@@ -67,18 +67,18 @@ func (c *Client) getSettingPorta(ctx context.Context, site string) (*SettingPort
 
 func (c *Client) updateSettingPorta(ctx context.Context, site string, d *SettingPorta) (*SettingPorta, error) {
 	var respBody struct {
-		Meta meta           `json:"meta"`
+		Meta Meta           `json:"meta"`
 		Data []SettingPorta `json:"data"`
 	}
 
 	d.Key = "porta"
-	err := c.do(ctx, "PUT", fmt.Sprintf("s/%s/set/setting/porta", site), d, &respBody)
+	err := c.Put(ctx, fmt.Sprintf("s/%s/set/setting/porta", site), d, &respBody)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, &NotFoundError{}
+		return nil, NotFoundError
 	}
 
 	new := respBody.Data[0]

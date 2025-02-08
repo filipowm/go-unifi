@@ -53,17 +53,17 @@ func (dst *SettingSuperSdn) UnmarshalJSON(b []byte) error {
 
 func (c *Client) getSettingSuperSdn(ctx context.Context, site string) (*SettingSuperSdn, error) {
 	var respBody struct {
-		Meta meta              `json:"meta"`
+		Meta Meta              `json:"meta"`
 		Data []SettingSuperSdn `json:"data"`
 	}
 
-	err := c.do(ctx, "GET", fmt.Sprintf("s/%s/get/setting/super_sdn", site), nil, &respBody)
+	err := c.Get(ctx, fmt.Sprintf("s/%s/get/setting/super_sdn", site), nil, &respBody)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, &NotFoundError{}
+		return nil, NotFoundError
 	}
 
 	d := respBody.Data[0]
@@ -72,18 +72,18 @@ func (c *Client) getSettingSuperSdn(ctx context.Context, site string) (*SettingS
 
 func (c *Client) updateSettingSuperSdn(ctx context.Context, site string, d *SettingSuperSdn) (*SettingSuperSdn, error) {
 	var respBody struct {
-		Meta meta              `json:"meta"`
+		Meta Meta              `json:"meta"`
 		Data []SettingSuperSdn `json:"data"`
 	}
 
 	d.Key = "super_sdn"
-	err := c.do(ctx, "PUT", fmt.Sprintf("s/%s/set/setting/super_sdn", site), d, &respBody)
+	err := c.Put(ctx, fmt.Sprintf("s/%s/set/setting/super_sdn", site), d, &respBody)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, &NotFoundError{}
+		return nil, NotFoundError
 	}
 
 	new := respBody.Data[0]

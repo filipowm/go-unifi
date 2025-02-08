@@ -15,7 +15,7 @@ type sysInfo struct {
 	/*
 
 	   {
-	       "meta": {
+	       "Meta": {
 	           "rc": "ok"
 	       },
 	       "data": [
@@ -68,17 +68,17 @@ type sysInfo struct {
 
 func (c *Client) sysinfo(ctx context.Context, id string) (*sysInfo, error) {
 	var respBody struct {
-		Meta meta      `json:"meta"`
+		Meta Meta      `json:"Meta"`
 		Data []sysInfo `json:"data"`
 	}
 
-	err := c.do(ctx, "GET", fmt.Sprintf("s/%s/stat/sysinfo", id), nil, &respBody)
+	err := c.Get(ctx, fmt.Sprintf("s/%s/stat/sysinfo", id), nil, &respBody)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, &NotFoundError{}
+		return nil, NotFoundError
 	}
 
 	return &respBody.Data[0], nil

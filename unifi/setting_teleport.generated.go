@@ -49,17 +49,17 @@ func (dst *SettingTeleport) UnmarshalJSON(b []byte) error {
 
 func (c *Client) getSettingTeleport(ctx context.Context, site string) (*SettingTeleport, error) {
 	var respBody struct {
-		Meta meta              `json:"meta"`
+		Meta Meta              `json:"meta"`
 		Data []SettingTeleport `json:"data"`
 	}
 
-	err := c.do(ctx, "GET", fmt.Sprintf("s/%s/get/setting/teleport", site), nil, &respBody)
+	err := c.Get(ctx, fmt.Sprintf("s/%s/get/setting/teleport", site), nil, &respBody)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, &NotFoundError{}
+		return nil, NotFoundError
 	}
 
 	d := respBody.Data[0]
@@ -68,18 +68,18 @@ func (c *Client) getSettingTeleport(ctx context.Context, site string) (*SettingT
 
 func (c *Client) updateSettingTeleport(ctx context.Context, site string, d *SettingTeleport) (*SettingTeleport, error) {
 	var respBody struct {
-		Meta meta              `json:"meta"`
+		Meta Meta              `json:"meta"`
 		Data []SettingTeleport `json:"data"`
 	}
 
 	d.Key = "teleport"
-	err := c.do(ctx, "PUT", fmt.Sprintf("s/%s/set/setting/teleport", site), d, &respBody)
+	err := c.Put(ctx, fmt.Sprintf("s/%s/set/setting/teleport", site), d, &respBody)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, &NotFoundError{}
+		return nil, NotFoundError
 	}
 
 	new := respBody.Data[0]
