@@ -49,7 +49,7 @@ func (dst *ScheduleTask) UnmarshalJSON(b []byte) error {
 }
 
 type ScheduleTaskUpgradeTargets struct {
-	MAC string `json:"mac,omitempty"` // ^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$
+	MAC string `json:"mac,omitempty" validate:"omitempty,mac"` // ^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$
 }
 
 func (dst *ScheduleTaskUpgradeTargets) UnmarshalJSON(b []byte) error {

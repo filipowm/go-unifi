@@ -25,7 +25,7 @@ type Device struct {
 	NoDelete bool   `json:"attr_no_delete,omitempty"`
 	NoEdit   bool   `json:"attr_no_edit,omitempty"`
 
-	MAC string `json:"mac,omitempty"`
+	MAC string `json:"mac,omitempty" validate:"omitempty,mac"`
 
 	Adopted                     bool                      `json:"adopted"`
 	AfcEnabled                  bool                      `json:"afc_enabled,omitempty"`

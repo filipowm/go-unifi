@@ -30,7 +30,7 @@ type WLAN struct {
 	AuthCache                   bool                       `json:"auth_cache"`
 	BSupported                  bool                       `json:"b_supported"`
 	BroadcastFilterEnabled      bool                       `json:"bc_filter_enabled"`
-	BroadcastFilterList         []string                   `json:"bc_filter_list,omitempty"` // ^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$
+	BroadcastFilterList         []string                   `json:"bc_filter_list,omitempty" validate:"omitempty,mac"` // ^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$
 	BssTransition               bool                       `json:"bss_transition"`
 	CountryBeacon               bool                       `json:"country_beacon"`
 	DPIEnabled                  bool                       `json:"dpi_enabled"`
@@ -52,7 +52,7 @@ type WLAN struct {
 	L2Isolation                 bool                       `json:"l2_isolation"`
 	LogLevel                    string                     `json:"log_level,omitempty"`
 	MACFilterEnabled            bool                       `json:"mac_filter_enabled"`
-	MACFilterList               []string                   `json:"mac_filter_list,omitempty"`                                         // ^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$
+	MACFilterList               []string                   `json:"mac_filter_list,omitempty" validate:"omitempty,mac"`                // ^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$
 	MACFilterPolicy             string                     `json:"mac_filter_policy,omitempty" validate:"omitempty,oneof=allow deny"` // allow|deny
 	MinrateNaAdvertisingRates   bool                       `json:"minrate_na_advertising_rates"`
 	MinrateNaDataRateKbps       int                        `json:"minrate_na_data_rate_kbps,omitempty"`
@@ -388,10 +388,10 @@ func (dst *WLANRoamingConsortiumList) UnmarshalJSON(b []byte) error {
 }
 
 type WLANSaePsk struct {
-	ID   string `json:"id" validate:"omitempty,gte=0,lte=128"` // .{0,128}
-	MAC  string `json:"mac,omitempty"`                         // ^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$
-	Psk  string `json:"psk,omitempty"`                         // [\x20-\x7E]{8,255}
-	VLAN int    `json:"vlan,omitempty"`                        // [0-9]|[1-9][0-9]{1,2}|[1-3][0-9]{3}|40[0-8][0-9]|409[0-5]|^$
+	ID   string `json:"id" validate:"omitempty,gte=0,lte=128"`  // .{0,128}
+	MAC  string `json:"mac,omitempty" validate:"omitempty,mac"` // ^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$
+	Psk  string `json:"psk,omitempty"`                          // [\x20-\x7E]{8,255}
+	VLAN int    `json:"vlan,omitempty"`                         // [0-9]|[1-9][0-9]{1,2}|[1-3][0-9]{3}|40[0-8][0-9]|409[0-5]|^$
 }
 
 func (dst *WLANSaePsk) UnmarshalJSON(b []byte) error {

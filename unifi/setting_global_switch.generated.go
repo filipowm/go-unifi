@@ -36,7 +36,7 @@ type SettingGlobalSwitch struct {
 	JumboframeEnabled      bool                                `json:"jumboframe_enabled"`
 	RADIUSProfileID        string                              `json:"radiusprofile_id"`
 	StpVersion             string                              `json:"stp_version,omitempty" validate:"omitempty,oneof=stp rstp disabled"` // stp|rstp|disabled
-	SwitchExclusions       []string                            `json:"switch_exclusions,omitempty"`                                        // ^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$
+	SwitchExclusions       []string                            `json:"switch_exclusions,omitempty" validate:"omitempty,mac"`               // ^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$
 }
 
 func (dst *SettingGlobalSwitch) UnmarshalJSON(b []byte) error {

@@ -211,3 +211,29 @@ func TestIsWRegexValidation(t *testing.T) {
 	}
 	testValidationCommentCheck(t, testCases, func(v validationComment) bool { return v.IsWRegex() })
 }
+
+func TestIsMACValidation(t *testing.T) {
+	t.Parallel()
+	testCases := []struct {
+		validationComment validationComment
+		expected          bool
+	}{
+		{"[0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2}", true},
+		{"([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})", true},
+		{"[0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})", true},
+		{"([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2}", true},
+		{"([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$", true},
+		{"^[0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2}$", true},
+		{"^$|[0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})", true},
+		{"^$|[0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})|^$", true},
+		{"(^$|[0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})|^$)", true},
+		{"^$|[0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})|^$)", true},
+		{"(^$|[0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})|^$", true},
+		{"", false},
+		{"a", false},
+		{"([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})|(0-9)", false},
+		{"[0-9]|([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})", false},
+		{"[0-9]|([0-9A-Fa-f]{2}:){5}", false},
+	}
+	testValidationCommentCheck(t, testCases, func(v validationComment) bool { return v.IsMAC() })
+}

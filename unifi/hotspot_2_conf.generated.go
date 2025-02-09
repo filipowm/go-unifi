@@ -35,7 +35,7 @@ type Hotspot2Conf struct {
 	GasAdvanced             bool                                `json:"gas_advanced"`
 	GasComebackDelay        int                                 `json:"gas_comeback_delay,omitempty"`
 	GasFragLimit            int                                 `json:"gas_frag_limit,omitempty"`
-	Hessid                  string                              `json:"hessid"` // ^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$|^$
+	Hessid                  string                              `json:"hessid" validate:"omitempty,mac"` // ^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$|^$
 	HessidUsed              bool                                `json:"hessid_used"`
 	IPaddrTypeAvailV4       int                                 `json:"ipaddr_type_avail_v4,omitempty" validate:"omitempty,oneof=0 1 2 3 4 5 6 7"` // 0|1|2|3|4|5|6|7
 	IPaddrTypeAvailV6       int                                 `json:"ipaddr_type_avail_v6,omitempty" validate:"omitempty,oneof=0 1 2"`           // 0|1|2

@@ -146,7 +146,7 @@ func NewResource(structName string, resourcePath string) *Resource {
 			baseType.Fields["MdnsEnabled"] = NewFieldInfo("MdnsEnabled", "mdns_enabled", "bool", "", "", false, false, "")
 		}
 	case resource.StructName == "Device":
-		baseType.Fields[" MAC"] = NewFieldInfo("MAC", "mac", "string", "", "", true, false, "")
+		baseType.Fields[" MAC"] = NewFieldInfo("MAC", "mac", "string", createValidations(validation{v: mac}), "", true, false, "")
 		baseType.Fields["Adopted"] = NewFieldInfo("Adopted", "adopted", "bool", "", "", false, false, "")
 		baseType.Fields["Model"] = NewFieldInfo("Model", "model", "string", "", "", true, false, "")
 		baseType.Fields["State"] = NewFieldInfo("State", "state", "DeviceState", "", "", false, false, "")

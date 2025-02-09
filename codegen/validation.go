@@ -105,6 +105,13 @@ func (vc validationComment) IsWRegex() bool {
 	return slices.Contains([]string{"[\\d\\w]+", "[\\d\\w]*", "[\\w]+", "[\\w]*"}, s)
 }
 
+func (vc validationComment) IsMAC() bool {
+	s := string(vc)
+	trimmed := strings.TrimSuffix(strings.TrimPrefix(s, "("), ")")          // remove wrapping parenthesis
+	trimmed = strings.TrimSuffix(strings.TrimPrefix(trimmed, "^$|"), "|^$") // remove ^$ which allows for empty string and is not needed
+	return strings.Contains(trimmed, "[0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2}") && regexChars.NotIn(trimmed, "(){}[]^$")
+}
+
 func defineFieldValidation(rawValidation string) string {
 	if rawValidation == "" {
 		return ""
@@ -121,6 +128,8 @@ func defineFieldValidation(rawValidation string) string {
 		return createValidations(validation{v: gte, params: []string{bounds[0]}}, validation{v: lte, params: []string{bounds[1]}})
 	} else if vc.IsWRegex() {
 		return createValidations(validation{v: w_regex})
+	} else if vc.IsMAC() {
+		return createValidations(validation{v: mac})
 	}
 	return ""
 }

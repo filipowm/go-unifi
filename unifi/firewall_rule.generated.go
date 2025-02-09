@@ -47,7 +47,7 @@ type FirewallRule struct {
 	SrcAddress            string   `json:"src_address,omitempty"`
 	SrcAddressIPV6        string   `json:"src_address_ipv6,omitempty"`
 	SrcFirewallGroupIDs   []string `json:"src_firewallgroup_ids,omitempty" validate:"omitempty,w_regex"`           // [\d\w]+
-	SrcMACAddress         string   `json:"src_mac_address"`                                                        // ^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$|^$
+	SrcMACAddress         string   `json:"src_mac_address" validate:"omitempty,mac"`                               // ^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$|^$
 	SrcNetworkID          string   `json:"src_networkconf_id"`                                                     // [\d\w]+|^$
 	SrcNetworkType        string   `json:"src_networkconf_type,omitempty" validate:"omitempty,oneof=ADDRv4 NETv4"` // ADDRv4|NETv4
 	SrcPort               string   `json:"src_port,omitempty"`

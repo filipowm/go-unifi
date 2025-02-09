@@ -42,11 +42,11 @@ type Network struct {
 	DHCPDIP2                                      string                          `json:"dhcpd_ip_2"` // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
 	DHCPDIP3                                      string                          `json:"dhcpd_ip_3"` // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
 	DHCPDLeaseTime                                int                             `json:"dhcpd_leasetime,omitempty"`
-	DHCPDMAC1                                     string                          `json:"dhcpd_mac_1"` // (^$|^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$)
-	DHCPDMAC2                                     string                          `json:"dhcpd_mac_2"` // (^$|^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$)
-	DHCPDMAC3                                     string                          `json:"dhcpd_mac_3"` // (^$|^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$)
-	DHCPDNtp1                                     string                          `json:"dhcpd_ntp_1"` // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
-	DHCPDNtp2                                     string                          `json:"dhcpd_ntp_2"` // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
+	DHCPDMAC1                                     string                          `json:"dhcpd_mac_1" validate:"omitempty,mac"` // (^$|^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$)
+	DHCPDMAC2                                     string                          `json:"dhcpd_mac_2" validate:"omitempty,mac"` // (^$|^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$)
+	DHCPDMAC3                                     string                          `json:"dhcpd_mac_3" validate:"omitempty,mac"` // (^$|^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$)
+	DHCPDNtp1                                     string                          `json:"dhcpd_ntp_1"`                          // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
+	DHCPDNtp2                                     string                          `json:"dhcpd_ntp_2"`                          // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
 	DHCPDNtpEnabled                               bool                            `json:"dhcpd_ntp_enabled"`
 	DHCPDStart                                    string                          `json:"dhcpd_start"` // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
 	DHCPDStop                                     string                          `json:"dhcpd_stop"`  // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
@@ -76,7 +76,7 @@ type Network struct {
 	Enabled                                       bool                            `json:"enabled"`
 	ExposedToSiteVPN                              bool                            `json:"exposed_to_site_vpn"`
 	FirewallZoneID                                string                          `json:"firewall_zone_id"`
-	GatewayDevice                                 string                          `json:"gateway_device"`                                                   // (^$|^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$)
+	GatewayDevice                                 string                          `json:"gateway_device" validate:"omitempty,mac"`                          // (^$|^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$)
 	GatewayType                                   string                          `json:"gateway_type,omitempty" validate:"omitempty,oneof=default switch"` // default|switch
 	IGMPFastleave                                 bool                            `json:"igmp_fastleave"`
 	IGMPForwardUnknownMulticast                   bool                            `json:"igmp_forward_unknown_multicast"`
@@ -139,7 +139,7 @@ type Network struct {
 	L2TpLocalWANIP                                string                          `json:"l2tp_local_wan_ip,omitempty"`                                  // ^any$|^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$
 	LocalPort                                     int                             `json:"local_port,omitempty"`                                         // ^([1-9][0-9]{0,3}|[1-5][0-9]{4}|[6][0-4][0-9]{3}|[6][5][0-4][0-9]{2}|[6][5][5][0-2][0-9]|[6][5][5][3][0-5])$
 	LteLanEnabled                                 bool                            `json:"lte_lan_enabled"`
-	MACOverride                                   string                          `json:"mac_override"` // (^$|^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$)
+	MACOverride                                   string                          `json:"mac_override" validate:"omitempty,mac"` // (^$|^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$)
 	MACOverrideEnabled                            bool                            `json:"mac_override_enabled"`
 	MdnsEnabled                                   bool                            `json:"mdns_enabled"`
 	NATOutboundIPAddresses                        []NetworkNATOutboundIPAddresses `json:"nat_outbound_ip_addresses,omitempty"`
