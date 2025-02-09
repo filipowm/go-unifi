@@ -97,7 +97,7 @@ func (vc validationComment) HasDefinedLength() bool {
 
 func (vc validationComment) IsOneOf() bool {
 	s := string(vc)
-	return strings.Contains(s, "|") && regexChars.NotIn(s, "|")
+	return strings.Contains(s, "|") && regexChars.NotIn(s, "|.")
 }
 
 func (vc validationComment) IsWRegex() bool {
