@@ -36,6 +36,12 @@ const (
 	logoutPath = "/api/logout"
 
 	defaultUserAgent = "go-unifi/0.0.1"
+
+	ApiKeyHeader      = "X-API-Key"
+	CsrfHeader        = "X-Csrf-Token"
+	UserAgentHeader   = "User-Agent"
+	AcceptHeader      = "Accept"
+	ContentTypeHeader = "Content-Type"
 )
 
 var (
@@ -140,15 +146,15 @@ type ClientInterceptor interface {
 	InterceptRequest(req *http.Request) error
 	InterceptResponse(resp *http.Response) error
 }
-type ApiTokenAuthInterceptor struct {
+type ApiKeyAuthInterceptor struct {
 	apiKey string
 }
 
-func (a *ApiTokenAuthInterceptor) InterceptRequest(req *http.Request) error {
-	req.Header.Set("X-API-Key", a.apiKey)
+func (a *ApiKeyAuthInterceptor) InterceptRequest(req *http.Request) error {
+	req.Header.Set(ApiKeyHeader, a.apiKey)
 	return nil
 }
-func (a *ApiTokenAuthInterceptor) InterceptResponse(_ *http.Response) error {
+func (a *ApiKeyAuthInterceptor) InterceptResponse(_ *http.Response) error {
 	return nil
 }
 
@@ -158,13 +164,13 @@ type CsrfInterceptor struct {
 
 func (c *CsrfInterceptor) InterceptRequest(req *http.Request) error {
 	if c.csrfToken != "" {
-		req.Header.Set("X-Csrf-Token", c.csrfToken)
+		req.Header.Set(CsrfHeader, c.csrfToken)
 	}
 	return nil
 }
 
 func (c *CsrfInterceptor) InterceptResponse(resp *http.Response) error {
-	if csrf := resp.Header.Get("X-Csrf-Token"); csrf != "" {
+	if csrf := resp.Header.Get(CsrfHeader); csrf != "" {
 		c.csrfToken = csrf
 	}
 	return nil
@@ -303,7 +309,7 @@ func newUnifi(config *ClientConfig) (*Client, error) {
 	var interceptors []ClientInterceptor
 
 	if config.APIKey != "" {
-		interceptors = append(interceptors, &ApiTokenAuthInterceptor{apiKey: config.APIKey})
+		interceptors = append(interceptors, &ApiKeyAuthInterceptor{apiKey: config.APIKey})
 	} else {
 		// CSRF is only needed for user/pass auth
 		interceptors = append(interceptors, &CsrfInterceptor{})
@@ -312,9 +318,9 @@ func newUnifi(config *ClientConfig) (*Client, error) {
 		config.UserAgent = defaultUserAgent
 	}
 	interceptors = append(interceptors, &DefaultHeadersInterceptor{headers: map[string]string{
-		"User-Agent":   config.UserAgent,
-		"Accept":       "application/json",
-		"Content-Type": "application/json; charset=utf-8",
+		UserAgentHeader:   config.UserAgent,
+		AcceptHeader:      "application/json",
+		ContentTypeHeader: "application/json; charset=utf-8",
 	}})
 
 	var errorHandler ResponseErrorHandler
@@ -340,6 +346,7 @@ func newUnifi(config *ClientConfig) (*Client, error) {
 }
 
 // Login is a helper method. It can be called to grab a new authentication cookie.
+// Only useful if you are using user/pass auth.
 func (c *Client) Login() error {
 	if c.config.APIKey != "" {
 		// no need to login on api-key auth
@@ -362,7 +369,7 @@ func (c *Client) Login() error {
 	return nil
 }
 
-// Logout closes the current session.
+// Logout closes the current session. Only useful if you are using user/pass auth.
 func (c *Client) Logout() error {
 	if c.config.APIKey != "" {
 		// no need to logout on api-key auth
@@ -433,7 +440,7 @@ func (c *Client) determineApiStyle() error {
 	return nil
 }
 
-// GetServerInfo sets the controller's version and UUID. Only call this if you
+// GetServerInfo reads the controller's version and UUID. Only call this if you
 // previously called Login and suspect the controller version has changed.
 func (c *Client) GetServerInfo() (*ServerInfo, error) {
 	ctx, cancel := c.createRequestContext()
@@ -474,6 +481,7 @@ func (c *Client) createRequestURL(apiPath string) (*url.URL, error) {
 	return c.BaseURL.ResolveReference(reqURL), nil
 }
 
+// Do performs a request to the given API path with the given method.
 func (c *Client) Do(ctx context.Context, method, apiPath string, reqBody interface{}, respBody interface{}) error {
 	reqReader, err := marshalRequest(reqBody)
 	if err != nil {
@@ -531,18 +539,22 @@ func (c *Client) Do(ctx context.Context, method, apiPath string, reqBody interfa
 	return nil
 }
 
+// Get performs a GET request to the given API path.
 func (c *Client) Get(context context.Context, apiPath string, reqBody interface{}, respBody interface{}) error {
 	return c.Do(context, http.MethodGet, apiPath, reqBody, respBody)
 }
 
+// Post performs a POST request to the given API path.
 func (c *Client) Post(context context.Context, apiPath string, reqBody interface{}, respBody interface{}) error {
 	return c.Do(context, http.MethodPost, apiPath, reqBody, respBody)
 }
 
+// Put performs a PUT request to the given API path.
 func (c *Client) Put(context context.Context, apiPath string, reqBody interface{}, respBody interface{}) error {
 	return c.Do(context, http.MethodPut, apiPath, reqBody, respBody)
 }
 
+// Delete performs a DELETE request to the given API path.
 func (c *Client) Delete(context context.Context, apiPath string, reqBody interface{}, respBody interface{}) error {
 	return c.Do(context, http.MethodDelete, apiPath, reqBody, respBody)
 }
