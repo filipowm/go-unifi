@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCreateValidator(t *testing.T) {
@@ -23,6 +24,7 @@ func TestCreateValidator(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.expectedValidation, func(t *testing.T) {
+			t.Parallel()
 			a := assert.New(t)
 			v := validation{testValidator, tc.params}
 			result := createValidator(v.v, v.params...)
@@ -55,6 +57,7 @@ func TestCreateValidations(t *testing.T) {
 			expectedValidationTag = fmt.Sprintf("validate:\"omitempty,%s\"", c.expectedValidations)
 		}
 		t.Run(expectedValidationTag, func(t *testing.T) {
+			t.Parallel()
 			a := assert.New(t)
 			var validations []validation
 			for _, params := range c.params {
@@ -100,8 +103,9 @@ func TestValidation(t *testing.T) {
 func testValidationCommentCheck(t *testing.T, testCases []struct {
 	validationComment validationComment
 	expected          bool
-}, fn func(validationComment) bool) {
-
+}, fn func(validationComment) bool,
+) {
+	t.Helper()
 	for _, c := range testCases {
 		t.Run(fmt.Sprintf("%s-%t", c.validationComment, c.expected), func(t *testing.T) {
 			t.Parallel()

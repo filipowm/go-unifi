@@ -18,12 +18,12 @@ type DNSRecord struct {
 	NoEdit   bool   `json:"attr_no_edit,omitempty"`
 
 	Enabled    bool   `json:"enabled"`
-	Key        string `json:"key,omitempty" validate:"required,gte=1,lte=128"` // .{1,128}
+	Key        string `json:"key,omitempty"         validate:"required,gte=1,lte=128"` // .{1,128}
 	Port       int    `json:"port,omitempty"`
-	Priority   int    `json:"priority,omitempty" validate:"omitempty,gte=1,lte=128"`                        // .{1,128}
+	Priority   int    `json:"priority,omitempty"    validate:"omitempty,gte=1,lte=128"`                     // .{1,128}
 	RecordType string `json:"record_type,omitempty" validate:"required,oneof=A AAAA MX NS PTR SOA SRV TXT"` // A|AAAA|CNAME|MX|NS|PTR|SOA|SRV|TXT
 	Ttl        int    `json:"ttl,omitempty"`
-	Value      string `json:"value,omitempty" validate:"required,gte=1,lte=256"` // .{1,256}
+	Value      string `json:"value,omitempty"       validate:"required,gte=1,lte=256"` // .{1,256}
 	Weight     int    `json:"weight,omitempty"`
 }
 
