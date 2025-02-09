@@ -368,7 +368,6 @@ func generateCode(fieldsDir string, outDir string) error {
 		urlPath := strings.ToLower(name)
 		structName := cleanName(name, fileReps)
 
-		goFile := strcase.ToSnake(structName) + ".generated.go"
 		fieldsFilePath := filepath.Join(fieldsDir, fieldsFile.Name())
 		b, err := os.ReadFile(fieldsFilePath)
 		if err != nil {
@@ -504,9 +503,10 @@ func generateCode(fieldsDir string, outDir string) error {
 			continue
 		}
 
+		goFile := strcase.ToSnake(structName) + ".generated.go"
 		goFilePath := filepath.Join(outDir, goFile)
 		_ = os.Remove(goFilePath)
-		if err := os.WriteFile(goFile, ([]byte)(code), 0o644); err != nil {
+		if err := os.WriteFile(goFilePath, ([]byte)(code), 0o644); err != nil {
 			log.Errorf("failed to write file %s: %s", goFile, err)
 			continue
 		}

@@ -49,8 +49,8 @@ as well as dedicated user restricted to local access only.
 
 ```go
 c, err := unifi.NewClient(&unifi.ClientConfig{
-	BaseURL: "https://unifi.localdomain",
-	APIKey: "your-api-key",
+    BaseURL: "https://unifi.localdomain",
+    APIKey: "your-api-key",
 })
 ```
 
@@ -106,12 +106,12 @@ func (l *LoggingInterceptor) InterceptRequest(req *http.Request) error {
 }
 
 func (l *LoggingInterceptor) InterceptResponse(resp *http.Response) error {
-	log.Printf("Response status: %d", resp.StatusCode)
+    log.Printf("Response status: %d", resp.StatusCode)
     return nil
 }
 
 c, err := unifi.NewClient(&unifi.ClientConfig{
-	    ...
+    ...
     Interceptors: []unifi.ClientInterceptor{&LoggingInterceptor{}},
 })
 ```
@@ -126,10 +126,10 @@ network, err := c.ListNetwork(ctx, "site-name")
 Create user assigned to network:
 ```go
 user, err := c.CreateUser(ctx, "site-name", &unifi.User{
-	Name:      "My Network User",
-	MAC:       "00:00:00:00:00:00",
-	NetworkID: network[0].ID,
-	IP:        "10.0.21.37",
+    Name:      "My Network User",
+    MAC:       "00:00:00:00:00:00", 
+    NetworkID: network[0].ID, 
+    IP:        "10.0.21.37",
 })
 ```
 

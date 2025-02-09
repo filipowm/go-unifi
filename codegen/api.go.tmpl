@@ -95,7 +95,7 @@ func (c *Client) get{{ .StructName }}(ctx context.Context, site{{ if not .IsSett
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -123,7 +123,7 @@ func (c *Client) create{{ .StructName }}(ctx context.Context, site string, d *{{
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]
@@ -148,7 +148,7 @@ func (c *Client) update{{ .StructName }}(ctx context.Context, site string, d *{{
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]
