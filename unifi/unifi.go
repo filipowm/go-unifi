@@ -85,10 +85,10 @@ func (m *Meta) error() error {
 }
 
 type ClientConfig struct {
-	User           string
-	Pass           string
-	APIKey         string
-	URL            string
+	URL            string        `validate:"required,http_url"`
+	APIKey         string        `validate:"required_without_all=User Pass"`
+	User           string        `validate:"excluded_with=APIKey,required_with=Pass"`
+	Pass           string        `validate:"excluded_with=APIKey,required_with=User"`
 	Timeout        time.Duration // how long to wait for replies, default: forever.
 	VerifySSL      bool
 	Interceptors   []ClientInterceptor
@@ -107,6 +107,7 @@ type Client struct {
 	interceptors []ClientInterceptor
 	errorHandler ResponseErrorHandler
 	lock         sync.Mutex
+	validator    *validator
 }
 
 type ApiPaths struct {
@@ -240,7 +241,14 @@ func (d *DefaultResponseErrorHandler) HandleError(resp *http.Response) error {
 // Used to make additional, authenticated requests to the APIs.
 // Start here.
 func NewClient(config *ClientConfig) (*Client, error) {
-	u, err := newUnifi(config)
+	v, err := newValidator()
+	if err != nil {
+		return nil, fmt.Errorf("failed creating validator: %w", err)
+	}
+	if err := v.Validate(config); err != nil {
+		return nil, fmt.Errorf("failed validating config: %w", err)
+	}
+	u, err := newUnifi(config, v)
 	if err != nil {
 		return nil, fmt.Errorf("failed creating unifi client: %w", err)
 	}
@@ -275,7 +283,7 @@ func parseBaseUrl(base string) (*url.URL, error) {
 	return baseURL, nil
 }
 
-func newUnifi(config *ClientConfig) (*Client, error) {
+func newUnifi(config *ClientConfig, v *validator) (*Client, error) {
 	var err error
 
 	config.URL = strings.TrimRight(config.URL, "/")
@@ -337,6 +345,7 @@ func newUnifi(config *ClientConfig) (*Client, error) {
 		interceptors: interceptors,
 		errorHandler: errorHandler,
 		lock:         sync.Mutex{},
+		validator:    v,
 	}
 	for _, interceptor := range config.Interceptors {
 		// add any custom interceptors and ensure no duplicates

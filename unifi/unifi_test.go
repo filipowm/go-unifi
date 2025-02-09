@@ -102,7 +102,8 @@ func TestCustomizeHttpClient(t *testing.T) {
 
 	// when
 	_, err := NewClient(&ClientConfig{
-		URL: localUrl,
+		URL:    localUrl,
+		APIKey: "test-key",
 		HttpCustomizer: func(transport *http.Transport) error {
 			called = true
 			return nil
@@ -439,7 +440,8 @@ func TestResponseDataHandling(t *testing.T) {
 	}
 	srv := RunTestServer(NewStyleAPI.ApiPath+"/test", TestData{})
 	c, _ := NewClient(&ClientConfig{
-		URL: srv.URL,
+		URL:    srv.URL,
+		APIKey: "test-key",
 	})
 	c.apiPaths = &NewStyleAPI
 	var data TestData
@@ -460,6 +462,8 @@ func TestCsrfHandling(t *testing.T) {
 	interceptor := NewTestInterceptor()
 	c, _ := NewClient(&ClientConfig{
 		URL:          srv.URL,
+		User:         "test-user",
+		Pass:         "test-pass",
 		Interceptors: interceptor.AsList(),
 	})
 	c.apiPaths = &NewStyleAPI
@@ -487,6 +491,7 @@ func TestOverrideUserAgent(t *testing.T) {
 	interceptor := NewTestInterceptor()
 	c, _ := NewClient(&ClientConfig{
 		URL:          testUrl,
+		APIKey:       "test-key",
 		Interceptors: interceptor.AsList(),
 		UserAgent:    "test-agent",
 	})
@@ -498,4 +503,79 @@ func TestOverrideUserAgent(t *testing.T) {
 	// then
 	require.Error(t, err)
 	a.EqualValues("test-agent", interceptor.RequestHeader(UserAgentHeader))
+}
+
+func TestAuthConfigurationValidation(t *testing.T) {
+	t.Parallel()
+	testCases := []struct {
+		User, Pass, APIKey string
+		shouldFail         bool
+	}{
+		{"", "", "", true},
+		{"", "", "test", false},
+		{"", "test", "", true},
+		{"", "test", "test", true},
+		{"test", "", "", true},
+		{"test", "", "test", true},
+		{"test", "test", "", false},
+		{"test", "test", "test", true},
+	}
+
+	for _, tc := range testCases {
+		t.Run(fmt.Sprintf("user:%s-pass:%s-apikey:%s", tc.User, tc.Pass, tc.APIKey), func(t *testing.T) {
+			t.Parallel()
+			// given
+			_, err := NewClient(&ClientConfig{
+				URL:    testUrl,
+				User:   tc.User,
+				Pass:   tc.Pass,
+				APIKey: tc.APIKey,
+			})
+
+			// then
+			if tc.shouldFail {
+				require.ErrorContains(t, err, "validation failed")
+				return
+			}
+			require.ErrorContains(t, err, "dial tcp") // error will anyway exist, but it will be not related to config
+		})
+	}
+}
+
+func TestUrlValidation(t *testing.T) {
+	t.Parallel()
+	testCases := []struct {
+		URL         string
+		shouldFail  bool
+		errorString string
+	}{
+		{"", true, "required"},
+		{"http://test.url", false, ""},
+		{"http://test.url:3999", false, ""},
+		{"https://test.url:3999", false, ""},
+		{"ftp://test.url", true, "http"},
+		{"test.url", true, "http"},
+		{"http://127.0.0.1", false, ""},
+		{"http://127.0.0.1:3999", false, ""},
+		{"test", true, "http"},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.URL, func(t *testing.T) {
+			t.Parallel()
+			// given
+			_, err := NewClient(&ClientConfig{
+				URL:    tc.URL,
+				APIKey: "test-key",
+			})
+
+			// then
+			if tc.shouldFail {
+				require.ErrorContains(t, err, "validation failed")
+				require.ErrorContains(t, err, tc.errorString)
+				return
+			}
+			require.ErrorContains(t, err, "dial tcp") // error will anyway exist, but it will be not related to config
+		})
+	}
 }
