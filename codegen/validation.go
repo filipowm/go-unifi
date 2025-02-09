@@ -20,7 +20,6 @@ type regexSpecialChars string
 
 const (
 	validateTag           = "validate"
-	required    validator = "required"
 	mac         validator = "mac"
 	ip          validator = "ip"
 	ipv4        validator = "ipv4"
@@ -107,14 +106,39 @@ func (vc validationComment) IsWRegex() bool {
 
 func (vc validationComment) IsMAC() bool {
 	s := string(vc)
-	return strings.Contains(s, "[0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2}") && regexChars.NotIn(s, "(){}[]^$")
+	return strings.Contains(s, "([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})") && regexChars.NotIn(s, "(){}[]^$")
+}
+
+func (vc validationComment) IsIPv4() bool {
+	s := string(vc)
+	return strings.Contains(s, ipv4Regex) && strings.Count(s, "|") == ipv4RegexGroupsCount // last is sanity check if there are no more validation groups than expected
+}
+
+func (vc validationComment) IsIPv6() bool {
+	s := string(vc)
+	return strings.Contains(s, ipv6Regex) && strings.Count(s, "|") == ipv6RegexGroupsCount // last is sanity check if there are no more validation groups than expected
+}
+
+func (vc validationComment) IsIP() bool {
+	s := string(vc)
+	return strings.Contains(s, ipv4Regex) && strings.Contains(s, ipv6Regex) && strings.Count(s, "|") == (ipv4RegexGroupsCount+ipv6RegexGroupsCount+1)
 }
 
 func trimWrappers(s string) string {
-	trimmed := strings.TrimSuffix(strings.TrimPrefix(s, "("), ")")          // remove wrapping parenthesis
+	trimmed := strings.TrimSuffix(strings.TrimPrefix(s, "(^$|"), "|^$)")    // remove wrapping parenthesis
 	trimmed = strings.TrimSuffix(strings.TrimPrefix(trimmed, "^$|"), "|^$") // remove ^$ which allows for empty string and is not needed
 	return trimmed
 }
+
+const (
+	ipv4Regex = "(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])"
+	ipv6Regex = "(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))"
+)
+
+var (
+	ipv4RegexGroupsCount = strings.Count(ipv4Regex, "|")
+	ipv6RegexGroupsCount = strings.Count(ipv6Regex, "|")
+)
 
 func defineFieldValidation(rawValidation string) string {
 	if rawValidation == "" {
@@ -135,6 +159,12 @@ func defineFieldValidation(rawValidation string) string {
 		return createValidations(validation{v: w_regex})
 	} else if vc.IsMAC() {
 		return createValidations(validation{v: mac})
+	} else if vc.IsIPv4() {
+		return createValidations(validation{v: ipv4})
+	} else if vc.IsIPv6() {
+		return createValidations(validation{v: ipv6})
+	} else if vc.IsIP() {
+		return createValidations(validation{v: ip})
 	}
 	return ""
 }

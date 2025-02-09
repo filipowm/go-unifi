@@ -115,7 +115,9 @@ func testValidationCommentCheck(t *testing.T, testCases []struct {
 		t.Run(fmt.Sprintf("%s-%t", c.validationComment, c.expected), func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
-			result := fn(c.validationComment)
+			trimmed := trimWrappers(string(c.validationComment))
+			//trimmed := string(c.validationComment) //trimWrappers(string(c.validationComment))
+			result := fn(validationComment(trimmed))
 			a.Equal(c.expected, result)
 		})
 	}
@@ -218,17 +220,26 @@ func TestIsMACValidation(t *testing.T) {
 		validationComment validationComment
 		expected          bool
 	}{
-		{"[0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2}", true},
 		{"([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})", true},
-		{"[0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})", true},
-		{"([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2}", true},
 		{"([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$", true},
-		{"^[0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2}$", true},
-		{"^$|[0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})", true},
-		{"^$|[0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})|^$", true},
-		{"(^$|[0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})|^$)", true},
-		{"^$|[0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})|^$)", true},
-		{"(^$|[0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})|^$", true},
+		{"^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$", true},
+		{"^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$", true},
+		{"^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})", true},
+		{"^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})", true},
+		{"^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})|^$", true},
+		{"^$|^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})|^$", true},
+		{"^$|^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})", true},
+		{"(^$|^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})|^$)", true},
+
+		{"[0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2}", false},
+		{"[0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})", false},
+		{"([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2}", false},
+		{"^[0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2}$", false},
+		{"^$|[0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})", false},
+		{"^$|[0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})|^$", false},
+		{"(^$|[0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})|^$)", false},
+		{"^$|[0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})|^$)", false},
+		{"(^$|[0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})|^$", false},
 		{"", false},
 		{"a", false},
 		{"([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})|(0-9)", false},
@@ -236,4 +247,71 @@ func TestIsMACValidation(t *testing.T) {
 		{"[0-9]|([0-9A-Fa-f]{2}:){5}", false},
 	}
 	testValidationCommentCheck(t, testCases, func(v validationComment) bool { return v.IsMAC() })
+}
+
+func (vc validationComment) mutate(prefix, suffix string) validationComment {
+	return validationComment(fmt.Sprintf("%s%s%s", prefix, string(vc), suffix))
+}
+
+func generateTestCasesForFixedRegex(regex string) []struct {
+	validationComment validationComment
+	expected          bool
+} {
+	base := validationComment(regex)
+	return []struct {
+		validationComment validationComment
+		expected          bool
+	}{
+		{base, true},
+		{base.mutate("^", "$"), true},
+		{base.mutate("^", ""), true},
+		{base.mutate("", "$"), true},
+		{base.mutate("(^", "$)"), true},
+		{base.mutate("^", "$)"), true},
+		{base.mutate("^(", "$"), true},
+		{base.mutate("^$|", "|^$"), true},
+		{base.mutate("^$|", ""), true},
+		{base.mutate("", "|^$"), true},
+		{base.mutate("(^$|", "|^$)"), true},
+		{base.mutate("(^$|", ""), true},
+		{base.mutate("", "|^$)"), true},
+
+		//{base.mutate("^test", ""), false},
+		//{base.mutate("^test", "test$"), false},
+		//{base.mutate("", "test$"), false},
+		//{base.mutate("test", "test"), false},
+		//{base.mutate("", "test"), false},
+		//{base.mutate("test", ""), false},
+		{base.mutate("^test$|", "|^test$"), false},
+		{base.mutate("^test|", "|^test$"), false},
+		{base.mutate("test$|", "|^test$"), false},
+		{base.mutate("test$|", "|^test$"), false},
+		{base.mutate("^test$|", "|test$"), false},
+		{base.mutate("^test|", "|^test"), false},
+		{base.mutate("test|", "|test"), false},
+		{base.mutate("(test|", "|test)"), false},
+		{"test", false},
+		{"", false},
+	}
+}
+
+func TestIsIPv4Validation(t *testing.T) {
+	t.Parallel()
+	testCases := generateTestCasesForFixedRegex(ipv4Regex)
+	testValidationCommentCheck(t, testCases, func(v validationComment) bool { return v.IsIPv4() })
+}
+
+func TestIsIPv6Validation(t *testing.T) {
+	t.Parallel()
+	testCases := generateTestCasesForFixedRegex(ipv6Regex)
+	testValidationCommentCheck(t, testCases, func(v validationComment) bool { return v.IsIPv6() })
+}
+
+func TestIsIPValidation(t *testing.T) {
+	t.Parallel()
+	testCases := generateTestCasesForFixedRegex(ipv4Regex + "|" + ipv6Regex)
+	testCases = append(testCases, generateTestCasesForFixedRegex(ipv6Regex+"|"+ipv4Regex)...)
+	testCases = append(testCases, generateTestCasesForFixedRegex("("+ipv6Regex+")|("+ipv4Regex+")")...)
+	testCases = append(testCases, generateTestCasesForFixedRegex("("+ipv4Regex+")|("+ipv6Regex+")")...)
+	testValidationCommentCheck(t, testCases, func(v validationComment) bool { return v.IsIP() })
 }

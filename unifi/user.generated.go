@@ -25,8 +25,8 @@ type User struct {
 	NoDelete bool   `json:"attr_no_delete,omitempty"`
 	NoEdit   bool   `json:"attr_no_edit,omitempty"`
 
-	DevIdOverride int    `json:"dev_id_override,omitempty"` // non-generated field
-	IP            string `json:"ip,omitempty"`              // non-generated field
+	DevIdOverride int    `json:"dev_id_override,omitempty"`            // non-generated field
+	IP            string `json:"ip,omitempty" validate:"omitempty,ip"` // non-generated field
 
 	Blocked                       bool   `json:"blocked,omitempty"`
 	FixedApEnabled                bool   `json:"fixed_ap_enabled"`

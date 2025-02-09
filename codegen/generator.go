@@ -152,7 +152,7 @@ func NewResource(structName string, resourcePath string) *Resource {
 		baseType.Fields["State"] = NewFieldInfo("State", "state", "DeviceState", "", "", false, false, "")
 		baseType.Fields["Type"] = NewFieldInfo("Type", "type", "string", "", "", true, false, "")
 	case resource.StructName == "User":
-		baseType.Fields[" IP"] = NewFieldInfo("IP", "ip", "string", "", "non-generated field", true, false, "")
+		baseType.Fields[" IP"] = NewFieldInfo("IP", "ip", "string", createValidations(validation{v: ip}), "non-generated field", true, false, "")
 		baseType.Fields[" DevIdOverride"] = NewFieldInfo("DevIdOverride", "dev_id_override", "int", "", "non-generated field", true, false, "")
 	case resource.StructName == "WLAN":
 		// this field removed in v6, retaining for backwards compatibility

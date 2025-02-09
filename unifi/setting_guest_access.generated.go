@@ -31,7 +31,7 @@ type SettingGuestAccess struct {
 	Auth                                   string   `json:"auth,omitempty" validate:"omitempty,oneof=none hotspot facebook_wifi custom"` // none|hotspot|facebook_wifi|custom
 	AuthUrl                                string   `json:"auth_url,omitempty"`
 	AuthorizeUseSandbox                    bool     `json:"authorize_use_sandbox"`
-	CustomIP                               string   `json:"custom_ip"` // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
+	CustomIP                               string   `json:"custom_ip" validate:"omitempty,ipv4"` // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
 	EcEnabled                              bool     `json:"ec_enabled"`
 	Expire                                 string   `json:"expire,omitempty"`                                           // [\d]+|custom
 	ExpireNumber                           int      `json:"expire_number,omitempty"`                                    // ^[1-9][0-9]{0,5}|1000000$
@@ -97,7 +97,7 @@ type SettingGuestAccess struct {
 	RedirectToHttps                        bool     `json:"redirect_to_https"`
 	RedirectUrl                            string   `json:"redirect_url,omitempty"`
 	RestrictedDNSEnabled                   bool     `json:"restricted_dns_enabled"`
-	RestrictedDNSServers                   []string `json:"restricted_dns_servers,omitempty"` // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
+	RestrictedDNSServers                   []string `json:"restricted_dns_servers,omitempty" validate:"omitempty,ipv4"` // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
 	RestrictedSubnet                       string   `json:"restricted_subnet_,omitempty"`
 	TemplateEngine                         string   `json:"template_engine,omitempty" validate:"omitempty,oneof=jsp angular"` // jsp|angular
 	VoucherCustomized                      bool     `json:"voucher_customized"`

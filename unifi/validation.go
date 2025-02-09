@@ -87,7 +87,6 @@ func newValidator() (*validator, error) {
 	uni := ut.New(enLocale, enLocale)
 	trans, _ := uni.GetTranslator(enLocale.Locale())
 	err := en_translations.RegisterDefaultTranslations(validate, trans)
-
 	if err != nil {
 		return nil, err
 	}
@@ -133,11 +132,9 @@ type CustomRegexValidator struct {
 	regex func() *regexp.Regexp
 }
 
-var (
-	customValidators = []CustomValidator{
-		NewCustomRegexValidator("w_regex", wRegexString),
-	}
-)
+var customValidators = []CustomValidator{
+	NewCustomRegexValidator("w_regex", wRegexString),
+}
 
 func lazyRegexCompile(str string) func() *regexp.Regexp {
 	var regex *regexp.Regexp
