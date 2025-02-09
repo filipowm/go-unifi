@@ -107,15 +107,20 @@ func (vc validationComment) IsWRegex() bool {
 
 func (vc validationComment) IsMAC() bool {
 	s := string(vc)
+	return strings.Contains(s, "[0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2}") && regexChars.NotIn(s, "(){}[]^$")
+}
+
+func trimWrappers(s string) string {
 	trimmed := strings.TrimSuffix(strings.TrimPrefix(s, "("), ")")          // remove wrapping parenthesis
 	trimmed = strings.TrimSuffix(strings.TrimPrefix(trimmed, "^$|"), "|^$") // remove ^$ which allows for empty string and is not needed
-	return strings.Contains(trimmed, "[0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2}") && regexChars.NotIn(trimmed, "(){}[]^$")
+	return trimmed
 }
 
 func defineFieldValidation(rawValidation string) string {
 	if rawValidation == "" {
 		return ""
 	}
+	rawValidation = trimWrappers(rawValidation)
 	vc := validationComment(rawValidation)
 	if vc.IsOneOf() {
 		return createValidations(validation{v: oneOf, params: strings.Split(rawValidation, "|")})

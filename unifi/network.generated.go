@@ -71,8 +71,8 @@ type Network struct {
 	DHCPRelayEnabled                              bool                            `json:"dhcp_relay_enabled"`
 	DHCPguardEnabled                              bool                            `json:"dhcpguard_enabled"`
 	DPIEnabled                                    bool                            `json:"dpi_enabled"`
-	DPIgroupID                                    string                          `json:"dpigroup_id"` // [\d\w]+|^$
-	DomainName                                    string                          `json:"domain_name"` // (?=^.{3,253}$)(^((?!-)[a-zA-Z0-9-]{1,63}(?<!-)\.)+[a-zA-Z]{2,63}$)|^$|[a-zA-Z0-9-]{1,63}
+	DPIgroupID                                    string                          `json:"dpigroup_id" validate:"omitempty,w_regex"` // [\d\w]+|^$
+	DomainName                                    string                          `json:"domain_name"`                              // (?=^.{3,253}$)(^((?!-)[a-zA-Z0-9-]{1,63}(?<!-)\.)+[a-zA-Z]{2,63}$)|^$|[a-zA-Z0-9-]{1,63}
 	Enabled                                       bool                            `json:"enabled"`
 	ExposedToSiteVPN                              bool                            `json:"exposed_to_site_vpn"`
 	FirewallZoneID                                string                          `json:"firewall_zone_id"`

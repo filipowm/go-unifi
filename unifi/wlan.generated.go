@@ -34,7 +34,7 @@ type WLAN struct {
 	BssTransition               bool                       `json:"bss_transition"`
 	CountryBeacon               bool                       `json:"country_beacon"`
 	DPIEnabled                  bool                       `json:"dpi_enabled"`
-	DPIgroupID                  string                     `json:"dpigroup_id"`                                                   // [\d\w]+|^$
+	DPIgroupID                  string                     `json:"dpigroup_id" validate:"omitempty,w_regex"`                      // [\d\w]+|^$
 	DTIM6E                      int                        `json:"dtim_6e,omitempty"`                                             // ^([1-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
 	DTIMMode                    string                     `json:"dtim_mode,omitempty" validate:"omitempty,oneof=default custom"` // default|custom
 	DTIMNa                      int                        `json:"dtim_na,omitempty"`                                             // ^([1-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$

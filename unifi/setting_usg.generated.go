@@ -32,15 +32,15 @@ type SettingUsg struct {
 	BroadcastPing                  bool                      `json:"broadcast_ping"`
 	DHCPDHostfileUpdate            bool                      `json:"dhcpd_hostfile_update"`
 	DHCPDUseDNSmasq                bool                      `json:"dhcpd_use_dnsmasq"`
-	DHCPRelayAgentsPackets         string                    `json:"dhcp_relay_agents_packets"`      // append|discard|forward|replace|^$
-	DHCPRelayHopCount              int                       `json:"dhcp_relay_hop_count,omitempty"` // ([1-9]|[1-8][0-9]|9[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])|^$
-	DHCPRelayMaxSize               int                       `json:"dhcp_relay_max_size,omitempty"`  // (6[4-9]|[7-9][0-9]|[1-8][0-9]{2}|9[0-8][0-9]|99[0-9]|1[0-3][0-9]{2}|1400)|^$
-	DHCPRelayPort                  int                       `json:"dhcp_relay_port,omitempty"`      // [1-9][0-9]{0,3}|[1-5][0-9]{4}|[6][0-4][0-9]{3}|[6][5][0-4][0-9]{2}|[6][5][5][0-2][0-9]|[6][5][5][3][0-5]|^$
-	DHCPRelayServer1               string                    `json:"dhcp_relay_server_1"`            // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
-	DHCPRelayServer2               string                    `json:"dhcp_relay_server_2"`            // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
-	DHCPRelayServer3               string                    `json:"dhcp_relay_server_3"`            // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
-	DHCPRelayServer4               string                    `json:"dhcp_relay_server_4"`            // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
-	DHCPRelayServer5               string                    `json:"dhcp_relay_server_5"`            // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
+	DHCPRelayAgentsPackets         string                    `json:"dhcp_relay_agents_packets" validate:"omitempty,oneof=append discard forward replace"` // append|discard|forward|replace|^$
+	DHCPRelayHopCount              int                       `json:"dhcp_relay_hop_count,omitempty"`                                                      // ([1-9]|[1-8][0-9]|9[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])|^$
+	DHCPRelayMaxSize               int                       `json:"dhcp_relay_max_size,omitempty"`                                                       // (6[4-9]|[7-9][0-9]|[1-8][0-9]{2}|9[0-8][0-9]|99[0-9]|1[0-3][0-9]{2}|1400)|^$
+	DHCPRelayPort                  int                       `json:"dhcp_relay_port,omitempty"`                                                           // [1-9][0-9]{0,3}|[1-5][0-9]{4}|[6][0-4][0-9]{3}|[6][5][0-4][0-9]{2}|[6][5][5][0-2][0-9]|[6][5][5][3][0-5]|^$
+	DHCPRelayServer1               string                    `json:"dhcp_relay_server_1"`                                                                 // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
+	DHCPRelayServer2               string                    `json:"dhcp_relay_server_2"`                                                                 // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
+	DHCPRelayServer3               string                    `json:"dhcp_relay_server_3"`                                                                 // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
+	DHCPRelayServer4               string                    `json:"dhcp_relay_server_4"`                                                                 // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
+	DHCPRelayServer5               string                    `json:"dhcp_relay_server_5"`                                                                 // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
 	DNSVerification                SettingUsgDNSVerification `json:"dns_verification,omitempty"`
 	DNSmasqAllServers              bool                      `json:"dnsmasq_all_servers"`
 	EchoServer                     string                    `json:"echo_server,omitempty"` // [^\"\' ]{1,255}
