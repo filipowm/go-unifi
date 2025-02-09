@@ -1,10 +1,10 @@
-package unifi
+package unifi //nolint: testpackage
 
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -12,6 +12,9 @@ import (
 	"slices"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -21,8 +24,8 @@ const (
 
 func verifyContainsInterceptors(a *assert.Assertions, c *Client, interceptors ...interface{}) {
 	var (
-		expectedTypes []reflect.Type
-		matchingTypes []reflect.Type
+		expectedTypes = make([]reflect.Type, len(interceptors))
+		matchingTypes = make([]reflect.Type, len(interceptors))
 	)
 	for _, i := range interceptors {
 		expectedTypes = append(expectedTypes, reflect.TypeOf(i))
@@ -40,8 +43,8 @@ func verifyContainsInterceptors(a *assert.Assertions, c *Client, interceptors ..
 
 func verifyDoesNotContainInterceptors(a *assert.Assertions, c *Client, interceptors ...interface{}) {
 	var (
-		expectedTypes []reflect.Type
-		matchingTypes []reflect.Type
+		expectedTypes = make([]reflect.Type, 0, len(interceptors))
+		matchingTypes = make([]reflect.Type, 0, len(interceptors))
 	)
 	for _, i := range interceptors {
 		expectedTypes = append(expectedTypes, reflect.TypeOf(i))
@@ -66,7 +69,7 @@ func TestNewClient(t *testing.T) {
 		Pass:      "password",
 		VerifySSL: false,
 	})
-	a.NotNil(err)
+	require.Error(t, err)
 	a.EqualValues(localUrl, c.BaseURL.String())
 	a.Contains(err.Error(), "connection refused", "an invalid destination should produce a connection error.")
 	verifyContainsInterceptors(a, c, &CsrfInterceptor{}, &DefaultHeadersInterceptor{})
@@ -84,7 +87,7 @@ func TestNewClientWithApiKey(t *testing.T) {
 	})
 
 	// then
-	a.NotNil(err)
+	require.Error(t, err)
 	a.EqualValues(localUrl, c.BaseURL.String())
 	a.Contains(err.Error(), "connection refused", "an invalid destination should produce a connection error.")
 	verifyContainsInterceptors(a, c, &ApiKeyAuthInterceptor{}, &DefaultHeadersInterceptor{})
@@ -98,7 +101,7 @@ func TestCustomizeHttpClient(t *testing.T) {
 	called := false
 
 	// when
-	NewClient(&ClientConfig{
+	_, err := NewClient(&ClientConfig{
 		URL: localUrl,
 		HttpCustomizer: func(transport *http.Transport) error {
 			called = true
@@ -107,6 +110,7 @@ func TestCustomizeHttpClient(t *testing.T) {
 	})
 
 	// then
+	require.Error(t, err)
 	a.True(called, "http customizer not called")
 }
 
@@ -127,10 +131,11 @@ func (i *TestInterceptor) IsResponseIntercepted() bool {
 func (i *TestInterceptor) InterceptRequest(req *http.Request) error {
 	i.request = req
 	if i.failOnRequest {
-		return fmt.Errorf("request interceptor failed")
+		return errors.New("request interceptor failed")
 	}
 	return nil
 }
+
 func (i *TestInterceptor) InterceptResponse(resp *http.Response) error {
 	i.response = resp
 	return nil
@@ -174,9 +179,10 @@ func TestInterceptors(t *testing.T) {
 	c, interceptor := NewTestClientWithInterceptor()
 
 	// when
-	c.Get(context.Background(), "/", nil, nil)
+	err := c.Get(context.Background(), "/", nil, nil)
 
 	// then
+	require.Error(t, err)
 	a.True(interceptor.IsRequestIntercepted(), "request interceptor not called")
 	a.False(interceptor.IsResponseIntercepted(), "response interceptor called, but should not because of failed request")
 }
@@ -192,7 +198,7 @@ func TestNoSendRequestWhenRequestInterceptorReturnsError(t *testing.T) {
 	err := c.Get(context.Background(), "/", nil, nil)
 
 	// then
-	a.NotNil(err)
+	require.Error(t, err)
 	a.Contains(err.Error(), "request interceptor failed")
 }
 
@@ -211,15 +217,18 @@ func TestProperRequestUrl(t *testing.T) {
 		{"/test", testUrl + "/test"},
 		{"/test/test", testUrl + "/test/test"},
 	}
-	// given
-	c, interceptor := NewTestClientWithInterceptor()
 
 	for _, tc := range testCases {
 		t.Run(tc.path, func(t *testing.T) {
+			t.Parallel()
+			// given
+			c, interceptor := NewTestClientWithInterceptor()
+
 			// when
-			c.Get(context.Background(), tc.path, nil, nil)
+			err := c.Get(context.Background(), tc.path, nil, nil)
 
 			// then
+			require.Error(t, err)
 			a.EqualValues(tc.expected, interceptor.request.URL.String())
 		})
 	}
@@ -232,9 +241,10 @@ func TestApiKeyAddedToRequest(t *testing.T) {
 	c, interceptor := NewTestClientWithInterceptor()
 
 	// when
-	c.Get(context.Background(), "/", nil, nil)
+	err := c.Get(context.Background(), "/", nil, nil)
 
 	// then
+	require.Error(t, err)
 	a.EqualValues("test-key", interceptor.RequestHeader(ApiKeyHeader))
 }
 
@@ -243,11 +253,12 @@ func TestDefaultHeadersAddedToRequest(t *testing.T) {
 	a := assert.New(t)
 	// given
 	c, interceptor := NewTestClientWithInterceptor()
-	
+
 	// when
-	c.Get(context.Background(), "/", nil, nil)
+	err := c.Get(context.Background(), "/", nil, nil)
 
 	// then
+	require.Error(t, err)
 	a.EqualValues("application/json", interceptor.RequestHeader(AcceptHeader))
 	a.EqualValues("application/json; charset=utf-8", interceptor.RequestHeader(ContentTypeHeader))
 	a.EqualValues(defaultUserAgent, interceptor.RequestHeader(UserAgentHeader))
@@ -267,13 +278,13 @@ func TestRequestSentWithJson(t *testing.T) {
 	}
 
 	// when
-	c.Get(context.Background(), "/", data, nil)
+	err := c.Get(context.Background(), "/", data, nil)
 
 	// then
+	require.Error(t, err)
 	body := &TestData{}
-	err := json.NewDecoder(interceptor.request.Body).Decode(body)
-
-	a.Nil(err)
+	err = json.NewDecoder(interceptor.request.Body).Decode(body)
+	require.NoError(t, err)
 	a.Equal(data, body)
 }
 
@@ -283,19 +294,18 @@ func TestRequestMethod(t *testing.T) {
 	testCases := []string{
 		http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodPatch, http.MethodOptions, http.MethodHead, http.MethodTrace, http.MethodConnect,
 	}
-	// given
-	c, interceptor := NewTestClientWithInterceptor()
 
-	// when
-	c.Post(context.Background(), "/", nil, nil)
-
-	// then
 	for _, tc := range testCases {
 		t.Run(tc, func(t *testing.T) {
+			t.Parallel()
+			// given
+			c, interceptor := NewTestClientWithInterceptor()
+
 			// when
-			c.Do(context.Background(), tc, "", nil, nil)
+			err := c.Do(context.Background(), tc, "", nil, nil)
 
 			// then
+			require.Error(t, err)
 			a.EqualValues(tc, interceptor.Method())
 		})
 	}
@@ -308,9 +318,10 @@ func TestGetRequest(t *testing.T) {
 	c, interceptor := NewTestClientWithInterceptor()
 
 	// when
-	c.Get(context.Background(), "/", nil, nil)
+	err := c.Get(context.Background(), "/", nil, nil)
 
 	// then
+	require.Error(t, err)
 	a.EqualValues(http.MethodGet, interceptor.Method())
 }
 
@@ -321,9 +332,10 @@ func TestPostRequest(t *testing.T) {
 	c, interceptor := NewTestClientWithInterceptor()
 
 	// when
-	c.Post(context.Background(), "/", nil, nil)
+	err := c.Post(context.Background(), "/", nil, nil)
 
 	// then
+	require.Error(t, err)
 	a.EqualValues(http.MethodPost, interceptor.Method())
 }
 
@@ -334,9 +346,10 @@ func TestPutRequest(t *testing.T) {
 	c, interceptor := NewTestClientWithInterceptor()
 
 	// when
-	c.Put(context.Background(), "/", nil, nil)
+	err := c.Put(context.Background(), "/", nil, nil)
 
 	// then
+	require.Error(t, err)
 	a.EqualValues(http.MethodPut, interceptor.Method())
 }
 
@@ -347,9 +360,10 @@ func TestDeleteRequest(t *testing.T) {
 	c, interceptor := NewTestClientWithInterceptor()
 
 	// when
-	c.Delete(context.Background(), "/", nil, nil)
+	err := c.Delete(context.Background(), "/", nil, nil)
 
 	// then
+	require.Error(t, err)
 	a.EqualValues(http.MethodDelete, interceptor.Method())
 }
 
@@ -411,7 +425,7 @@ func TestUnifiIntegrationUserPassInjected(t *testing.T) {
 	err := c.Login()
 
 	// then
-	a.Nil(err, "user/pass login must not produce an error")
+	require.NoError(t, err, "user/pass login must not produce an error")
 	a.EqualValues(http.MethodPost, interceptor.Method())
 	a.EqualValues(http.StatusOK, interceptor.response.StatusCode)
 }
@@ -434,7 +448,7 @@ func TestResponseDataHandling(t *testing.T) {
 	err := c.Get(context.Background(), "test", reqData, &data)
 
 	// then
-	a.Nil(err)
+	require.NoError(t, err)
 	a.EqualValues("test", data.Data)
 }
 
@@ -451,16 +465,18 @@ func TestCsrfHandling(t *testing.T) {
 	c.apiPaths = &NewStyleAPI
 
 	// when
-	c.Get(context.Background(), "", nil, nil)
+	err := c.Get(context.Background(), "", nil, nil)
 
 	// then
+	require.Error(t, err)
 	a.EqualValues("", interceptor.RequestHeader(CsrfHeader))
 	a.EqualValues("csrf-token", interceptor.ResponseHeader(CsrfHeader))
 
 	// when
-	c.Get(context.Background(), "", nil, nil)
+	err = c.Get(context.Background(), "", nil, nil)
 
 	// then
+	require.Error(t, err)
 	a.EqualValues("csrf-token", interceptor.RequestHeader(CsrfHeader))
 }
 
@@ -477,8 +493,9 @@ func TestOverrideUserAgent(t *testing.T) {
 	c.apiPaths = &NewStyleAPI
 
 	// when
-	c.Get(context.Background(), "", nil, nil)
+	err := c.Get(context.Background(), "", nil, nil)
 
 	// then
+	require.Error(t, err)
 	a.EqualValues("test-agent", interceptor.RequestHeader(UserAgentHeader))
 }

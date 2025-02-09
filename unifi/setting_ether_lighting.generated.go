@@ -101,7 +101,7 @@ func (c *Client) getSettingEtherLighting(ctx context.Context, site string) (*Set
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -121,7 +121,7 @@ func (c *Client) updateSettingEtherLighting(ctx context.Context, site string, d 
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

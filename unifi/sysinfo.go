@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-type sysInfo struct {
+type sysInfo struct { //nolint: unused
 	Timezone        string `json:"timezone"`
 	Version         string `json:"version"`
 	PreviousVersion string `json:"previous_version"`
@@ -66,7 +66,7 @@ type sysInfo struct {
 	*/
 }
 
-func (c *Client) sysinfo(ctx context.Context, id string) (*sysInfo, error) {
+func (c *Client) sysinfo(ctx context.Context, id string) (*sysInfo, error) { //nolint: unused
 	var respBody struct {
 		Meta Meta      `json:"Meta"`
 		Data []sysInfo `json:"data"`
@@ -78,7 +78,7 @@ func (c *Client) sysinfo(ctx context.Context, id string) (*sysInfo, error) {
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	return &respBody.Data[0], nil

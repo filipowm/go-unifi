@@ -58,7 +58,7 @@ func (c *Client) getSettingLocale(ctx context.Context, site string) (*SettingLoc
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -78,7 +78,7 @@ func (c *Client) updateSettingLocale(ctx context.Context, site string, d *Settin
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

@@ -21,7 +21,7 @@ func (c *Client) GetUserByMAC(ctx context.Context, site, mac string) (*User, err
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -63,7 +63,7 @@ func (c *Client) CreateUser(ctx context.Context, site string, d *User) (*User, e
 	}
 
 	if len(respBody.Data[0].Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	user := respBody.Data[0].Data[0]
@@ -101,7 +101,7 @@ func (c *Client) BlockUserByMAC(ctx context.Context, site, mac string) error {
 		return err
 	}
 	if len(users) != 1 {
-		return NotFoundError
+		return ErrNotFound
 	}
 	return nil
 }
@@ -114,7 +114,7 @@ func (c *Client) UnblockUserByMAC(ctx context.Context, site, mac string) error {
 		return err
 	}
 	if len(users) != 1 {
-		return NotFoundError
+		return ErrNotFound
 	}
 	return nil
 }
@@ -127,7 +127,7 @@ func (c *Client) DeleteUserByMAC(ctx context.Context, site, mac string) error {
 		return err
 	}
 	if len(users) != 1 {
-		return NotFoundError
+		return ErrNotFound
 	}
 	return nil
 }
@@ -140,7 +140,7 @@ func (c *Client) KickUserByMAC(ctx context.Context, site, mac string) error {
 		return err
 	}
 	if len(users) != 1 {
-		return NotFoundError
+		return ErrNotFound
 	}
 	return nil
 }

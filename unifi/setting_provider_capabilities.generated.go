@@ -65,7 +65,7 @@ func (c *Client) getSettingProviderCapabilities(ctx context.Context, site string
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -85,7 +85,7 @@ func (c *Client) updateSettingProviderCapabilities(ctx context.Context, site str
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

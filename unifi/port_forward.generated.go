@@ -104,7 +104,7 @@ func (c *Client) getPortForward(ctx context.Context, site, id string) (*PortForw
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -131,7 +131,7 @@ func (c *Client) createPortForward(ctx context.Context, site string, d *PortForw
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]
@@ -151,7 +151,7 @@ func (c *Client) updatePortForward(ctx context.Context, site string, d *PortForw
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

@@ -64,7 +64,7 @@ func (c *Client) getSettingSuperCloudaccess(ctx context.Context, site string) (*
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -84,7 +84,7 @@ func (c *Client) updateSettingSuperCloudaccess(ctx context.Context, site string,
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

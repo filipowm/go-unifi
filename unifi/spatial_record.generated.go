@@ -114,7 +114,7 @@ func (c *Client) getSpatialRecord(ctx context.Context, site, id string) (*Spatia
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -141,7 +141,7 @@ func (c *Client) createSpatialRecord(ctx context.Context, site string, d *Spatia
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]
@@ -161,7 +161,7 @@ func (c *Client) updateSpatialRecord(ctx context.Context, site string, d *Spatia
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

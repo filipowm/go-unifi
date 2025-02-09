@@ -82,7 +82,7 @@ func (c *Client) getRouting(ctx context.Context, site, id string) (*Routing, err
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -109,7 +109,7 @@ func (c *Client) createRouting(ctx context.Context, site string, d *Routing) (*R
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]
@@ -129,7 +129,7 @@ func (c *Client) updateRouting(ctx context.Context, site string, d *Routing) (*R
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

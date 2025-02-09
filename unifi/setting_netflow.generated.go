@@ -81,7 +81,7 @@ func (c *Client) getSettingNetflow(ctx context.Context, site string) (*SettingNe
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -101,7 +101,7 @@ func (c *Client) updateSettingNetflow(ctx context.Context, site string, d *Setti
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

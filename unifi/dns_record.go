@@ -71,7 +71,7 @@ func (c *Client) GetDNSRecord(ctx context.Context, site, id string) (*DNSRecord,
 	}
 
 	if respBody.ID == "" {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	return &respBody, nil
@@ -103,7 +103,7 @@ func (c *Client) UpdateDNSRecord(ctx context.Context, site string, d *DNSRecord)
 	}
 
 	// if len(respBody) != nil {
-	// 	return nil, NotFoundError
+	// 	return nil, ErrNotFound
 	// }
 
 	return &respBody, nil

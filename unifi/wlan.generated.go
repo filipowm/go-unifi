@@ -492,7 +492,7 @@ func (c *Client) getWLAN(ctx context.Context, site, id string) (*WLAN, error) {
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -519,7 +519,7 @@ func (c *Client) createWLAN(ctx context.Context, site string, d *WLAN) (*WLAN, e
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]
@@ -539,7 +539,7 @@ func (c *Client) updateWLAN(ctx context.Context, site string, d *WLAN) (*WLAN, e
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

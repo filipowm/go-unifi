@@ -102,7 +102,7 @@ func (c *Client) getFirewallRule(ctx context.Context, site, id string) (*Firewal
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -129,7 +129,7 @@ func (c *Client) createFirewallRule(ctx context.Context, site string, d *Firewal
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]
@@ -149,7 +149,7 @@ func (c *Client) updateFirewallRule(ctx context.Context, site string, d *Firewal
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

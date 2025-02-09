@@ -82,7 +82,7 @@ func (c *Client) getSettingDoh(ctx context.Context, site string) (*SettingDoh, e
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -102,7 +102,7 @@ func (c *Client) updateSettingDoh(ctx context.Context, site string, d *SettingDo
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

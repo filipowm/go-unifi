@@ -167,7 +167,7 @@ func (c *Client) getSettingGuestAccess(ctx context.Context, site string) (*Setti
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -187,7 +187,7 @@ func (c *Client) updateSettingGuestAccess(ctx context.Context, site string, d *S
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

@@ -94,7 +94,7 @@ func (c *Client) getScheduleTask(ctx context.Context, site, id string) (*Schedul
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -121,7 +121,7 @@ func (c *Client) createScheduleTask(ctx context.Context, site string, d *Schedul
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]
@@ -141,7 +141,7 @@ func (c *Client) updateScheduleTask(ctx context.Context, site string, d *Schedul
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

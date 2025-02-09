@@ -62,7 +62,7 @@ func (c *Client) getSettingNtp(ctx context.Context, site string) (*SettingNtp, e
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -82,7 +82,7 @@ func (c *Client) updateSettingNtp(ctx context.Context, site string, d *SettingNt
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

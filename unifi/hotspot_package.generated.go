@@ -111,7 +111,7 @@ func (c *Client) getHotspotPackage(ctx context.Context, site, id string) (*Hotsp
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -138,7 +138,7 @@ func (c *Client) createHotspotPackage(ctx context.Context, site string, d *Hotsp
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]
@@ -158,7 +158,7 @@ func (c *Client) updateHotspotPackage(ctx context.Context, site string, d *Hotsp
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

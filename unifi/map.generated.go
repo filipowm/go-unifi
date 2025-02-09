@@ -87,7 +87,7 @@ func (c *Client) getMap(ctx context.Context, site, id string) (*Map, error) {
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -114,7 +114,7 @@ func (c *Client) createMap(ctx context.Context, site string, d *Map) (*Map, erro
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]
@@ -134,7 +134,7 @@ func (c *Client) updateMap(ctx context.Context, site string, d *Map) (*Map, erro
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

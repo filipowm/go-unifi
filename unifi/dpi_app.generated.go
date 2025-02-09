@@ -92,7 +92,7 @@ func (c *Client) getDpiApp(ctx context.Context, site, id string) (*DpiApp, error
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -119,7 +119,7 @@ func (c *Client) createDpiApp(ctx context.Context, site string, d *DpiApp) (*Dpi
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]
@@ -139,7 +139,7 @@ func (c *Client) updateDpiApp(ctx context.Context, site string, d *DpiApp) (*Dpi
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

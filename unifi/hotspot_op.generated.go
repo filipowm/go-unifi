@@ -72,7 +72,7 @@ func (c *Client) getHotspotOp(ctx context.Context, site, id string) (*HotspotOp,
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -99,7 +99,7 @@ func (c *Client) createHotspotOp(ctx context.Context, site string, d *HotspotOp)
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]
@@ -119,7 +119,7 @@ func (c *Client) updateHotspotOp(ctx context.Context, site string, d *HotspotOp)
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

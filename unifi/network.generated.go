@@ -462,7 +462,7 @@ func (c *Client) getNetwork(ctx context.Context, site, id string) (*Network, err
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -489,7 +489,7 @@ func (c *Client) createNetwork(ctx context.Context, site string, d *Network) (*N
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]
@@ -509,7 +509,7 @@ func (c *Client) updateNetwork(ctx context.Context, site string, d *Network) (*N
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

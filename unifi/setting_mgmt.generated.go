@@ -105,7 +105,7 @@ func (c *Client) getSettingMgmt(ctx context.Context, site string) (*SettingMgmt,
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -125,7 +125,7 @@ func (c *Client) updateSettingMgmt(ctx context.Context, site string, d *SettingM
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

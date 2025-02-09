@@ -37,7 +37,7 @@ const (
 
 	defaultUserAgent = "go-unifi/0.0.1"
 
-	ApiKeyHeader      = "X-API-Key"
+	ApiKeyHeader      = "X-Api-Key"
 	CsrfHeader        = "X-Csrf-Token"
 	UserAgentHeader   = "User-Agent"
 	AcceptHeader      = "Accept"
@@ -45,8 +45,8 @@ const (
 )
 
 var (
-	AuthenticationFailedError = fmt.Errorf("authentication failed")
-	NotFoundError             = fmt.Errorf("not found")
+	ErrAuthenticationFailed = errors.New("authentication failed")
+	ErrNotFound             = errors.New("not found")
 )
 
 type APIError struct {
@@ -154,6 +154,7 @@ func (a *ApiKeyAuthInterceptor) InterceptRequest(req *http.Request) error {
 	req.Header.Set(ApiKeyHeader, a.apiKey)
 	return nil
 }
+
 func (a *ApiKeyAuthInterceptor) InterceptResponse(_ *http.Response) error {
 	return nil
 }
@@ -209,9 +210,9 @@ func (d *DefaultResponseErrorHandler) HandleError(resp *http.Response) error {
 	case http.StatusOK:
 		return nil
 	case http.StatusNotFound:
-		return NotFoundError
+		return ErrNotFound
 	case http.StatusUnauthorized:
-		return AuthenticationFailedError
+		return ErrAuthenticationFailed
 	}
 	errBody := struct {
 		Meta Meta `json:"Meta"`
@@ -280,7 +281,7 @@ func newUnifi(config *ClientConfig) (*Client, error) {
 	config.URL = strings.TrimRight(config.URL, "/")
 	transport := &http.Transport{
 		Proxy:           http.ProxyFromEnvironment,
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: !config.VerifySSL}, // nolint: gosec
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: !config.VerifySSL}, //nolint: gosec
 	}
 
 	if config.HttpCustomizer != nil {
@@ -403,7 +404,7 @@ func (c *Client) determineApiStyle() error {
 	ctx, cancel := c.createRequestContext()
 	defer cancel()
 
-	//c.DebugLog("Requesting %s/ to determine API paths", c.URL)
+	// c.DebugLog("Requesting %s/ to determine API paths", c.URL)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.BaseURL.String(), nil)
 	if err != nil {
@@ -435,7 +436,7 @@ func (c *Client) determineApiStyle() error {
 		return fmt.Errorf("expected 200 or 302 status code, but got: %d", resp.StatusCode)
 	}
 	if c.apiPaths == &OldStyleAPI && c.config.APIKey != "" {
-		return fmt.Errorf("unable to use API key authentication with old style API. Switch to user/pass authentication or update controller to latest version")
+		return errors.New("unable to use API key authentication with old style API. Switch to user/pass authentication or update controller to latest version")
 	}
 	return nil
 }
@@ -460,7 +461,7 @@ func (c *Client) GetServerInfo() (*ServerInfo, error) {
 
 func marshalRequest(reqBody interface{}) (io.Reader, error) {
 	if reqBody == nil {
-		return nil, nil
+		return nil, nil //nolint: nilnil
 	}
 	reqBytes, err := json.Marshal(reqBody)
 	if err != nil {
@@ -511,13 +512,7 @@ func (c *Client) Do(ctx context.Context, method, apiPath string, reqBody interfa
 	if err != nil {
 		return fmt.Errorf("unable to perform request: %s %s %w", method, apiPath, err)
 	}
-	defer func(body io.ReadCloser) {
-		err := body.Close()
-		if err != nil {
-			// TODO use logger
-			fmt.Printf("error closing body: %s", err)
-		}
-	}(resp.Body)
+	defer resp.Body.Close()
 
 	for _, interceptor := range c.interceptors {
 		if err := interceptor.InterceptResponse(resp); err != nil {

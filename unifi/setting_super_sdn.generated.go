@@ -63,7 +63,7 @@ func (c *Client) getSettingSuperSdn(ctx context.Context, site string) (*SettingS
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -83,7 +83,7 @@ func (c *Client) updateSettingSuperSdn(ctx context.Context, site string, d *Sett
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

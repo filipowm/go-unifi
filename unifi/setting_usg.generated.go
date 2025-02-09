@@ -170,7 +170,7 @@ func (c *Client) getSettingUsg(ctx context.Context, site string) (*SettingUsg, e
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -190,7 +190,7 @@ func (c *Client) updateSettingUsg(ctx context.Context, site string, d *SettingUs
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

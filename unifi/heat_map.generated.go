@@ -73,7 +73,7 @@ func (c *Client) getHeatMap(ctx context.Context, site, id string) (*HeatMap, err
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -100,7 +100,7 @@ func (c *Client) createHeatMap(ctx context.Context, site string, d *HeatMap) (*H
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]
@@ -120,7 +120,7 @@ func (c *Client) updateHeatMap(ctx context.Context, site string, d *HeatMap) (*H
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]
