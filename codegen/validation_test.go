@@ -69,16 +69,21 @@ func TestCreateValidations(t *testing.T) {
 	}
 }
 
-func TestValidation(t *testing.T) {
+func TestDefineValidation(t *testing.T) {
 	t.Parallel()
 
 	testCases := []struct {
 		validationComment, expected string
 	}{
 		{"a|b", "oneof=a b"},
+		{"1|2", "oneof=1 2"},
 		{".{1,2}", "gte=1,lte=2"},
 		{".{1}", "len=1"},
-		{"", ""},
+		{".{1}", "len=1"},
+		{"[\\d\\w]+", "w_regex"},
+		{"[\\d\\w]*", "w_regex"},
+		{"[\\w]+", "w_regex"},
+		{"[\\w]*", "w_regex"},
 		{"a", ""},
 		{".{1}|.{5,6}", ""},
 		{"a|.{5,6}", ""},
@@ -127,6 +132,7 @@ func TestIsOneOfValidation(t *testing.T) {
 		{"a|b", true},
 		{"1-2|2-3", true},
 		{"1_2|2_3", true},
+		{"1|2", true},
 		{"%|#", true},
 		{"^a|b", false},
 		{"a|b$", false},
@@ -184,4 +190,24 @@ func TestStringLengthValidation(t *testing.T) {
 		{".{.,2}", false},
 	}
 	testValidationCommentCheck(t, testCases, func(v validationComment) bool { return v.HasDefinedLength() })
+}
+
+func TestIsWRegexValidation(t *testing.T) {
+	t.Parallel()
+	testCases := []struct {
+		validationComment validationComment
+		expected          bool
+	}{
+		{"[\\d\\w]+", true},
+		{"[\\d\\w]*", true},
+		{"[\\w]+", true},
+		{"[\\w]*", true},
+		{"", false},
+		{"a", false},
+		{"[\\d]+", false},
+		{"[\\d]*", false},
+		{"[\\s]+", false},
+		{"[\\s]*", false},
+	}
+	testValidationCommentCheck(t, testCases, func(v validationComment) bool { return v.IsWRegex() })
 }

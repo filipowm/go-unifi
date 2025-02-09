@@ -77,7 +77,7 @@ type Device struct {
 	LteUsername                 string                    `json:"lte_username,omitempty"`
 	MapID                       string                    `json:"map_id,omitempty"`
 	MeshStaVapEnabled           bool                      `json:"mesh_sta_vap_enabled,omitempty"`
-	MgmtNetworkID               string                    `json:"mgmt_network_id,omitempty"` // [\d\w]+
+	MgmtNetworkID               string                    `json:"mgmt_network_id,omitempty" validate:"omitempty,w_regex"` // [\d\w]+
 	Model                       string                    `json:"model,omitempty"`
 	Name                        string                    `json:"name,omitempty" validate:"omitempty,gte=0,lte=128"`                         // .{0,128}
 	OutdoorModeOverride         string                    `json:"outdoor_mode_override,omitempty" validate:"omitempty,oneof=default on off"` // default|on|off
@@ -276,7 +276,7 @@ type DevicePortOverrides struct {
 	PoeMode                      string           `json:"poe_mode,omitempty" validate:"omitempty,oneof=auto pasv24 passthrough off"` // auto|pasv24|passthrough|off
 	PortIDX                      int              `json:"port_idx,omitempty"`                                                        // [1-9]|[1-4][0-9]|5[0-6]
 	PortKeepaliveEnabled         bool             `json:"port_keepalive_enabled,omitempty"`
-	PortProfileID                string           `json:"portconf_id,omitempty"` // [\d\w]+
+	PortProfileID                string           `json:"portconf_id,omitempty" validate:"omitempty,w_regex"` // [\d\w]+
 	PortSecurityEnabled          bool             `json:"port_security_enabled,omitempty"`
 	PortSecurityMACAddress       []string         `json:"port_security_mac_address,omitempty"` // ^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$
 	PriorityQueue1Level          int              `json:"priority_queue1_level,omitempty"`     // [0-9]|[1-9][0-9]|100

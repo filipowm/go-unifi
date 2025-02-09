@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -28,9 +29,10 @@ const (
 	oneOf       validator = "oneof"
 	cidr        validator = "cidr"
 	omitempty   validator = "omitempty"
-	lenv        validator = "len"
+	length      validator = "len"
 	gte         validator = "gte"
 	lte         validator = "lte"
+	w_regex     validator = "w_regex"
 
 	regexChars regexSpecialChars = "^$*+?()[]{}\\|."
 )
@@ -74,10 +76,6 @@ func (r regexSpecialChars) NotIn(s string, excludedChars string) bool {
 	return !r.In(s, excludedChars)
 }
 
-func (r regexSpecialChars) NoneIn(s string) bool {
-	return r.NotIn(s, "")
-}
-
 func (vc validationComment) HasDefinedLength() bool {
 	s := string(vc)
 	formatOk := strings.HasPrefix(s, ".{") && strings.HasSuffix(s, "}") && regexChars.NotIn(s, ".{}")
@@ -102,6 +100,11 @@ func (vc validationComment) IsOneOf() bool {
 	return strings.Contains(s, "|") && regexChars.NotIn(s, "|")
 }
 
+func (vc validationComment) IsWRegex() bool {
+	s := string(vc)
+	return slices.Contains([]string{"[\\d\\w]+", "[\\d\\w]*", "[\\w]+", "[\\w]*"}, s)
+}
+
 func defineFieldValidation(rawValidation string) string {
 	if rawValidation == "" {
 		return ""
@@ -113,9 +116,11 @@ func defineFieldValidation(rawValidation string) string {
 		sub := rawValidation[2 : len(rawValidation)-1]
 		bounds := strings.Split(sub, ",")
 		if len(bounds) == 1 {
-			return createValidations(validation{v: lenv, params: []string{bounds[0]}})
+			return createValidations(validation{v: length, params: []string{bounds[0]}})
 		}
 		return createValidations(validation{v: gte, params: []string{bounds[0]}}, validation{v: lte, params: []string{bounds[1]}})
+	} else if vc.IsWRegex() {
+		return createValidations(validation{v: w_regex})
 	}
 	return ""
 }

@@ -3,6 +3,8 @@ package unifi
 import (
 	"errors"
 	"fmt"
+	"regexp"
+	"sync"
 
 	"github.com/go-playground/locales/en"
 	ut "github.com/go-playground/universal-translator"
@@ -34,6 +36,8 @@ type Validator interface {
 	RegisterStructValidation(fn vd.StructLevelFunc, i interface{})
 	// RegisterTranslation registers a custom translation for a given tag.
 	RegisterTranslation(tag string, registerFn vd.RegisterTranslationsFunc, translationFn vd.TranslationFunc) (err error)
+	// RegisterCustomValidator registers a custom validator function with own tag and error message.
+	RegisterCustomValidator(cv CustomValidator) error
 }
 
 type validator struct {
@@ -60,18 +64,93 @@ func (v *validator) RegisterTranslation(tag string, registerFn vd.RegisterTransl
 	return v.validate.RegisterTranslation(tag, v.trans, registerFn, translationFn)
 }
 
+func (v *validator) RegisterCustomValidator(cv CustomValidator) error {
+	var err error
+	if err = v.validate.RegisterValidation(cv.tag, cv.fn, false); err != nil {
+		return fmt.Errorf("failed to register custom validation '%s': %w", cv.tag, err)
+	}
+	err = v.RegisterTranslation(cv.tag, func(ut ut.Translator) error {
+		return ut.Add(cv.tag, cv.messageText, true)
+	}, func(ut ut.Translator, fe vd.FieldError) string {
+		t, _ := ut.T(cv.tag, append([]string{fe.Field()}, cv.params...)...)
+		return t
+	})
+	if err != nil {
+		return fmt.Errorf("failed to register custom validation '%s' translation: %w", cv.tag, err)
+	}
+	return nil
+}
+
 func newValidator() (*validator, error) {
 	validate := vd.New(vd.WithRequiredStructEnabled())
 	enLocale := en.New()
 	uni := ut.New(enLocale, enLocale)
 	trans, _ := uni.GetTranslator(enLocale.Locale())
 	err := en_translations.RegisterDefaultTranslations(validate, trans)
+
 	if err != nil {
 		return nil, err
 	}
 
-	return &validator{
+	v := &validator{
 		validate: validate,
 		trans:    trans,
-	}, nil
+	}
+
+	for _, customValidator := range customValidators {
+		if err = v.RegisterCustomValidator(customValidator); err != nil {
+			return nil, err
+		}
+	}
+	return v, nil
 }
+
+type CustomValidator struct {
+	tag         string
+	fn          vd.Func
+	messageText string
+	params      []string
+}
+
+func NewCustomRegexValidator(tag string, regex string) CustomValidator {
+	cv := &CustomValidator{
+		tag:         tag,
+		messageText: regexValidatorMessage,
+		params:      []string{regex},
+	}
+	crv := CustomRegexValidator{
+		CustomValidator: cv,
+		regex:           lazyRegexCompile(regex),
+	}
+	crv.fn = func(fl vd.FieldLevel) bool {
+		return crv.regex().MatchString(fl.Field().String())
+	}
+	return *crv.CustomValidator
+}
+
+type CustomRegexValidator struct {
+	*CustomValidator
+	regex func() *regexp.Regexp
+}
+
+var (
+	customValidators = []CustomValidator{
+		NewCustomRegexValidator("w_regex", wRegexString),
+	}
+)
+
+func lazyRegexCompile(str string) func() *regexp.Regexp {
+	var regex *regexp.Regexp
+	var once sync.Once
+	return func() *regexp.Regexp {
+		once.Do(func() {
+			regex = regexp.MustCompile(str)
+		})
+		return regex
+	}
+}
+
+const (
+	regexValidatorMessage = "{0} must comply with the regular expression pattern '{1}'"
+	wRegexString          = `^[\w]+$`
+)
