@@ -343,8 +343,8 @@ func (dst *Network) UnmarshalJSON(b []byte) error {
 }
 
 type NetworkIGMPQuerierSwitches struct {
-	QuerierAddress string `json:"querier_address" validate:"omitempty,ipv4"` // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
-	SwitchMAC      string `json:"switch_mac,omitempty"`                      // ^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$
+	QuerierAddress string `json:"querier_address" validate:"omitempty,ipv4"`     // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
+	SwitchMAC      string `json:"switch_mac,omitempty" validate:"omitempty,mac"` // ^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$
 }
 
 func (dst *NetworkIGMPQuerierSwitches) UnmarshalJSON(b []byte) error {

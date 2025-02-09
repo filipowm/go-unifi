@@ -90,8 +90,8 @@ type Device struct {
 	PowerSourceCtrl             string                    `json:"power_source_ctrl,omitempty" validate:"omitempty,oneof=auto 8023af 8023at 8023bt-type3 8023bt-type4 pasv24 poe-injector ac adapter dc rps"` // auto|8023af|8023at|8023bt-type3|8023bt-type4|pasv24|poe-injector|ac|adapter|dc|rps
 	PowerSourceCtrlBudget       int                       `json:"power_source_ctrl_budget,omitempty"`                                                                                                        // [0-9]|[1-9][0-9]|[1-9][0-9][0-9]
 	PowerSourceCtrlEnabled      bool                      `json:"power_source_ctrl_enabled,omitempty"`
-	PtmpApMAC                   string                    `json:"ptmp_ap_mac,omitempty"` // ^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$
-	PtpApMAC                    string                    `json:"ptp_ap_mac,omitempty"`  // ^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$
+	PtmpApMAC                   string                    `json:"ptmp_ap_mac,omitempty" validate:"omitempty,mac"` // ^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$
+	PtpApMAC                    string                    `json:"ptp_ap_mac,omitempty" validate:"omitempty,mac"`  // ^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$
 	RADIUSProfileID             string                    `json:"radiusprofile_id,omitempty"`
 	RadioTable                  []DeviceRadioTable        `json:"radio_table,omitempty"`
 	ResetbtnEnabled             string                    `json:"resetbtn_enabled,omitempty" validate:"omitempty,oneof=on off"` // on|off
@@ -278,11 +278,11 @@ type DevicePortOverrides struct {
 	PortKeepaliveEnabled         bool             `json:"port_keepalive_enabled,omitempty"`
 	PortProfileID                string           `json:"portconf_id,omitempty" validate:"omitempty,w_regex"` // [\d\w]+
 	PortSecurityEnabled          bool             `json:"port_security_enabled,omitempty"`
-	PortSecurityMACAddress       []string         `json:"port_security_mac_address,omitempty"` // ^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$
-	PriorityQueue1Level          int              `json:"priority_queue1_level,omitempty"`     // [0-9]|[1-9][0-9]|100
-	PriorityQueue2Level          int              `json:"priority_queue2_level,omitempty"`     // [0-9]|[1-9][0-9]|100
-	PriorityQueue3Level          int              `json:"priority_queue3_level,omitempty"`     // [0-9]|[1-9][0-9]|100
-	PriorityQueue4Level          int              `json:"priority_queue4_level,omitempty"`     // [0-9]|[1-9][0-9]|100
+	PortSecurityMACAddress       []string         `json:"port_security_mac_address,omitempty" validate:"omitempty,mac"` // ^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$
+	PriorityQueue1Level          int              `json:"priority_queue1_level,omitempty"`                              // [0-9]|[1-9][0-9]|100
+	PriorityQueue2Level          int              `json:"priority_queue2_level,omitempty"`                              // [0-9]|[1-9][0-9]|100
+	PriorityQueue3Level          int              `json:"priority_queue3_level,omitempty"`                              // [0-9]|[1-9][0-9]|100
+	PriorityQueue4Level          int              `json:"priority_queue4_level,omitempty"`                              // [0-9]|[1-9][0-9]|100
 	QOSProfile                   DeviceQOSProfile `json:"qos_profile,omitempty"`
 	SettingPreference            string           `json:"setting_preference,omitempty" validate:"omitempty,oneof=auto manual"`                                   // auto|manual
 	Speed                        int              `json:"speed,omitempty" validate:"omitempty,oneof=10 100 1000 2500 5000 10000 20000 25000 40000 50000 100000"` // 10|100|1000|2500|5000|10000|20000|25000|40000|50000|100000

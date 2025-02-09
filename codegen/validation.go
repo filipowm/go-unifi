@@ -107,7 +107,8 @@ func (vc validationComment) IsWRegex() bool {
 
 func (vc validationComment) IsMAC() bool {
 	s := string(vc)
-	return strings.Contains(s, "([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})") && regexChars.NotIn(s, "(){}[]^$")
+	// there are validations present in both notations, so we need to check for both
+	return (strings.Contains(s, "([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})") || strings.Contains(s, "([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})")) && regexChars.NotIn(s, "(){}[]^$")
 }
 
 func (vc validationComment) IsIPv4() bool {
