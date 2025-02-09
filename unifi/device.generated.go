@@ -52,9 +52,9 @@ type Device struct {
 	LcmBrightnessOverride       bool                      `json:"lcm_brightness_override,omitempty"`
 	LcmIDleTimeout              int                       `json:"lcm_idle_timeout,omitempty"` // [1-9][0-9]|[1-9][0-9][0-9]|[1-2][0-9][0-9][0-9]|3[0-5][0-9][0-9]|3600
 	LcmIDleTimeoutOverride      bool                      `json:"lcm_idle_timeout_override,omitempty"`
-	LcmNightModeBegins          string                    `json:"lcm_night_mode_begins,omitempty"`    // (^$)|(^(0[1-9])|(1[0-9])|(2[0-3])):([0-5][0-9]$)
-	LcmNightModeEnds            string                    `json:"lcm_night_mode_ends,omitempty"`      // (^$)|(^(0[1-9])|(1[0-9])|(2[0-3])):([0-5][0-9]$)
-	LcmOrientationOverride      int                       `json:"lcm_orientation_override,omitempty"` // 0|90|180|270
+	LcmNightModeBegins          string                    `json:"lcm_night_mode_begins,omitempty"`                                            // (^$)|(^(0[1-9])|(1[0-9])|(2[0-3])):([0-5][0-9]$)
+	LcmNightModeEnds            string                    `json:"lcm_night_mode_ends,omitempty"`                                              // (^$)|(^(0[1-9])|(1[0-9])|(2[0-3])):([0-5][0-9]$)
+	LcmOrientationOverride      int                       `json:"lcm_orientation_override,omitempty" validate:"omitempty,oneof=0 90 180 270"` // 0|90|180|270
 	LcmSettingsRestrictedAccess bool                      `json:"lcm_settings_restricted_access,omitempty"`
 	LcmTrackerEnabled           bool                      `json:"lcm_tracker_enabled,omitempty"`
 	LcmTrackerSeed              string                    `json:"lcm_tracker_seed,omitempty" validate:"omitempty,gte=0,lte=50"`     // .{0,50}
@@ -99,9 +99,9 @@ type Device struct {
 	SnmpContact                 string                    `json:"snmp_contact,omitempty" validate:"omitempty,gte=0,lte=255"`  // .{0,255}
 	SnmpLocation                string                    `json:"snmp_location,omitempty" validate:"omitempty,gte=0,lte=255"` // .{0,255}
 	State                       DeviceState               `json:"state"`
-	StationMode                 string                    `json:"station_mode,omitempty" validate:"omitempty,oneof=ptp ptmp wifi"`    // ptp|ptmp|wifi
-	StpPriority                 string                    `json:"stp_priority,omitempty"`                                             // 0|4096|8192|12288|16384|20480|24576|28672|32768|36864|40960|45056|49152|53248|57344|61440
-	StpVersion                  string                    `json:"stp_version,omitempty" validate:"omitempty,oneof=stp rstp disabled"` // stp|rstp|disabled
+	StationMode                 string                    `json:"station_mode,omitempty" validate:"omitempty,oneof=ptp ptmp wifi"`                                                                             // ptp|ptmp|wifi
+	StpPriority                 string                    `json:"stp_priority,omitempty" validate:"omitempty,oneof=0 4096 8192 12288 16384 20480 24576 28672 32768 36864 40960 45056 49152 53248 57344 61440"` // 0|4096|8192|12288|16384|20480|24576|28672|32768|36864|40960|45056|49152|53248|57344|61440
+	StpVersion                  string                    `json:"stp_version,omitempty" validate:"omitempty,oneof=stp rstp disabled"`                                                                          // stp|rstp|disabled
 	SwitchVLANEnabled           bool                      `json:"switch_vlan_enabled,omitempty"`
 	Type                        string                    `json:"type,omitempty"`
 	UbbPairName                 string                    `json:"ubb_pair_name,omitempty" validate:"omitempty,gte=1,lte=128"` // .{1,128}
@@ -284,8 +284,8 @@ type DevicePortOverrides struct {
 	PriorityQueue3Level          int              `json:"priority_queue3_level,omitempty"`     // [0-9]|[1-9][0-9]|100
 	PriorityQueue4Level          int              `json:"priority_queue4_level,omitempty"`     // [0-9]|[1-9][0-9]|100
 	QOSProfile                   DeviceQOSProfile `json:"qos_profile,omitempty"`
-	SettingPreference            string           `json:"setting_preference,omitempty" validate:"omitempty,oneof=auto manual"` // auto|manual
-	Speed                        int              `json:"speed,omitempty"`                                                     // 10|100|1000|2500|5000|10000|20000|25000|40000|50000|100000
+	SettingPreference            string           `json:"setting_preference,omitempty" validate:"omitempty,oneof=auto manual"`                                   // auto|manual
+	Speed                        int              `json:"speed,omitempty" validate:"omitempty,oneof=10 100 1000 2500 5000 10000 20000 25000 40000 50000 100000"` // 10|100|1000|2500|5000|10000|20000|25000|40000|50000|100000
 	StormctrlBroadcastastEnabled bool             `json:"stormctrl_bcast_enabled,omitempty"`
 	StormctrlBroadcastastLevel   int              `json:"stormctrl_bcast_level,omitempty"` // [0-9]|[1-9][0-9]|100
 	StormctrlBroadcastastRate    int              `json:"stormctrl_bcast_rate,omitempty"`  // [0-9]|[1-9][0-9]{1,6}|1[0-3][0-9]{6}|14[0-7][0-9]{5}|148[0-7][0-9]{4}|14880000
@@ -351,10 +351,10 @@ func (dst *DevicePortOverrides) UnmarshalJSON(b []byte) error {
 }
 
 type DeviceQOSMarking struct {
-	CosCode          int `json:"cos_code,omitempty"`           // [0-7]
-	DscpCode         int `json:"dscp_code,omitempty"`          // 0|8|16|24|32|40|48|56|10|12|14|18|20|22|26|28|30|34|36|38|44|46
-	IPPrecedenceCode int `json:"ip_precedence_code,omitempty"` // [0-7]
-	Queue            int `json:"queue,omitempty"`              // [0-7]
+	CosCode          int `json:"cos_code,omitempty"`                                                                                             // [0-7]
+	DscpCode         int `json:"dscp_code,omitempty" validate:"omitempty,oneof=0 8 16 24 32 40 48 56 10 12 14 18 20 22 26 28 30 34 36 38 44 46"` // 0|8|16|24|32|40|48|56|10|12|14|18|20|22|26|28|30|34|36|38|44|46
+	IPPrecedenceCode int `json:"ip_precedence_code,omitempty"`                                                                                   // [0-7]
+	Queue            int `json:"queue,omitempty"`                                                                                                // [0-7]
 }
 
 func (dst *DeviceQOSMarking) UnmarshalJSON(b []byte) error {
@@ -488,7 +488,7 @@ type DeviceRadioTable struct {
 	Channel                    string                   `json:"channel,omitempty"`        // [0-9]|[1][0-4]|4.5|5|16|17|21|25|29|33|34|36|37|38|40|41|42|44|45|46|48|49|52|53|56|57|60|61|64|65|69|73|77|81|85|89|93|97|100|101|104|105|108|109|112|113|117|116|120|121|124|125|128|129|132|133|136|137|140|141|144|145|149|153|157|161|165|169|173|177|181|183|184|185|187|188|189|192|193|196|197|201|205|209|213|217|221|225|229|233|auto
 	ChannelOptimizationEnabled bool                     `json:"channel_optimization_enabled,omitempty"`
 	HardNoiseFloorEnabled      bool                     `json:"hard_noise_floor_enabled,omitempty"`
-	Ht                         int                      `json:"ht,omitempty"` // 20|40|80|160|240|320|1080|2160|4320
+	Ht                         int                      `json:"ht,omitempty" validate:"omitempty,oneof=20 40 80 160 240 320 1080 2160 4320"` // 20|40|80|160|240|320|1080|2160|4320
 	LoadbalanceEnabled         bool                     `json:"loadbalance_enabled,omitempty"`
 	Maxsta                     int                      `json:"maxsta,omitempty"`   // [1-9]|[1-9][0-9]|1[0-9]{2}|200|^$
 	MinRssi                    int                      `json:"min_rssi,omitempty"` // ^-(6[7-9]|[7-8][0-9]|90)$

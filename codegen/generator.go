@@ -273,8 +273,9 @@ func (r *Resource) fieldInfoFromValidation(name string, validation interface{}) 
 					return fieldInfo, r.FieldProcessor(fieldName, fieldInfo)
 				}
 
+				fieldValidation := defineFieldValidation(fieldValidationComment)
 				omitEmpty = true
-				fieldInfo = NewFieldInfo(fieldName, name, "int", "", fieldValidationComment, omitEmpty, false, "")
+				fieldInfo = NewFieldInfo(fieldName, name, "int", fieldValidation, fieldValidationComment, omitEmpty, false, "")
 				fieldInfo.CustomUnmarshalType = "emptyStringInt"
 				return fieldInfo, r.FieldProcessor(fieldName, fieldInfo)
 			}

@@ -28,13 +28,13 @@ type SettingGlobalAp struct {
 	Key string `json:"key"`
 
 	ApExclusions    []string `json:"ap_exclusions,omitempty"`                                                           // ^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$
-	NaChannelSize   int      `json:"na_channel_size,omitempty"`                                                         // 20|40|80|160
+	NaChannelSize   int      `json:"na_channel_size,omitempty" validate:"omitempty,oneof=20 40 80 160"`                 // 20|40|80|160
 	NaTxPower       int      `json:"na_tx_power,omitempty"`                                                             // [0-9]|[1-4][0-9]
 	NaTxPowerMode   string   `json:"na_tx_power_mode,omitempty" validate:"omitempty,oneof=auto medium high low custom"` // auto|medium|high|low|custom
-	NgChannelSize   int      `json:"ng_channel_size,omitempty"`                                                         // 20|40
+	NgChannelSize   int      `json:"ng_channel_size,omitempty" validate:"omitempty,oneof=20 40"`                        // 20|40
 	NgTxPower       int      `json:"ng_tx_power,omitempty"`                                                             // [0-9]|[1-4][0-9]
 	NgTxPowerMode   string   `json:"ng_tx_power_mode,omitempty" validate:"omitempty,oneof=auto medium high low custom"` // auto|medium|high|low|custom
-	SixEChannelSize int      `json:"6e_channel_size,omitempty"`                                                         // 20|40|80|160
+	SixEChannelSize int      `json:"6e_channel_size,omitempty" validate:"omitempty,oneof=20 40 80 160"`                 // 20|40|80|160
 	SixETxPower     int      `json:"6e_tx_power,omitempty"`                                                             // [0-9]|[1-4][0-9]
 	SixETxPowerMode string   `json:"6e_tx_power_mode,omitempty" validate:"omitempty,oneof=auto medium high low custom"` // auto|medium|high|low|custom
 }

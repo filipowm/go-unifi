@@ -55,9 +55,9 @@ func (dst *ChannelPlan) UnmarshalJSON(b []byte) error {
 }
 
 type ChannelPlanApBlacklistedChannels struct {
-	Channel   int    `json:"channel,omitempty"`   // 36|38|40|42|44|46|48|52|56|60|64|100|104|108|112|116|120|124|128|132|136|140|144|149|153|157|161|165|183|184|185|187|188|189|192|196
-	MAC       string `json:"mac,omitempty"`       // ^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$
-	Timestamp int    `json:"timestamp,omitempty"` // [1-9][0-9]{12}
+	Channel   int    `json:"channel,omitempty" validate:"omitempty,oneof=36 38 40 42 44 46 48 52 56 60 64 100 104 108 112 116 120 124 128 132 136 140 144 149 153 157 161 165 183 184 185 187 188 189 192 196"` // 36|38|40|42|44|46|48|52|56|60|64|100|104|108|112|116|120|124|128|132|136|140|144|149|153|157|161|165|183|184|185|187|188|189|192|196
+	MAC       string `json:"mac,omitempty"`                                                                                                                                                                     // ^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$
+	Timestamp int    `json:"timestamp,omitempty"`                                                                                                                                                               // [1-9][0-9]{12}
 }
 
 func (dst *ChannelPlanApBlacklistedChannels) UnmarshalJSON(b []byte) error {
@@ -113,7 +113,7 @@ type ChannelPlanRadioTable struct {
 	Name          string `json:"name,omitempty"`                                                                 // [a-z]*[0-9]*
 	TxPower       string `json:"tx_power,omitempty"`                                                             // [\d]+|auto
 	TxPowerMode   string `json:"tx_power_mode,omitempty" validate:"omitempty,oneof=auto medium high low custom"` // auto|medium|high|low|custom
-	Width         int    `json:"width,omitempty"`                                                                // 20|40|80|160
+	Width         int    `json:"width,omitempty" validate:"omitempty,oneof=20 40 80 160"`                        // 20|40|80|160
 }
 
 func (dst *ChannelPlanRadioTable) UnmarshalJSON(b []byte) error {
@@ -163,8 +163,8 @@ func (dst *ChannelPlanSatisfactionTable) UnmarshalJSON(b []byte) error {
 }
 
 type ChannelPlanSiteBlacklistedChannels struct {
-	Channel   int `json:"channel,omitempty"`   // 36|38|40|42|44|46|48|52|56|60|64|100|104|108|112|116|120|124|128|132|136|140|144|149|153|157|161|165|183|184|185|187|188|189|192|196
-	Timestamp int `json:"timestamp,omitempty"` // [1-9][0-9]{12}
+	Channel   int `json:"channel,omitempty" validate:"omitempty,oneof=36 38 40 42 44 46 48 52 56 60 64 100 104 108 112 116 120 124 128 132 136 140 144 149 153 157 161 165 183 184 185 187 188 189 192 196"` // 36|38|40|42|44|46|48|52|56|60|64|100|104|108|112|116|120|124|128|132|136|140|144|149|153|157|161|165|183|184|185|187|188|189|192|196
+	Timestamp int `json:"timestamp,omitempty"`                                                                                                                                                               // [1-9][0-9]{12}
 }
 
 func (dst *ChannelPlanSiteBlacklistedChannels) UnmarshalJSON(b []byte) error {

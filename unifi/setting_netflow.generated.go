@@ -37,7 +37,7 @@ type SettingNetflow struct {
 	SamplingMode        string   `json:"sampling_mode,omitempty" validate:"omitempty,oneof=off hash random deterministic"` // off|hash|random|deterministic
 	SamplingRate        int      `json:"sampling_rate,omitempty"`                                                          // [2-9]|[1-9][0-9]{1,3}|1[0-5][0-9]{3}|16[0-2][0-9]{2}|163[0-7][0-9]|1638[0-3]|^$
 	Server              string   `json:"server,omitempty"`                                                                 // .{0,252}[^\.]$
-	Version             int      `json:"version,omitempty"`                                                                // 5|9|10
+	Version             int      `json:"version,omitempty" validate:"omitempty,oneof=5 9 10"`                              // 5|9|10
 }
 
 func (dst *SettingNetflow) UnmarshalJSON(b []byte) error {

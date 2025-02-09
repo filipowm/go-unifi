@@ -244,8 +244,8 @@ type WLANHotspot2 struct {
 	CellularNetworkList     []WLANCellularNetworkList   `json:"cellular_network_list,omitempty"`
 	DomainNameList          []string                    `json:"domain_name_list,omitempty" validate:"omitempty,gte=1,lte=128"` // .{1,128}
 	FriendlyName            []WLANFriendlyName          `json:"friendly_name,omitempty"`
-	IPaddrTypeAvailV4       int                         `json:"ipaddr_type_avail_v4,omitempty"` // 0|1|2|3|4|5|6|7
-	IPaddrTypeAvailV6       int                         `json:"ipaddr_type_avail_v6,omitempty"` // 0|1|2
+	IPaddrTypeAvailV4       int                         `json:"ipaddr_type_avail_v4,omitempty" validate:"omitempty,oneof=0 1 2 3 4 5 6 7"` // 0|1|2|3|4|5|6|7
+	IPaddrTypeAvailV6       int                         `json:"ipaddr_type_avail_v6,omitempty" validate:"omitempty,oneof=0 1 2"`           // 0|1|2
 	MetricsDownlinkLoad     int                         `json:"metrics_downlink_load,omitempty"`
 	MetricsDownlinkLoadSet  bool                        `json:"metrics_downlink_load_set"`
 	MetricsDownlinkSpeed    int                         `json:"metrics_downlink_speed,omitempty"`
@@ -261,11 +261,11 @@ type WLANHotspot2 struct {
 	MetricsUplinkSpeed      int                         `json:"metrics_uplink_speed,omitempty"`
 	MetricsUplinkSpeedSet   bool                        `json:"metrics_uplink_speed_set"`
 	NaiRealmList            []WLANNaiRealmList          `json:"nai_realm_list,omitempty"`
-	NetworkType             int                         `json:"network_type,omitempty"` // 0|1|2|3|4|5|14|15
+	NetworkType             int                         `json:"network_type,omitempty" validate:"omitempty,oneof=0 1 2 3 4 5 14 15"` // 0|1|2|3|4|5|14|15
 	RoamingConsortiumList   []WLANRoamingConsortiumList `json:"roaming_consortium_list,omitempty"`
-	VenueGroup              int                         `json:"venue_group,omitempty"` // 0|1|2|3|4|5|6|7|8|9|10|11
+	VenueGroup              int                         `json:"venue_group,omitempty" validate:"omitempty,oneof=0 1 2 3 4 5 6 7 8 9 10 11"` // 0|1|2|3|4|5|6|7|8|9|10|11
 	VenueName               []WLANVenueName             `json:"venue_name,omitempty"`
-	VenueType               int                         `json:"venue_type,omitempty"` // 0|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15
+	VenueType               int                         `json:"venue_type,omitempty" validate:"omitempty,oneof=0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15"` // 0|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15
 }
 
 func (dst *WLANHotspot2) UnmarshalJSON(b []byte) error {
@@ -306,11 +306,11 @@ func (dst *WLANHotspot2) UnmarshalJSON(b []byte) error {
 }
 
 type WLANNaiRealmList struct {
-	AuthIDs   []int  `json:"auth_ids,omitempty"`                                // 0|1|2|3|4|5
-	AuthVals  []int  `json:"auth_vals,omitempty"`                               // 0|1|2|3|4|5|6|7|8|9|10
-	EapMethod int    `json:"eap_method,omitempty"`                              // 13|21|18|23|50
-	Encoding  int    `json:"encoding,omitempty"`                                // 0|1
-	Name      string `json:"name,omitempty" validate:"omitempty,gte=1,lte=128"` // .{1,128}
+	AuthIDs   []int  `json:"auth_ids,omitempty" validate:"omitempty,oneof=0 1 2 3 4 5"`             // 0|1|2|3|4|5
+	AuthVals  []int  `json:"auth_vals,omitempty" validate:"omitempty,oneof=0 1 2 3 4 5 6 7 8 9 10"` // 0|1|2|3|4|5|6|7|8|9|10
+	EapMethod int    `json:"eap_method,omitempty" validate:"omitempty,oneof=13 21 18 23 50"`        // 13|21|18|23|50
+	Encoding  int    `json:"encoding,omitempty" validate:"omitempty,oneof=0 1"`                     // 0|1
+	Name      string `json:"name,omitempty" validate:"omitempty,gte=1,lte=128"`                     // .{1,128}
 	Status    bool   `json:"status"`
 }
 

@@ -33,9 +33,9 @@ type SettingGuestAccess struct {
 	AuthorizeUseSandbox                    bool     `json:"authorize_use_sandbox"`
 	CustomIP                               string   `json:"custom_ip"` // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
 	EcEnabled                              bool     `json:"ec_enabled"`
-	Expire                                 string   `json:"expire,omitempty"`        // [\d]+|custom
-	ExpireNumber                           int      `json:"expire_number,omitempty"` // ^[1-9][0-9]{0,5}|1000000$
-	ExpireUnit                             int      `json:"expire_unit,omitempty"`   // 1|60|1440
+	Expire                                 string   `json:"expire,omitempty"`                                           // [\d]+|custom
+	ExpireNumber                           int      `json:"expire_number,omitempty"`                                    // ^[1-9][0-9]{0,5}|1000000$
+	ExpireUnit                             int      `json:"expire_unit,omitempty" validate:"omitempty,oneof=1 60 1440"` // 1|60|1440
 	FacebookAppID                          string   `json:"facebook_app_id"`
 	FacebookEnabled                        bool     `json:"facebook_enabled"`
 	FacebookScopeEmail                     bool     `json:"facebook_scope_email"`

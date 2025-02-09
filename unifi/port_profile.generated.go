@@ -50,8 +50,8 @@ type PortProfile struct {
 	PriorityQueue3Level          int                   `json:"priority_queue3_level,omitempty"`     // [0-9]|[1-9][0-9]|100
 	PriorityQueue4Level          int                   `json:"priority_queue4_level,omitempty"`     // [0-9]|[1-9][0-9]|100
 	QOSProfile                   PortProfileQOSProfile `json:"qos_profile,omitempty"`
-	SettingPreference            string                `json:"setting_preference,omitempty" validate:"omitempty,oneof=auto manual"` // auto|manual
-	Speed                        int                   `json:"speed,omitempty"`                                                     // 10|100|1000|2500|5000|10000|20000|25000|40000|50000|100000
+	SettingPreference            string                `json:"setting_preference,omitempty" validate:"omitempty,oneof=auto manual"`                                   // auto|manual
+	Speed                        int                   `json:"speed,omitempty" validate:"omitempty,oneof=10 100 1000 2500 5000 10000 20000 25000 40000 50000 100000"` // 10|100|1000|2500|5000|10000|20000|25000|40000|50000|100000
 	StormctrlBroadcastastEnabled bool                  `json:"stormctrl_bcast_enabled"`
 	StormctrlBroadcastastLevel   int                   `json:"stormctrl_bcast_level,omitempty"` // [0-9]|[1-9][0-9]|100
 	StormctrlBroadcastastRate    int                   `json:"stormctrl_bcast_rate,omitempty"`  // [0-9]|[1-9][0-9]{1,6}|1[0-3][0-9]{6}|14[0-7][0-9]{5}|148[0-7][0-9]{4}|14880000
@@ -111,10 +111,10 @@ func (dst *PortProfile) UnmarshalJSON(b []byte) error {
 }
 
 type PortProfileQOSMarking struct {
-	CosCode          int `json:"cos_code,omitempty"`           // [0-7]
-	DscpCode         int `json:"dscp_code,omitempty"`          // 0|8|16|24|32|40|48|56|10|12|14|18|20|22|26|28|30|34|36|38|44|46
-	IPPrecedenceCode int `json:"ip_precedence_code,omitempty"` // [0-7]
-	Queue            int `json:"queue,omitempty"`              // [0-7]
+	CosCode          int `json:"cos_code,omitempty"`                                                                                             // [0-7]
+	DscpCode         int `json:"dscp_code,omitempty" validate:"omitempty,oneof=0 8 16 24 32 40 48 56 10 12 14 18 20 22 26 28 30 34 36 38 44 46"` // 0|8|16|24|32|40|48|56|10|12|14|18|20|22|26|28|30|34|36|38|44|46
+	IPPrecedenceCode int `json:"ip_precedence_code,omitempty"`                                                                                   // [0-7]
+	Queue            int `json:"queue,omitempty"`                                                                                                // [0-7]
 }
 
 func (dst *PortProfileQOSMarking) UnmarshalJSON(b []byte) error {

@@ -30,8 +30,8 @@ type SettingRadioAi struct {
 	AutoAdjustChannelsToCountry bool                              `json:"auto_adjust_channels_to_country"`
 	Channels6E                  []int                             `json:"channels_6e,omitempty"` // [1-9]|[1-2][0-9]|3[3-9]|[4-5][0-9]|6[0-1]|6[5-9]|[7-8][0-9]|9[0-3]|9[7-9]|1[0-1][0-9]|12[0-5]|129|1[3-4][0-9]|15[0-7]|16[1-9]|1[7-8][0-9]|19[3-9]|2[0-1][0-9]|22[0-1]|22[5-9]|233
 	ChannelsBlacklist           []SettingRadioAiChannelsBlacklist `json:"channels_blacklist,omitempty"`
-	ChannelsNa                  []int                             `json:"channels_na,omitempty"` // 34|36|38|40|42|44|46|48|52|56|60|64|100|104|108|112|116|120|124|128|132|136|140|144|149|153|157|161|165|169
-	ChannelsNg                  []int                             `json:"channels_ng,omitempty"` // 1|2|3|4|5|6|7|8|9|10|11|12|13|14
+	ChannelsNa                  []int                             `json:"channels_na,omitempty" validate:"omitempty,oneof=34 36 38 40 42 44 46 48 52 56 60 64 100 104 108 112 116 120 124 128 132 136 140 144 149 153 157 161 165 169"` // 34|36|38|40|42|44|46|48|52|56|60|64|100|104|108|112|116|120|124|128|132|136|140|144|149|153|157|161|165|169
+	ChannelsNg                  []int                             `json:"channels_ng,omitempty" validate:"omitempty,oneof=1 2 3 4 5 6 7 8 9 10 11 12 13 14"`                                                                            // 1|2|3|4|5|6|7|8|9|10|11|12|13|14
 	CronExpr                    string                            `json:"cron_expr,omitempty"`
 	Default                     bool                              `json:"default"`
 	Enabled                     bool                              `json:"enabled"`
@@ -87,9 +87,9 @@ func (dst *SettingRadioAi) UnmarshalJSON(b []byte) error {
 }
 
 type SettingRadioAiChannelsBlacklist struct {
-	Channel      int    `json:"channel,omitempty"`                                   // [1-9]|[1-9][0-9]|1[0-9][0-9]|2[0-9]|2[0-1][0-9]|22[0-1]|22[5-9]|233
-	ChannelWidth int    `json:"channel_width,omitempty"`                             // 20|40|80|160|240|320
-	Radio        string `json:"radio,omitempty" validate:"omitempty,oneof=na ng 6e"` // na|ng|6e
+	Channel      int    `json:"channel,omitempty"`                                                       // [1-9]|[1-9][0-9]|1[0-9][0-9]|2[0-9]|2[0-1][0-9]|22[0-1]|22[5-9]|233
+	ChannelWidth int    `json:"channel_width,omitempty" validate:"omitempty,oneof=20 40 80 160 240 320"` // 20|40|80|160|240|320
+	Radio        string `json:"radio,omitempty" validate:"omitempty,oneof=na ng 6e"`                     // na|ng|6e
 }
 
 func (dst *SettingRadioAiChannelsBlacklist) UnmarshalJSON(b []byte) error {
