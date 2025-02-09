@@ -75,7 +75,7 @@ func (c *Client) getVirtualDevice(ctx context.Context, site, id string) (*Virtua
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -102,7 +102,7 @@ func (c *Client) createVirtualDevice(ctx context.Context, site string, d *Virtua
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]
@@ -122,7 +122,7 @@ func (c *Client) updateVirtualDevice(ctx context.Context, site string, d *Virtua
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

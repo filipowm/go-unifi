@@ -63,7 +63,7 @@ func (c *Client) getSettingConnectivity(ctx context.Context, site string) (*Sett
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -83,7 +83,7 @@ func (c *Client) updateSettingConnectivity(ctx context.Context, site string, d *
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

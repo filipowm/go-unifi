@@ -58,7 +58,7 @@ func (c *Client) getSettingNetworkOptimization(ctx context.Context, site string)
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -78,7 +78,7 @@ func (c *Client) updateSettingNetworkOptimization(ctx context.Context, site stri
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

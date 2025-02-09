@@ -38,7 +38,7 @@ func (c *Client) ListAPGroup(ctx context.Context, site string) ([]APGroup, error
 
 // func (c *Client) getWLANGroup(ctx context.Context, site, id string) (*WLANGroup, error) {
 // 	var respBody struct {
-// 		Meta Meta        `json:"Meta"`
+// 		Meta `json:"Meta"`
 // 		Data []WLANGroup `json:"data"`
 // 	}
 
@@ -48,7 +48,7 @@ func (c *Client) ListAPGroup(ctx context.Context, site string) ([]APGroup, error
 // 	}
 
 // 	if len(respBody.Data) != 1 {
-// 		return nil, NotFoundError
+// 		return nil, ErrNotFound
 // 	}
 
 // 	d := respBody.Data[0]
@@ -76,7 +76,7 @@ func (c *Client) CreateAPGroup(ctx context.Context, site string, d *APGroup) (*A
 
 // func (c *Client) updateWLANGroup(ctx context.Context, site string, d *WLANGroup) (*WLANGroup, error) {
 // 	var respBody struct {
-// 		Meta Meta        `json:"Meta"`
+// 		Meta `json:"Meta"`
 // 		Data []WLANGroup `json:"data"`
 // 	}
 
@@ -86,7 +86,7 @@ func (c *Client) CreateAPGroup(ctx context.Context, site string, d *APGroup) (*A
 // 	}
 
 // 	if len(respBody.Data) != 1 {
-// 		return nil, NotFoundError
+// 		return nil, ErrNotFound
 // 	}
 
 // 	new := respBody.Data[0]

@@ -77,7 +77,7 @@ func (c *Client) getDHCPOption(ctx context.Context, site, id string) (*DHCPOptio
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -104,7 +104,7 @@ func (c *Client) createDHCPOption(ctx context.Context, site string, d *DHCPOptio
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]
@@ -124,7 +124,7 @@ func (c *Client) updateDHCPOption(ctx context.Context, site string, d *DHCPOptio
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

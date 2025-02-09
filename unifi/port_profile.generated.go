@@ -246,7 +246,7 @@ func (c *Client) getPortProfile(ctx context.Context, site, id string) (*PortProf
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -273,7 +273,7 @@ func (c *Client) createPortProfile(ctx context.Context, site string, d *PortProf
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]
@@ -293,7 +293,7 @@ func (c *Client) updatePortProfile(ctx context.Context, site string, d *PortProf
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

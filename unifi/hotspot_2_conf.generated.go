@@ -453,7 +453,7 @@ func (c *Client) getHotspot2Conf(ctx context.Context, site, id string) (*Hotspot
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -480,7 +480,7 @@ func (c *Client) createHotspot2Conf(ctx context.Context, site string, d *Hotspot
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]
@@ -500,7 +500,7 @@ func (c *Client) updateHotspot2Conf(ctx context.Context, site string, d *Hotspot
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

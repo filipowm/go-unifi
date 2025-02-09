@@ -67,7 +67,7 @@ func (c *Client) getSettingLcm(ctx context.Context, site string) (*SettingLcm, e
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -87,7 +87,7 @@ func (c *Client) updateSettingLcm(ctx context.Context, site string, d *SettingLc
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

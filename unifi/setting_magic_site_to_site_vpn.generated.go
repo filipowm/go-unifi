@@ -58,7 +58,7 @@ func (c *Client) getSettingMagicSiteToSiteVpn(ctx context.Context, site string) 
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -78,7 +78,7 @@ func (c *Client) updateSettingMagicSiteToSiteVpn(ctx context.Context, site strin
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

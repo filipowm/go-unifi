@@ -214,7 +214,7 @@ func (c *Client) getChannelPlan(ctx context.Context, site, id string) (*ChannelP
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -241,7 +241,7 @@ func (c *Client) createChannelPlan(ctx context.Context, site string, d *ChannelP
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]
@@ -261,7 +261,7 @@ func (c *Client) updateChannelPlan(ctx context.Context, site string, d *ChannelP
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

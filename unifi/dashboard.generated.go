@@ -97,7 +97,7 @@ func (c *Client) getDashboard(ctx context.Context, site, id string) (*Dashboard,
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -124,7 +124,7 @@ func (c *Client) createDashboard(ctx context.Context, site string, d *Dashboard)
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]
@@ -144,7 +144,7 @@ func (c *Client) updateDashboard(ctx context.Context, site string, d *Dashboard)
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

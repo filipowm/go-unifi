@@ -103,7 +103,7 @@ func (c *Client) GetSetting(ctx context.Context, site, key string) (*Setting, in
 		}
 	}
 	if setting == nil {
-		return nil, nil, NotFoundError
+		return nil, nil, ErrNotFound
 	}
 
 	fields, err := setting.newFields()

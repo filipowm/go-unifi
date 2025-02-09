@@ -77,7 +77,7 @@ func (c *Client) getUserGroup(ctx context.Context, site, id string) (*UserGroup,
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -104,7 +104,7 @@ func (c *Client) createUserGroup(ctx context.Context, site string, d *UserGroup)
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]
@@ -124,7 +124,7 @@ func (c *Client) updateUserGroup(ctx context.Context, site string, d *UserGroup)
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

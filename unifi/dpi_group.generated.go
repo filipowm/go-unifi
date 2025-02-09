@@ -72,7 +72,7 @@ func (c *Client) getDpiGroup(ctx context.Context, site, id string) (*DpiGroup, e
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -99,7 +99,7 @@ func (c *Client) createDpiGroup(ctx context.Context, site string, d *DpiGroup) (
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]
@@ -119,7 +119,7 @@ func (c *Client) updateDpiGroup(ctx context.Context, site string, d *DpiGroup) (
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

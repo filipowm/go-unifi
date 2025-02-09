@@ -86,7 +86,7 @@ func (c *Client) getAccount(ctx context.Context, site, id string) (*Account, err
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -113,7 +113,7 @@ func (c *Client) createAccount(ctx context.Context, site string, d *Account) (*A
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]
@@ -133,7 +133,7 @@ func (c *Client) updateAccount(ctx context.Context, site string, d *Account) (*A
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

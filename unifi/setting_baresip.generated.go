@@ -61,7 +61,7 @@ func (c *Client) getSettingBaresip(ctx context.Context, site string) (*SettingBa
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -81,7 +81,7 @@ func (c *Client) updateSettingBaresip(ctx context.Context, site string, d *Setti
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

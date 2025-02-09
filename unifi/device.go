@@ -55,7 +55,7 @@ func (c *Client) GetDevice(ctx context.Context, site, id string) (*Device, error
 		}
 	}
 
-	return nil, NotFoundError
+	return nil, ErrNotFound
 }
 
 func (c *Client) AdoptDevice(ctx context.Context, site, mac string) error {

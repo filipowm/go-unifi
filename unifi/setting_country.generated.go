@@ -61,7 +61,7 @@ func (c *Client) getSettingCountry(ctx context.Context, site string) (*SettingCo
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -81,7 +81,7 @@ func (c *Client) updateSettingCountry(ctx context.Context, site string, d *Setti
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

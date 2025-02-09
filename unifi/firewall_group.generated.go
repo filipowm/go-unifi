@@ -72,7 +72,7 @@ func (c *Client) getFirewallGroup(ctx context.Context, site, id string) (*Firewa
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -99,7 +99,7 @@ func (c *Client) createFirewallGroup(ctx context.Context, site string, d *Firewa
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]
@@ -119,7 +119,7 @@ func (c *Client) updateFirewallGroup(ctx context.Context, site string, d *Firewa
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

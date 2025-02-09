@@ -71,7 +71,7 @@ func (c *Client) getTag(ctx context.Context, site, id string) (*Tag, error) {
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -98,7 +98,7 @@ func (c *Client) createTag(ctx context.Context, site string, d *Tag) (*Tag, erro
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]
@@ -118,7 +118,7 @@ func (c *Client) updateTag(ctx context.Context, site string, d *Tag) (*Tag, erro
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

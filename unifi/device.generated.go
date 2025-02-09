@@ -610,7 +610,7 @@ func (c *Client) getDevice(ctx context.Context, site, id string) (*Device, error
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -637,7 +637,7 @@ func (c *Client) createDevice(ctx context.Context, site string, d *Device) (*Dev
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]
@@ -657,7 +657,7 @@ func (c *Client) updateDevice(ctx context.Context, site string, d *Device) (*Dev
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

@@ -58,7 +58,7 @@ func (c *Client) getSettingEvaluationScore(ctx context.Context, site string) (*S
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -78,7 +78,7 @@ func (c *Client) updateSettingEvaluationScore(ctx context.Context, site string, 
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

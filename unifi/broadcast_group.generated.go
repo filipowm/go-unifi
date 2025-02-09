@@ -71,7 +71,7 @@ func (c *Client) getBroadcastGroup(ctx context.Context, site, id string) (*Broad
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -98,7 +98,7 @@ func (c *Client) createBroadcastGroup(ctx context.Context, site string, d *Broad
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]
@@ -118,7 +118,7 @@ func (c *Client) updateBroadcastGroup(ctx context.Context, site string, d *Broad
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

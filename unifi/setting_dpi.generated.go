@@ -59,7 +59,7 @@ func (c *Client) getSettingDpi(ctx context.Context, site string) (*SettingDpi, e
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -79,7 +79,7 @@ func (c *Client) updateSettingDpi(ctx context.Context, site string, d *SettingDp
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

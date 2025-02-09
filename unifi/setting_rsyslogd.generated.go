@@ -73,7 +73,7 @@ func (c *Client) getSettingRsyslogd(ctx context.Context, site string) (*SettingR
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -93,7 +93,7 @@ func (c *Client) updateSettingRsyslogd(ctx context.Context, site string, d *Sett
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

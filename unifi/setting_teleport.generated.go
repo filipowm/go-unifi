@@ -59,7 +59,7 @@ func (c *Client) getSettingTeleport(ctx context.Context, site string) (*SettingT
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -79,7 +79,7 @@ func (c *Client) updateSettingTeleport(ctx context.Context, site string, d *Sett
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

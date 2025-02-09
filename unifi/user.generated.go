@@ -91,7 +91,7 @@ func (c *Client) getUser(ctx context.Context, site, id string) (*User, error) {
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -118,7 +118,7 @@ func (c *Client) createUser(ctx context.Context, site string, d *User) (*User, e
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]
@@ -138,7 +138,7 @@ func (c *Client) updateUser(ctx context.Context, site string, d *User) (*User, e
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

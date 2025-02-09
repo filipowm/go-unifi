@@ -160,7 +160,7 @@ func (c *Client) getRADIUSProfile(ctx context.Context, site, id string) (*RADIUS
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -187,7 +187,7 @@ func (c *Client) createRADIUSProfile(ctx context.Context, site string, d *RADIUS
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]
@@ -207,7 +207,7 @@ func (c *Client) updateRADIUSProfile(ctx context.Context, site string, d *RADIUS
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

@@ -70,7 +70,7 @@ func (c *Client) getMediaFile(ctx context.Context, site, id string) (*MediaFile,
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -97,7 +97,7 @@ func (c *Client) createMediaFile(ctx context.Context, site string, d *MediaFile)
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]
@@ -117,7 +117,7 @@ func (c *Client) updateMediaFile(ctx context.Context, site string, d *MediaFile)
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

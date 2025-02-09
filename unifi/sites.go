@@ -45,7 +45,7 @@ func (c *Client) GetSite(ctx context.Context, id string) (*Site, error) {
 		}
 	}
 
-	return nil, NotFoundError
+	return nil, ErrNotFound
 }
 
 func (c *Client) CreateSite(ctx context.Context, description string) ([]Site, error) {

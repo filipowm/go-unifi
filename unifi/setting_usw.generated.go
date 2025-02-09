@@ -58,7 +58,7 @@ func (c *Client) getSettingUsw(ctx context.Context, site string) (*SettingUsw, e
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -78,7 +78,7 @@ func (c *Client) updateSettingUsw(ctx context.Context, site string, d *SettingUs
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]

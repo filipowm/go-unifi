@@ -62,7 +62,7 @@ func (c *Client) getSettingSnmp(ctx context.Context, site string) (*SettingSnmp,
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	d := respBody.Data[0]
@@ -82,7 +82,7 @@ func (c *Client) updateSettingSnmp(ctx context.Context, site string, d *SettingS
 	}
 
 	if len(respBody.Data) != 1 {
-		return nil, NotFoundError
+		return nil, ErrNotFound
 	}
 
 	new := respBody.Data[0]
