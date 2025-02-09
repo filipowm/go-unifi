@@ -132,10 +132,15 @@ func TestIsOneOfValidation(t *testing.T) {
 		{"", false},
 		{"a", false},
 		{"a|b", true},
+		{"^(a|b)$", true},
 		{"1-2|2-3", true},
 		{"1_2|2_3", true},
 		{"1|2", true},
 		{"%|#", true},
+		{".|b", true},
+		{".|.", true},
+		{"a|.", true},
+		{"a|.", true},
 		{"^a|b", false},
 		{"a|b$", false},
 		{"(a)|b", false},
@@ -147,7 +152,6 @@ func TestIsOneOfValidation(t *testing.T) {
 		{"a?|b", false},
 		{"\\w|b", false},
 		{"{a}|b", false},
-		{".|b", false},
 		{".{0,32}", false},
 	}
 	testValidationCommentCheck(t, testCases, func(v validationComment) bool { return v.IsOneOf() })

@@ -36,8 +36,8 @@ type SettingRadioAi struct {
 	Default                     bool                              `json:"default"`
 	Enabled                     bool                              `json:"enabled"`
 	ExcludeDevices              []string                          `json:"exclude_devices,omitempty"`                                           // ([0-9a-z]{2}:){5}[0-9a-z]{2}
-	HtModesNa                   []int                             `json:"ht_modes_na,omitempty"`                                               // ^(20|40|80|160)$
-	HtModesNg                   []int                             `json:"ht_modes_ng,omitempty"`                                               // ^(20|40)$
+	HtModesNa                   []int                             `json:"ht_modes_na,omitempty" validate:"omitempty,oneof=20 40 80 160"`       // ^(20|40|80|160)$
+	HtModesNg                   []int                             `json:"ht_modes_ng,omitempty" validate:"omitempty,oneof=20 40"`              // ^(20|40)$
 	Optimize                    []string                          `json:"optimize,omitempty" validate:"omitempty,oneof=channel power"`         // channel|power
 	Radios                      []string                          `json:"radios,omitempty" validate:"omitempty,oneof=na ng"`                   // na|ng
 	SettingPreference           string                            `json:"setting_preference,omitempty" validate:"omitempty,oneof=auto manual"` // auto|manual

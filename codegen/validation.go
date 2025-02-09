@@ -97,7 +97,8 @@ func (vc validationComment) HasDefinedLength() bool {
 
 func (vc validationComment) IsOneOf() bool {
 	s := string(vc)
-	return strings.Contains(s, "|") && regexChars.NotIn(s, "|.")
+	trimmed := strings.TrimPrefix(strings.TrimSuffix(s, ")$"), "^(")
+	return strings.Contains(trimmed, "|") && regexChars.NotIn(trimmed, "|.")
 }
 
 func (vc validationComment) IsWRegex() bool {
@@ -155,7 +156,8 @@ func defineFieldValidation(rawValidation string) string {
 	rawValidation = trimWrappers(rawValidation)
 	vc := validationComment(rawValidation)
 	if vc.IsOneOf() {
-		return createValidations(validation{v: oneOf, params: strings.Split(rawValidation, "|")})
+		trimmed := strings.TrimPrefix(strings.TrimSuffix(rawValidation, ")$"), "^(")
+		return createValidations(validation{v: oneOf, params: strings.Split(trimmed, "|")})
 	} else if vc.HasDefinedLength() {
 		sub := rawValidation[2 : len(rawValidation)-1]
 		bounds := strings.Split(sub, ",")

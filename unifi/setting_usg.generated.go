@@ -48,7 +48,7 @@ type SettingUsg struct {
 	GeoIPFilteringBlock            string                    `json:"geo_ip_filtering_block,omitempty" validate:"omitempty,oneof=block allow"` // block|allow
 	GeoIPFilteringCountries        string                    `json:"geo_ip_filtering_countries,omitempty"`                                    // ^([A-Z]{2})?(,[A-Z]{2}){0,149}$
 	GeoIPFilteringEnabled          bool                      `json:"geo_ip_filtering_enabled"`
-	GeoIPFilteringTrafficDirection string                    `json:"geo_ip_filtering_traffic_direction,omitempty"` // ^(both|ingress|egress)$
+	GeoIPFilteringTrafficDirection string                    `json:"geo_ip_filtering_traffic_direction,omitempty" validate:"omitempty,oneof=both ingress egress"` // ^(both|ingress|egress)$
 	GreModule                      bool                      `json:"gre_module"`
 	H323Module                     bool                      `json:"h323_module"`
 	ICMPTimeout                    int                       `json:"icmp_timeout,omitempty"`
