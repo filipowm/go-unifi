@@ -8,4 +8,4 @@ builds:
   - skip: true
 
 changelog:
-  use: github
+  use: "github"
