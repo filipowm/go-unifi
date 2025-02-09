@@ -89,7 +89,8 @@ type validationMode string
 const (
 	SoftValidation    validationMode = "soft"
 	HardValidation    validationMode = "hard"
-	DefaultValidation validationMode = HardValidation // TODO: change to soft in next major version
+	DisableValidation validationMode = "disable"
+	DefaultValidation validationMode = SoftValidation // TODO: change to hard in next major version
 )
 
 type ClientConfig struct {
@@ -104,7 +105,7 @@ type ClientConfig struct {
 	UserAgent      string
 	ErrorHandler   ResponseErrorHandler
 	UseLocking     bool
-	ValidationMode validationMode
+	ValidationMode validationMode `validate:"omitempty,oneof=soft hard disable"`
 }
 
 type Client struct {
@@ -504,17 +505,13 @@ func (c *Client) createRequestURL(apiPath string) (*url.URL, error) {
 }
 
 func (c *Client) validateRequestBody(reqBody interface{}) error {
-	if reqBody != nil {
+	if reqBody != nil && c.config.ValidationMode != DisableValidation {
 		if err := c.validator.Validate(reqBody); err != nil {
 			err = fmt.Errorf("failed validating request body: %w", err)
-			switch c.config.ValidationMode {
-			case HardValidation:
+			if c.config.ValidationMode == HardValidation {
 				return err
-			case SoftValidation:
-				// log error and continue
+			} else {
 				fmt.Println(err)
-			default:
-				return nil
 			}
 		}
 	}
