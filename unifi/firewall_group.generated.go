@@ -26,8 +26,8 @@ type FirewallGroup struct {
 	NoEdit   bool   `json:"attr_no_edit,omitempty"`
 
 	GroupMembers []string `json:"group_members,omitempty"`
-	GroupType    string   `json:"group_type,omitempty"` // address-group|port-group|ipv6-address-group
-	Name         string   `json:"name,omitempty"`       // .{1,64}
+	GroupType    string   `json:"group_type,omitempty" validate:"omitempty,oneof=address-group port-group ipv6-address-group"` // address-group|port-group|ipv6-address-group
+	Name         string   `json:"name,omitempty" validate:"omitempty,gte=1,lte=64"`                                            // .{1,64}
 }
 
 func (dst *FirewallGroup) UnmarshalJSON(b []byte) error {

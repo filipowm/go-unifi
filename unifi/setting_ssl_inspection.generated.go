@@ -27,7 +27,7 @@ type SettingSslInspection struct {
 
 	Key string `json:"key"`
 
-	State string `json:"state,omitempty"` // off|simple|advanced
+	State string `json:"state,omitempty" validate:"omitempty,oneof=off simple advanced"` // off|simple|advanced
 }
 
 func (dst *SettingSslInspection) UnmarshalJSON(b []byte) error {

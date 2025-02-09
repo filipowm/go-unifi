@@ -25,17 +25,17 @@ type Map struct {
 	NoDelete bool   `json:"attr_no_delete,omitempty"`
 	NoEdit   bool   `json:"attr_no_edit,omitempty"`
 
-	Lat        string  `json:"lat,omitempty"` // ^([-]?[\d]+[.]?[\d]*([eE][-+]?[\d]+)?)$
-	Lng        string  `json:"lng,omitempty"` // ^([-]?[\d]+[.]?[\d]*([eE][-+]?[\d]+)?)$
-	MapTypeID  string  `json:"mapTypeId"`     // satellite|roadmap|hybrid|terrain
+	Lat        string  `json:"lat,omitempty"`                                                         // ^([-]?[\d]+[.]?[\d]*([eE][-+]?[\d]+)?)$
+	Lng        string  `json:"lng,omitempty"`                                                         // ^([-]?[\d]+[.]?[\d]*([eE][-+]?[\d]+)?)$
+	MapTypeID  string  `json:"mapTypeId" validate:"omitempty,oneof=satellite roadmap hybrid terrain"` // satellite|roadmap|hybrid|terrain
 	Name       string  `json:"name,omitempty"`
 	OffsetLeft float64 `json:"offset_left,omitempty"`
 	OffsetTop  float64 `json:"offset_top,omitempty"`
 	Opacity    float64 `json:"opacity,omitempty"` // ^(0(\.[\d]{1,2})?|1)$|^$
 	Selected   bool    `json:"selected"`
 	Tilt       int     `json:"tilt,omitempty"`
-	Type       string  `json:"type,omitempty"` // designerMap|imageMap|googleMap
-	Unit       string  `json:"unit,omitempty"` // m|f
+	Type       string  `json:"type,omitempty" validate:"omitempty,oneof=designerMap imageMap googleMap"` // designerMap|imageMap|googleMap
+	Unit       string  `json:"unit,omitempty" validate:"omitempty,oneof=m f"`                            // m|f
 	Upp        float64 `json:"upp,omitempty"`
 	Zoom       int     `json:"zoom,omitempty"`
 }

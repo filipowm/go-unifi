@@ -31,7 +31,7 @@ type SettingNtp struct {
 	NtpServer2        string `json:"ntp_server_2,omitempty"`
 	NtpServer3        string `json:"ntp_server_3,omitempty"`
 	NtpServer4        string `json:"ntp_server_4,omitempty"`
-	SettingPreference string `json:"setting_preference,omitempty"` // auto|manual
+	SettingPreference string `json:"setting_preference,omitempty" validate:"omitempty,oneof=auto manual"` // auto|manual
 }
 
 func (dst *SettingNtp) UnmarshalJSON(b []byte) error {

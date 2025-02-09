@@ -27,7 +27,7 @@ type DpiGroup struct {
 
 	DPIappIDs []string `json:"dpiapp_ids,omitempty"` // [\d\w]+
 	Enabled   bool     `json:"enabled"`
-	Name      string   `json:"name,omitempty"` // .{1,128}
+	Name      string   `json:"name,omitempty" validate:"omitempty,gte=1,lte=128"` // .{1,128}
 }
 
 func (dst *DpiGroup) UnmarshalJSON(b []byte) error {

@@ -29,13 +29,13 @@ type RADIUSProfile struct {
 	AcctServers               []RADIUSProfileAcctServers `json:"acct_servers,omitempty"`
 	AuthServers               []RADIUSProfileAuthServers `json:"auth_servers,omitempty"`
 	InterimUpdateEnabled      bool                       `json:"interim_update_enabled"`
-	InterimUpdateInterval     int                        `json:"interim_update_interval,omitempty"` // ^([6-9][0-9]|[1-9][0-9]{2,3}|[1-7][0-9]{4}|8[0-5][0-9]{3}|86[0-3][0-9][0-9]|86400)$
-	Name                      string                     `json:"name,omitempty"`                    // .{1,128}
+	InterimUpdateInterval     int                        `json:"interim_update_interval,omitempty"`                 // ^([6-9][0-9]|[1-9][0-9]{2,3}|[1-7][0-9]{4}|8[0-5][0-9]{3}|86[0-3][0-9][0-9]|86400)$
+	Name                      string                     `json:"name,omitempty" validate:"omitempty,gte=1,lte=128"` // .{1,128}
 	TlsEnabled                bool                       `json:"tls_enabled"`
 	UseUsgAcctServer          bool                       `json:"use_usg_acct_server"`
 	UseUsgAuthServer          bool                       `json:"use_usg_auth_server"`
 	VLANEnabled               bool                       `json:"vlan_enabled"`
-	VLANWLANMode              string                     `json:"vlan_wlan_mode,omitempty"` // disabled|optional|required
+	VLANWLANMode              string                     `json:"vlan_wlan_mode,omitempty" validate:"omitempty,oneof=disabled optional required"` // disabled|optional|required
 	XCaCrts                   []RADIUSProfileXCaCrts     `json:"x_ca_crts,omitempty"`
 	XClientCrt                string                     `json:"x_client_crt,omitempty"`
 	XClientCrtFilename        string                     `json:"x_client_crt_filename,omitempty"`

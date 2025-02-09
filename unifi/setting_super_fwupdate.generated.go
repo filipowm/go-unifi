@@ -27,8 +27,8 @@ type SettingSuperFwupdate struct {
 
 	Key string `json:"key"`
 
-	ControllerChannel string `json:"controller_channel,omitempty"` // internal|alpha|beta|release-candidate|release
-	FirmwareChannel   string `json:"firmware_channel,omitempty"`   // internal|alpha|beta|release-candidate|release
+	ControllerChannel string `json:"controller_channel,omitempty" validate:"omitempty,oneof=internal alpha beta release-candidate release"` // internal|alpha|beta|release-candidate|release
+	FirmwareChannel   string `json:"firmware_channel,omitempty" validate:"omitempty,oneof=internal alpha beta release-candidate release"`   // internal|alpha|beta|release-candidate|release
 	SsoEnabled        bool   `json:"sso_enabled"`
 }
 

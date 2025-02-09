@@ -35,12 +35,12 @@ type SettingRadioAi struct {
 	CronExpr                    string                            `json:"cron_expr,omitempty"`
 	Default                     bool                              `json:"default"`
 	Enabled                     bool                              `json:"enabled"`
-	ExcludeDevices              []string                          `json:"exclude_devices,omitempty"`    // ([0-9a-z]{2}:){5}[0-9a-z]{2}
-	HtModesNa                   []int                             `json:"ht_modes_na,omitempty"`        // ^(20|40|80|160)$
-	HtModesNg                   []int                             `json:"ht_modes_ng,omitempty"`        // ^(20|40)$
-	Optimize                    []string                          `json:"optimize,omitempty"`           // channel|power
-	Radios                      []string                          `json:"radios,omitempty"`             // na|ng
-	SettingPreference           string                            `json:"setting_preference,omitempty"` // auto|manual
+	ExcludeDevices              []string                          `json:"exclude_devices,omitempty"`                                           // ([0-9a-z]{2}:){5}[0-9a-z]{2}
+	HtModesNa                   []int                             `json:"ht_modes_na,omitempty"`                                               // ^(20|40|80|160)$
+	HtModesNg                   []int                             `json:"ht_modes_ng,omitempty"`                                               // ^(20|40)$
+	Optimize                    []string                          `json:"optimize,omitempty" validate:"omitempty,oneof=channel power"`         // channel|power
+	Radios                      []string                          `json:"radios,omitempty" validate:"omitempty,oneof=na ng"`                   // na|ng
+	SettingPreference           string                            `json:"setting_preference,omitempty" validate:"omitempty,oneof=auto manual"` // auto|manual
 	UseXy                       bool                              `json:"useXY"`
 }
 
@@ -87,9 +87,9 @@ func (dst *SettingRadioAi) UnmarshalJSON(b []byte) error {
 }
 
 type SettingRadioAiChannelsBlacklist struct {
-	Channel      int    `json:"channel,omitempty"`       // [1-9]|[1-9][0-9]|1[0-9][0-9]|2[0-9]|2[0-1][0-9]|22[0-1]|22[5-9]|233
-	ChannelWidth int    `json:"channel_width,omitempty"` // 20|40|80|160|240|320
-	Radio        string `json:"radio,omitempty"`         // na|ng|6e
+	Channel      int    `json:"channel,omitempty"`                                   // [1-9]|[1-9][0-9]|1[0-9][0-9]|2[0-9]|2[0-1][0-9]|22[0-1]|22[5-9]|233
+	ChannelWidth int    `json:"channel_width,omitempty"`                             // 20|40|80|160|240|320
+	Radio        string `json:"radio,omitempty" validate:"omitempty,oneof=na ng 6e"` // na|ng|6e
 }
 
 func (dst *SettingRadioAiChannelsBlacklist) UnmarshalJSON(b []byte) error {

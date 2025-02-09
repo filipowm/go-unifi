@@ -28,7 +28,7 @@ type SettingGlobalNat struct {
 	Key string `json:"key"`
 
 	ExcludedNetworkIDs []string `json:"excluded_network_ids,omitempty"`
-	Mode               string   `json:"mode,omitempty"` // auto|custom|off
+	Mode               string   `json:"mode,omitempty" validate:"omitempty,oneof=auto custom off"` // auto|custom|off
 }
 
 func (dst *SettingGlobalNat) UnmarshalJSON(b []byte) error {

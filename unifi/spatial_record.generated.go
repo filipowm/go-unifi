@@ -26,7 +26,7 @@ type SpatialRecord struct {
 	NoEdit   bool   `json:"attr_no_edit,omitempty"`
 
 	Devices []SpatialRecordDevices `json:"devices,omitempty"`
-	Name    string                 `json:"name,omitempty"` // .{1,128}
+	Name    string                 `json:"name,omitempty" validate:"omitempty,gte=1,lte=128"` // .{1,128}
 }
 
 func (dst *SpatialRecord) UnmarshalJSON(b []byte) error {

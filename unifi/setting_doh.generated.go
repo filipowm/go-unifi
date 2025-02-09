@@ -29,7 +29,7 @@ type SettingDoh struct {
 
 	CustomServers []SettingDohCustomServers `json:"custom_servers,omitempty"`
 	ServerNames   []string                  `json:"server_names,omitempty"`
-	State         string                    `json:"state,omitempty"` // off|auto|manual|custom
+	State         string                    `json:"state,omitempty" validate:"omitempty,oneof=off auto manual custom"` // off|auto|manual|custom
 }
 
 func (dst *SettingDoh) UnmarshalJSON(b []byte) error {

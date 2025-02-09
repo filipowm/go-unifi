@@ -29,10 +29,10 @@ type SettingBroadcast struct {
 
 	SoundAfterEnabled   bool   `json:"sound_after_enabled"`
 	SoundAfterResource  string `json:"sound_after_resource,omitempty"`
-	SoundAfterType      string `json:"sound_after_type,omitempty"` // sample|media
+	SoundAfterType      string `json:"sound_after_type,omitempty" validate:"omitempty,oneof=sample media"` // sample|media
 	SoundBeforeEnabled  bool   `json:"sound_before_enabled"`
 	SoundBeforeResource string `json:"sound_before_resource,omitempty"`
-	SoundBeforeType     string `json:"sound_before_type,omitempty"` // sample|media
+	SoundBeforeType     string `json:"sound_before_type,omitempty" validate:"omitempty,oneof=sample media"` // sample|media
 }
 
 func (dst *SettingBroadcast) UnmarshalJSON(b []byte) error {

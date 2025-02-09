@@ -27,7 +27,7 @@ type SettingSnmp struct {
 
 	Key string `json:"key"`
 
-	Community string `json:"community,omitempty"` // .{1,256}
+	Community string `json:"community,omitempty" validate:"omitempty,gte=1,lte=256"` // .{1,256}
 	Enabled   bool   `json:"enabled"`
 	EnabledV3 bool   `json:"enabledV3"`
 	Username  string `json:"username,omitempty"`   // [a-zA-Z0-9_-]{1,30}
