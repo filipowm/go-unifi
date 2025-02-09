@@ -27,35 +27,35 @@ type SettingUsg struct {
 
 	Key string `json:"key"`
 
-	ArpCacheBaseReachable          int                       `json:"arp_cache_base_reachable,omitempty"` // ^$|^[1-9]{1}[0-9]{0,4}$
-	ArpCacheTimeout                string                    `json:"arp_cache_timeout,omitempty"`        // normal|min-dhcp-lease|custom
+	ArpCacheBaseReachable          int                       `json:"arp_cache_base_reachable,omitempty"`                                                  // ^$|^[1-9]{1}[0-9]{0,4}$
+	ArpCacheTimeout                string                    `json:"arp_cache_timeout,omitempty" validate:"omitempty,oneof=normal min-dhcp-lease custom"` // normal|min-dhcp-lease|custom
 	BroadcastPing                  bool                      `json:"broadcast_ping"`
 	DHCPDHostfileUpdate            bool                      `json:"dhcpd_hostfile_update"`
 	DHCPDUseDNSmasq                bool                      `json:"dhcpd_use_dnsmasq"`
-	DHCPRelayAgentsPackets         string                    `json:"dhcp_relay_agents_packets"`      // append|discard|forward|replace|^$
-	DHCPRelayHopCount              int                       `json:"dhcp_relay_hop_count,omitempty"` // ([1-9]|[1-8][0-9]|9[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])|^$
-	DHCPRelayMaxSize               int                       `json:"dhcp_relay_max_size,omitempty"`  // (6[4-9]|[7-9][0-9]|[1-8][0-9]{2}|9[0-8][0-9]|99[0-9]|1[0-3][0-9]{2}|1400)|^$
-	DHCPRelayPort                  int                       `json:"dhcp_relay_port,omitempty"`      // [1-9][0-9]{0,3}|[1-5][0-9]{4}|[6][0-4][0-9]{3}|[6][5][0-4][0-9]{2}|[6][5][5][0-2][0-9]|[6][5][5][3][0-5]|^$
-	DHCPRelayServer1               string                    `json:"dhcp_relay_server_1"`            // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
-	DHCPRelayServer2               string                    `json:"dhcp_relay_server_2"`            // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
-	DHCPRelayServer3               string                    `json:"dhcp_relay_server_3"`            // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
-	DHCPRelayServer4               string                    `json:"dhcp_relay_server_4"`            // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
-	DHCPRelayServer5               string                    `json:"dhcp_relay_server_5"`            // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
+	DHCPRelayAgentsPackets         string                    `json:"dhcp_relay_agents_packets" validate:"omitempty,oneof=append discard forward replace"` // append|discard|forward|replace|^$
+	DHCPRelayHopCount              int                       `json:"dhcp_relay_hop_count,omitempty"`                                                      // ([1-9]|[1-8][0-9]|9[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])|^$
+	DHCPRelayMaxSize               int                       `json:"dhcp_relay_max_size,omitempty"`                                                       // (6[4-9]|[7-9][0-9]|[1-8][0-9]{2}|9[0-8][0-9]|99[0-9]|1[0-3][0-9]{2}|1400)|^$
+	DHCPRelayPort                  int                       `json:"dhcp_relay_port,omitempty"`                                                           // [1-9][0-9]{0,3}|[1-5][0-9]{4}|[6][0-4][0-9]{3}|[6][5][0-4][0-9]{2}|[6][5][5][0-2][0-9]|[6][5][5][3][0-5]|^$
+	DHCPRelayServer1               string                    `json:"dhcp_relay_server_1" validate:"omitempty,ipv4"`                                       // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
+	DHCPRelayServer2               string                    `json:"dhcp_relay_server_2" validate:"omitempty,ipv4"`                                       // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
+	DHCPRelayServer3               string                    `json:"dhcp_relay_server_3" validate:"omitempty,ipv4"`                                       // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
+	DHCPRelayServer4               string                    `json:"dhcp_relay_server_4" validate:"omitempty,ipv4"`                                       // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
+	DHCPRelayServer5               string                    `json:"dhcp_relay_server_5" validate:"omitempty,ipv4"`                                       // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
 	DNSVerification                SettingUsgDNSVerification `json:"dns_verification,omitempty"`
 	DNSmasqAllServers              bool                      `json:"dnsmasq_all_servers"`
 	EchoServer                     string                    `json:"echo_server,omitempty"` // [^\"\' ]{1,255}
 	FtpModule                      bool                      `json:"ftp_module"`
-	GeoIPFilteringBlock            string                    `json:"geo_ip_filtering_block,omitempty"`     // block|allow
-	GeoIPFilteringCountries        string                    `json:"geo_ip_filtering_countries,omitempty"` // ^([A-Z]{2})?(,[A-Z]{2}){0,149}$
+	GeoIPFilteringBlock            string                    `json:"geo_ip_filtering_block,omitempty" validate:"omitempty,oneof=block allow"` // block|allow
+	GeoIPFilteringCountries        string                    `json:"geo_ip_filtering_countries,omitempty"`                                    // ^([A-Z]{2})?(,[A-Z]{2}){0,149}$
 	GeoIPFilteringEnabled          bool                      `json:"geo_ip_filtering_enabled"`
-	GeoIPFilteringTrafficDirection string                    `json:"geo_ip_filtering_traffic_direction,omitempty"` // ^(both|ingress|egress)$
+	GeoIPFilteringTrafficDirection string                    `json:"geo_ip_filtering_traffic_direction,omitempty" validate:"omitempty,oneof=both ingress egress"` // ^(both|ingress|egress)$
 	GreModule                      bool                      `json:"gre_module"`
 	H323Module                     bool                      `json:"h323_module"`
 	ICMPTimeout                    int                       `json:"icmp_timeout,omitempty"`
 	LldpEnableAll                  bool                      `json:"lldp_enable_all"`
 	MdnsEnabled                    bool                      `json:"mdns_enabled"`
-	MssClamp                       string                    `json:"mss_clamp,omitempty"`     // auto|custom|disabled
-	MssClampMss                    int                       `json:"mss_clamp_mss,omitempty"` // [1-9][0-9]{2,3}
+	MssClamp                       string                    `json:"mss_clamp,omitempty" validate:"omitempty,oneof=auto custom disabled"` // auto|custom|disabled
+	MssClampMss                    int                       `json:"mss_clamp_mss,omitempty"`                                             // [1-9][0-9]{2,3}
 	OffloadAccounting              bool                      `json:"offload_accounting"`
 	OffloadL2Blocking              bool                      `json:"offload_l2_blocking"`
 	OffloadSch                     bool                      `json:"offload_sch"`
@@ -74,14 +74,14 @@ type SettingUsg struct {
 	TCPSynSentTimeout              int                       `json:"tcp_syn_sent_timeout,omitempty"`
 	TCPTimeWaitTimeout             int                       `json:"tcp_time_wait_timeout,omitempty"`
 	TFTPModule                     bool                      `json:"tftp_module"`
-	TimeoutSettingPreference       string                    `json:"timeout_setting_preference,omitempty"` // auto|manual
+	TimeoutSettingPreference       string                    `json:"timeout_setting_preference,omitempty" validate:"omitempty,oneof=auto manual"` // auto|manual
 	UDPOtherTimeout                int                       `json:"udp_other_timeout,omitempty"`
 	UDPStreamTimeout               int                       `json:"udp_stream_timeout,omitempty"`
 	UnbindWANMonitors              bool                      `json:"unbind_wan_monitors"`
 	UpnpEnabled                    bool                      `json:"upnp_enabled"`
 	UpnpNATPmpEnabled              bool                      `json:"upnp_nat_pmp_enabled"`
 	UpnpSecureMode                 bool                      `json:"upnp_secure_mode"`
-	UpnpWANInterface               string                    `json:"upnp_wan_interface,omitempty"` // WAN|WAN2
+	UpnpWANInterface               string                    `json:"upnp_wan_interface,omitempty" validate:"omitempty,oneof=WAN WAN2"` // WAN|WAN2
 }
 
 func (dst *SettingUsg) UnmarshalJSON(b []byte) error {
@@ -139,7 +139,7 @@ type SettingUsgDNSVerification struct {
 	Domain             string `json:"domain,omitempty"`
 	PrimaryDNSServer   string `json:"primary_dns_server,omitempty"`
 	SecondaryDNSServer string `json:"secondary_dns_server,omitempty"`
-	SettingPreference  string `json:"setting_preference,omitempty"` // auto|manual
+	SettingPreference  string `json:"setting_preference,omitempty" validate:"omitempty,oneof=auto manual"` // auto|manual
 }
 
 func (dst *SettingUsgDNSVerification) UnmarshalJSON(b []byte) error {

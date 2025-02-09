@@ -26,19 +26,19 @@ type WLAN struct {
 	NoEdit   bool   `json:"attr_no_edit,omitempty"`
 
 	ApGroupIDs                  []string                   `json:"ap_group_ids,omitempty"`
-	ApGroupMode                 string                     `json:"ap_group_mode,omitempty"` // all|groups|devices
+	ApGroupMode                 string                     `json:"ap_group_mode,omitempty" validate:"omitempty,oneof=all groups devices"` // all|groups|devices
 	AuthCache                   bool                       `json:"auth_cache"`
 	BSupported                  bool                       `json:"b_supported"`
 	BroadcastFilterEnabled      bool                       `json:"bc_filter_enabled"`
-	BroadcastFilterList         []string                   `json:"bc_filter_list,omitempty"` // ^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$
+	BroadcastFilterList         []string                   `json:"bc_filter_list,omitempty" validate:"omitempty,mac"` // ^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$
 	BssTransition               bool                       `json:"bss_transition"`
 	CountryBeacon               bool                       `json:"country_beacon"`
 	DPIEnabled                  bool                       `json:"dpi_enabled"`
-	DPIgroupID                  string                     `json:"dpigroup_id"`         // [\d\w]+|^$
-	DTIM6E                      int                        `json:"dtim_6e,omitempty"`   // ^([1-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
-	DTIMMode                    string                     `json:"dtim_mode,omitempty"` // default|custom
-	DTIMNa                      int                        `json:"dtim_na,omitempty"`   // ^([1-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
-	DTIMNg                      int                        `json:"dtim_ng,omitempty"`   // ^([1-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
+	DPIgroupID                  string                     `json:"dpigroup_id" validate:"omitempty,w_regex"`                      // [\d\w]+|^$
+	DTIM6E                      int                        `json:"dtim_6e,omitempty"`                                             // ^([1-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
+	DTIMMode                    string                     `json:"dtim_mode,omitempty" validate:"omitempty,oneof=default custom"` // default|custom
+	DTIMNa                      int                        `json:"dtim_na,omitempty"`                                             // ^([1-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
+	DTIMNg                      int                        `json:"dtim_ng,omitempty"`                                             // ^([1-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
 	ElementAdopt                bool                       `json:"element_adopt"`
 	Enabled                     bool                       `json:"enabled"`
 	EnhancedIot                 bool                       `json:"enhanced_iot"`
@@ -52,37 +52,37 @@ type WLAN struct {
 	L2Isolation                 bool                       `json:"l2_isolation"`
 	LogLevel                    string                     `json:"log_level,omitempty"`
 	MACFilterEnabled            bool                       `json:"mac_filter_enabled"`
-	MACFilterList               []string                   `json:"mac_filter_list,omitempty"`   // ^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$
-	MACFilterPolicy             string                     `json:"mac_filter_policy,omitempty"` // allow|deny
+	MACFilterList               []string                   `json:"mac_filter_list,omitempty" validate:"omitempty,mac"`                // ^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$
+	MACFilterPolicy             string                     `json:"mac_filter_policy,omitempty" validate:"omitempty,oneof=allow deny"` // allow|deny
 	MinrateNaAdvertisingRates   bool                       `json:"minrate_na_advertising_rates"`
 	MinrateNaDataRateKbps       int                        `json:"minrate_na_data_rate_kbps,omitempty"`
 	MinrateNaEnabled            bool                       `json:"minrate_na_enabled"`
 	MinrateNgAdvertisingRates   bool                       `json:"minrate_ng_advertising_rates"`
 	MinrateNgDataRateKbps       int                        `json:"minrate_ng_data_rate_kbps,omitempty"`
 	MinrateNgEnabled            bool                       `json:"minrate_ng_enabled"`
-	MinrateSettingPreference    string                     `json:"minrate_setting_preference,omitempty"` // auto|manual
+	MinrateSettingPreference    string                     `json:"minrate_setting_preference,omitempty" validate:"omitempty,oneof=auto manual"` // auto|manual
 	MloEnabled                  bool                       `json:"mlo_enabled"`
 	MulticastEnhanceEnabled     bool                       `json:"mcastenhance_enabled"`
-	Name                        string                     `json:"name,omitempty"` // .{1,32}
+	Name                        string                     `json:"name,omitempty" validate:"omitempty,gte=1,lte=32"` // .{1,32}
 	NameCombineEnabled          bool                       `json:"name_combine_enabled"`
-	NameCombineSuffix           string                     `json:"name_combine_suffix,omitempty"` // .{0,8}
-	NasIDentifier               string                     `json:"nas_identifier,omitempty"`      // .{0,48}
-	NasIDentifierType           string                     `json:"nas_identifier_type,omitempty"` // ap_name|ap_mac|bssid|site_name|custom
+	NameCombineSuffix           string                     `json:"name_combine_suffix,omitempty" validate:"omitempty,gte=0,lte=8"`                                 // .{0,8}
+	NasIDentifier               string                     `json:"nas_identifier,omitempty" validate:"omitempty,gte=0,lte=48"`                                     // .{0,48}
+	NasIDentifierType           string                     `json:"nas_identifier_type,omitempty" validate:"omitempty,oneof=ap_name ap_mac bssid site_name custom"` // ap_name|ap_mac|bssid|site_name|custom
 	NetworkID                   string                     `json:"networkconf_id"`
 	No2GhzOui                   bool                       `json:"no2ghz_oui"`
 	OptimizeIotWifiConnectivity bool                       `json:"optimize_iot_wifi_connectivity"`
 	P2P                         bool                       `json:"p2p"`
 	P2PCrossConnect             bool                       `json:"p2p_cross_connect"`
-	PMFCipher                   string                     `json:"pmf_cipher,omitempty"` // auto|aes-128-cmac|bip-gmac-256
-	PMFMode                     string                     `json:"pmf_mode,omitempty"`   // disabled|optional|required
-	Priority                    string                     `json:"priority,omitempty"`   // medium|high|low
+	PMFCipher                   string                     `json:"pmf_cipher,omitempty" validate:"omitempty,oneof=auto aes-128-cmac bip-gmac-256"` // auto|aes-128-cmac|bip-gmac-256
+	PMFMode                     string                     `json:"pmf_mode,omitempty" validate:"omitempty,oneof=disabled optional required"`       // disabled|optional|required
+	Priority                    string                     `json:"priority,omitempty" validate:"omitempty,oneof=medium high low"`                  // medium|high|low
 	PrivatePresharedKeys        []WLANPrivatePresharedKeys `json:"private_preshared_keys,omitempty"`
 	PrivatePresharedKeysEnabled bool                       `json:"private_preshared_keys_enabled"`
 	ProxyArp                    bool                       `json:"proxy_arp"`
 	RADIUSDasEnabled            bool                       `json:"radius_das_enabled"`
 	RADIUSMACAuthEnabled        bool                       `json:"radius_mac_auth_enabled"`
 	RADIUSMACaclEmptyPassword   bool                       `json:"radius_macacl_empty_password"`
-	RADIUSMACaclFormat          string                     `json:"radius_macacl_format,omitempty"` // none_lower|hyphen_lower|colon_lower|none_upper|hyphen_upper|colon_upper
+	RADIUSMACaclFormat          string                     `json:"radius_macacl_format,omitempty" validate:"omitempty,oneof=none_lower hyphen_lower colon_lower none_upper hyphen_upper colon_upper"` // none_lower|hyphen_lower|colon_lower|none_upper|hyphen_upper|colon_upper
 	RADIUSProfileID             string                     `json:"radiusprofile_id"`
 	RoamClusterID               int                        `json:"roam_cluster_id,omitempty"` // [0-9]|[1-2][0-9]|[3][0-1]|^$
 	RrmEnabled                  bool                       `json:"rrm_enabled"`
@@ -95,27 +95,27 @@ type WLAN struct {
 	ScheduleEnabled             bool                       `json:"schedule_enabled"`
 	ScheduleReversed            bool                       `json:"schedule_reversed"`
 	ScheduleWithDuration        []WLANScheduleWithDuration `json:"schedule_with_duration"`
-	Security                    string                     `json:"security,omitempty"`           // open|wpapsk|wep|wpaeap|osen
-	SettingPreference           string                     `json:"setting_preference,omitempty"` // auto|manual
+	Security                    string                     `json:"security,omitempty" validate:"omitempty,oneof=open wpapsk wep wpaeap osen"` // open|wpapsk|wep|wpaeap|osen
+	SettingPreference           string                     `json:"setting_preference,omitempty" validate:"omitempty,oneof=auto manual"`       // auto|manual
 	TdlsProhibit                bool                       `json:"tdls_prohibit"`
 	UapsdEnabled                bool                       `json:"uapsd_enabled"`
 	UidWorkspaceUrl             string                     `json:"uid_workspace_url,omitempty"`
 	UserGroupID                 string                     `json:"usergroup_id"`
 	VLAN                        int                        `json:"vlan,omitempty"` // [2-9]|[1-9][0-9]{1,2}|[1-3][0-9]{3}|40[0-8][0-9]|409[0-5]|^$
 	VLANEnabled                 bool                       `json:"vlan_enabled"`
-	WEPIDX                      int                        `json:"wep_idx,omitempty"`    // [1-4]
-	WLANBand                    string                     `json:"wlan_band,omitempty"`  // 2g|5g|both
-	WLANBands                   []string                   `json:"wlan_bands,omitempty"` // 2g|5g|6g
+	WEPIDX                      int                        `json:"wep_idx,omitempty"`                                         // [1-4]
+	WLANBand                    string                     `json:"wlan_band,omitempty" validate:"omitempty,oneof=2g 5g both"` // 2g|5g|both
+	WLANBands                   []string                   `json:"wlan_bands,omitempty" validate:"omitempty,oneof=2g 5g 6g"`  // 2g|5g|6g
 	WLANGroupID                 string                     `json:"wlangroup_id"`
 	WPA3Enhanced192             bool                       `json:"wpa3_enhanced_192"`
 	WPA3FastRoaming             bool                       `json:"wpa3_fast_roaming"`
 	WPA3Support                 bool                       `json:"wpa3_support"`
 	WPA3Transition              bool                       `json:"wpa3_transition"`
-	WPAEnc                      string                     `json:"wpa_enc,omitempty"`        // auto|ccmp|gcmp|ccmp-256|gcmp-256
-	WPAMode                     string                     `json:"wpa_mode,omitempty"`       // auto|wpa1|wpa2
-	WPAPskRADIUS                string                     `json:"wpa_psk_radius,omitempty"` // disabled|optional|required
-	XIappKey                    string                     `json:"x_iapp_key,omitempty"`     // [0-9A-Fa-f]{32}
-	XPassphrase                 string                     `json:"x_passphrase,omitempty"`   // [\x20-\x7E]{8,255}|[0-9a-fA-F]{64}
+	WPAEnc                      string                     `json:"wpa_enc,omitempty" validate:"omitempty,oneof=auto ccmp gcmp ccmp-256 gcmp-256"`  // auto|ccmp|gcmp|ccmp-256|gcmp-256
+	WPAMode                     string                     `json:"wpa_mode,omitempty" validate:"omitempty,oneof=auto wpa1 wpa2"`                   // auto|wpa1|wpa2
+	WPAPskRADIUS                string                     `json:"wpa_psk_radius,omitempty" validate:"omitempty,oneof=disabled optional required"` // disabled|optional|required
+	XIappKey                    string                     `json:"x_iapp_key,omitempty"`                                                           // [0-9A-Fa-f]{32}
+	XPassphrase                 string                     `json:"x_passphrase,omitempty"`                                                         // [\x20-\x7E]{8,255}|[0-9a-fA-F]{64}
 	XWEP                        string                     `json:"x_wep,omitempty"`
 }
 
@@ -164,9 +164,9 @@ func (dst *WLAN) UnmarshalJSON(b []byte) error {
 }
 
 type WLANCapab struct {
-	Port     int    `json:"port,omitempty"`     // ^(0|[1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])|$
-	Protocol string `json:"protocol,omitempty"` // icmp|tcp_udp|tcp|udp|esp
-	Status   string `json:"status,omitempty"`   // closed|open|unknown
+	Port     int    `json:"port,omitempty"`                                                         // ^(0|[1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])|$
+	Protocol string `json:"protocol,omitempty" validate:"omitempty,oneof=icmp tcp_udp tcp udp esp"` // icmp|tcp_udp|tcp|udp|esp
+	Status   string `json:"status,omitempty" validate:"omitempty,oneof=closed open unknown"`        // closed|open|unknown
 }
 
 func (dst *WLANCapab) UnmarshalJSON(b []byte) error {
@@ -192,7 +192,7 @@ type WLANCellularNetworkList struct {
 	CountryCode int    `json:"country_code,omitempty"` // [1-9]{1}[0-9]{0,3}
 	Mcc         int    `json:"mcc,omitempty"`
 	Mnc         int    `json:"mnc,omitempty"`
-	Name        string `json:"name,omitempty"` // .{1,128}
+	Name        string `json:"name,omitempty" validate:"omitempty,gte=1,lte=128"` // .{1,128}
 }
 
 func (dst *WLANCellularNetworkList) UnmarshalJSON(b []byte) error {
@@ -219,8 +219,8 @@ func (dst *WLANCellularNetworkList) UnmarshalJSON(b []byte) error {
 }
 
 type WLANFriendlyName struct {
-	Language string `json:"language,omitempty"` // [a-z]{3}
-	Text     string `json:"text,omitempty"`     // .{1,128}
+	Language string `json:"language,omitempty"`                                // [a-z]{3}
+	Text     string `json:"text,omitempty" validate:"omitempty,gte=1,lte=128"` // .{1,128}
 }
 
 func (dst *WLANFriendlyName) UnmarshalJSON(b []byte) error {
@@ -242,16 +242,16 @@ func (dst *WLANFriendlyName) UnmarshalJSON(b []byte) error {
 type WLANHotspot2 struct {
 	Capab                   []WLANCapab                 `json:"capab,omitempty"`
 	CellularNetworkList     []WLANCellularNetworkList   `json:"cellular_network_list,omitempty"`
-	DomainNameList          []string                    `json:"domain_name_list,omitempty"` // .{1,128}
+	DomainNameList          []string                    `json:"domain_name_list,omitempty" validate:"omitempty,gte=1,lte=128"` // .{1,128}
 	FriendlyName            []WLANFriendlyName          `json:"friendly_name,omitempty"`
-	IPaddrTypeAvailV4       int                         `json:"ipaddr_type_avail_v4,omitempty"` // 0|1|2|3|4|5|6|7
-	IPaddrTypeAvailV6       int                         `json:"ipaddr_type_avail_v6,omitempty"` // 0|1|2
+	IPaddrTypeAvailV4       int                         `json:"ipaddr_type_avail_v4,omitempty" validate:"omitempty,oneof=0 1 2 3 4 5 6 7"` // 0|1|2|3|4|5|6|7
+	IPaddrTypeAvailV6       int                         `json:"ipaddr_type_avail_v6,omitempty" validate:"omitempty,oneof=0 1 2"`           // 0|1|2
 	MetricsDownlinkLoad     int                         `json:"metrics_downlink_load,omitempty"`
 	MetricsDownlinkLoadSet  bool                        `json:"metrics_downlink_load_set"`
 	MetricsDownlinkSpeed    int                         `json:"metrics_downlink_speed,omitempty"`
 	MetricsDownlinkSpeedSet bool                        `json:"metrics_downlink_speed_set"`
 	MetricsInfoAtCapacity   bool                        `json:"metrics_info_at_capacity"`
-	MetricsInfoLinkStatus   string                      `json:"metrics_info_link_status,omitempty"` // up|down|test
+	MetricsInfoLinkStatus   string                      `json:"metrics_info_link_status,omitempty" validate:"omitempty,oneof=up down test"` // up|down|test
 	MetricsInfoSymmetric    bool                        `json:"metrics_info_symmetric"`
 	MetricsMeasurement      int                         `json:"metrics_measurement,omitempty"`
 	MetricsMeasurementSet   bool                        `json:"metrics_measurement_set"`
@@ -261,11 +261,11 @@ type WLANHotspot2 struct {
 	MetricsUplinkSpeed      int                         `json:"metrics_uplink_speed,omitempty"`
 	MetricsUplinkSpeedSet   bool                        `json:"metrics_uplink_speed_set"`
 	NaiRealmList            []WLANNaiRealmList          `json:"nai_realm_list,omitempty"`
-	NetworkType             int                         `json:"network_type,omitempty"` // 0|1|2|3|4|5|14|15
+	NetworkType             int                         `json:"network_type,omitempty" validate:"omitempty,oneof=0 1 2 3 4 5 14 15"` // 0|1|2|3|4|5|14|15
 	RoamingConsortiumList   []WLANRoamingConsortiumList `json:"roaming_consortium_list,omitempty"`
-	VenueGroup              int                         `json:"venue_group,omitempty"` // 0|1|2|3|4|5|6|7|8|9|10|11
+	VenueGroup              int                         `json:"venue_group,omitempty" validate:"omitempty,oneof=0 1 2 3 4 5 6 7 8 9 10 11"` // 0|1|2|3|4|5|6|7|8|9|10|11
 	VenueName               []WLANVenueName             `json:"venue_name,omitempty"`
-	VenueType               int                         `json:"venue_type,omitempty"` // 0|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15
+	VenueType               int                         `json:"venue_type,omitempty" validate:"omitempty,oneof=0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15"` // 0|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15
 }
 
 func (dst *WLANHotspot2) UnmarshalJSON(b []byte) error {
@@ -306,11 +306,11 @@ func (dst *WLANHotspot2) UnmarshalJSON(b []byte) error {
 }
 
 type WLANNaiRealmList struct {
-	AuthIDs   []int  `json:"auth_ids,omitempty"`   // 0|1|2|3|4|5
-	AuthVals  []int  `json:"auth_vals,omitempty"`  // 0|1|2|3|4|5|6|7|8|9|10
-	EapMethod int    `json:"eap_method,omitempty"` // 13|21|18|23|50
-	Encoding  int    `json:"encoding,omitempty"`   // 0|1
-	Name      string `json:"name,omitempty"`       // .{1,128}
+	AuthIDs   []int  `json:"auth_ids,omitempty" validate:"omitempty,oneof=0 1 2 3 4 5"`             // 0|1|2|3|4|5
+	AuthVals  []int  `json:"auth_vals,omitempty" validate:"omitempty,oneof=0 1 2 3 4 5 6 7 8 9 10"` // 0|1|2|3|4|5|6|7|8|9|10
+	EapMethod int    `json:"eap_method,omitempty" validate:"omitempty,oneof=13 21 18 23 50"`        // 13|21|18|23|50
+	Encoding  int    `json:"encoding,omitempty" validate:"omitempty,oneof=0 1"`                     // 0|1
+	Name      string `json:"name,omitempty" validate:"omitempty,gte=1,lte=128"`                     // .{1,128}
 	Status    bool   `json:"status"`
 }
 
@@ -367,8 +367,8 @@ func (dst *WLANPrivatePresharedKeys) UnmarshalJSON(b []byte) error {
 }
 
 type WLANRoamingConsortiumList struct {
-	Name string `json:"name,omitempty"` // .{1,128}
-	Oid  string `json:"oid,omitempty"`  // .{1,128}
+	Name string `json:"name,omitempty" validate:"omitempty,gte=1,lte=128"` // .{1,128}
+	Oid  string `json:"oid,omitempty" validate:"omitempty,gte=1,lte=128"`  // .{1,128}
 }
 
 func (dst *WLANRoamingConsortiumList) UnmarshalJSON(b []byte) error {
@@ -388,10 +388,10 @@ func (dst *WLANRoamingConsortiumList) UnmarshalJSON(b []byte) error {
 }
 
 type WLANSaePsk struct {
-	ID   string `json:"id"`             // .{0,128}
-	MAC  string `json:"mac,omitempty"`  // ^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$
-	Psk  string `json:"psk,omitempty"`  // [\x20-\x7E]{8,255}
-	VLAN int    `json:"vlan,omitempty"` // [0-9]|[1-9][0-9]{1,2}|[1-3][0-9]{3}|40[0-8][0-9]|409[0-5]|^$
+	ID   string `json:"id" validate:"omitempty,gte=0,lte=128"`  // .{0,128}
+	MAC  string `json:"mac,omitempty" validate:"omitempty,mac"` // ^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$
+	Psk  string `json:"psk,omitempty"`                          // [\x20-\x7E]{8,255}
+	VLAN int    `json:"vlan,omitempty"`                         // [0-9]|[1-9][0-9]{1,2}|[1-3][0-9]{3}|40[0-8][0-9]|409[0-5]|^$
 }
 
 func (dst *WLANSaePsk) UnmarshalJSON(b []byte) error {
@@ -414,11 +414,11 @@ func (dst *WLANSaePsk) UnmarshalJSON(b []byte) error {
 }
 
 type WLANScheduleWithDuration struct {
-	DurationMinutes int      `json:"duration_minutes,omitempty"`   // ^[1-9][0-9]*$
-	Name            string   `json:"name,omitempty"`               // .*
-	StartDaysOfWeek []string `json:"start_days_of_week,omitempty"` // ^(sun|mon|tue|wed|thu|fri|sat)$
-	StartHour       int      `json:"start_hour,omitempty"`         // ^(1?[0-9])|(2[0-3])$
-	StartMinute     int      `json:"start_minute,omitempty"`       // ^[0-5]?[0-9]$
+	DurationMinutes int      `json:"duration_minutes,omitempty" validate:"omitempty,numeric_nonzero"`                     // ^[1-9][0-9]*$
+	Name            string   `json:"name,omitempty"`                                                                      // .*
+	StartDaysOfWeek []string `json:"start_days_of_week,omitempty" validate:"omitempty,oneof=sun mon tue wed thu fri sat"` // ^(sun|mon|tue|wed|thu|fri|sat)$
+	StartHour       int      `json:"start_hour,omitempty"`                                                                // ^(1?[0-9])|(2[0-3])$
+	StartMinute     int      `json:"start_minute,omitempty"`                                                              // ^[0-5]?[0-9]$
 }
 
 func (dst *WLANScheduleWithDuration) UnmarshalJSON(b []byte) error {

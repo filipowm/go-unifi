@@ -579,3 +579,46 @@ func TestUrlValidation(t *testing.T) {
 		})
 	}
 }
+
+type validateableBody struct {
+	Data string `json:"data" validate:"required"`
+}
+
+func TestValidationModes(t *testing.T) {
+	t.Parallel()
+	testCases := []struct {
+		validationMode validationMode
+		expectedError  string
+		expectRequest  bool
+	}{
+		{SoftValidation, "dial tcp", true},
+		{HardValidation, "validation failed", false},
+		{DisableValidation, "dial tcp", true},
+	}
+
+	for _, tc := range testCases {
+		t.Run(string(tc.validationMode), func(t *testing.T) {
+			t.Parallel()
+			a := assert.New(t)
+			// given
+			interceptor := NewTestInterceptor()
+			c, _ := NewClient(&ClientConfig{
+				URL:            testUrl,
+				APIKey:         "test-key",
+				Interceptors:   []ClientInterceptor{interceptor},
+				ValidationMode: tc.validationMode,
+			})
+			c.apiPaths = &NewStyleAPI
+			// when
+			err := c.Get(context.Background(), "", validateableBody{}, nil)
+
+			// then
+			require.ErrorContains(t, err, tc.expectedError)
+			if tc.expectRequest {
+				a.NotNil(interceptor.request)
+			} else {
+				a.Nil(interceptor.request)
+			}
+		})
+	}
+}

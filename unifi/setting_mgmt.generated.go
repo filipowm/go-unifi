@@ -44,7 +44,7 @@ type SettingMgmt struct {
 	XSshEnabled             bool                  `json:"x_ssh_enabled"`
 	XSshKeys                []SettingMgmtXSshKeys `json:"x_ssh_keys,omitempty"`
 	XSshMd5Passwd           string                `json:"x_ssh_md5passwd,omitempty"`
-	XSshPassword            string                `json:"x_ssh_password,omitempty"` // .{1,128}
+	XSshPassword            string                `json:"x_ssh_password,omitempty" validate:"omitempty,gte=1,lte=128"` // .{1,128}
 	XSshSha512Passwd        string                `json:"x_ssh_sha512passwd,omitempty"`
 	XSshUsername            string                `json:"x_ssh_username,omitempty"` // ^[_A-Za-z0-9][-_.A-Za-z0-9]{0,29}$
 }

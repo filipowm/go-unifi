@@ -30,22 +30,22 @@ type Hotspot2Conf struct {
 	CellularNetworkList     []Hotspot2ConfCellularNetworkList   `json:"cellular_network_list,omitempty"`
 	DeauthReqTimeout        int                                 `json:"deauth_req_timeout,omitempty"` // [1-9][0-9]|[1-9][0-9][0-9]|[1-2][0-9][0-9][0-9]|3[0-5][0-9][0-9]|3600
 	DisableDgaf             bool                                `json:"disable_dgaf"`
-	DomainNameList          []string                            `json:"domain_name_list,omitempty"` // .{1,128}
+	DomainNameList          []string                            `json:"domain_name_list,omitempty" validate:"omitempty,gte=1,lte=128"` // .{1,128}
 	FriendlyName            []Hotspot2ConfFriendlyName          `json:"friendly_name,omitempty"`
 	GasAdvanced             bool                                `json:"gas_advanced"`
 	GasComebackDelay        int                                 `json:"gas_comeback_delay,omitempty"`
 	GasFragLimit            int                                 `json:"gas_frag_limit,omitempty"`
-	Hessid                  string                              `json:"hessid"` // ^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$|^$
+	Hessid                  string                              `json:"hessid" validate:"omitempty,mac"` // ^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$|^$
 	HessidUsed              bool                                `json:"hessid_used"`
-	IPaddrTypeAvailV4       int                                 `json:"ipaddr_type_avail_v4,omitempty"` // 0|1|2|3|4|5|6|7
-	IPaddrTypeAvailV6       int                                 `json:"ipaddr_type_avail_v6,omitempty"` // 0|1|2
+	IPaddrTypeAvailV4       int                                 `json:"ipaddr_type_avail_v4,omitempty" validate:"omitempty,oneof=0 1 2 3 4 5 6 7"` // 0|1|2|3|4|5|6|7
+	IPaddrTypeAvailV6       int                                 `json:"ipaddr_type_avail_v6,omitempty" validate:"omitempty,oneof=0 1 2"`           // 0|1|2
 	Icons                   []Hotspot2ConfIcons                 `json:"icons,omitempty"`
 	MetricsDownlinkLoad     int                                 `json:"metrics_downlink_load,omitempty"`
 	MetricsDownlinkLoadSet  bool                                `json:"metrics_downlink_load_set"`
 	MetricsDownlinkSpeed    int                                 `json:"metrics_downlink_speed,omitempty"`
 	MetricsDownlinkSpeedSet bool                                `json:"metrics_downlink_speed_set"`
 	MetricsInfoAtCapacity   bool                                `json:"metrics_info_at_capacity"`
-	MetricsInfoLinkStatus   string                              `json:"metrics_info_link_status,omitempty"` // up|down|test
+	MetricsInfoLinkStatus   string                              `json:"metrics_info_link_status,omitempty" validate:"omitempty,oneof=up down test"` // up|down|test
 	MetricsInfoSymmetric    bool                                `json:"metrics_info_symmetric"`
 	MetricsMeasurement      int                                 `json:"metrics_measurement,omitempty"`
 	MetricsMeasurementSet   bool                                `json:"metrics_measurement_set"`
@@ -55,14 +55,14 @@ type Hotspot2Conf struct {
 	MetricsUplinkSpeed      int                                 `json:"metrics_uplink_speed,omitempty"`
 	MetricsUplinkSpeedSet   bool                                `json:"metrics_uplink_speed_set"`
 	NaiRealmList            []Hotspot2ConfNaiRealmList          `json:"nai_realm_list,omitempty"`
-	Name                    string                              `json:"name,omitempty"` // .{1,128}
+	Name                    string                              `json:"name,omitempty" validate:"omitempty,gte=1,lte=128"` // .{1,128}
 	NetworkAccessAsra       bool                                `json:"network_access_asra"`
 	NetworkAccessEsr        bool                                `json:"network_access_esr"`
 	NetworkAccessInternet   bool                                `json:"network_access_internet"`
 	NetworkAccessUesa       bool                                `json:"network_access_uesa"`
-	NetworkAuthType         int                                 `json:"network_auth_type,omitempty"` // -1|0|1|2|3
+	NetworkAuthType         int                                 `json:"network_auth_type,omitempty" validate:"omitempty,oneof=-1 0 1 2 3"` // -1|0|1|2|3
 	NetworkAuthUrl          string                              `json:"network_auth_url,omitempty"`
-	NetworkType             int                                 `json:"network_type,omitempty"` // 0|1|2|3|4|5|14|15
+	NetworkType             int                                 `json:"network_type,omitempty" validate:"omitempty,oneof=0 1 2 3 4 5 14 15"` // 0|1|2|3|4|5|14|15
 	Osu                     []Hotspot2ConfOsu                   `json:"osu,omitempty"`
 	OsuSSID                 string                              `json:"osu_ssid"`
 	QOSMapDcsp              []Hotspot2ConfQOSMapDcsp            `json:"qos_map_dcsp,omitempty"`
@@ -70,11 +70,11 @@ type Hotspot2Conf struct {
 	QOSMapStatus            bool                                `json:"qos_map_status"`
 	RoamingConsortiumList   []Hotspot2ConfRoamingConsortiumList `json:"roaming_consortium_list,omitempty"`
 	SaveTimestamp           string                              `json:"save_timestamp,omitempty"`
-	TCFilename              string                              `json:"t_c_filename,omitempty"` // .{1,256}
+	TCFilename              string                              `json:"t_c_filename,omitempty" validate:"omitempty,gte=1,lte=256"` // .{1,256}
 	TCTimestamp             int                                 `json:"t_c_timestamp,omitempty"`
-	VenueGroup              int                                 `json:"venue_group,omitempty"` // 0|1|2|3|4|5|6|7|8|9|10|11
+	VenueGroup              int                                 `json:"venue_group,omitempty" validate:"omitempty,oneof=0 1 2 3 4 5 6 7 8 9 10 11"` // 0|1|2|3|4|5|6|7|8|9|10|11
 	VenueName               []Hotspot2ConfVenueName             `json:"venue_name,omitempty"`
-	VenueType               int                                 `json:"venue_type,omitempty"` // 0|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15
+	VenueType               int                                 `json:"venue_type,omitempty" validate:"omitempty,oneof=0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15"` // 0|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15
 }
 
 func (dst *Hotspot2Conf) UnmarshalJSON(b []byte) error {
@@ -127,9 +127,9 @@ func (dst *Hotspot2Conf) UnmarshalJSON(b []byte) error {
 }
 
 type Hotspot2ConfCapab struct {
-	Port     int    `json:"port,omitempty"`     // ^(0|[1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])|$
-	Protocol string `json:"protocol,omitempty"` // icmp|tcp_udp|tcp|udp|esp
-	Status   string `json:"status,omitempty"`   // closed|open|unknown
+	Port     int    `json:"port,omitempty"`                                                         // ^(0|[1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])|$
+	Protocol string `json:"protocol,omitempty" validate:"omitempty,oneof=icmp tcp_udp tcp udp esp"` // icmp|tcp_udp|tcp|udp|esp
+	Status   string `json:"status,omitempty" validate:"omitempty,oneof=closed open unknown"`        // closed|open|unknown
 }
 
 func (dst *Hotspot2ConfCapab) UnmarshalJSON(b []byte) error {
@@ -154,7 +154,7 @@ func (dst *Hotspot2ConfCapab) UnmarshalJSON(b []byte) error {
 type Hotspot2ConfCellularNetworkList struct {
 	Mcc  int    `json:"mcc,omitempty"`
 	Mnc  int    `json:"mnc,omitempty"`
-	Name string `json:"name,omitempty"` // .{1,128}
+	Name string `json:"name,omitempty" validate:"omitempty,gte=1,lte=128"` // .{1,128}
 }
 
 func (dst *Hotspot2ConfCellularNetworkList) UnmarshalJSON(b []byte) error {
@@ -179,8 +179,8 @@ func (dst *Hotspot2ConfCellularNetworkList) UnmarshalJSON(b []byte) error {
 }
 
 type Hotspot2ConfDescription struct {
-	Language string `json:"language,omitempty"` // [a-z]{3}
-	Text     string `json:"text,omitempty"`     // .{1,128}
+	Language string `json:"language,omitempty"`                                // [a-z]{3}
+	Text     string `json:"text,omitempty" validate:"omitempty,gte=1,lte=128"` // .{1,128}
 }
 
 func (dst *Hotspot2ConfDescription) UnmarshalJSON(b []byte) error {
@@ -200,8 +200,8 @@ func (dst *Hotspot2ConfDescription) UnmarshalJSON(b []byte) error {
 }
 
 type Hotspot2ConfFriendlyName struct {
-	Language string `json:"language,omitempty"` // [a-z]{3}
-	Text     string `json:"text,omitempty"`     // .{1,128}
+	Language string `json:"language,omitempty"`                                // [a-z]{3}
+	Text     string `json:"text,omitempty" validate:"omitempty,gte=1,lte=128"` // .{1,128}
 }
 
 func (dst *Hotspot2ConfFriendlyName) UnmarshalJSON(b []byte) error {
@@ -221,7 +221,7 @@ func (dst *Hotspot2ConfFriendlyName) UnmarshalJSON(b []byte) error {
 }
 
 type Hotspot2ConfIcon struct {
-	Name string `json:"name,omitempty"` // .{1,128}
+	Name string `json:"name,omitempty" validate:"omitempty,gte=1,lte=128"` // .{1,128}
 }
 
 func (dst *Hotspot2ConfIcon) UnmarshalJSON(b []byte) error {
@@ -242,11 +242,11 @@ func (dst *Hotspot2ConfIcon) UnmarshalJSON(b []byte) error {
 
 type Hotspot2ConfIcons struct {
 	Data     string `json:"data,omitempty"`
-	Filename string `json:"filename,omitempty"` // .{1,256}
+	Filename string `json:"filename,omitempty" validate:"omitempty,gte=1,lte=256"` // .{1,256}
 	Height   int    `json:"height,omitempty"`
-	Language string `json:"language,omitempty"` // [a-z]{3}
-	Media    string `json:"media,omitempty"`    // .{1,256}
-	Name     string `json:"name,omitempty"`     // .{1,256}
+	Language string `json:"language,omitempty"`                                 // [a-z]{3}
+	Media    string `json:"media,omitempty" validate:"omitempty,gte=1,lte=256"` // .{1,256}
+	Name     string `json:"name,omitempty" validate:"omitempty,gte=1,lte=256"`  // .{1,256}
 	Size     int    `json:"size,omitempty"`
 	Width    int    `json:"width,omitempty"`
 }
@@ -277,9 +277,9 @@ func (dst *Hotspot2ConfIcons) UnmarshalJSON(b []byte) error {
 type Hotspot2ConfNaiRealmList struct {
 	AuthIDs   string `json:"auth_ids,omitempty"`
 	AuthVals  string `json:"auth_vals,omitempty"`
-	EapMethod int    `json:"eap_method,omitempty"` // 13|21|18|23|50
-	Encoding  int    `json:"encoding,omitempty"`   // 0|1
-	Name      string `json:"name,omitempty"`       // .{1,128}
+	EapMethod int    `json:"eap_method,omitempty" validate:"omitempty,oneof=13 21 18 23 50"` // 13|21|18|23|50
+	Encoding  int    `json:"encoding,omitempty" validate:"omitempty,oneof=0 1"`              // 0|1
+	Name      string `json:"name,omitempty" validate:"omitempty,gte=1,lte=128"`              // .{1,128}
 	Status    bool   `json:"status"`
 }
 
@@ -385,8 +385,8 @@ func (dst *Hotspot2ConfQOSMapExceptions) UnmarshalJSON(b []byte) error {
 }
 
 type Hotspot2ConfRoamingConsortiumList struct {
-	Name string `json:"name,omitempty"` // .{1,128}
-	Oid  string `json:"oid,omitempty"`  // .{1,128}
+	Name string `json:"name,omitempty" validate:"omitempty,gte=1,lte=128"` // .{1,128}
+	Oid  string `json:"oid,omitempty" validate:"omitempty,gte=1,lte=128"`  // .{1,128}
 }
 
 func (dst *Hotspot2ConfRoamingConsortiumList) UnmarshalJSON(b []byte) error {

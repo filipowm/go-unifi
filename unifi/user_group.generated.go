@@ -25,9 +25,9 @@ type UserGroup struct {
 	NoDelete bool   `json:"attr_no_delete,omitempty"`
 	NoEdit   bool   `json:"attr_no_edit,omitempty"`
 
-	Name           string `json:"name,omitempty"`              // .{1,128}
-	QOSRateMaxDown int    `json:"qos_rate_max_down,omitempty"` // -1|[2-9]|[1-9][0-9]{1,4}|100000
-	QOSRateMaxUp   int    `json:"qos_rate_max_up,omitempty"`   // -1|[2-9]|[1-9][0-9]{1,4}|100000
+	Name           string `json:"name,omitempty" validate:"omitempty,gte=1,lte=128"` // .{1,128}
+	QOSRateMaxDown int    `json:"qos_rate_max_down,omitempty"`                       // -1|[2-9]|[1-9][0-9]{1,4}|100000
+	QOSRateMaxUp   int    `json:"qos_rate_max_up,omitempty"`                         // -1|[2-9]|[1-9][0-9]{1,4}|100000
 }
 
 func (dst *UserGroup) UnmarshalJSON(b []byte) error {

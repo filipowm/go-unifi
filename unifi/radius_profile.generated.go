@@ -29,13 +29,13 @@ type RADIUSProfile struct {
 	AcctServers               []RADIUSProfileAcctServers `json:"acct_servers,omitempty"`
 	AuthServers               []RADIUSProfileAuthServers `json:"auth_servers,omitempty"`
 	InterimUpdateEnabled      bool                       `json:"interim_update_enabled"`
-	InterimUpdateInterval     int                        `json:"interim_update_interval,omitempty"` // ^([6-9][0-9]|[1-9][0-9]{2,3}|[1-7][0-9]{4}|8[0-5][0-9]{3}|86[0-3][0-9][0-9]|86400)$
-	Name                      string                     `json:"name,omitempty"`                    // .{1,128}
+	InterimUpdateInterval     int                        `json:"interim_update_interval,omitempty"`                 // ^([6-9][0-9]|[1-9][0-9]{2,3}|[1-7][0-9]{4}|8[0-5][0-9]{3}|86[0-3][0-9][0-9]|86400)$
+	Name                      string                     `json:"name,omitempty" validate:"omitempty,gte=1,lte=128"` // .{1,128}
 	TlsEnabled                bool                       `json:"tls_enabled"`
 	UseUsgAcctServer          bool                       `json:"use_usg_acct_server"`
 	UseUsgAuthServer          bool                       `json:"use_usg_auth_server"`
 	VLANEnabled               bool                       `json:"vlan_enabled"`
-	VLANWLANMode              string                     `json:"vlan_wlan_mode,omitempty"` // disabled|optional|required
+	VLANWLANMode              string                     `json:"vlan_wlan_mode,omitempty" validate:"omitempty,oneof=disabled optional required"` // disabled|optional|required
 	XCaCrts                   []RADIUSProfileXCaCrts     `json:"x_ca_crts,omitempty"`
 	XClientCrt                string                     `json:"x_client_crt,omitempty"`
 	XClientCrtFilename        string                     `json:"x_client_crt_filename,omitempty"`
@@ -64,8 +64,8 @@ func (dst *RADIUSProfile) UnmarshalJSON(b []byte) error {
 }
 
 type RADIUSProfileAcctServers struct {
-	IP      string `json:"ip,omitempty"`   // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$
-	Port    int    `json:"port,omitempty"` // ^([1-9][0-9]{0,3}|[1-5][0-9]{4}|[6][0-4][0-9]{3}|[6][5][0-4][0-9]{2}|[6][5][5][0-2][0-9]|[6][5][5][3][0-5])$|^$
+	IP      string `json:"ip,omitempty" validate:"omitempty,ipv4"` // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$
+	Port    int    `json:"port,omitempty"`                         // ^([1-9][0-9]{0,3}|[1-5][0-9]{4}|[6][0-4][0-9]{3}|[6][5][0-4][0-9]{2}|[6][5][5][0-2][0-9]|[6][5][5][3][0-5])$|^$
 	XSecret string `json:"x_secret,omitempty"`
 }
 
@@ -89,8 +89,8 @@ func (dst *RADIUSProfileAcctServers) UnmarshalJSON(b []byte) error {
 }
 
 type RADIUSProfileAuthServers struct {
-	IP      string `json:"ip,omitempty"`   // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$
-	Port    int    `json:"port,omitempty"` // ^([1-9][0-9]{0,3}|[1-5][0-9]{4}|[6][0-4][0-9]{3}|[6][5][0-4][0-9]{2}|[6][5][5][0-2][0-9]|[6][5][5][3][0-5])$|^$
+	IP      string `json:"ip,omitempty" validate:"omitempty,ipv4"` // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$
+	Port    int    `json:"port,omitempty"`                         // ^([1-9][0-9]{0,3}|[1-5][0-9]{4}|[6][0-4][0-9]{3}|[6][5][0-4][0-9]{2}|[6][5][5][0-2][0-9]|[6][5][5][3][0-5])$|^$
 	XSecret string `json:"x_secret,omitempty"`
 }
 

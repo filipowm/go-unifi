@@ -25,7 +25,7 @@ type WLANGroup struct {
 	NoDelete bool   `json:"attr_no_delete,omitempty"`
 	NoEdit   bool   `json:"attr_no_edit,omitempty"`
 
-	Name string `json:"name,omitempty"` // .{1,128}
+	Name string `json:"name,omitempty" validate:"omitempty,gte=1,lte=128"` // .{1,128}
 }
 
 func (dst *WLANGroup) UnmarshalJSON(b []byte) error {

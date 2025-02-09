@@ -30,9 +30,9 @@ type DpiApp struct {
 	Cats           []int  `json:"cats,omitempty"`
 	Enabled        bool   `json:"enabled"`
 	Log            bool   `json:"log"`
-	Name           string `json:"name,omitempty"`              // .{1,128}
-	QOSRateMaxDown int    `json:"qos_rate_max_down,omitempty"` // -1|[2-9]|[1-9][0-9]{1,4}|100000|10[0-1][0-9]{3}|102[0-3][0-9]{2}|102400
-	QOSRateMaxUp   int    `json:"qos_rate_max_up,omitempty"`   // -1|[2-9]|[1-9][0-9]{1,4}|100000|10[0-1][0-9]{3}|102[0-3][0-9]{2}|102400
+	Name           string `json:"name,omitempty" validate:"omitempty,gte=1,lte=128"` // .{1,128}
+	QOSRateMaxDown int    `json:"qos_rate_max_down,omitempty"`                       // -1|[2-9]|[1-9][0-9]{1,4}|100000|10[0-1][0-9]{3}|102[0-3][0-9]{2}|102400
+	QOSRateMaxUp   int    `json:"qos_rate_max_up,omitempty"`                         // -1|[2-9]|[1-9][0-9]{1,4}|100000|10[0-1][0-9]{3}|102[0-3][0-9]{2}|102400
 }
 
 func (dst *DpiApp) UnmarshalJSON(b []byte) error {

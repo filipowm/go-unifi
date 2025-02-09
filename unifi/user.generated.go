@@ -25,18 +25,18 @@ type User struct {
 	NoDelete bool   `json:"attr_no_delete,omitempty"`
 	NoEdit   bool   `json:"attr_no_edit,omitempty"`
 
-	DevIdOverride int    `json:"dev_id_override,omitempty"` // non-generated field
-	IP            string `json:"ip,omitempty"`              // non-generated field
+	DevIdOverride int    `json:"dev_id_override,omitempty"`            // non-generated field
+	IP            string `json:"ip,omitempty" validate:"omitempty,ip"` // non-generated field
 
 	Blocked                       bool   `json:"blocked,omitempty"`
 	FixedApEnabled                bool   `json:"fixed_ap_enabled"`
-	FixedApMAC                    string `json:"fixed_ap_mac,omitempty"` // ^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$
+	FixedApMAC                    string `json:"fixed_ap_mac,omitempty" validate:"omitempty,mac"` // ^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$
 	FixedIP                       string `json:"fixed_ip,omitempty"`
 	Hostname                      string `json:"hostname,omitempty"`
 	LastSeen                      int    `json:"last_seen,omitempty"`
 	LocalDNSRecord                string `json:"local_dns_record,omitempty"`
 	LocalDNSRecordEnabled         bool   `json:"local_dns_record_enabled"`
-	MAC                           string `json:"mac,omitempty"` // ^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$
+	MAC                           string `json:"mac,omitempty" validate:"omitempty,mac"` // ^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$
 	Name                          string `json:"name,omitempty"`
 	NetworkID                     string `json:"network_id"`
 	Note                          string `json:"note,omitempty"`

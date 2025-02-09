@@ -50,8 +50,8 @@ func TestFieldInfoFromValidation(t *testing.T) {
 			if fieldInfo.FieldType != c.expectedType {
 				t.Fatalf("expected type %q got %q", c.expectedType, fieldInfo.FieldType)
 			}
-			if fieldInfo.FieldValidation != c.expectedComment {
-				t.Fatalf("expected comment %q got %q", c.expectedComment, fieldInfo.FieldValidation)
+			if fieldInfo.FieldValidationComment != c.expectedComment {
+				t.Fatalf("expected comment %q got %q", c.expectedComment, fieldInfo.FieldValidationComment)
 			}
 			if fieldInfo.OmitEmpty != c.expectedOmitEmpty {
 				t.Fatalf("expected omitempty %t got %t", c.expectedOmitEmpty, fieldInfo.OmitEmpty)
@@ -79,51 +79,51 @@ func TestResourceTypes(t *testing.T) {
 }
 	`
 	expectedFields := map[string]*FieldInfo{
-		"Note":    NewFieldInfo("Note", "note", "string", ".{0,1024}", true, false, ""),
-		"Date":    NewFieldInfo("Date", "date", "string", "^$|^(20[0-9]{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9])Z?$", false, false, ""),
-		"MAC":     NewFieldInfo("MAC", "mac", "string", "^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$", true, false, ""),
-		"Number":  NewFieldInfo("Number", "number", "int", "", true, false, "emptyStringInt"),
-		"Boolean": NewFieldInfo("Boolean", "boolean", "bool", "", false, false, ""),
+		"Note":    NewFieldInfo("Note", "note", "string", "validate:\"omitempty,gte=0,lte=1024\"", ".{0,1024}", true, false, ""),
+		"Date":    NewFieldInfo("Date", "date", "string", "", "^$|^(20[0-9]{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9])Z?$", false, false, ""),
+		"MAC":     NewFieldInfo("MAC", "mac", "string", "validate:\"omitempty,mac\"", "^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$", true, false, ""),
+		"Number":  NewFieldInfo("Number", "number", "int", "", "", true, false, "emptyStringInt"),
+		"Boolean": NewFieldInfo("Boolean", "boolean", "bool", "", "", false, false, ""),
 		"NestedType": {
-			FieldName:       "NestedType",
-			JSONName:        "nested_type",
-			FieldType:       "StructNestedType",
-			FieldValidation: "",
-			OmitEmpty:       true,
-			IsArray:         false,
+			FieldName:              "NestedType",
+			JSONName:               "nested_type",
+			FieldType:              "StructNestedType",
+			FieldValidationComment: "",
+			OmitEmpty:              true,
+			IsArray:                false,
 			Fields: map[string]*FieldInfo{
-				"NestedFieldModified": NewFieldInfo("NestedFieldModified", "nested_field", "string", "^$", false, false, ""),
+				"NestedFieldModified": NewFieldInfo("NestedFieldModified", "nested_field", "string", "", "^$", false, false, ""),
 			},
 		},
 		"NestedTypeArray": {
-			FieldName:       "NestedTypeArray",
-			JSONName:        "nested_type_array",
-			FieldType:       "StructNestedTypeArray",
-			FieldValidation: "",
-			OmitEmpty:       true,
-			IsArray:         true,
+			FieldName:              "NestedTypeArray",
+			JSONName:               "nested_type_array",
+			FieldType:              "StructNestedTypeArray",
+			FieldValidationComment: "",
+			OmitEmpty:              true,
+			IsArray:                true,
 			Fields: map[string]*FieldInfo{
-				"NestedFieldModified": NewFieldInfo("NestedFieldModified", "nested_field", "string", "^$", false, false, ""),
+				"NestedFieldModified": NewFieldInfo("NestedFieldModified", "nested_field", "string", "", "^$", false, false, ""),
 			},
 		},
 	}
 
 	expectedStruct := map[string]*FieldInfo{
 		"Struct": {
-			FieldName:       "Struct",
-			JSONName:        "path",
-			FieldType:       "struct",
-			FieldValidation: "",
-			OmitEmpty:       false,
-			IsArray:         false,
+			FieldName:              "Struct",
+			JSONName:               "path",
+			FieldType:              "struct",
+			FieldValidationComment: "",
+			OmitEmpty:              false,
+			IsArray:                false,
 			Fields: map[string]*FieldInfo{
-				"   ID":      NewFieldInfo("ID", "_id", "string", "", true, false, ""),
-				"   SiteID":  NewFieldInfo("SiteID", "site_id", "string", "", true, false, ""),
+				"   ID":      NewFieldInfo("ID", "_id", "string", "", "", true, false, ""),
+				"   SiteID":  NewFieldInfo("SiteID", "site_id", "string", "", "", true, false, ""),
 				"   _Spacer": nil,
-				"  Hidden":   NewFieldInfo("Hidden", "attr_hidden", "bool", "", true, false, ""),
-				"  HiddenID": NewFieldInfo("HiddenID", "attr_hidden_id", "string", "", true, false, ""),
-				"  NoDelete": NewFieldInfo("NoDelete", "attr_no_delete", "bool", "", true, false, ""),
-				"  NoEdit":   NewFieldInfo("NoEdit", "attr_no_edit", "bool", "", true, false, ""),
+				"  Hidden":   NewFieldInfo("Hidden", "attr_hidden", "bool", "", "", true, false, ""),
+				"  HiddenID": NewFieldInfo("HiddenID", "attr_hidden_id", "string", "", "", true, false, ""),
+				"  NoDelete": NewFieldInfo("NoDelete", "attr_no_delete", "bool", "", "", true, false, ""),
+				"  NoEdit":   NewFieldInfo("NoEdit", "attr_no_edit", "bool", "", "", true, false, ""),
 				"  _Spacer":  nil,
 				" _Spacer":   nil,
 			},

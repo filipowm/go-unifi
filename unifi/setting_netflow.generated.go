@@ -34,10 +34,10 @@ type SettingNetflow struct {
 	NetworkIDs          []string `json:"network_ids,omitempty"`
 	Port                int      `json:"port,omitempty"` // 102[4-9]|10[3-9][0-9]|1[1-9][0-9]{2}|[2-9][0-9]{3}|[1-5][0-9]{4}|[6][0-4][0-9]{3}|[6][5][0-4][0-9]{2}|[6][5][5][0-2][0-9]|[6][5][5][3][0-5]
 	RefreshRate         int      `json:"refresh_rate,omitempty"`
-	SamplingMode        string   `json:"sampling_mode,omitempty"` // off|hash|random|deterministic
-	SamplingRate        int      `json:"sampling_rate,omitempty"` // [2-9]|[1-9][0-9]{1,3}|1[0-5][0-9]{3}|16[0-2][0-9]{2}|163[0-7][0-9]|1638[0-3]|^$
-	Server              string   `json:"server,omitempty"`        // .{0,252}[^\.]$
-	Version             int      `json:"version,omitempty"`       // 5|9|10
+	SamplingMode        string   `json:"sampling_mode,omitempty" validate:"omitempty,oneof=off hash random deterministic"` // off|hash|random|deterministic
+	SamplingRate        int      `json:"sampling_rate,omitempty"`                                                          // [2-9]|[1-9][0-9]{1,3}|1[0-5][0-9]{3}|16[0-2][0-9]{2}|163[0-7][0-9]|1638[0-3]|^$
+	Server              string   `json:"server,omitempty"`                                                                 // .{0,252}[^\.]$
+	Version             int      `json:"version,omitempty" validate:"omitempty,oneof=5 9 10"`                              // 5|9|10
 }
 
 func (dst *SettingNetflow) UnmarshalJSON(b []byte) error {

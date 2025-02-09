@@ -29,14 +29,14 @@ type SettingIps struct {
 
 	AdBlockingConfigurations    []SettingIpsAdBlockingConfigurations `json:"ad_blocking_configurations,omitempty"`
 	AdBlockingEnabled           bool                                 `json:"ad_blocking_enabled"`
-	AdvancedFilteringPreference string                               `json:"advanced_filtering_preference,omitempty"` // |manual|disabled
+	AdvancedFilteringPreference string                               `json:"advanced_filtering_preference,omitempty" validate:"omitempty,oneof=manual disabled"` // |manual|disabled
 	DNSFiltering                bool                                 `json:"dns_filtering"`
 	DNSFilters                  []SettingIpsDNSFilters               `json:"dns_filters,omitempty"`
-	EnabledCategories           []string                             `json:"enabled_categories,omitempty"` // emerging-activex|emerging-attackresponse|botcc|emerging-chat|ciarmy|compromised|emerging-dns|emerging-dos|dshield|emerging-exploit|emerging-ftp|emerging-games|emerging-icmp|emerging-icmpinfo|emerging-imap|emerging-inappropriate|emerging-info|emerging-malware|emerging-misc|emerging-mobile|emerging-netbios|emerging-p2p|emerging-policy|emerging-pop3|emerging-rpc|emerging-scada|emerging-scan|emerging-shellcode|emerging-smtp|emerging-snmp|emerging-sql|emerging-telnet|emerging-tftp|tor|emerging-useragent|emerging-voip|emerging-webapps|emerging-webclient|emerging-webserver|emerging-worm|exploit-kit|adware-pup|botcc-portgrouped|phishing|threatview-cs-c2|3coresec|chat|coinminer|current-events|drop|hunting|icmp-info|inappropriate|info|ja3|policy|scada|dark-web-blocker-list|malicious-hosts
+	EnabledCategories           []string                             `json:"enabled_categories,omitempty" validate:"omitempty,oneof=emerging-activex emerging-attackresponse botcc emerging-chat ciarmy compromised emerging-dns emerging-dos dshield emerging-exploit emerging-ftp emerging-games emerging-icmp emerging-icmpinfo emerging-imap emerging-inappropriate emerging-info emerging-malware emerging-misc emerging-mobile emerging-netbios emerging-p2p emerging-policy emerging-pop3 emerging-rpc emerging-scada emerging-scan emerging-shellcode emerging-smtp emerging-snmp emerging-sql emerging-telnet emerging-tftp tor emerging-useragent emerging-voip emerging-webapps emerging-webclient emerging-webserver emerging-worm exploit-kit adware-pup botcc-portgrouped phishing threatview-cs-c2 3coresec chat coinminer current-events drop hunting icmp-info inappropriate info ja3 policy scada dark-web-blocker-list malicious-hosts"` // emerging-activex|emerging-attackresponse|botcc|emerging-chat|ciarmy|compromised|emerging-dns|emerging-dos|dshield|emerging-exploit|emerging-ftp|emerging-games|emerging-icmp|emerging-icmpinfo|emerging-imap|emerging-inappropriate|emerging-info|emerging-malware|emerging-misc|emerging-mobile|emerging-netbios|emerging-p2p|emerging-policy|emerging-pop3|emerging-rpc|emerging-scada|emerging-scan|emerging-shellcode|emerging-smtp|emerging-snmp|emerging-sql|emerging-telnet|emerging-tftp|tor|emerging-useragent|emerging-voip|emerging-webapps|emerging-webclient|emerging-webserver|emerging-worm|exploit-kit|adware-pup|botcc-portgrouped|phishing|threatview-cs-c2|3coresec|chat|coinminer|current-events|drop|hunting|icmp-info|inappropriate|info|ja3|policy|scada|dark-web-blocker-list|malicious-hosts
 	EnabledNetworks             []string                             `json:"enabled_networks,omitempty"`
 	Honeypot                    []SettingIpsHoneypot                 `json:"honeypot,omitempty"`
 	HoneypotEnabled             bool                                 `json:"honeypot_enabled"`
-	IPsMode                     string                               `json:"ips_mode,omitempty"` // ids|ips|ipsInline|disabled
+	IPsMode                     string                               `json:"ips_mode,omitempty" validate:"omitempty,oneof=ids ips ipsInline disabled"` // ids|ips|ipsInline|disabled
 	MemoryOptimized             bool                                 `json:"memory_optimized"`
 	RestrictTorrents            bool                                 `json:"restrict_torrents"`
 	Suppression                 SettingIpsSuppression                `json:"suppression,omitempty"`
@@ -84,7 +84,7 @@ type SettingIpsAlerts struct {
 	ID        int                  `json:"id,omitempty"`
 	Signature string               `json:"signature,omitempty"`
 	Tracking  []SettingIpsTracking `json:"tracking,omitempty"`
-	Type      string               `json:"type,omitempty"` // all|track
+	Type      string               `json:"type,omitempty" validate:"omitempty,oneof=all track"` // all|track
 }
 
 func (dst *SettingIpsAlerts) UnmarshalJSON(b []byte) error {
@@ -113,10 +113,10 @@ type SettingIpsDNSFilters struct {
 	BlockedSites []string `json:"blocked_sites,omitempty"` // ^[a-zA-Z0-9.-]+$|^$
 	BlockedTld   []string `json:"blocked_tld,omitempty"`   // ^[a-zA-Z0-9.-]+$|^$
 	Description  string   `json:"description,omitempty"`
-	Filter       string   `json:"filter,omitempty"` // none|work|family
+	Filter       string   `json:"filter,omitempty" validate:"omitempty,oneof=none work family"` // none|work|family
 	Name         string   `json:"name,omitempty"`
 	NetworkID    string   `json:"network_id"`
-	Version      string   `json:"version,omitempty"` // v4|v6
+	Version      string   `json:"version,omitempty" validate:"omitempty,oneof=v4 v6"` // v4|v6
 }
 
 func (dst *SettingIpsDNSFilters) UnmarshalJSON(b []byte) error {
@@ -138,7 +138,7 @@ func (dst *SettingIpsDNSFilters) UnmarshalJSON(b []byte) error {
 type SettingIpsHoneypot struct {
 	IPAddress string `json:"ip_address,omitempty"`
 	NetworkID string `json:"network_id"`
-	Version   string `json:"version,omitempty"` // v4|v6
+	Version   string `json:"version,omitempty" validate:"omitempty,oneof=v4 v6"` // v4|v6
 }
 
 func (dst *SettingIpsHoneypot) UnmarshalJSON(b []byte) error {
@@ -179,8 +179,8 @@ func (dst *SettingIpsSuppression) UnmarshalJSON(b []byte) error {
 }
 
 type SettingIpsTracking struct {
-	Direction string `json:"direction,omitempty"` // both|src|dest
-	Mode      string `json:"mode,omitempty"`      // ip|subnet|network
+	Direction string `json:"direction,omitempty" validate:"omitempty,oneof=both src dest"` // both|src|dest
+	Mode      string `json:"mode,omitempty" validate:"omitempty,oneof=ip subnet network"`  // ip|subnet|network
 	Value     string `json:"value,omitempty"`
 }
 
@@ -201,8 +201,8 @@ func (dst *SettingIpsTracking) UnmarshalJSON(b []byte) error {
 }
 
 type SettingIpsWhitelist struct {
-	Direction string `json:"direction,omitempty"` // both|src|dest
-	Mode      string `json:"mode,omitempty"`      // ip|subnet|network
+	Direction string `json:"direction,omitempty" validate:"omitempty,oneof=both src dest"` // both|src|dest
+	Mode      string `json:"mode,omitempty" validate:"omitempty,oneof=ip subnet network"`  // ip|subnet|network
 	Value     string `json:"value,omitempty"`
 }
 

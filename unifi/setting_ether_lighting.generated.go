@@ -69,8 +69,8 @@ func (dst *SettingEtherLightingNetworkOverrides) UnmarshalJSON(b []byte) error {
 }
 
 type SettingEtherLightingSpeedOverrides struct {
-	Key         string `json:"key,omitempty"`           // FE|GbE|2.5GbE|5GbE|10GbE|25GbE|40GbE|100GbE
-	RawColorHex string `json:"raw_color_hex,omitempty"` // [0-9A-Fa-f]{6}
+	Key         string `json:"key,omitempty" validate:"omitempty,oneof=FE GbE 2.5GbE 5GbE 10GbE 25GbE 40GbE 100GbE"` // FE|GbE|2.5GbE|5GbE|10GbE|25GbE|40GbE|100GbE
+	RawColorHex string `json:"raw_color_hex,omitempty"`                                                              // [0-9A-Fa-f]{6}
 }
 
 func (dst *SettingEtherLightingSpeedOverrides) UnmarshalJSON(b []byte) error {

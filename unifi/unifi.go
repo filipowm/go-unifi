@@ -84,6 +84,15 @@ func (m *Meta) error() error {
 	return nil
 }
 
+type validationMode string
+
+const (
+	SoftValidation    validationMode = "soft"
+	HardValidation    validationMode = "hard"
+	DisableValidation validationMode = "disable"
+	DefaultValidation validationMode = SoftValidation // TODO: change to hard in next major version
+)
+
 type ClientConfig struct {
 	URL            string        `validate:"required,http_url"`
 	APIKey         string        `validate:"required_without_all=User Pass"`
@@ -96,6 +105,7 @@ type ClientConfig struct {
 	UserAgent      string
 	ErrorHandler   ResponseErrorHandler
 	UseLocking     bool
+	ValidationMode validationMode `validate:"omitempty,oneof=soft hard disable"`
 }
 
 type Client struct {
@@ -247,6 +257,9 @@ func NewClient(config *ClientConfig) (*Client, error) {
 	}
 	if err := v.Validate(config); err != nil {
 		return nil, fmt.Errorf("failed validating config: %w", err)
+	}
+	if config.ValidationMode == "" {
+		config.ValidationMode = DefaultValidation
 	}
 	u, err := newUnifi(config, v)
 	if err != nil {
@@ -491,8 +504,25 @@ func (c *Client) createRequestURL(apiPath string) (*url.URL, error) {
 	return c.BaseURL.ResolveReference(reqURL), nil
 }
 
+func (c *Client) validateRequestBody(reqBody interface{}) error {
+	if reqBody != nil && c.config.ValidationMode != DisableValidation {
+		if err := c.validator.Validate(reqBody); err != nil {
+			err = fmt.Errorf("failed validating request body: %w", err)
+			if c.config.ValidationMode == HardValidation {
+				return err
+			} else {
+				fmt.Println(err)
+			}
+		}
+	}
+	return nil
+}
+
 // Do performs a request to the given API path with the given method.
 func (c *Client) Do(ctx context.Context, method, apiPath string, reqBody interface{}, respBody interface{}) error {
+	if err := c.validateRequestBody(reqBody); err != nil {
+		return err
+	}
 	reqReader, err := marshalRequest(reqBody)
 	if err != nil {
 		return fmt.Errorf("unable to marshal request: %w", err)

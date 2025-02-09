@@ -27,8 +27,8 @@ type HeatMap struct {
 
 	Description string `json:"description,omitempty"`
 	MapID       string `json:"map_id"`
-	Name        string `json:"name,omitempty"` // .*[^\s]+.*
-	Type        string `json:"type,omitempty"` // download|upload
+	Name        string `json:"name,omitempty"`                                            // .*[^\s]+.*
+	Type        string `json:"type,omitempty" validate:"omitempty,oneof=download upload"` // download|upload
 }
 
 func (dst *HeatMap) UnmarshalJSON(b []byte) error {

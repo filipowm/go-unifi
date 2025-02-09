@@ -27,7 +27,7 @@ type SettingSuperMail struct {
 
 	Key string `json:"key"`
 
-	Provider string `json:"provider,omitempty"` // smtp|cloud|disabled
+	Provider string `json:"provider,omitempty" validate:"omitempty,oneof=smtp cloud disabled"` // smtp|cloud|disabled
 }
 
 func (dst *SettingSuperMail) UnmarshalJSON(b []byte) error {

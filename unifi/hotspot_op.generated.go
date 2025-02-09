@@ -25,9 +25,9 @@ type HotspotOp struct {
 	NoDelete bool   `json:"attr_no_delete,omitempty"`
 	NoEdit   bool   `json:"attr_no_edit,omitempty"`
 
-	Name      string `json:"name,omitempty"` // .{1,256}
+	Name      string `json:"name,omitempty" validate:"omitempty,gte=1,lte=256"` // .{1,256}
 	Note      string `json:"note,omitempty"`
-	XPassword string `json:"x_password,omitempty"` // .{1,256}
+	XPassword string `json:"x_password,omitempty" validate:"omitempty,gte=1,lte=256"` // .{1,256}
 }
 
 func (dst *HotspotOp) UnmarshalJSON(b []byte) error {

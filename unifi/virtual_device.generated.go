@@ -28,7 +28,7 @@ type VirtualDevice struct {
 	HeightInMeters float64 `json:"heightInMeters,omitempty"`
 	Locked         bool    `json:"locked"`
 	MapID          string  `json:"map_id"`
-	Type           string  `json:"type,omitempty"` // uap|usg|usw
+	Type           string  `json:"type,omitempty" validate:"omitempty,oneof=uap usg usw"` // uap|usg|usw
 	X              string  `json:"x,omitempty"`
 	Y              string  `json:"y,omitempty"`
 }

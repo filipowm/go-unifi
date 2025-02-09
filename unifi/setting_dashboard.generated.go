@@ -27,7 +27,7 @@ type SettingDashboard struct {
 
 	Key string `json:"key"`
 
-	LayoutPreference string                    `json:"layout_preference,omitempty"` // auto|manual
+	LayoutPreference string                    `json:"layout_preference,omitempty" validate:"omitempty,oneof=auto manual"` // auto|manual
 	Widgets          []SettingDashboardWidgets `json:"widgets,omitempty"`
 }
 
@@ -49,7 +49,7 @@ func (dst *SettingDashboard) UnmarshalJSON(b []byte) error {
 
 type SettingDashboardWidgets struct {
 	Enabled bool   `json:"enabled"`
-	Name    string `json:"name,omitempty"` // cybersecure|traffic_identification|wifi_technology|wifi_channels|wifi_client_experience|wifi_tx_retries|most_active_apps_aps_clients|most_active_apps_clients|most_active_aps_clients|most_active_apps_aps|most_active_apps|v2_most_active_aps|v2_most_active_clients|wifi_connectivity|ap_radio_density
+	Name    string `json:"name,omitempty" validate:"omitempty,oneof=cybersecure traffic_identification wifi_technology wifi_channels wifi_client_experience wifi_tx_retries most_active_apps_aps_clients most_active_apps_clients most_active_aps_clients most_active_apps_aps most_active_apps v2_most_active_aps v2_most_active_clients wifi_connectivity ap_radio_density"` // cybersecure|traffic_identification|wifi_technology|wifi_channels|wifi_client_experience|wifi_tx_retries|most_active_apps_aps_clients|most_active_apps_clients|most_active_aps_clients|most_active_apps_aps|most_active_apps|v2_most_active_aps|v2_most_active_clients|wifi_connectivity|ap_radio_density
 }
 
 func (dst *SettingDashboardWidgets) UnmarshalJSON(b []byte) error {
