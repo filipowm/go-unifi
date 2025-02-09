@@ -116,6 +116,47 @@ c, err := unifi.NewClient(&unifi.ClientConfig{
 })
 ```
 
+### Client-side validation
+
+The SDK provides basic validation for the API models. It is recommended to use it to ensure that the data you are sending 
+to the UniFi Controller is correct. The validation is based on the regex and validation rules provided in 
+the UniFi Controller API specs extracted from the JAR files.
+
+Client supports 3 modes of validation:
+- `soft`, `unifi.SoftValidation` (_default_) - will log a warning if any of the fields are invalid before sending the request, but will not stop the request
+- `hard`, `unifi.HardValidation` - will return an error if any of the fields are invalid before sending the request
+- `disable`, `unifi.DisableValidation` - will disable validation completely
+
+To change the validation mode, you can use the `ValidationMode` field in the client configuration:
+
+```go
+c, err := unifi.NewClient(&unifi.ClientConfig{
+    ...
+    ValidationMode: unifi.HardValidation,
+})
+```
+
+If you use hard validation, you can get access to `unifi.ValidationError` struct, which contains information about the validation errors:
+
+```go
+n := &unifi.Network{
+	Name:     "my-network",
+	Purpose:  "invalid-purpose",
+	IPSubnet: "10.0.0.10/24",
+}
+_, err = c.CreateNetwork(ctx, "default", n)
+
+if err != nil {
+	validationError := &unifi.ValidationError{}
+	errors.As(err, &validationError)
+	fmt.Printf("Error: %v\n", validationError)
+    fmt.Printf("Root: %v\n", validationError.Root)
+}
+```
+
+`Root` error is `validator.ValidationErrors` struct from [go-playground/validator](https://pkg.go.dev/github.com/go-playground/validator/v10#ValidationErrors), 
+which contains detailed information about the validation errors.
+
 ### Examples
 
 List all available networks:
@@ -141,7 +182,8 @@ user, err := c.CreateUser(ctx, "site-name", &unifi.User{
 - [x] Support API Key authentication
 - [ ] Generate client code for currently generated API structures, for use within or outside the Terraform provider
 - [ ] Increase test coverage
-- [ ] Implement validation for fields and structures
+- [x] Implement validation for fields and structures
+- [ ] Extend validators for more complex cases
 - [ ] Add more documentation and examples
 - [ ] Bugfixing...
 
