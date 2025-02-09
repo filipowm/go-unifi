@@ -94,7 +94,7 @@ c, err := unifi.NewClient(&unifi.ClientConfig{
 You can use interceptors to modify requests and responses. This gives you more control over the client behavior
 and flexibility to add custom logic.
 
-To use interceptor logic, you need to create a struct implementing [ClientInterceptor](https://pkg.go.dev/github.com/filipowm/go-unifi/unifi#ClientInterceptor). interface.
+To use interceptor logic, you need to create a struct implementing [ClientInterceptor](https://pkg.go.dev/github.com/filipowm/go-unifi/unifi#ClientInterceptor) interface.
 For example, you can use interceptors to log requests and responses:
 
 ```go
