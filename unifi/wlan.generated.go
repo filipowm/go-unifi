@@ -414,11 +414,11 @@ func (dst *WLANSaePsk) UnmarshalJSON(b []byte) error {
 }
 
 type WLANScheduleWithDuration struct {
-	DurationMinutes int      `json:"duration_minutes,omitempty"`   // ^[1-9][0-9]*$
-	Name            string   `json:"name,omitempty"`               // .*
-	StartDaysOfWeek []string `json:"start_days_of_week,omitempty"` // ^(sun|mon|tue|wed|thu|fri|sat)$
-	StartHour       int      `json:"start_hour,omitempty"`         // ^(1?[0-9])|(2[0-3])$
-	StartMinute     int      `json:"start_minute,omitempty"`       // ^[0-5]?[0-9]$
+	DurationMinutes int      `json:"duration_minutes,omitempty" validate:"omitempty,numeric_nonzero"` // ^[1-9][0-9]*$
+	Name            string   `json:"name,omitempty"`                                                  // .*
+	StartDaysOfWeek []string `json:"start_days_of_week,omitempty"`                                    // ^(sun|mon|tue|wed|thu|fri|sat)$
+	StartHour       int      `json:"start_hour,omitempty"`                                            // ^(1?[0-9])|(2[0-3])$
+	StartMinute     int      `json:"start_minute,omitempty"`                                          // ^[0-5]?[0-9]$
 }
 
 func (dst *WLANScheduleWithDuration) UnmarshalJSON(b []byte) error {

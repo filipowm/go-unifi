@@ -134,6 +134,7 @@ type CustomRegexValidator struct {
 
 var customValidators = []CustomValidator{
 	NewCustomRegexValidator("w_regex", wRegexString),
+	NewCustomRegexValidator("numeric_nonzero", `^[1-9][0-9]*$`),
 }
 
 func lazyRegexCompile(str string) func() *regexp.Regexp {

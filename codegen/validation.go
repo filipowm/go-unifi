@@ -19,19 +19,20 @@ type validationComment string
 type regexSpecialChars string
 
 const (
-	validateTag           = "validate"
-	mac         validator = "mac"
-	ip          validator = "ip"
-	ipv4        validator = "ipv4"
-	ipv6        validator = "ipv6"
-	httpUrl     validator = "http_url"
-	oneOf       validator = "oneof"
-	cidr        validator = "cidr"
-	omitempty   validator = "omitempty"
-	length      validator = "len"
-	gte         validator = "gte"
-	lte         validator = "lte"
-	w_regex     validator = "w_regex"
+	validateTag               = "validate"
+	mac             validator = "mac"
+	ip              validator = "ip"
+	ipv4            validator = "ipv4"
+	ipv6            validator = "ipv6"
+	httpUrl         validator = "http_url"
+	oneOf           validator = "oneof"
+	cidr            validator = "cidr"
+	omitempty       validator = "omitempty"
+	length          validator = "len"
+	gte             validator = "gte"
+	lte             validator = "lte"
+	w_regex         validator = "w_regex"
+	numeric_nonzero validator = "numeric_nonzero"
 
 	regexChars regexSpecialChars = "^$*+?()[]{}\\|."
 )
@@ -124,6 +125,11 @@ func (vc validationComment) IsIP() bool {
 	return strings.Contains(s, ipv4Regex) && strings.Contains(s, ipv6Regex) && strings.Count(s, "|") == (ipv4RegexGroupsCount+ipv6RegexGroupsCount+1)
 }
 
+func (vc validationComment) IsNumericNonZeroBased() bool {
+	s := string(vc)
+	return s == numericNonZeroRegex
+}
+
 func trimWrappers(s string) string {
 	trimmed := strings.TrimSuffix(strings.TrimPrefix(s, "(^$|"), "|^$)")    // remove wrapping parenthesis
 	trimmed = strings.TrimSuffix(strings.TrimPrefix(trimmed, "^$|"), "|^$") // remove ^$ which allows for empty string and is not needed
@@ -131,8 +137,9 @@ func trimWrappers(s string) string {
 }
 
 const (
-	ipv4Regex = "(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])"
-	ipv6Regex = "(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))"
+	ipv4Regex           = "(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])"
+	ipv6Regex           = "(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))"
+	numericNonZeroRegex = "^[1-9][0-9]*$"
 )
 
 var (
@@ -165,6 +172,8 @@ func defineFieldValidation(rawValidation string) string {
 		return createValidations(validation{v: ipv6})
 	} else if vc.IsIP() {
 		return createValidations(validation{v: ip})
+	} else if vc.IsNumericNonZeroBased() {
+		return createValidations(validation{v: numeric_nonzero})
 	}
 	return ""
 }

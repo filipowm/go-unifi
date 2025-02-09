@@ -183,7 +183,7 @@ type Network struct {
 	UidVPNCustomRouting                           []string                        `json:"uid_vpn_custom_routing,omitempty"` // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\/([1-9]|[1-2][0-9]|3[0-2])$
 	UidVPNDefaultDNSSuffix                        string                          `json:"uid_vpn_default_dns_suffix,omitempty"`
 	UidVPNMasqueradeEnabled                       bool                            `json:"uid_vpn_masquerade_enabled"`
-	UidVPNMaxConnectionTimeSeconds                int                             `json:"uid_vpn_max_connection_time_seconds,omitempty"` // ^[1-9][0-9]*$
+	UidVPNMaxConnectionTimeSeconds                int                             `json:"uid_vpn_max_connection_time_seconds,omitempty" validate:"omitempty,numeric_nonzero"` // ^[1-9][0-9]*$
 	UidVPNSyncPublicIP                            bool                            `json:"uid_vpn_sync_public_ip"`
 	UidVPNType                                    string                          `json:"uid_vpn_type,omitempty" validate:"omitempty,oneof=openvpn wireguard"` // openvpn|wireguard
 	UidWorkspaceUrl                               string                          `json:"uid_workspace_url,omitempty"`
@@ -411,8 +411,8 @@ func (dst *NetworkWANDHCPOptions) UnmarshalJSON(b []byte) error {
 }
 
 type NetworkWANProviderCapabilities struct {
-	DownloadKilobitsPerSecond int `json:"download_kilobits_per_second,omitempty"` // ^[1-9][0-9]*$
-	UploadKilobitsPerSecond   int `json:"upload_kilobits_per_second,omitempty"`   // ^[1-9][0-9]*$
+	DownloadKilobitsPerSecond int `json:"download_kilobits_per_second,omitempty" validate:"omitempty,numeric_nonzero"` // ^[1-9][0-9]*$
+	UploadKilobitsPerSecond   int `json:"upload_kilobits_per_second,omitempty" validate:"omitempty,numeric_nonzero"`   // ^[1-9][0-9]*$
 }
 
 func (dst *NetworkWANProviderCapabilities) UnmarshalJSON(b []byte) error {

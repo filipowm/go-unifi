@@ -116,7 +116,7 @@ func testValidationCommentCheck(t *testing.T, testCases []struct {
 			t.Parallel()
 			a := assert.New(t)
 			trimmed := trimWrappers(string(c.validationComment))
-			//trimmed := string(c.validationComment) //trimWrappers(string(c.validationComment))
+			// trimmed := string(c.validationComment) //trimWrappers(string(c.validationComment))
 			result := fn(validationComment(trimmed))
 			a.Equal(c.expected, result)
 		})
@@ -276,6 +276,7 @@ func generateTestCasesForFixedRegex(regex string) []struct {
 		{base.mutate("(^$|", ""), true},
 		{base.mutate("", "|^$)"), true},
 
+		// FIXME how to handle these cases? current implementation is dumb and quick, and might fail..
 		//{base.mutate("^test", ""), false},
 		//{base.mutate("^test", "test$"), false},
 		//{base.mutate("", "test$"), false},
@@ -314,4 +315,42 @@ func TestIsIPValidation(t *testing.T) {
 	testCases = append(testCases, generateTestCasesForFixedRegex("("+ipv6Regex+")|("+ipv4Regex+")")...)
 	testCases = append(testCases, generateTestCasesForFixedRegex("("+ipv4Regex+")|("+ipv6Regex+")")...)
 	testValidationCommentCheck(t, testCases, func(v validationComment) bool { return v.IsIP() })
+}
+
+func TestIsNumericNonZeroValidation(t *testing.T) {
+	t.Parallel()
+	base := validationComment(numericNonZeroRegex)
+	testCases := []struct {
+		validationComment validationComment
+		expected          bool
+	}{
+		{base, true},
+		{base.mutate("^$|", "|^$"), true},
+		{base.mutate("^$|", ""), true},
+		{base.mutate("", "|^$"), true},
+		{base.mutate("(^$|", "|^$)"), true},
+		{base.mutate("(^$|", ""), true},
+		{base.mutate("", "|^$)"), true},
+
+		{base.mutate("(^", "$)"), false},
+		{base.mutate("^", "$)"), false},
+		{base.mutate("^(", "$"), false},
+		{base.mutate("^test", ""), false},
+		{base.mutate("^test", "test$"), false},
+		{base.mutate("", "test$"), false},
+		{base.mutate("test", "test"), false},
+		{base.mutate("", "test"), false},
+		{base.mutate("test", ""), false},
+		{base.mutate("^test$|", "|^test$"), false},
+		{base.mutate("^test|", "|^test$"), false},
+		{base.mutate("test$|", "|^test$"), false},
+		{base.mutate("test$|", "|^test$"), false},
+		{base.mutate("^test$|", "|test$"), false},
+		{base.mutate("^test|", "|^test"), false},
+		{base.mutate("test|", "|test"), false},
+		{base.mutate("(test|", "|test)"), false},
+		{"test", false},
+		{"", false},
+	}
+	testValidationCommentCheck(t, testCases, func(v validationComment) bool { return v.IsNumericNonZeroBased() })
 }
