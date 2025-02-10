@@ -2,9 +2,11 @@ package unifi
 
 import (
 	"context"
+	"errors"
 	"fmt"
 )
 
+// SysInfo represents detailed system information from the UniFi controller.
 type SysInfo struct {
 	Timezone        string   `json:"timezone"`
 	Version         string   `json:"version"`
@@ -71,6 +73,7 @@ type SysInfo struct {
 	*/
 }
 
+// GetSystemInfo retrieves system info using the new API.
 func (c *Client) GetSystemInfo(ctx context.Context, id string) (*SysInfo, error) {
 	var respBody struct {
 		Meta Meta      `json:"Meta"`
@@ -87,4 +90,57 @@ func (c *Client) GetSystemInfo(ctx context.Context, id string) (*SysInfo, error)
 	}
 
 	return &respBody.Data[0], nil
+}
+
+// serverInfo represents basic server info from old API .
+type serverInfo struct {
+	Up            bool   `json:"up"`
+	ServerVersion string `json:"server_version"`
+	UUID          string `json:"uuid"`
+}
+
+// getOldSysInfo retrieves system information using the old API style.
+func (c *Client) getOldSysInfo(ctx context.Context) (*SysInfo, error) {
+	var response struct {
+		Data serverInfo `json:"Meta"`
+	}
+
+	err := c.Get(ctx, c.apiPaths.StatusPath, nil, &response)
+	if err != nil {
+		return nil, err
+	}
+	d := response.Data
+	return &SysInfo{
+		Version: d.ServerVersion,
+	}, nil
+}
+
+// GetSystemInformation retrieves system information, trying the new API first and falling back to the old API if necessary.
+func (c *Client) GetSystemInformation() (*SysInfo, error) {
+	ctx, cancel := c.newRequestContext()
+	defer cancel()
+
+	var resultingError error
+	info, err := c.GetSystemInfo(ctx, "default")
+	if err != nil {
+		resultingError = err
+	} else if info == nil || info.Version == "" {
+		resultingError = errors.New("new API returned empty server info")
+	}
+
+	if resultingError != nil {
+		info, err = c.getOldSysInfo(ctx)
+		if err != nil {
+			resultingError = errors.Join(resultingError, err)
+		} else if info == nil || info.Version == "" {
+			resultingError = errors.Join(resultingError, errors.New("old API returned empty server info"))
+		} else {
+			resultingError = nil
+		}
+	}
+
+	if resultingError != nil {
+		return nil, resultingError
+	}
+	return info, nil
 }

@@ -46,10 +46,10 @@ func verifyInterceptorPresence(a *assert.Assertions, c *Client, interceptors []i
 	}
 }
 
-func TestNewClient(t *testing.T) {
+func TestNewBareClient(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
-	c, err := NewClient(&ClientConfig{
+	c, err := NewBareClient(&ClientConfig{
 		URL:       localUrl,
 		User:      "admin",
 		Pass:      "password",
@@ -58,8 +58,8 @@ func TestNewClient(t *testing.T) {
 	require.Error(t, err)
 	a.EqualValues(localUrl, c.BaseURL.String())
 	a.Contains(err.Error(), "connection refused", "an invalid destination should produce a connection error.")
-	verifyInterceptorPresence(a, c, []interface{}{&CsrfInterceptor{}, &DefaultHeadersInterceptor{}}, true)
-	verifyInterceptorPresence(a, c, []interface{}{&ApiKeyAuthInterceptor{}}, false)
+	verifyInterceptorPresence(a, c, []interface{}{&CSRFInterceptor{}, &DefaultHeadersInterceptor{}}, true)
+	verifyInterceptorPresence(a, c, []interface{}{&APIKeyAuthInterceptor{}}, false)
 }
 
 func TestNewClientWithApiKey(t *testing.T) {
@@ -76,8 +76,8 @@ func TestNewClientWithApiKey(t *testing.T) {
 	require.Error(t, err)
 	a.EqualValues(localUrl, c.BaseURL.String())
 	a.Contains(err.Error(), "connection refused", "an invalid destination should produce a connection error.")
-	verifyInterceptorPresence(a, c, []interface{}{&ApiKeyAuthInterceptor{}, &DefaultHeadersInterceptor{}}, true)
-	verifyInterceptorPresence(a, c, []interface{}{&CsrfInterceptor{}}, false)
+	verifyInterceptorPresence(a, c, []interface{}{&APIKeyAuthInterceptor{}, &DefaultHeadersInterceptor{}}, true)
+	verifyInterceptorPresence(a, c, []interface{}{&CSRFInterceptor{}}, false)
 }
 
 func TestCustomizeHttpClient(t *testing.T) {
@@ -418,23 +418,27 @@ func TestAuthConfigurationValidation(t *testing.T) {
 		{"test", "test", "test", true},
 	}
 
+	v, err := newValidator()
+	require.NoError(t, err)
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("user:%s-pass:%s-apikey:%s", tc.User, tc.Pass, tc.APIKey), func(t *testing.T) {
 			t.Parallel()
 			// given
-			_, err := NewClient(&ClientConfig{
+			cc := &ClientConfig{
 				URL:    testUrl,
 				User:   tc.User,
 				Pass:   tc.Pass,
 				APIKey: tc.APIKey,
-			})
+			}
 
+			// when
+			err = v.Validate(cc)
 			// then
 			if tc.shouldFail {
 				require.ErrorContains(t, err, "validation failed")
 				return
 			}
-			require.ErrorContains(t, err, "dial tcp") // error will anyway exist, but it will be not related to config
+			require.NoError(t, err)
 		})
 	}
 }
@@ -461,20 +465,73 @@ func TestUrlValidation(t *testing.T) {
 		t.Run(tc.URL, func(t *testing.T) {
 			t.Parallel()
 			// given
-			_, err := NewClient(&ClientConfig{
+			cc := &ClientConfig{
 				URL:    tc.URL,
 				APIKey: "test-key",
-			})
+			}
+			v, err := newValidator()
+			require.NoError(t, err)
+
+			// when
+			err = v.Validate(cc)
 
 			// then
 			if tc.shouldFail {
 				require.ErrorContains(t, err, "validation failed")
-				require.ErrorContains(t, err, tc.errorString)
 				return
 			}
-			require.ErrorContains(t, err, "dial tcp") // error will anyway exist, but it will be not related to config
+			require.NoError(t, err)
 		})
 	}
+}
+
+func TestValidationModeValidation(t *testing.T) {
+	t.Parallel()
+	testCases := []struct {
+		validationMode validationMode
+		expectedError  string
+	}{
+		{SoftValidation, ""},
+		{HardValidation, ""},
+		{DisableValidation, ""},
+		{"invalid", "must be one of"},
+	}
+
+	for _, tc := range testCases {
+		t.Run(string(tc.validationMode), func(t *testing.T) {
+			t.Parallel()
+			// given
+			cc := &ClientConfig{
+				URL:            testUrl,
+				APIKey:         "test-key",
+				ValidationMode: tc.validationMode,
+			}
+			v, err := newValidator()
+			require.NoError(t, err)
+
+			// when
+			err = v.Validate(cc)
+
+			// then
+			if tc.expectedError != "" {
+				require.ErrorContains(t, err, tc.expectedError)
+				return
+			}
+			require.NoError(t, err)
+		})
+	}
+}
+
+func TestClientConfigValidationExecutedOnNewClient(t *testing.T) {
+	t.Parallel()
+	a := assert.New(t)
+	// given
+	cc := &ClientConfig{URL: "invalid URL"}
+	// when
+	c, err := NewClient(cc)
+	// then
+	require.ErrorContains(t, err, "validation failed")
+	a.Nil(c)
 }
 
 type validateableBody struct {
@@ -584,7 +641,7 @@ func TestGetSystemInformation(t *testing.T) {
 				VerifySSL: false,
 			})
 
-			sysInfo, err := c.getSystemInformation()
+			sysInfo, err := c.GetSystemInformation()
 
 			if tc.expectedError != "" {
 				require.ErrorContains(t, err, tc.expectedError)
@@ -602,17 +659,17 @@ func TestParseBaseUrl(t *testing.T) {
 	a := assert.New(t)
 
 	// Valid URL without /api in the path.
-	base, err := parseBaseUrl("http://localhost")
+	base, err := parseBaseURL("http://localhost")
 	require.NoError(t, err)
 	a.Equal("http", base.Scheme)
 	a.Equal("", base.Path)
 
 	// URL with trailing slash /api/
-	_, err = parseBaseUrl("http://localhost/api/")
+	_, err = parseBaseURL("http://localhost/api/")
 	require.ErrorContains(t, err, "expected a base URL without the `/api`")
 
 	// URL with /api in path (no trailing slash).
-	_, err = parseBaseUrl("http://localhost/api")
+	_, err = parseBaseURL("http://localhost/api")
 	require.ErrorContains(t, err, "expected a base URL without the `/api`")
 }
 
@@ -642,10 +699,10 @@ func TestRegisterInterceptor(t *testing.T) {
 	// Create a dummy interceptor (using TestInterceptor already defined in the file).
 	var dummy ClientInterceptor = &TestInterceptor{}
 	initialCount := len(client.interceptors)
-	client.RegisterInterceptor(&dummy)
+	client.AddInterceptor(&dummy)
 	assert.Len(t, client.interceptors, initialCount+1)
 	// Attempt to add the same interceptor again.
-	client.RegisterInterceptor(&dummy)
+	client.AddInterceptor(&dummy)
 	assert.Len(t, client.interceptors, initialCount+1)
 }
 
@@ -730,7 +787,7 @@ func TestCreateRequestURLInvalid(t *testing.T) {
 		BaseURL:  &url.URL{Scheme: "http", Host: "localhost"},
 		apiPaths: &NewStyleAPI,
 	}
-	_, err := c.createRequestURL("://bad-url")
+	_, err := c.buildRequestURL("://bad-url")
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "parse")
 }
@@ -741,7 +798,7 @@ func TestCreateRequestURLAbsolute(t *testing.T) {
 		BaseURL:  &url.URL{Scheme: "http", Host: "localhost"},
 		apiPaths: &NewStyleAPI,
 	}
-	reqURL, err := c.createRequestURL("http://example.com/test")
+	reqURL, err := c.buildRequestURL("http://example.com/test")
 	require.NoError(t, err)
 	assert.Equal(t, "http://example.com/test", reqURL.String())
 }
@@ -749,9 +806,9 @@ func TestCreateRequestURLAbsolute(t *testing.T) {
 func TestCreateRequestContextTimeout(t *testing.T) {
 	t.Parallel()
 	c := &Client{
-		config: &ClientConfig{Timeout: 100 * time.Millisecond},
+		timeout: 100 * time.Millisecond,
 	}
-	ctx, cancel := c.createRequestContext()
+	ctx, cancel := c.newRequestContext()
 	defer cancel()
 	_, ok := ctx.Deadline()
 	require.True(t, ok)
@@ -787,9 +844,7 @@ func TestLoginWithAPIKeyDirect(t *testing.T) {
 	t.Parallel()
 	// Create a client manually with the APIKey set.
 	c := &Client{
-		config: &ClientConfig{
-			APIKey: "abc",
-		},
+		credentials: APIKeyCredentials{APIKey: "abc"},
 	}
 	err := c.Login()
 	assert.NoError(t, err)
