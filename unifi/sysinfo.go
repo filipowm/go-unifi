@@ -5,12 +5,17 @@ import (
 	"fmt"
 )
 
-type sysInfo struct { //nolint: unused
-	Timezone        string `json:"timezone"`
-	Version         string `json:"version"`
-	PreviousVersion string `json:"previous_version"`
-	UBNTDeviceType  string `json:"ubnt_device_type"`
-	UDMVersion      string `json:"udm_version"`
+type SysInfo struct {
+	Timezone        string   `json:"timezone"`
+	Version         string   `json:"version"`
+	PreviousVersion string   `json:"previous_version"`
+	Build           string   `json:"build"`
+	Name            string   `json:"name"`
+	Hostname        string   `json:"hostname"`
+	IPAddrs         []string `json:"ip_addrs"`
+	Uptime          int64    `json:"uptime"`
+	UBNTDeviceType  string   `json:"ubnt_device_type"`
+	UDMVersion      string   `json:"udm_version"`
 
 	/*
 
@@ -66,10 +71,10 @@ type sysInfo struct { //nolint: unused
 	*/
 }
 
-func (c *Client) sysinfo(ctx context.Context, id string) (*sysInfo, error) { //nolint: unused
+func (c *Client) GetSystemInfo(ctx context.Context, id string) (*SysInfo, error) {
 	var respBody struct {
 		Meta Meta      `json:"Meta"`
-		Data []sysInfo `json:"data"`
+		Data []SysInfo `json:"data"`
 	}
 
 	err := c.Get(ctx, fmt.Sprintf("s/%s/stat/sysinfo", id), nil, &respBody)

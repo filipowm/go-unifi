@@ -68,7 +68,7 @@ type ClientConfig struct {
 
 type Client struct {
 	BaseURL      *url.URL
-	ServerInfo   *ServerInfo
+	SysInfo      *SysInfo
 	apiPaths     *ApiPaths
 	config       *ClientConfig
 	http         *http.Client
@@ -180,13 +180,16 @@ func NewClient(config *ClientConfig) (*Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed creating validator: %w", err)
 	}
+
 	if err := v.Validate(config); err != nil {
 		return nil, fmt.Errorf("failed validating config: %w", err)
 	}
+
 	u, err := newUnifi(config, v)
 	if err != nil {
 		return nil, fmt.Errorf("failed creating unifi client: %w", err)
 	}
+
 	if err = u.determineApiStyle(); err != nil {
 		return u, fmt.Errorf("failed determining API style: %w", err)
 	}
@@ -195,10 +198,10 @@ func NewClient(config *ClientConfig) (*Client, error) {
 		return u, fmt.Errorf("failed logging in: %w", err)
 	}
 
-	if serverInfo, err := u.GetServerInfo(); err != nil {
+	if sysInfo, err := u.getSystemInformation(); err != nil {
 		return u, fmt.Errorf("failed getting server info: %w", err)
 	} else {
-		u.ServerInfo = serverInfo
+		u.SysInfo = sysInfo
 	}
 	return u, nil
 }
@@ -388,12 +391,7 @@ func (c *Client) determineApiStyle() error {
 	return nil
 }
 
-// GetServerInfo reads the controller's version and UUID. Only call this if you
-// previously called Login and suspect the controller version has changed.
-func (c *Client) GetServerInfo() (*ServerInfo, error) {
-	ctx, cancel := c.createRequestContext()
-	defer cancel()
-
+func (c *Client) getOldSysInfo(ctx context.Context) (*SysInfo, error) {
 	var response struct {
 		Data ServerInfo `json:"Meta"`
 	}
@@ -402,8 +400,41 @@ func (c *Client) GetServerInfo() (*ServerInfo, error) {
 	if err != nil {
 		return nil, err
 	}
+	data := response.Data
+	return &SysInfo{
+		Version: data.ServerVersion,
+	}, nil
+}
 
-	return &response.Data, nil
+// getSystemInformation reads the controller's version and UUID. Only call this if you
+// previously called Login and suspect the controller version has changed.
+func (c *Client) getSystemInformation() (*SysInfo, error) {
+	ctx, cancel := c.createRequestContext()
+	defer cancel()
+
+	var resultingError error
+	info, err := c.GetSystemInfo(ctx, "default") // get for default site which must exist
+	if err != nil {
+		resultingError = err
+	} else if info == nil || info.Version == "" {
+		resultingError = errors.New("new API returned empty server info")
+	}
+
+	if resultingError != nil {
+		info, err = c.getOldSysInfo(ctx)
+		if err != nil {
+			resultingError = errors.Join(resultingError, err)
+		} else if info == nil || info.Version == "" {
+			resultingError = errors.Join(resultingError, errors.New("old API returned empty server info"))
+		} else {
+			resultingError = nil
+		}
+	}
+
+	if resultingError != nil {
+		return nil, resultingError
+	}
+	return info, nil
 }
 
 func marshalRequest(reqBody interface{}) (io.Reader, error) {
