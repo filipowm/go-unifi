@@ -42,56 +42,14 @@ const (
 	UserAgentHeader   = "User-Agent"
 	AcceptHeader      = "Accept"
 	ContentTypeHeader = "Content-Type"
-)
 
-var (
-	ErrAuthenticationFailed = errors.New("authentication failed")
-	ErrNotFound             = errors.New("not found")
-)
-
-type APIError struct {
-	RC      string
-	Message string
-}
-
-func (err *APIError) Error() string {
-	return err.Message
-}
-
-func (err *APIError) Is(target error) bool {
-	var apiError *APIError
-	if errors.As(target, &apiError) {
-		if err.RC == apiError.RC && err.Message == apiError.Message {
-			return true
-		}
-	}
-	return false
-}
-
-type Meta struct {
-	RC      string `json:"rc"`
-	Message string `json:"msg"`
-}
-
-func (m *Meta) error() error {
-	if m.RC != "ok" {
-		return &APIError{
-			RC:      m.RC,
-			Message: m.Message,
-		}
-	}
-
-	return nil
-}
-
-type validationMode string
-
-const (
 	SoftValidation    validationMode = "soft"
 	HardValidation    validationMode = "hard"
 	DisableValidation validationMode = "disable"
 	DefaultValidation validationMode = SoftValidation // TODO: change to hard in next major version
 )
+
+type validationMode string
 
 type ClientConfig struct {
 	URL            string        `validate:"required,http_url"`
@@ -147,8 +105,8 @@ var (
 
 type ServerInfo struct {
 	Up            bool   `json:"up"`
-	ServerVersion string `fake:"{appversion}" json:"server_version"`
-	UUID          string `fake:"{uuid}"       json:"uuid"`
+	ServerVersion string `json:"server_version"`
+	UUID          string `json:"uuid"`
 }
 
 type HttpCustomizer func(transport *http.Transport) error
@@ -214,39 +172,6 @@ type ResponseErrorHandler interface {
 	HandleError(resp *http.Response) error
 }
 
-type DefaultResponseErrorHandler struct{}
-
-func (d *DefaultResponseErrorHandler) HandleError(resp *http.Response) error {
-	switch resp.StatusCode {
-	case http.StatusOK:
-		return nil
-	case http.StatusNotFound:
-		return ErrNotFound
-	case http.StatusUnauthorized:
-		return ErrAuthenticationFailed
-	}
-	errBody := struct {
-		Meta Meta `json:"Meta"`
-		Data []struct {
-			Meta Meta `json:"Meta"`
-		} `json:"data"`
-	}{}
-	if err := json.NewDecoder(resp.Body).Decode(&errBody); err != nil {
-		return err
-	}
-	var apiErr error
-	if len(errBody.Data) > 0 && errBody.Data[0].Meta.RC == "error" {
-		// check first error in data, should we look for more than one?
-		apiErr = errBody.Data[0].Meta.error()
-	}
-	if apiErr == nil {
-		apiErr = errBody.Meta.error()
-	}
-
-	// TODO: check rc in addition to status code?
-	return fmt.Errorf("%w (%s) for %s %s", apiErr, resp.Status, resp.Request.Method, resp.Request.URL.String())
-}
-
 // NewClient creates a http.Client with authenticated cookies.
 // Used to make additional, authenticated requests to the APIs.
 // Start here.
@@ -257,9 +182,6 @@ func NewClient(config *ClientConfig) (*Client, error) {
 	}
 	if err := v.Validate(config); err != nil {
 		return nil, fmt.Errorf("failed validating config: %w", err)
-	}
-	if config.ValidationMode == "" {
-		config.ValidationMode = DefaultValidation
 	}
 	u, err := newUnifi(config, v)
 	if err != nil {
@@ -350,6 +272,9 @@ func newUnifi(config *ClientConfig, v *validator) (*Client, error) {
 		errorHandler = config.ErrorHandler
 	} else {
 		errorHandler = &DefaultResponseErrorHandler{}
+	}
+	if config.ValidationMode == "" {
+		config.ValidationMode = DefaultValidation
 	}
 	u := &Client{
 		BaseURL:      baseURL,

@@ -58,6 +58,7 @@ func (c *Client) CreateUser(ctx context.Context, site string, d *User) (*User, e
 		return nil, errors.New("malformed group response")
 	}
 
+	// TODO verify if this is still needed cause it's the only place where old-style error handling is used
 	if err := respBody.Data[0].Meta.error(); err != nil {
 		return nil, err
 	}

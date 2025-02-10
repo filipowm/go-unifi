@@ -177,7 +177,7 @@ user, err := c.CreateUser(ctx, "site-name", &unifi.User{
 ## Plans
 
 - [ ] Increase API coverage, or modify code generation to rely on the official UniFi Controller API specifications
-- [ ] Improve error handling (currently only basic error handling is implemented and some of the errors are swallowed)
+- [x] Improve error handling (currently only basic error handling is implemented and error details are not propagated)
 - [x] Improve client code for better usability
 - [x] Support API Key authentication
 - [ ] Generate client code for currently generated API structures, for use within or outside the Terraform provider
