@@ -45,7 +45,7 @@ jobs:
       actions: "read"
       pull-requests: "write"
     steps:
-      - uses: "fgrosse/go-coverage-report@v1.1.1"
+      - uses: "fgrosse/go-coverage-report@v1.2.0"
         name: "PR Coverage Report"
         if: "${{ github.event_name == 'pull_request' }}"
         with:
