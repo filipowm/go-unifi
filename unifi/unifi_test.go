@@ -159,6 +159,7 @@ func NewTestClientWithInterceptor() (*Client, *TestInterceptor) {
 // runClientGetRequest creates a new test client, performs a GET request,
 // asserts that an error occurred, and returns the client and its interceptor.
 func runClientGetRequest(t *testing.T, path string, data interface{}) (*Client, *TestInterceptor) {
+	t.Helper()
 	c, interceptor := NewTestClientWithInterceptor()
 	err := c.Get(context.Background(), path, data, nil)
 	require.Error(t, err)
@@ -168,6 +169,7 @@ func runClientGetRequest(t *testing.T, path string, data interface{}) (*Client, 
 // runClientRequest creates a new test client, performs a request with the given method,
 // asserts that an error occurred, and returns the client and its interceptor.
 func runClientRequest(t *testing.T, method, path string, body interface{}) (*Client, *TestInterceptor) {
+	t.Helper()
 	c, interceptor := NewTestClientWithInterceptor()
 	err := c.Do(context.Background(), method, path, body, nil)
 	require.Error(t, err)
@@ -190,6 +192,7 @@ func TestRequestInterceptorBehavior(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 			c, interceptor := NewTestClientWithInterceptor()
 			interceptor.failOnRequest = tc.failOnRequest
 			err := c.Get(context.Background(), "/", nil, nil)
@@ -246,6 +249,7 @@ func TestRequestHeaders(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 			assert.EqualValues(t, tc.expected, interceptor.RequestHeader(tc.header))
 		})
 	}
@@ -302,10 +306,6 @@ func TestUnifiIntegrationUserPassInjected(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
 	// given
-	type userPass struct {
-		Username string `json:"username"`
-		Password string `json:"password"`
-	}
 	srv := runTestServer(NewStyleAPI.LoginPath)
 	interceptor := NewTestInterceptor()
 	c, _ := NewClient(&ClientConfig{
@@ -517,7 +517,7 @@ func TestValidationModes(t *testing.T) {
 	}
 }
 
-// Common test server setup for system information tests
+// Common test server setup for system information tests.
 type sysInfoTestCase struct {
 	name           string
 	newAPIVersion  string
@@ -575,7 +575,7 @@ func TestGetSystemInformation(t *testing.T) {
 			ts := setupSysInfoTestServer(tc)
 			defer ts.Close()
 
-			c, err := NewClient(&ClientConfig{
+			c, _ := NewClient(&ClientConfig{
 				URL:       ts.URL,
 				APIKey:    "dummy",
 				VerifySSL: false,
