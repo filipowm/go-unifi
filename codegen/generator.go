@@ -41,29 +41,14 @@ func generateCodeFromTemplate(templateName, templateContent string, toWrite any)
 	return string(src), err
 }
 
-// buildClientInfo creates ClientInfo from the provided resources.
-func buildClientInfo(resources []*Resource) (*ClientInfo, error) {
-	var functions []ClientFunction
-	for _, resource := range resources {
-		functions = append(functions, resource)
-	}
-	return &ClientInfo{Functions: functions}, nil
-}
-
-type generators []Generatable
-
 // generateCode generates code for each generation source and writes it to file.
 func generateCode(fieldsDir string, outDir string) error {
-	var generators generators
+	generators := make([]Generatable, 0)
 	resources, err := buildResourcesFromDownloadedFields(fieldsDir)
 	if err != nil {
 		return fmt.Errorf("failed to build resources from downloaded fields: %w", err)
 	}
-	client, err := buildClientInfo(resources)
-	if err != nil {
-		return err
-	}
-
+	client := newClientInfo(resources)
 	for _, resource := range resources {
 		generators = append(generators, resource)
 	}
@@ -79,7 +64,7 @@ func generateCode(fieldsDir string, outDir string) error {
 		goFile := strcase.ToSnake(g.Name()) + ".generated.go"
 		goFilePath := filepath.Join(outDir, goFile)
 		_ = os.Remove(goFilePath)
-		if err := os.WriteFile(goFilePath, []byte(code), 0644); err != nil {
+		if err := os.WriteFile(goFilePath, []byte(code), 0o644); err != nil {
 			log.Errorf("failed to write file %s: %s", goFile, err)
 			continue
 		}
@@ -93,7 +78,7 @@ func writeGeneratedFile(outDir string, name string, content string) error {
 	goFile := strcase.ToSnake(name) + ".generated.go"
 	goFilePath := filepath.Join(outDir, goFile)
 	_ = os.Remove(goFilePath)
-	if err := os.WriteFile(goFilePath, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(goFilePath, []byte(content), 0o644); err != nil {
 		return fmt.Errorf("failed to write file %s: %w", goFile, err)
 	}
 	return nil

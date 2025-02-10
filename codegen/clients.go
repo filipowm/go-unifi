@@ -51,6 +51,15 @@ type ClientInfo struct {
 	CustomFunctions []CustomClientFunction
 }
 
+// newClientInfo creates ClientInfo from the provided resources.
+func newClientInfo(resources []*Resource) *ClientInfo {
+	functions := make([]ClientFunction, 0)
+	for _, resource := range resources {
+		functions = append(functions, resource)
+	}
+	return &ClientInfo{Functions: functions}
+}
+
 //go:embed client.go.tmpl
 var clientGoTemplate string
 

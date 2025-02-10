@@ -325,7 +325,7 @@ func buildResourcesFromDownloadedFields(fieldsDir string) ([]*Resource, error) {
 		return nil, fmt.Errorf("unable to read fields directory %s: %w", fieldsDir, err)
 	}
 
-	var resources []*Resource
+	resources := make([]*Resource, 0)
 
 	for _, fieldsFile := range fieldsFiles {
 		name := fieldsFile.Name()
