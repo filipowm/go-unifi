@@ -5,11 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -592,4 +595,217 @@ func TestGetSystemInformation(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestParseBaseUrl(t *testing.T) {
+	t.Parallel()
+	a := assert.New(t)
+
+	// Valid URL without /api in the path.
+	base, err := parseBaseUrl("http://localhost")
+	require.NoError(t, err)
+	a.Equal("http", base.Scheme)
+	a.Equal("", base.Path)
+
+	// URL with trailing slash /api/
+	_, err = parseBaseUrl("http://localhost/api/")
+	require.ErrorContains(t, err, "expected a base URL without the `/api`")
+
+	// URL with /api in path (no trailing slash).
+	_, err = parseBaseUrl("http://localhost/api")
+	require.ErrorContains(t, err, "expected a base URL without the `/api`")
+}
+
+func TestDetermineApiStyle_InvalidStatus(t *testing.T) {
+	t.Parallel()
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Return an unexpected status code.
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer ts.Close()
+
+	_, err := NewClient(&ClientConfig{
+		URL:       ts.URL,
+		APIKey:    "test",
+		VerifySSL: false,
+	})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "expected 200 or 302 status code")
+}
+
+func TestRegisterInterceptor(t *testing.T) {
+	t.Parallel()
+	// Create a manual client with an empty interceptor slice.
+	client := &Client{
+		interceptors: []ClientInterceptor{},
+	}
+	// Create a dummy interceptor (using TestInterceptor already defined in the file).
+	var dummy ClientInterceptor = &TestInterceptor{}
+	initialCount := len(client.interceptors)
+	client.RegisterInterceptor(&dummy)
+	assert.Len(t, client.interceptors, initialCount+1)
+	// Attempt to add the same interceptor again.
+	client.RegisterInterceptor(&dummy)
+	assert.Len(t, client.interceptors, initialCount+1)
+}
+
+func TestDoInvalidJsonResponse(t *testing.T) {
+	t.Parallel()
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// For API style determination.
+		if r.URL.Path == "/" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		// When handling the API call, return an invalid JSON.
+		if r.URL.Path == NewStyleAPI.ApiPath+"/any" {
+			w.WriteHeader(http.StatusOK)
+			_, err := w.Write([]byte("invalid json"))
+			if err != nil {
+				t.Error(err)
+			}
+			return
+		}
+		http.NotFound(w, r)
+	}))
+	defer ts.Close()
+
+	c, err := NewClient(&ClientConfig{
+		URL:       ts.URL,
+		APIKey:    "test-key",
+		VerifySSL: false,
+	})
+	require.Error(t, err)
+
+	var result map[string]interface{}
+	err = c.Get(context.Background(), "any", nil, &result)
+	require.ErrorContains(t, err, "unable to decode body")
+}
+
+type failingErrorHandler struct{}
+
+func (f *failingErrorHandler) HandleError(resp *http.Response) error {
+	return errors.New("custom error")
+}
+
+func TestErrorHandlerCustom(t *testing.T) {
+	t.Parallel()
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// For API style determination.
+		if r.URL.Path == "/" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		// For the API call.
+		if r.URL.Path == NewStyleAPI.ApiPath+"/error" {
+			w.WriteHeader(http.StatusOK)
+			_, err := w.Write([]byte(`{"data":"ok"}`))
+			if err != nil {
+				t.Error(err)
+			}
+			return
+		}
+		http.NotFound(w, r)
+	}))
+	defer ts.Close()
+
+	customErrorHandler := &failingErrorHandler{}
+	c, err := NewClient(&ClientConfig{
+		URL:          ts.URL,
+		APIKey:       "test-key",
+		VerifySSL:    false,
+		ErrorHandler: customErrorHandler,
+	})
+	require.Error(t, err)
+
+	var result map[string]interface{}
+	err = c.Get(context.Background(), "error", nil, &result)
+	require.Error(t, err)
+	assert.Equal(t, "custom error", err.Error())
+}
+
+func TestCreateRequestURLInvalid(t *testing.T) {
+	t.Parallel()
+	c := &Client{
+		BaseURL:  &url.URL{Scheme: "http", Host: "localhost"},
+		apiPaths: &NewStyleAPI,
+	}
+	_, err := c.createRequestURL("://bad-url")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "parse")
+}
+
+func TestCreateRequestURLAbsolute(t *testing.T) {
+	t.Parallel()
+	c := &Client{
+		BaseURL:  &url.URL{Scheme: "http", Host: "localhost"},
+		apiPaths: &NewStyleAPI,
+	}
+	reqURL, err := c.createRequestURL("http://example.com/test")
+	require.NoError(t, err)
+	assert.Equal(t, "http://example.com/test", reqURL.String())
+}
+
+func TestCreateRequestContextTimeout(t *testing.T) {
+	t.Parallel()
+	c := &Client{
+		config: &ClientConfig{Timeout: 100 * time.Millisecond},
+	}
+	ctx, cancel := c.createRequestContext()
+	defer cancel()
+	_, ok := ctx.Deadline()
+	require.True(t, ok)
+
+	// Wait for the deadline to expire.
+	time.Sleep(150 * time.Millisecond)
+	select {
+	case <-ctx.Done():
+		assert.Equal(t, context.DeadlineExceeded, ctx.Err())
+	default:
+		t.Error("expected context deadline exceeded")
+	}
+}
+
+func TestMarshalRequestInvalid(t *testing.T) {
+	t.Parallel()
+	r, err := marshalRequest(make(chan int))
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "json")
+	assert.Nil(t, r)
+}
+
+func TestMarshalRequestValid(t *testing.T) {
+	t.Parallel()
+	r, err := marshalRequest(map[string]string{"key": "value"})
+	require.NoError(t, err)
+	data, err := io.ReadAll(r)
+	require.NoError(t, err)
+	assert.JSONEq(t, `{"key":"value"}`, string(data))
+}
+
+func TestLoginWithAPIKeyDirect(t *testing.T) {
+	t.Parallel()
+	// Create a client manually with the APIKey set.
+	c := &Client{
+		config: &ClientConfig{
+			APIKey: "abc",
+		},
+	}
+	err := c.Login()
+	assert.NoError(t, err)
+}
+
+func TestHttpCustomizerError(t *testing.T) {
+	t.Parallel()
+	customizer := func(transport *http.Transport) error {
+		return errors.New("customization failed")
+	}
+	_, err := NewClient(&ClientConfig{
+		URL:            testUrl,
+		APIKey:         "test-key",
+		VerifySSL:      false,
+		HttpCustomizer: customizer,
+	})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "failed customizing HTTP transport")
 }
