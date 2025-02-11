@@ -45,6 +45,28 @@ const greeting = "{{.Greeting}}"`,
 			data:         nil,
 			expectedCode: "package main",
 		},
+		{
+			name:         "complex template",
+			templateName: "complex",
+			template: `package main
+
+type {{.TypeName}} struct {
+	{{range .Fields}}
+	{{.Name}} {{.Type}}
+	{{end}}
+}`,
+			data: struct {
+				TypeName string
+				Fields   []struct{ Name, Type string }
+			}{
+				TypeName: "Person",
+				Fields: []struct{ Name, Type string }{
+					{Name: "Name", Type: "string"},
+					{Name: "Age", Type: "int"},
+				},
+			},
+			expectedCode: "type Person struct",
+		},
 	}
 
 	for _, tt := range tests {
@@ -129,4 +151,61 @@ func TestWriteGeneratedFile_OverrideExistingFile(t *testing.T) {
 	dataBytes, err := os.ReadFile(expectedFile)
 	require.NoError(t, err)
 	a.Equal("updated content", string(dataBytes))
+}
+
+func TestWriteGeneratedFile_InvalidPath(t *testing.T) {
+	t.Parallel()
+	tempDir := t.TempDir()
+	invalidDir := filepath.Join(tempDir, "nonexistent")
+
+	_, err := writeGeneratedFile(invalidDir, "test", "content")
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "failed to write file")
+}
+
+func TestGenerateCodeFromFields(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name           string
+		fieldsDir      string
+		outDir         string
+		expectedError  bool
+		errorContains  string
+		setupMockFiles func(string)
+	}{
+		{
+			name:          "invalid fields directory",
+			fieldsDir:     "nonexistent",
+			outDir:        t.TempDir(),
+			expectedError: true,
+			errorContains: "failed to build resources from downloaded fields",
+		},
+		{
+			name:      "valid empty fields directory",
+			fieldsDir: t.TempDir(),
+			outDir:    t.TempDir(),
+			setupMockFiles: func(dir string) {
+				// Create empty directory structure
+				_ = os.MkdirAll(dir, 0755)
+			},
+			expectedError: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.setupMockFiles != nil {
+				tt.setupMockFiles(tt.fieldsDir)
+			}
+
+			err := generateCode(tt.fieldsDir, tt.outDir)
+
+			if tt.expectedError {
+				require.Error(t, err)
+				require.ErrorContains(t, err, tt.errorContains)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
 }
