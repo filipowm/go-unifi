@@ -102,7 +102,8 @@ const UnifiVersion = %q
 		return err
 	}
 
-	return writeGeneratedFile(outDir, "version", string(versionGo))
+	_, err = writeGeneratedFile(outDir, "version", string(versionGo))
+	return err
 }
 
 func writeVersionRepoMarkerFile(version *version.Version, outDir string) error {

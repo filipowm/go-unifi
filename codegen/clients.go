@@ -28,15 +28,18 @@ func (c *CustomClientFunction) Signature() string {
 	}
 	b.WriteString(c.Name)
 	b.WriteString("(")
+
+	// Build parameters without trailing comma
+	params := make([]string, 0, len(c.Parameters))
 	for k, v := range c.Parameters {
-		b.WriteString(fmt.Sprintf("%s %s, ", k, v))
+		params = append(params, fmt.Sprintf("%s %s", k, v))
 	}
+	b.WriteString(strings.Join(params, ", "))
 	b.WriteString(")")
+
 	if len(c.ReturnParameters) > 1 {
 		b.WriteString(" (")
-		for _, v := range c.ReturnParameters {
-			b.WriteString(v + ", ")
-		}
+		b.WriteString(strings.Join(c.ReturnParameters, ", "))
 		b.WriteString(")")
 	} else if len(c.ReturnParameters) == 1 {
 		b.WriteString(" " + c.ReturnParameters[0])

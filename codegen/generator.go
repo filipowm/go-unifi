@@ -61,25 +61,23 @@ func generateCode(fieldsDir string, outDir string) error {
 			continue
 		}
 
-		goFile := strcase.ToSnake(g.Name()) + ".generated.go"
-		goFilePath := filepath.Join(outDir, goFile)
-		_ = os.Remove(goFilePath)
-		if err := os.WriteFile(goFilePath, []byte(code), 0o644); err != nil {
-			log.Errorf("failed to write file %s: %s", goFile, err)
+		filename, err := writeGeneratedFile(outDir, g.Name(), code)
+		if err != nil {
+			log.Errorf("failed to write file %s: %s", g.Name(), err)
 			continue
 		}
-		log.Debugf("Generated %s with resource %s\n\n", goFile, g.Name())
+		log.Debugf("Generated %s with resource %s\n\n", filename, g.Name())
 	}
 	return nil
 }
 
 // writeGeneratedFile writes generated file content to a file.
-func writeGeneratedFile(outDir string, name string, content string) error {
+func writeGeneratedFile(outDir string, name string, content string) (string, error) {
 	goFile := strcase.ToSnake(name) + ".generated.go"
 	goFilePath := filepath.Join(outDir, goFile)
 	_ = os.Remove(goFilePath)
 	if err := os.WriteFile(goFilePath, []byte(content), 0o644); err != nil {
-		return fmt.Errorf("failed to write file %s: %w", goFile, err)
+		return goFile, fmt.Errorf("failed to write file %s: %w", goFile, err)
 	}
-	return nil
+	return goFile, nil
 }
