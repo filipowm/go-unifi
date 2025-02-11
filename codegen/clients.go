@@ -12,10 +12,15 @@ type ClientFunction interface {
 	IsSetting() bool
 }
 
+type FunctionParam struct {
+	Name string
+	Type string
+}
+
 // CustomClientFunction represents a custom client function definition.
 type CustomClientFunction struct {
 	Name             string
-	Parameters       map[string]string
+	Parameters       []FunctionParam
 	ReturnParameters []string
 	Comment          string
 }
@@ -31,8 +36,8 @@ func (c *CustomClientFunction) Signature() string {
 
 	// Build parameters without trailing comma
 	params := make([]string, 0, len(c.Parameters))
-	for k, v := range c.Parameters {
-		params = append(params, fmt.Sprintf("%s %s", k, v))
+	for _, v := range c.Parameters {
+		params = append(params, fmt.Sprintf("%s %s", v.Name, v.Type))
 	}
 	b.WriteString(strings.Join(params, ", "))
 	b.WriteString(")")

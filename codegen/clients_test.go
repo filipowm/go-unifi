@@ -19,20 +19,15 @@ func TestCustomClientFunctionSignature(t *testing.T) {
 		{
 			name: "no comment, no params, no returns",
 			fn: CustomClientFunction{
-				Name:             "Foo",
-				Parameters:       map[string]string{},
-				ReturnParameters: []string{},
-				Comment:          "",
+				Name: "Foo",
 			},
 			wantFunc: "Foo()",
 		},
 		{
 			name: "with comment, no params, no returns",
 			fn: CustomClientFunction{
-				Name:             "Bar",
-				Parameters:       map[string]string{},
-				ReturnParameters: []string{},
-				Comment:          "does something",
+				Name:    "Bar",
+				Comment: "does something",
 			},
 			wantComment: "// Bar does something",
 			wantFunc:    "Bar()",
@@ -41,9 +36,8 @@ func TestCustomClientFunctionSignature(t *testing.T) {
 			name: "with one param and one return",
 			fn: CustomClientFunction{
 				Name:             "Baz",
-				Parameters:       map[string]string{"a": "int"},
+				Parameters:       []FunctionParam{{"a", "int"}},
 				ReturnParameters: []string{"error"},
-				Comment:          "",
 			},
 			wantFunc: "Baz(a int) error",
 		},
@@ -51,9 +45,8 @@ func TestCustomClientFunctionSignature(t *testing.T) {
 			name: "with multiple returns",
 			fn: CustomClientFunction{
 				Name:             "Qux",
-				Parameters:       map[string]string{"x": "string"},
+				Parameters:       []FunctionParam{{"x", "string"}},
 				ReturnParameters: []string{"int", "error"},
-				Comment:          "",
 			},
 			wantFunc: "Qux(x string) (int, error)",
 		},
@@ -61,7 +54,7 @@ func TestCustomClientFunctionSignature(t *testing.T) {
 			name: "with multiple params",
 			fn: CustomClientFunction{
 				Name:             "MultiParams",
-				Parameters:       map[string]string{"x": "string", "y": "int"},
+				Parameters:       []FunctionParam{{"x", "string"}, {"y", "int"}},
 				ReturnParameters: []string{},
 				Comment:          "function with multiple parameters",
 			},
@@ -94,14 +87,12 @@ func TestCustomClientFunctionSignature(t *testing.T) {
 func TestGenerateCode(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
-	// Create a minimal ClientInfo with a custom function
 	ci := &ClientInfo{
-		Imports:   []string{"fmt"},
-		Functions: []ClientFunction{},
+		Imports: []string{"fmt"},
 		CustomFunctions: []CustomClientFunction{
 			{
 				Name:             "TestFunc",
-				Parameters:       map[string]string{"x": "int"},
+				Parameters:       []FunctionParam{{"x", "int"}},
 				ReturnParameters: []string{"error"},
 				Comment:          "This is a test function",
 			},
