@@ -31,8 +31,23 @@ func NewUnifiVersion(unifiVersion *version.Version, downloadUrl *url.URL) *Unifi
 	}
 }
 
-func latestUnifiVersion() (*UnifiVersion, error) {
-	url, err := url.Parse(firmwareUpdateApi)
+type UnifiVersionProvider interface {
+	Latest() (*UnifiVersion, error)
+	ByVersionMarker(versionMarker string) (*UnifiVersion, error)
+}
+
+type defaultUnifiVersionProvider struct {
+	firmwareUpdateApi string
+}
+
+func NewUnifiVersionProvider(firmwareUpdateApi string) UnifiVersionProvider { //nolint:ireturn
+	return &defaultUnifiVersionProvider{
+		firmwareUpdateApi: firmwareUpdateApi,
+	}
+}
+
+func (p *defaultUnifiVersionProvider) Latest() (*UnifiVersion, error) {
+	url, err := url.Parse(p.firmwareUpdateApi)
 	if err != nil {
 		return nil, err
 	}
@@ -70,9 +85,9 @@ func latestUnifiVersion() (*UnifiVersion, error) {
 	return nil, errors.New("no Unifi Controller firmware found")
 }
 
-func determineUnifiVersion(versionMarker string) (*UnifiVersion, error) {
+func (p *defaultUnifiVersionProvider) ByVersionMarker(versionMarker string) (*UnifiVersion, error) {
 	if versionMarker == LatestVersionMarker {
-		return latestUnifiVersion()
+		return p.Latest()
 	} else {
 		unifiVersion, err := version.NewVersion(versionMarker)
 		if err != nil {

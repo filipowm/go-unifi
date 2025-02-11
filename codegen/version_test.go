@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func assertLatestVersionUsingProvider(t *testing.T, provider func() (*UnifiVersion, error)) {
+func assertLatestVersionUsingProvider(t *testing.T, provider func(p UnifiVersionProvider) (*UnifiVersion, error)) {
 	t.Helper()
 	assert := assert.New(t)
 	require := require.New(t)
@@ -85,8 +85,9 @@ func assertLatestVersionUsingProvider(t *testing.T, provider func() (*UnifiVersi
 	}))
 	defer server.Close()
 
-	firmwareUpdateApi = server.URL
-	gotVersion, err := provider()
+	p := NewUnifiVersionProvider(server.URL)
+
+	gotVersion, err := provider(p)
 	require.NoError(err)
 
 	assert.Equal(fwVersion.Core(), gotVersion.Version)
@@ -95,15 +96,15 @@ func assertLatestVersionUsingProvider(t *testing.T, provider func() (*UnifiVersi
 
 func TestLatestUnifiVersion(t *testing.T) {
 	t.Parallel()
-	assertLatestVersionUsingProvider(t, func() (*UnifiVersion, error) {
-		return latestUnifiVersion()
+	assertLatestVersionUsingProvider(t, func(p UnifiVersionProvider) (*UnifiVersion, error) {
+		return p.Latest()
 	})
 }
 
 func TestDetermineUnifiVersion_latest(t *testing.T) {
 	t.Parallel()
-	assertLatestVersionUsingProvider(t, func() (*UnifiVersion, error) {
-		return determineUnifiVersion(LatestVersionMarker)
+	assertLatestVersionUsingProvider(t, func(p UnifiVersionProvider) (*UnifiVersion, error) {
+		return p.ByVersionMarker(LatestVersionMarker)
 	})
 }
 
@@ -121,7 +122,7 @@ func TestDetermineUnifiVersion_provided(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 
-			unifiVersion, err := determineUnifiVersion(providedVersion)
+			unifiVersion, err := NewUnifiVersionProvider(defaultFirmwareUpdateApi).ByVersionMarker(providedVersion)
 			require.NoError(t, err)
 
 			a.Equal(expectedVersion, unifiVersion.Version.String())
@@ -143,7 +144,7 @@ func TestDetermineUnifiVersion_invalid(t *testing.T) {
 	for _, providedVersion := range testCases {
 		t.Run(providedVersion, func(t *testing.T) {
 			t.Parallel()
-			_, err := determineUnifiVersion(providedVersion)
+			_, err := NewUnifiVersionProvider(defaultFirmwareUpdateApi).ByVersionMarker(providedVersion)
 			require.ErrorContains(t, err, providedVersion)
 		})
 	}
@@ -171,8 +172,7 @@ func TestLatestUnifiVersion_HttpError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	firmwareUpdateApi = server.URL
-	_, err := latestUnifiVersion()
+	_, err := NewUnifiVersionProvider(server.URL).Latest()
 	require.Error(t, err)
 }
 
@@ -187,8 +187,8 @@ func TestLatestUnifiVersion_InvalidJson(t *testing.T) {
 	}))
 	defer server.Close()
 
-	firmwareUpdateApi = server.URL
-	_, err := latestUnifiVersion()
+	_, err := NewUnifiVersionProvider(server.URL).Latest()
+
 	require.Error(t, err)
 	require.ErrorContains(t, err, "invalid")
 }
@@ -224,8 +224,8 @@ func TestLatestUnifiVersion_NoDebianFirmware(t *testing.T) {
 	}))
 	defer server.Close()
 
-	firmwareUpdateApi = server.URL
-	_, err = latestUnifiVersion()
+	_, err = NewUnifiVersionProvider(server.URL).Latest()
+
 	require.Error(t, err)
 	require.ErrorContains(t, err, "no Unifi Controller firmware found")
 }
@@ -265,8 +265,7 @@ func TestWriteVersionRepoMarkerFile(t *testing.T) {
 func TestLatestUnifiVersion_InvalidUrl(t *testing.T) {
 	t.Parallel()
 
-	firmwareUpdateApi = ":\\invalid"
-	_, err := latestUnifiVersion()
+	_, err := NewUnifiVersionProvider(":\\invalid").Latest()
 	require.Error(t, err)
 	require.ErrorContains(t, err, "invalid")
 }
@@ -321,8 +320,7 @@ func TestLatestUnifiVersion_NilVersion(t *testing.T) {
 	}))
 	defer server.Close()
 
-	firmwareUpdateApi = server.URL
-	_, err := latestUnifiVersion()
+	_, err := NewUnifiVersionProvider(server.URL).Latest()
 	require.Error(t, err)
 }
 

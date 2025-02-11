@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/go-version"
 )
 
-var firmwareUpdateApi = "https://fw-update.ubnt.com/api/firmware-latest"
+const defaultFirmwareUpdateApi = "https://fw-update.ubnt.com/api/firmware-latest"
 
 const (
 	debianPlatform         = "debian"
@@ -55,21 +55,20 @@ func (l *firmwareUpdateApiResponseEmbeddedFirmwareDataLink) MarshalJSON() ([]byt
 
 func (l *firmwareUpdateApiResponseEmbeddedFirmwareDataLink) UnmarshalJSON(j []byte) error {
 	var m map[string]interface{}
-
-	err := json.Unmarshal(j, &m)
-	if err != nil {
+	if err := json.Unmarshal(j, &m); err != nil {
 		return err
 	}
-
-	if href := m["href"]; href != nil {
-		url, err := url.Parse(href.(string))
+	if href, exists := m["href"]; exists && href != nil {
+		strHref, ok := href.(string)
+		if !ok {
+			return fmt.Errorf("expected string for href, got %T", href)
+		}
+		u, err := url.Parse(strHref)
 		if err != nil {
 			return err
 		}
-
-		l.Href = url
+		l.Href = u
 	}
-
 	return nil
 }
 

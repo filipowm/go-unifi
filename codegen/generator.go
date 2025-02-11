@@ -11,7 +11,6 @@ import (
 	"text/template"
 
 	"github.com/iancoleman/strcase"
-	log "github.com/sirupsen/logrus"
 )
 
 // Generatable is the interface for generation sources.
@@ -43,6 +42,10 @@ func generateCodeFromTemplate(templateName, templateContent string, toWrite any)
 
 // generateCode generates code for each generation source and writes it to file.
 func generateCode(fieldsDir string, outDir string) error {
+	if _, err := ensurePath(outDir); err != nil {
+		return fmt.Errorf("unable to create output directory %s: %w", outDir, err)
+	}
+
 	generators := make([]Generatable, 0)
 	resources, err := buildResourcesFromDownloadedFields(fieldsDir)
 	if err != nil {
