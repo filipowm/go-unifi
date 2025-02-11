@@ -9,8 +9,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
+
+var log = logrus.New()
 
 func usage() {
 	fmt.Printf("Usage: %s [OPTIONS] version\n", path.Base(os.Args[0]))
@@ -19,19 +21,27 @@ func usage() {
 }
 
 func setupLogging(debugEnabled, traceEnabled bool) {
-	log.SetFormatter(&log.TextFormatter{
+	log.SetFormatter(&logrus.TextFormatter{
 		DisableTimestamp:       true,
 		DisableLevelTruncation: true,
 		ForceColors:            true,
 		FullTimestamp:          false,
 	})
 	if traceEnabled {
-		log.SetLevel(log.TraceLevel)
+		log.SetLevel(logrus.TraceLevel)
 	} else if debugEnabled {
-		log.SetLevel(log.DebugLevel)
+		log.SetLevel(logrus.DebugLevel)
 	} else {
-		log.SetLevel(log.InfoLevel)
+		log.SetLevel(logrus.InfoLevel)
 	}
+}
+
+type options struct {
+	versionBaseDir    string
+	outputDir         string
+	downloadOnly      bool
+	version           string
+	firmwareUpdateApi string
 }
 
 func main() {
@@ -43,16 +53,31 @@ func main() {
 	debugFlag := flag.Bool("debug", false, "Enable debug logging")
 	traceFlag := flag.Bool("trace", false, "Enable trace logging")
 
+	flag.CommandLine.Init(os.Args[0], flag.PanicOnError) // set error handling to panic if parse ends with error
 	flag.Parse()
 	setupLogging(*debugFlag, *traceFlag)
 	specifiedVersion := strings.TrimSpace(flag.Arg(0))
 	if specifiedVersion == "" {
 		specifiedVersion = LatestVersionMarker // default to latest version
 	}
-	unifiVersion, err := determineUnifiVersion(specifiedVersion)
+	err := generate(options{
+		versionBaseDir:    *versionBaseDirFlag,
+		outputDir:         *outputDirFlag,
+		downloadOnly:      *downloadOnly,
+		version:           specifiedVersion,
+		firmwareUpdateApi: defaultFirmwareUpdateApi,
+	})
 	if err != nil {
-		log.Fatalf("unable to determine version and download URL for Unifi version %s: %s", specifiedVersion, err)
-		panic(err)
+		log.Error(err)
+		os.Exit(1)
+	}
+}
+
+func generate(opts options) error {
+	p := NewUnifiVersionProvider(opts.firmwareUpdateApi)
+	unifiVersion, err := p.ByVersionMarker(opts.version)
+	if err != nil {
+		return fmt.Errorf("unable to determine version and download URL for Unifi version %s: %w", opts.version, err)
 	}
 
 	log.Infof("UniFi Controller version: %s", unifiVersion.Version)
@@ -60,42 +85,49 @@ func main() {
 
 	wd, err := os.Getwd()
 	if err != nil {
-		log.Fatalf("unable to determine working directory: %s", err)
-		panic(err)
+		return fmt.Errorf("unable to determine working directory: %w", err)
 	}
-
-	structuresDir := filepath.Join(wd, *versionBaseDirFlag, fmt.Sprintf("v%s", unifiVersion.Version))
+	var structuresDir string
+	if path.IsAbs(opts.versionBaseDir) {
+		structuresDir = opts.versionBaseDir
+	} else {
+		structuresDir = filepath.Join(wd, opts.versionBaseDir)
+	}
+	structuresDir = filepath.Join(structuresDir, fmt.Sprintf("v%s", unifiVersion.Version))
 	log.Infoln("Downloading UniFi Controller API structures definitions...")
 	err = DownloadAndExtract(*unifiVersion.DownloadUrl, structuresDir)
 	if err != nil {
-		log.Fatalf("unable to download and extract UniFi Controller API structures definitions: %s", err)
-		panic(err)
+		return fmt.Errorf("unable to download and extract UniFi Controller API structures definitions: %w", err)
 	}
 	log.Infof("Downloaded UniFi Controller API structures definitions in %s", structuresDir)
 
-	if *downloadOnly {
+	if opts.downloadOnly {
 		log.Infoln("Structure JSONs ready!")
-		os.Exit(0)
+		return nil
 	}
 
 	log.Infoln("Generating resources code...")
-	outDir := filepath.Join(wd, *outputDirFlag)
+
+	var outDir string
+	if path.IsAbs(opts.outputDir) {
+		outDir = opts.outputDir
+	} else {
+		outDir = filepath.Join(wd, opts.outputDir)
+	}
 	if err = generateCode(structuresDir, outDir); err != nil {
-		log.Fatalf("unable to generate resources code: %s", err)
-		panic(err)
+		return fmt.Errorf("unable to generate resources code: %w", err)
 	}
 
 	log.Infof("Writing version file...")
 	if err = writeVersionFile(unifiVersion.Version, outDir); err != nil {
-		log.Fatalf("failed to write version file to %s: %s", outDir, err)
-		panic(err)
+		return fmt.Errorf("failed to write version file to %s: %w", outDir, err)
 	}
 
 	basepath := filepath.Dir(wd)
 	if err = writeVersionRepoMarkerFile(unifiVersion.Version, basepath); err != nil {
-		log.Fatalf("failed to write version file to %s: %s", basepath, err)
-		panic(err)
+		return fmt.Errorf("failed to write version file to %s: %w", basepath, err)
 	}
 
 	log.Infof("Generated resources in %s", outDir)
+	return nil
 }

@@ -12,7 +12,6 @@ import (
 	"strings"
 
 	"github.com/iancoleman/strcase"
-	log "github.com/sirupsen/logrus"
 )
 
 type replacement struct {

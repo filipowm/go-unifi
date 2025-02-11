@@ -16,24 +16,16 @@ import (
 	"strings"
 
 	"github.com/iancoleman/strcase"
-	log "github.com/sirupsen/logrus"
 	"github.com/ulikunitz/xz"
 	"github.com/xor-gate/ar"
 )
 
 func DownloadAndExtract(downloadUrl url.URL, outputDir string) error {
-	targetInfo, err := os.Stat(outputDir)
-	if err != nil {
-		if !errors.Is(err, os.ErrNotExist) {
-			return err
-		}
+	// Check if output directory exists, if not create and perform extraction
 
-		err = os.MkdirAll(outputDir, 0o755)
-		if err != nil {
-			return err
-		}
-
-		// download fields, create
+	if created, err := ensurePath(outputDir); err != nil {
+		return fmt.Errorf("unable to create output directory %s: %w", outputDir, err)
+	} else if created {
 		log.Debugf("downloading UniFi Controller package from: %s", downloadUrl.String())
 		jarFile, err := downloadJar(downloadUrl, outputDir)
 		if err != nil {
@@ -41,18 +33,19 @@ func DownloadAndExtract(downloadUrl url.URL, outputDir string) error {
 		}
 
 		log.Debugf("extracting JSON files with API structures from: %s to: %s", jarFile, outputDir)
-		err = extractJSON(jarFile, outputDir)
-		if err != nil {
+		if err = extractJSON(jarFile, outputDir); err != nil {
 			return err
 		}
 
 		log.Debugf("JSON files extracted to: %s", outputDir)
-		targetInfo, err = os.Stat(outputDir)
+		_, err = os.Stat(outputDir)
 		if err != nil {
 			return err
 		}
 	}
-	if !targetInfo.IsDir() {
+	if targetInfo, err := os.Stat(outputDir); err != nil {
+		return err
+	} else if !targetInfo.IsDir() {
 		return errors.New("fields info isn't a directory")
 	}
 	return nil
@@ -68,10 +61,12 @@ func downloadJar(downloadUrl url.URL, outputDir string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("unable to download UniFi Controller deb: %w", err)
 	}
+	if debResp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("unable to download UniFi Controller deb: HTTP%d. Probably it does not exist under %s", debResp.StatusCode, downloadUrl.String())
+	}
 	defer debResp.Body.Close()
 
 	var uncompressedReader io.Reader
-
 	arReader := ar.NewReader(debResp.Body)
 	for {
 		header, err := arReader.Next()
@@ -81,8 +76,6 @@ func downloadJar(downloadUrl url.URL, outputDir string) (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("in ar next: %w", err)
 		}
-
-		// read the data file
 		if header.Name == "data.tar.xz" {
 			uncompressedReader, err = xz.NewReader(arReader)
 			if err != nil {
@@ -96,9 +89,7 @@ func downloadJar(downloadUrl url.URL, outputDir string) (string, error) {
 	}
 
 	tarReader := tar.NewReader(uncompressedReader)
-
 	var aceJar *os.File
-
 	log.Debugln("extracting ace.jar from downloaded controller package")
 	for {
 		header, err := tarReader.Next()
@@ -108,12 +99,9 @@ func downloadJar(downloadUrl url.URL, outputDir string) (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("in next: %w", err)
 		}
-
 		if header.Typeflag != tar.TypeReg || header.Name != "./usr/lib/unifi/lib/ace.jar" {
-			// skipping
 			continue
 		}
-
 		aceJar, err = os.Create(filepath.Join(outputDir, "ace.jar"))
 		if err != nil {
 			return "", fmt.Errorf("unable to create temp file: %w", err)
@@ -123,32 +111,12 @@ func downloadJar(downloadUrl url.URL, outputDir string) (string, error) {
 			return "", fmt.Errorf("unable to write ace.jar temp file: %w", err)
 		}
 	}
-
 	if aceJar == nil {
 		return "", errors.New("unable to find ace.jar")
 	}
-
 	defer aceJar.Close()
 	log.Debugf("ace.jar extracted to: %s", aceJar.Name())
 	return aceJar.Name(), nil
-}
-
-func sanitizeExtractedPath(filePath, destinationDir string) (string, error) {
-	absDestinationDir, err := filepath.Abs(destinationDir)
-	if err != nil {
-		return "", err
-	}
-
-	absFilePath, err := filepath.Abs(filepath.Join(destinationDir, filepath.Base(filePath)))
-	if err != nil {
-		return "", err
-	}
-
-	if !strings.HasPrefix(absFilePath, absDestinationDir) {
-		return "", fmt.Errorf("invalid file path: %s", filePath)
-	}
-
-	return absFilePath, nil
 }
 
 func extractJSON(jarFile, fieldsDir string) error {
@@ -161,7 +129,6 @@ func extractJSON(jarFile, fieldsDir string) error {
 	log.Tracef("opened jar %s with %d files", jarFile, len(jarZip.File))
 	for _, f := range jarZip.File {
 		if !strings.HasPrefix(f.Name, "api/fields/") || path.Ext(f.Name) != ".json" {
-			// skip file
 			continue
 		}
 
@@ -175,19 +142,16 @@ func extractJSON(jarFile, fieldsDir string) error {
 			if err != nil {
 				return err
 			}
-
 			dst, err := os.Create(dstPath)
 			if err != nil {
 				return err
 			}
 			defer dst.Close()
-
 			_, err = io.Copy(dst, src)
 			log.Debugf("extracted %s", f.Name)
 			if err != nil {
 				return err
 			}
-
 			return nil
 		}()
 		if err != nil {
@@ -227,6 +191,23 @@ func extractJSON(jarFile, fieldsDir string) error {
 		log.Tracef("splitted %s into %s", settingKey, fileName)
 	}
 
-	// TODO: cleanup JSON
 	return nil
+}
+
+func sanitizeExtractedPath(filePath, destinationDir string) (string, error) {
+	absDestinationDir, err := filepath.Abs(destinationDir)
+	if err != nil {
+		return "", err
+	}
+
+	absFilePath, err := filepath.Abs(filepath.Join(destinationDir, filepath.Base(filePath)))
+	if err != nil {
+		return "", err
+	}
+
+	if !strings.HasPrefix(absFilePath, absDestinationDir) {
+		return "", fmt.Errorf("invalid file path: %s", filePath)
+	}
+
+	return absFilePath, nil
 }
