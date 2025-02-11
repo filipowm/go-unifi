@@ -61,7 +61,7 @@ func latestUnifiVersion() (*UnifiVersion, error) {
 	}
 
 	for _, firmware := range respData.Embedded.Firmware {
-		if firmware.Platform != debianPlatform {
+		if firmware.Platform != debianPlatform || firmware.Version == nil {
 			continue
 		}
 		return NewUnifiVersion(firmware.Version.Core(), firmware.Links.Data.Href), nil
