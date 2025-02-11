@@ -1,168 +1,212 @@
 package main
 
 import (
-	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestFieldInfoFromValidation(t *testing.T) {
+func TestGenerateCodeFromTemplate(t *testing.T) {
 	t.Parallel()
 
-	for i, c := range []struct {
-		expectedType      string
-		expectedComment   string
-		expectedOmitEmpty bool
-		validation        interface{}
+	tests := []struct {
+		name          string
+		templateName  string
+		template      string
+		data          interface{}
+		expectedCode  string
+		expectedError bool
+		errorContains string
 	}{
-		{"string", "", true, ""},
-		{"string", "default|custom", true, "default|custom"},
-		{"string", ".{0,32}", true, ".{0,32}"},
-		{"string", "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$", false, "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$"},
+		{
+			name:         "valid template",
+			templateName: "simple",
+			template: `package main
 
-		{"int", "^([1-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$", true, "^([1-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$"},
-		{"int", "", true, "^[0-9]*$"},
+const greeting = "{{.Greeting}}"`,
+			data:         struct{ Greeting string }{Greeting: "hello"},
+			expectedCode: "const greeting = \"hello\"",
+		},
+		{
+			name:          "invalid go code output",
+			templateName:  "invalid_code",
+			template:      `not valid {{ .Value }} go code`,
+			data:          struct{ Value string }{Value: "test"},
+			expectedError: true,
+			errorContains: "failed to format source",
+		},
+		{
+			name:         "no data",
+			templateName: "nil_data",
+			template:     `package main`,
+			data:         nil,
+			expectedCode: "package main",
+		},
+		{
+			name:         "complex template",
+			templateName: "complex",
+			template: `package main
 
-		{"float64", "", true, "[-+]?[0-9]*\\.?[0-9]+"},
-		// this one is really an error as the . is not escaped
-		{"float64", "", true, "^([-]?[\\d]+[.]?[\\d]*)$"},
-		{"float64", "", true, "^([\\d]+[.]?[\\d]*)$"},
+type {{.TypeName}} struct {
+	{{range .Fields}}
+	{{.Name}} {{.Type}}
+	{{end}}
+}`,
+			data: struct {
+				TypeName string
+				Fields   []struct{ Name, Type string }
+			}{
+				TypeName: "Person",
+				Fields: []struct{ Name, Type string }{
+					{Name: "Name", Type: "string"},
+					{Name: "Age", Type: "int"},
+				},
+			},
+			expectedCode: "type Person struct",
+		},
+	}
 
-		{"bool", "", false, "false|true"},
-		{"bool", "", false, "true|false"},
-	} {
-		t.Run(fmt.Sprintf("%d %s %s", i, c.expectedType, c.validation), func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			code, err := generateCodeFromTemplate(tt.templateName, tt.template, tt.data)
 
-			resource := &Resource{
-				StructName:     "TestType",
-				Types:          make(map[string]*FieldInfo),
-				FieldProcessor: func(name string, f *FieldInfo) error { return nil },
+			if tt.expectedError {
+				require.ErrorContains(t, err, tt.errorContains)
+			} else {
+				require.NoError(t, err)
 			}
-
-			fieldInfo, err := resource.fieldInfoFromValidation("fieldName", c.validation)
-			// actualType, actualComment, actualOmitEmpty, err := fieldInfoFromValidation(c.validation)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if fieldInfo.FieldType != c.expectedType {
-				t.Fatalf("expected type %q got %q", c.expectedType, fieldInfo.FieldType)
-			}
-			if fieldInfo.FieldValidationComment != c.expectedComment {
-				t.Fatalf("expected comment %q got %q", c.expectedComment, fieldInfo.FieldValidationComment)
-			}
-			if fieldInfo.OmitEmpty != c.expectedOmitEmpty {
-				t.Fatalf("expected omitempty %t got %t", c.expectedOmitEmpty, fieldInfo.OmitEmpty)
-			}
+			a.Contains(code, tt.expectedCode)
 		})
 	}
 }
 
-func TestResourceTypes(t *testing.T) {
+func TestWriteGeneratedFile(t *testing.T) {
 	t.Parallel()
+	tests := []struct {
+		name             string
+		fileName         string
+		content          string
+		expectedFileName string
+		expectError      bool
+	}{
+		{
+			name:             "valid file",
+			fileName:         "TestFile",
+			content:          "package main\n\n// Code content",
+			expectedFileName: "test_file.generated.go",
+			expectError:      false,
+		},
+		{
+			name:             "empty content",
+			fileName:         "EmptyFile",
+			content:          "",
+			expectedFileName: "empty_file.generated.go",
+			expectError:      true,
+		},
+		{
+			name:             "file with spaces",
+			fileName:         "Test File",
+			content:          "package main",
+			expectedFileName: "test_file.generated.go",
+			expectError:      false,
+		},
+	}
 
-	testData := `
-{
-  "note": ".{0,1024}",
-  "date": "^$|^(20[0-9]{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9])Z?$",
-  "mac": "^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$",
-  "number": "\\d+",
-  "boolean": "true|false",
-	"nested_type": {
-    "nested_field": "^$"
-  },
-  "nested_type_array": [{
-    "nested_field": "^$"
-  }]
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			a := assert.New(t)
+			tempDir := t.TempDir()
+
+			fileName, err := writeGeneratedFile(tempDir, tt.fileName, tt.content)
+			require.NoError(t, err)
+			a.Equal(tt.expectedFileName, fileName)
+
+			expectedFile := filepath.Join(tempDir, tt.expectedFileName)
+			dataBytes, err := os.ReadFile(expectedFile)
+			require.NoError(t, err)
+			a.Equal(tt.content, string(dataBytes))
+		})
+	}
 }
-	`
-	expectedFields := map[string]*FieldInfo{
-		"Note":    NewFieldInfo("Note", "note", "string", "validate:\"omitempty,gte=0,lte=1024\"", ".{0,1024}", true, false, ""),
-		"Date":    NewFieldInfo("Date", "date", "string", "", "^$|^(20[0-9]{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9])Z?$", false, false, ""),
-		"MAC":     NewFieldInfo("MAC", "mac", "string", "validate:\"omitempty,mac\"", "^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$", true, false, ""),
-		"Number":  NewFieldInfo("Number", "number", "int", "", "", true, false, "emptyStringInt"),
-		"Boolean": NewFieldInfo("Boolean", "boolean", "bool", "", "", false, false, ""),
-		"NestedType": {
-			FieldName:              "NestedType",
-			JSONName:               "nested_type",
-			FieldType:              "StructNestedType",
-			FieldValidationComment: "",
-			OmitEmpty:              true,
-			IsArray:                false,
-			Fields: map[string]*FieldInfo{
-				"NestedFieldModified": NewFieldInfo("NestedFieldModified", "nested_field", "string", "", "^$", false, false, ""),
-			},
+
+func TestWriteGeneratedFile_OverrideExistingFile(t *testing.T) {
+	t.Parallel()
+	a := assert.New(t)
+	tempDir := t.TempDir()
+	fileName := "test"
+
+	_, err := writeGeneratedFile(tempDir, fileName, "starting content")
+	require.NoError(t, err)
+
+	_, err = writeGeneratedFile(tempDir, fileName, "updated content")
+	require.NoError(t, err)
+
+	expectedFile := filepath.Join(tempDir, "test.generated.go")
+	dataBytes, err := os.ReadFile(expectedFile)
+	require.NoError(t, err)
+	a.Equal("updated content", string(dataBytes))
+}
+
+func TestWriteGeneratedFile_InvalidPath(t *testing.T) {
+	t.Parallel()
+	tempDir := t.TempDir()
+	invalidDir := filepath.Join(tempDir, "nonexistent")
+
+	_, err := writeGeneratedFile(invalidDir, "test", "content")
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "failed to write file")
+}
+
+func TestGenerateCodeFromFields(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name           string
+		fieldsDir      string
+		outDir         string
+		expectedError  bool
+		errorContains  string
+		setupMockFiles func(string)
+	}{
+		{
+			name:          "invalid fields directory",
+			fieldsDir:     "nonexistent",
+			outDir:        t.TempDir(),
+			expectedError: true,
+			errorContains: "failed to build resources from downloaded fields",
 		},
-		"NestedTypeArray": {
-			FieldName:              "NestedTypeArray",
-			JSONName:               "nested_type_array",
-			FieldType:              "StructNestedTypeArray",
-			FieldValidationComment: "",
-			OmitEmpty:              true,
-			IsArray:                true,
-			Fields: map[string]*FieldInfo{
-				"NestedFieldModified": NewFieldInfo("NestedFieldModified", "nested_field", "string", "", "^$", false, false, ""),
+		{
+			name:      "valid empty fields directory",
+			fieldsDir: t.TempDir(),
+			outDir:    t.TempDir(),
+			setupMockFiles: func(dir string) {
+				// Create empty directory structure
+				_ = os.MkdirAll(dir, 0o755)
 			},
+			expectedError: false,
 		},
 	}
 
-	expectedStruct := map[string]*FieldInfo{
-		"Struct": {
-			FieldName:              "Struct",
-			JSONName:               "path",
-			FieldType:              "struct",
-			FieldValidationComment: "",
-			OmitEmpty:              false,
-			IsArray:                false,
-			Fields: map[string]*FieldInfo{
-				"   ID":      NewFieldInfo("ID", "_id", "string", "", "", true, false, ""),
-				"   SiteID":  NewFieldInfo("SiteID", "site_id", "string", "", "", true, false, ""),
-				"   _Spacer": nil,
-				"  Hidden":   NewFieldInfo("Hidden", "attr_hidden", "bool", "", "", true, false, ""),
-				"  HiddenID": NewFieldInfo("HiddenID", "attr_hidden_id", "string", "", "", true, false, ""),
-				"  NoDelete": NewFieldInfo("NoDelete", "attr_no_delete", "bool", "", "", true, false, ""),
-				"  NoEdit":   NewFieldInfo("NoEdit", "attr_no_edit", "bool", "", "", true, false, ""),
-				"  _Spacer":  nil,
-				" _Spacer":   nil,
-			},
-		},
-	}
-
-	for k, v := range expectedFields {
-		expectedStruct["Struct"].Fields[k] = v
-	}
-
-	expectation := &Resource{
-		StructName:   "Struct",
-		ResourcePath: "path",
-
-		Types: map[string]*FieldInfo{
-			"Struct":                expectedStruct["Struct"],
-			"StructNestedType":      expectedStruct["Struct"].Fields["NestedType"],
-			"StructNestedTypeArray": expectedStruct["Struct"].Fields["NestedTypeArray"],
-		},
-
-		FieldProcessor: func(name string, f *FieldInfo) error {
-			if name == "NestedField" {
-				f.FieldName = "NestedFieldModified"
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			if tt.setupMockFiles != nil {
+				tt.setupMockFiles(tt.fieldsDir)
 			}
-			return nil
-		},
+
+			err := generateCode(tt.fieldsDir, tt.outDir)
+
+			if tt.expectedError {
+				require.Error(t, err)
+				require.ErrorContains(t, err, tt.errorContains)
+			} else {
+				require.NoError(t, err)
+			}
+		})
 	}
-
-	t.Run("structural test", func(t *testing.T) {
-		t.Parallel()
-
-		resource := NewResource("Struct", "path")
-		resource.FieldProcessor = expectation.FieldProcessor
-
-		err := resource.processJSON(([]byte)(testData))
-
-		require.NoError(t, err, "No error processing JSON")
-		assert.Equal(t, expectation.StructName, resource.StructName)
-		assert.Equal(t, expectation.ResourcePath, resource.ResourcePath)
-		assert.Equal(t, expectation.Types, resource.Types)
-	})
 }

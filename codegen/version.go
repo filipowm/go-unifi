@@ -61,7 +61,7 @@ func latestUnifiVersion() (*UnifiVersion, error) {
 	}
 
 	for _, firmware := range respData.Embedded.Firmware {
-		if firmware.Platform != debianPlatform {
+		if firmware.Platform != debianPlatform || firmware.Version == nil {
 			continue
 		}
 		return NewUnifiVersion(firmware.Version.Core(), firmware.Links.Data.Href), nil
@@ -102,7 +102,8 @@ const UnifiVersion = %q
 		return err
 	}
 
-	return os.WriteFile(filepath.Join(outDir, "version.generated.go"), versionGo, 0o644)
+	_, err = writeGeneratedFile(outDir, "version", string(versionGo))
+	return err
 }
 
 func writeVersionRepoMarkerFile(version *version.Version, outDir string) error {

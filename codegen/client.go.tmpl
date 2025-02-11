@@ -1,0 +1,40 @@
+// Code generated from ace.jar fields *.json files
+// DO NOT EDIT.
+
+package unifi
+
+import (
+	"context"
+	{{ range $k, $v := .Imports }}"{{ $v }}"{{- end }}
+)
+
+type {{ .Name }} interface {
+
+    /* custom method signatures */
+
+    {{ range $k, $v := .CustomFunctions }}
+    {{ $v.Signature }}
+    {{- end }}
+
+    /* client methods generated based on resource generation */
+
+    {{- range $k, $v := .Functions }}
+    /* client methods for {{ $v.Name }} API */
+
+    // Get{{ $v.Name }} returns {{ $v.Name }} resource{{ if not $v.IsSetting }} by its ID{{ end }}
+    Get{{ $v.Name }}(ctx context.Context, site{{ if not $v.IsSetting }}, id{{ end }} string) (*{{ $v.Name }}, error)
+    // Update{{ $v.Name }} updates {{ $v.Name }} resource{{ if not $v.IsSetting }} by its ID{{ end }}
+    Update{{ $v.Name }}(ctx context.Context, site string, d *{{ $v.Name }}) (*{{ $v.Name }}, error)
+    {{- if not $v.IsSetting }}
+    // List{{ $v.Name }} returns list of {{ $v.Name }} resources
+    List{{ $v.Name }}(ctx context.Context, site string) ([]{{ $v.Name }}, error)
+    // Delete{{ $v.Name }} deletes {{ $v.Name }} resource by its ID
+    Delete{{ $v.Name }}(ctx context.Context, site, id string) error
+    // Create{{ $v.Name }} creates new {{ $v.Name }} resource
+    Create{{ $v.Name }}(ctx context.Context, site string, d *{{ $v.Name }}) (*{{ $v.Name }}, error)
+    {{ end }}
+
+    {{- end }}
+}
+
+

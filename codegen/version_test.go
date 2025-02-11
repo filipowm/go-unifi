@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/hashicorp/go-version"
@@ -117,14 +119,13 @@ func TestDetermineUnifiVersion_provided(t *testing.T) {
 	for providedVersion, expectedVersion := range testCases {
 		t.Run(providedVersion, func(t *testing.T) {
 			t.Parallel()
-			assert := assert.New(t)
-			require := require.New(t)
+			a := assert.New(t)
 
 			unifiVersion, err := determineUnifiVersion(providedVersion)
-			require.NoError(err)
+			require.NoError(t, err)
 
-			assert.Equal(expectedVersion, unifiVersion.Version.String())
-			assert.Equal(fmt.Sprintf(baseDownloadUrl, expectedVersion), unifiVersion.DownloadUrl.String())
+			a.Equal(expectedVersion, unifiVersion.Version.String())
+			a.Equal(fmt.Sprintf(baseDownloadUrl, expectedVersion), unifiVersion.DownloadUrl.String())
 		})
 	}
 }
@@ -132,17 +133,230 @@ func TestDetermineUnifiVersion_provided(t *testing.T) {
 func TestDetermineUnifiVersion_invalid(t *testing.T) {
 	t.Parallel()
 	testCases := []string{
+		"a7.3.83",
+		"7.3.83 ",
 		"invalid",
 		"-1",
 		"",
 	}
-	assert := assert.New(t)
 
 	for _, providedVersion := range testCases {
 		t.Run(providedVersion, func(t *testing.T) {
 			t.Parallel()
 			_, err := determineUnifiVersion(providedVersion)
-			assert.ErrorContains(err, providedVersion)
+			require.ErrorContains(t, err, providedVersion)
 		})
 	}
+}
+
+func TestNewUnifiVersion(t *testing.T) {
+	t.Parallel()
+	a := assert.New(t)
+
+	v, err := version.NewVersion("7.3.83")
+	require.NoError(t, err)
+	downloadUrl, err := url.Parse("https://example.com/download")
+	require.NoError(t, err)
+
+	unifiVersion := NewUnifiVersion(v, downloadUrl)
+	a.Equal(v, unifiVersion.Version)
+	a.Equal(downloadUrl, unifiVersion.DownloadUrl)
+}
+
+func TestLatestUnifiVersion_HttpError(t *testing.T) {
+	t.Parallel()
+
+	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		rw.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer server.Close()
+
+	firmwareUpdateApi = server.URL
+	_, err := latestUnifiVersion()
+	require.Error(t, err)
+}
+
+func TestLatestUnifiVersion_InvalidJson(t *testing.T) {
+	t.Parallel()
+
+	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		_, err := rw.Write([]byte("invalid json"))
+		if err != nil {
+			rw.WriteHeader(http.StatusInternalServerError)
+		}
+	}))
+	defer server.Close()
+
+	firmwareUpdateApi = server.URL
+	_, err := latestUnifiVersion()
+	require.Error(t, err)
+	require.ErrorContains(t, err, "invalid")
+}
+
+func TestLatestUnifiVersion_NoDebianFirmware(t *testing.T) {
+	t.Parallel()
+
+	fwVersion, err := version.NewVersion("7.3.83")
+	require.NoError(t, err)
+
+	respData := firmwareUpdateApiResponse{
+		Embedded: firmwareUpdateApiResponseEmbedded{
+			Firmware: []firmwareUpdateApiResponseEmbeddedFirmware{
+				{
+					Channel:  releaseChannel,
+					Platform: "windows",
+					Product:  unifiControllerProduct,
+					Version:  fwVersion,
+				},
+			},
+		},
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		resp, err := json.Marshal(respData)
+		if err != nil {
+			rw.WriteHeader(http.StatusInternalServerError)
+		}
+		_, err = rw.Write(resp)
+		if err != nil {
+			rw.WriteHeader(http.StatusInternalServerError)
+		}
+	}))
+	defer server.Close()
+
+	firmwareUpdateApi = server.URL
+	_, err = latestUnifiVersion()
+	require.Error(t, err)
+	require.ErrorContains(t, err, "no Unifi Controller firmware found")
+}
+
+func TestWriteVersionFile(t *testing.T) {
+	t.Parallel()
+	a := assert.New(t)
+
+	tmpDir := t.TempDir()
+	v, err := version.NewVersion("7.3.83")
+	require.NoError(t, err)
+
+	err = writeVersionFile(v, tmpDir)
+	require.NoError(t, err)
+
+	content, err := os.ReadFile(filepath.Join(tmpDir, "version.generated.go"))
+	require.NoError(t, err)
+	a.Contains(string(content), `const UnifiVersion = "7.3.83"`)
+}
+
+func TestWriteVersionRepoMarkerFile(t *testing.T) {
+	t.Parallel()
+	a := assert.New(t)
+
+	tmpDir := t.TempDir()
+	v, err := version.NewVersion("7.3.83")
+	require.NoError(t, err)
+
+	err = writeVersionRepoMarkerFile(v, tmpDir)
+	require.NoError(t, err)
+
+	content, err := os.ReadFile(filepath.Join(tmpDir, ".unifi-version"))
+	require.NoError(t, err)
+	a.Equal("7.3.83", string(content))
+}
+
+func TestLatestUnifiVersion_InvalidUrl(t *testing.T) {
+	t.Parallel()
+
+	firmwareUpdateApi = ":\\invalid"
+	_, err := latestUnifiVersion()
+	require.Error(t, err)
+	require.ErrorContains(t, err, "invalid")
+}
+
+func TestWriteVersionFile_InvalidDir(t *testing.T) {
+	t.Parallel()
+
+	v, err := version.NewVersion("7.3.83")
+	require.NoError(t, err)
+
+	err = writeVersionFile(v, "/nonexistent/directory")
+	require.Error(t, err)
+	require.ErrorContains(t, err, "no such file or directory")
+}
+
+func TestWriteVersionRepoMarkerFile_InvalidDir(t *testing.T) {
+	t.Parallel()
+
+	v, err := version.NewVersion("7.3.83")
+	require.NoError(t, err)
+
+	err = writeVersionRepoMarkerFile(v, "/nonexistent/directory")
+	require.Error(t, err)
+	require.ErrorContains(t, err, "no such file or directory")
+}
+
+func TestLatestUnifiVersion_NilVersion(t *testing.T) {
+	t.Parallel()
+
+	respData := firmwareUpdateApiResponse{
+		Embedded: firmwareUpdateApiResponseEmbedded{
+			Firmware: []firmwareUpdateApiResponseEmbeddedFirmware{
+				{
+					Channel:  releaseChannel,
+					Platform: debianPlatform,
+					Product:  unifiControllerProduct,
+					Version:  nil,
+				},
+			},
+		},
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		resp, err := json.Marshal(respData)
+		if err != nil {
+			rw.WriteHeader(http.StatusInternalServerError)
+		}
+		_, err = rw.Write(resp)
+		if err != nil {
+			rw.WriteHeader(http.StatusInternalServerError)
+		}
+	}))
+	defer server.Close()
+
+	firmwareUpdateApi = server.URL
+	_, err := latestUnifiVersion()
+	require.Error(t, err)
+}
+
+func TestWriteVersionFile_EmptyVersion(t *testing.T) {
+	t.Parallel()
+
+	tmpDir := t.TempDir()
+	v, err := version.NewVersion("0.0.0")
+	require.NoError(t, err)
+
+	err = writeVersionFile(v, tmpDir)
+	require.NoError(t, err)
+
+	content, err := os.ReadFile(filepath.Join(tmpDir, "version.generated.go"))
+	require.NoError(t, err)
+	assert.Contains(t, string(content), `const UnifiVersion = "0.0.0"`)
+}
+
+func TestWriteVersionRepoMarkerFile_Permissions(t *testing.T) {
+	t.Parallel()
+
+	if os.Getuid() == 0 {
+		t.Skip("Skipping test when running as root")
+	}
+
+	tmpDir := t.TempDir()
+	readOnlyDir := filepath.Join(tmpDir, "readonly")
+	err := os.Mkdir(readOnlyDir, 0o555)
+	require.NoError(t, err)
+
+	v, err := version.NewVersion("7.3.83")
+	require.NoError(t, err)
+
+	err = writeVersionRepoMarkerFile(v, readOnlyDir)
+	require.Error(t, err)
+	require.ErrorContains(t, err, "permission denied")
 }
