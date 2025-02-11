@@ -186,7 +186,7 @@ func TestGenerateCodeFromFields(t *testing.T) {
 			outDir:    t.TempDir(),
 			setupMockFiles: func(dir string) {
 				// Create empty directory structure
-				_ = os.MkdirAll(dir, 0755)
+				_ = os.MkdirAll(dir, 0o755)
 			},
 			expectedError: false,
 		},
@@ -194,6 +194,7 @@ func TestGenerateCodeFromFields(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if tt.setupMockFiles != nil {
 				tt.setupMockFiles(tt.fieldsDir)
 			}
