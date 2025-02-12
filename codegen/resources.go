@@ -82,11 +82,13 @@ var fileReps = []replacement{
 	{"ApGroups", "APGroup"},
 }
 
+type FieldProcessor func(name string, f *FieldInfo) error
+
 type Resource struct {
 	StructName     string
 	ResourcePath   string
 	Types          map[string]*FieldInfo
-	FieldProcessor func(name string, f *FieldInfo) error
+	FieldProcessor FieldProcessor
 }
 
 func (r *Resource) BaseType() *FieldInfo {
@@ -318,7 +320,7 @@ func normalizeValidation(re string) string {
 
 var skippable = []string{"AuthenticationRequest.json", "Setting.json", "Wall.json"}
 
-func buildResourcesFromDownloadedFields(fieldsDir string) ([]*Resource, error) {
+func buildResourcesFromDownloadedFields(fieldsDir string, customizer CodeCustomizer) ([]*Resource, error) {
 	fieldsFiles, err := os.ReadDir(fieldsDir)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read fields directory %s: %w", fieldsDir, err)
@@ -348,6 +350,7 @@ func buildResourcesFromDownloadedFields(fieldsDir string) ([]*Resource, error) {
 
 		resource := NewResource(structName, urlPath)
 		customizeResource(resource)
+		customizer.ApplyToResource(resource)
 
 		err = resource.processJSON(b)
 		if err != nil {
@@ -396,63 +399,6 @@ func customizeResource(resource *Resource) {
 	customizeBaseType(resource)
 
 	switch resource.StructName {
-	case "Account":
-		resource.FieldProcessor = func(name string, f *FieldInfo) error {
-			switch name {
-			case "IP", "NetworkID":
-				f.OmitEmpty = true
-			}
-			return nil
-		}
-	case "ChannelPlan":
-		resource.FieldProcessor = func(name string, f *FieldInfo) error {
-			switch name {
-			case "Channel", "BackupChannel", "TxPower":
-				if f.FieldType == "string" {
-					f.CustomUnmarshalType = "numberOrString"
-				}
-			}
-			return nil
-		}
-	case "Device":
-		resource.FieldProcessor = func(name string, f *FieldInfo) error {
-			switch name {
-			case "X", "Y":
-				f.FieldType = "float64"
-			case "StpPriority":
-				f.FieldType = "string"
-				f.CustomUnmarshalType = "numberOrString"
-			case "Ht":
-				f.FieldType = "int"
-			case "Channel", "BackupChannel", "TxPower":
-				if f.FieldType == "string" {
-					f.CustomUnmarshalType = "numberOrString"
-				}
-			case "LteExtAnt", "LtePoe":
-				f.CustomUnmarshalType = "booleanishString"
-			}
-
-			f.OmitEmpty = true
-			switch name {
-			case "PortOverrides":
-				f.OmitEmpty = false
-			}
-
-			return nil
-		}
-	case "Network":
-		resource.FieldProcessor = func(name string, f *FieldInfo) error {
-			switch name {
-			case "InternetAccessEnabled", "IntraNetworkAccessEnabled":
-				if f.FieldType == "bool" {
-					f.CustomUnmarshalType = "*bool"
-					f.CustomUnmarshalFunc = "emptyBoolToTrue"
-				}
-			case "WANUsername", "XWANPassword":
-				f.OmitEmpty = true
-			}
-			return nil
-		}
 	case "SettingGlobalAp":
 		resource.FieldProcessor = func(name string, f *FieldInfo) error {
 			if strings.HasPrefix(name, "6E") {
@@ -484,26 +430,6 @@ func customizeResource(resource *Resource) {
 			if strings.HasSuffix(name, "Timeout") && name != "ArpCacheTimeout" {
 				f.FieldType = "int"
 				f.CustomUnmarshalType = "emptyStringInt"
-			}
-			return nil
-		}
-	case "User":
-		resource.FieldProcessor = func(name string, f *FieldInfo) error {
-			switch name {
-			case "Blocked":
-				f.FieldType = "bool"
-			case "LastSeen":
-				f.FieldType = "int"
-				f.CustomUnmarshalType = "emptyStringInt"
-			}
-			return nil
-		}
-	case "WLAN":
-		resource.FieldProcessor = func(name string, f *FieldInfo) error {
-			switch name {
-			case "ScheduleWithDuration":
-				// always send schedule, so we can empty it if we want to
-				f.OmitEmpty = false
 			}
 			return nil
 		}

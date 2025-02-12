@@ -199,7 +199,7 @@ func TestGenerateCodeFromFields(t *testing.T) {
 				tt.setupMockFiles(tt.fieldsDir)
 			}
 
-			err := generateCode(tt.fieldsDir, tt.outDir)
+			err := generateCode(tt.fieldsDir, tt.outDir, noopCustomizer{})
 
 			if tt.expectedError {
 				require.Error(t, err)
