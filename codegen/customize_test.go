@@ -76,7 +76,6 @@ func TestApplyToResource(t *testing.T) {
 	err = res.FieldProcessor("Channel", fiChannelMismatch)
 	require.NoError(t, err)
 	a.Equal("", fiChannelMismatch.CustomUnmarshalType, "Override should not apply when FieldType does not match")
-
 }
 
 func TestCompositeFieldProcessor(t *testing.T) {
@@ -124,8 +123,9 @@ func TestNoCustomizationForResource(t *testing.T) {
 }
 
 func createTempCustomizationsYaml(t *testing.T, data string) string {
+	t.Helper()
 	tempFile := filepath.Join(t.TempDir(), "temp_customizations.yml")
-	err := os.WriteFile(tempFile, []byte(data), 0644)
+	err := os.WriteFile(tempFile, []byte(data), 0o644)
 	require.NoError(t, err, "should create temp file")
 	return tempFile
 }

@@ -140,7 +140,7 @@ type noopCustomizer struct{}
 
 func (noopCustomizer) ApplyToResource(resource *Resource) {}
 
-func NewCodeCustomizer(customizationsPath string) (CodeCustomizer, error) {
+func NewCodeCustomizer(customizationsPath string) (CodeCustomizer, error) { //nolint: ireturn
 	generate, err := unmarshalCustomizationYaml(customizationsPath)
 	if err != nil {
 		return nil, err
