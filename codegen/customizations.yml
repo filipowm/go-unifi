@@ -1,0 +1,73 @@
+---
+customizations:
+  resources:
+    Account:
+      fields:
+        IP:
+          omitEmpty: true
+        NetworkID:
+          omitEmpty: true
+    ChannelPlan:
+      fields:
+        Channel:
+          ifFieldType: "string"
+          customUnmarshalType: "numberOrString"
+        BackupChannel:
+          ifFieldType: "string"
+          customUnmarshalType: "numberOrString"
+        TxPower:
+          ifFieldType: "string"
+          customUnmarshalType: "numberOrString"
+    Device:
+      fields:
+        _all:
+          omitEmpty: true
+        X:
+          fieldType: "float64"
+        Y:
+          fieldType: "float64"
+        StpPriority:
+          fieldType: "string"
+          customUnmarshalType: "numberOrString"
+        Ht:
+          fieldType: "int"
+        Channel:
+          customUnmarshalType: "numberOrString"
+          ifFieldType: "string"
+        BackupChannel:
+          customUnmarshalType: "numberOrString"
+          ifFieldType: "string"
+        TxPower:
+          customUnmarshalType: "numberOrString"
+          ifFieldType: "string"
+        LteExtAnt:
+          customUnmarshalType: "booleanishString"
+        LtePoe:
+          customUnmarshalType: "booleanishString"
+        PortOverrides:
+          omitEmpty: false
+    Network:
+      fields:
+        InternetAccessEnabled:
+          ifFieldType: "bool"
+          customUnmarshalType: "*bool"
+          customUnmarshalFunc: "emptyBoolToTrue"
+        IntraNetworkAccessEnabled:
+          ifFieldType: "bool"
+          customUnmarshalType: "*bool"
+          customUnmarshalFunc: "emptyBoolToTrue"
+        WANUsername:
+          omitEmpty: true
+        XWANPassword:
+          omitEmpty: true
+    User:
+      fields:
+        Blocked:
+          fieldType: "bool"
+        LastSeen:
+          fieldType: "int"
+          customUnmarshalType: "emptyStringInt"
+    WLAN:
+      fields:
+        ScheduleWithDuration:
+          omitEmpty: false

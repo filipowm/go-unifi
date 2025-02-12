@@ -41,18 +41,19 @@ func generateCodeFromTemplate(templateName, templateContent string, toWrite any)
 }
 
 // generateCode generates code for each generation source and writes it to file.
-func generateCode(fieldsDir string, outDir string) error {
+func generateCode(fieldsDir string, outDir string, customizer CodeCustomizer) error {
 	if _, err := ensurePath(outDir); err != nil {
 		return fmt.Errorf("unable to create output directory %s: %w", outDir, err)
 	}
 
 	generators := make([]Generatable, 0)
-	resources, err := buildResourcesFromDownloadedFields(fieldsDir)
+	resources, err := buildResourcesFromDownloadedFields(fieldsDir, customizer)
 	if err != nil {
 		return fmt.Errorf("failed to build resources from downloaded fields: %w", err)
 	}
 	client := newClientInfo(resources)
 	for _, resource := range resources {
+		customizer.ApplyToResource(resource)
 		generators = append(generators, resource)
 	}
 	generators = append(generators, client)

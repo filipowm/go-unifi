@@ -37,11 +37,12 @@ func setupLogging(debugEnabled, traceEnabled bool) {
 }
 
 type options struct {
-	versionBaseDir    string
-	outputDir         string
-	downloadOnly      bool
-	version           string
-	firmwareUpdateApi string
+	versionBaseDir     string
+	outputDir          string
+	downloadOnly       bool
+	version            string
+	firmwareUpdateApi  string
+	customizationsPath string
 }
 
 func main() {
@@ -61,11 +62,12 @@ func main() {
 		specifiedVersion = LatestVersionMarker // default to latest version
 	}
 	err := generate(options{
-		versionBaseDir:    *versionBaseDirFlag,
-		outputDir:         *outputDirFlag,
-		downloadOnly:      *downloadOnly,
-		version:           specifiedVersion,
-		firmwareUpdateApi: defaultFirmwareUpdateApi,
+		versionBaseDir:     *versionBaseDirFlag,
+		outputDir:          *outputDirFlag,
+		downloadOnly:       *downloadOnly,
+		version:            specifiedVersion,
+		firmwareUpdateApi:  defaultFirmwareUpdateApi,
+		customizationsPath: "customizations.yml",
 	})
 	if err != nil {
 		log.Error(err)
@@ -114,7 +116,11 @@ func generate(opts options) error {
 	} else {
 		outDir = filepath.Join(wd, opts.outputDir)
 	}
-	if err = generateCode(structuresDir, outDir); err != nil {
+	customizer, err := NewCodeCustomizer(opts.customizationsPath)
+	if err != nil {
+		return fmt.Errorf("unable to create code customizer: %w", err)
+	}
+	if err = generateCode(structuresDir, outDir, customizer); err != nil {
 		return fmt.Errorf("unable to generate resources code: %w", err)
 	}
 
