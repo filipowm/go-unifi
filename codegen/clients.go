@@ -43,9 +43,9 @@ func (c *Comment) ResourceName() string {
 
 // CustomClientFunction represents a custom client function definition.
 type CustomClientFunction struct {
-	Resource         string          `yaml:"resource-name"`
+	Resource         string          `yaml:"resourceName"`
 	FunctionName     string          `yaml:"name"`
-	Parameters       []FunctionParam `yaml:"parameters"`
+	Parameters       []FunctionParam `yaml:"params"`
 	ReturnParameters []string        `yaml:"returns"`
 	FunctionComment  string          `yaml:"comment"`
 }

@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"fmt"
 	"os"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -28,8 +29,9 @@ type ResourceCustomization struct {
 }
 
 type ClientCustomization struct {
-	Imports   []string               `yaml:"imports"`
-	Functions []CustomClientFunction `yaml:"functions"`
+	Imports          []string               `yaml:"imports"`
+	Functions        []CustomClientFunction `yaml:"functions"`
+	ExcludeResources []string               `yaml:"excludeResources"`
 }
 
 type FieldCustomization struct {
@@ -150,6 +152,23 @@ func NewCodeCustomizer(customizationsPath string) (*CodeCustomizer, error) {
 		generate.Customizations = &Customizations{}
 	}
 	return &CodeCustomizer{*generate.Customizations}, nil
+}
+
+func (r *CodeCustomizer) IsExcludedFromClient(resourceName string) bool {
+	for _, excludedResource := range r.Customizations.Client.ExcludeResources {
+		prefixedAll := strings.HasPrefix(excludedResource, "*")
+		suffixedAll := strings.HasSuffix(excludedResource, "*")
+		if prefixedAll && suffixedAll && strings.Contains(resourceName, excludedResource[1:len(excludedResource)-1]) {
+			return true
+		} else if prefixedAll && strings.HasSuffix(resourceName, excludedResource[1:]) {
+			return true
+		} else if suffixedAll && strings.HasPrefix(resourceName, excludedResource[:len(excludedResource)-1]) {
+			return true
+		} else if resourceName == excludedResource {
+			return true
+		}
+	}
+	return false
 }
 
 func (r *CodeCustomizer) ApplyToResource(resource *Resource) {

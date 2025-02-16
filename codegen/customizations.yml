@@ -1,6 +1,8 @@
 ---
 customizations:
   client:
+    excludeResources:
+      - "Setting*"  # Exclude all resources that start with "Setting"
     functions:
       - name: "Login"
         comment: "Login logs in to the controller. Useful only for user/password authentication."
@@ -14,6 +16,18 @@ customizations:
         comment: "BaseURL returns the base URL of the controller."
         returns:
           - "string"
+      - name: "AdoptDevice"
+        comment: "AdoptDevice adopts a device by MAC address."
+        resourceName: "Device"
+        params:
+          - name: "ctx"
+            type: "context.Context"
+          - name: "site"
+            type: "string"
+          - name: "mac"
+            type: "string"
+        returns:
+          - "error"
   resources:
     Account:
       fields:
