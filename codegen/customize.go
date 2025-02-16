@@ -3,8 +3,9 @@ package main
 import (
 	_ "embed"
 	"fmt"
-	"gopkg.in/yaml.v3"
 	"os"
+
+	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -121,7 +122,7 @@ func unmarshalCustomizationYaml(customizationsPath string) (*Generate, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = yaml.Unmarshal(customizationsYml, &generate)
+	err = yaml.Unmarshal(customizationsYml, &generate) //nolint: musttag
 	if err != nil {
 		return nil, fmt.Errorf("failed unmarshalling YAML to Generate structure: %w", err)
 	}
@@ -140,7 +141,7 @@ type CodeCustomizer struct {
 	Customizations Customizations
 }
 
-func NewCodeCustomizer(customizationsPath string) (*CodeCustomizer, error) { //nolint: ireturn
+func NewCodeCustomizer(customizationsPath string) (*CodeCustomizer, error) {
 	generate, err := unmarshalCustomizationYaml(customizationsPath)
 	if err != nil {
 		return nil, err

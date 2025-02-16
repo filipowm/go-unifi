@@ -28,12 +28,15 @@ type Comment struct {
 func (c *Comment) Name() string {
 	return ""
 }
+
 func (c *Comment) Comment() string {
 	return c.comment
 }
+
 func (c *Comment) Signature() string {
 	return ""
 }
+
 func (c *Comment) ResourceName() string {
 	return c.resourceName
 }
@@ -100,7 +103,7 @@ type ClientInfoBuilder struct {
 	functions []ClientFunction
 }
 
-func (c *ClientInfoBuilder) AddFunction(f ClientFunction) *ClientInfoBuilder {
+func (c *ClientInfoBuilder) AddFunction(f ClientFunction) *ClientInfoBuilder { //nolint: unparam
 	c.functions = append(c.functions, f)
 	return c
 }
@@ -132,11 +135,11 @@ func (c *ClientInfoBuilder) addResourceFunction(actionName, resourceName, commen
 }
 
 func singlePointerReturn(name string) []string {
-	return []string{fmt.Sprintf("*%s", name)}
+	return []string{"*" + name}
 }
 
 func singlePointerParam(name string) []FunctionParam {
-	return []FunctionParam{{strings.ToLower(name[0:1]), fmt.Sprintf("*%s", name)}}
+	return []FunctionParam{{strings.ToLower(name[0:1]), "*" + name}}
 }
 
 func (c *ClientInfoBuilder) AddResource(r *Resource) *ClientInfoBuilder {
@@ -147,7 +150,7 @@ func (c *ClientInfoBuilder) AddResource(r *Resource) *ClientInfoBuilder {
 		return c
 	}
 	c.addResourceFunction("Get", r.Name(), "retrieves a resource", []FunctionParam{{"id", "string"}}, singlePointerReturn(r.Name()))
-	c.addResourceFunction("List", r.Name(), "lists the resources", nil, []string{fmt.Sprintf("[]*%s", r.Name())})
+	c.addResourceFunction("List", r.Name(), "lists the resources", nil, []string{"[]*" + r.Name()})
 	c.addResourceFunction("Create", r.Name(), "creates a resource", singlePointerParam(r.Name()), singlePointerReturn(r.Name()))
 	c.addResourceFunction("Update", r.Name(), "updates a resource", singlePointerParam(r.Name()), singlePointerReturn(r.Name()))
 	c.addResourceFunction("Delete", r.Name(), "deletes a resource", []FunctionParam{{"id", "string"}}, nil)
