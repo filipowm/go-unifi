@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"fmt"
 	"os"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -13,15 +14,24 @@ const (
 	defaultCustomizationsPath     = "customizations.yml"
 )
 
+type Customizations struct {
+	Resources map[string]*ResourceCustomization `yaml:"resources"`
+	Client    *ClientCustomization              `yaml:"client"`
+}
+
 type Generate struct {
-	Customizations struct {
-		Resources map[string]*ResourceCustomization `yaml:"resources"`
-	} `yaml:"customizations"`
+	Customizations *Customizations `yaml:"customizations"`
 }
 
 type ResourceCustomization struct {
 	ResourceName string                         `yaml:"-"`
 	Fields       map[string]*FieldCustomization `yaml:"fields"`
+}
+
+type ClientCustomization struct {
+	Imports          []string               `yaml:"imports"`
+	Functions        []CustomClientFunction `yaml:"functions"`
+	ExcludeResources []string               `yaml:"excludeResources"`
 }
 
 type FieldCustomization struct {
@@ -114,7 +124,7 @@ func unmarshalCustomizationYaml(customizationsPath string) (*Generate, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = yaml.Unmarshal(customizationsYml, &generate)
+	err = yaml.Unmarshal(customizationsYml, &generate) //nolint: musttag
 	if err != nil {
 		return nil, fmt.Errorf("failed unmarshalling YAML to Generate structure: %w", err)
 	}
@@ -125,33 +135,54 @@ func unmarshalCustomizationYaml(customizationsPath string) (*Generate, error) {
 			field.FieldName = fieldName
 		}
 	}
+
 	return &generate, nil
 }
 
-type YamlConfigCodeCustomizer struct {
-	Customizations map[string]*ResourceCustomization
+type CodeCustomizer struct {
+	Customizations Customizations
 }
 
-type CodeCustomizer interface {
-	ApplyToResource(resource *Resource)
-}
-
-type noopCustomizer struct{}
-
-func (noopCustomizer) ApplyToResource(resource *Resource) {}
-
-func NewCodeCustomizer(customizationsPath string) (CodeCustomizer, error) { //nolint: ireturn
+func NewCodeCustomizer(customizationsPath string) (*CodeCustomizer, error) {
 	generate, err := unmarshalCustomizationYaml(customizationsPath)
 	if err != nil {
 		return nil, err
 	}
-	return &YamlConfigCodeCustomizer{generate.Customizations.Resources}, nil
+	if generate.Customizations == nil {
+		generate.Customizations = &Customizations{}
+	}
+	return &CodeCustomizer{*generate.Customizations}, nil
 }
 
-func (r *YamlConfigCodeCustomizer) ApplyToResource(resource *Resource) {
-	for resourceName, resourceCustomization := range r.Customizations {
+func (r *CodeCustomizer) IsExcludedFromClient(resourceName string) bool {
+	for _, excludedResource := range r.Customizations.Client.ExcludeResources {
+		prefixedAll := strings.HasPrefix(excludedResource, "*")
+		suffixedAll := strings.HasSuffix(excludedResource, "*")
+		if prefixedAll && suffixedAll && strings.Contains(resourceName, excludedResource[1:len(excludedResource)-1]) {
+			return true
+		} else if prefixedAll && strings.HasSuffix(resourceName, excludedResource[1:]) {
+			return true
+		} else if suffixedAll && strings.HasPrefix(resourceName, excludedResource[:len(excludedResource)-1]) {
+			return true
+		} else if resourceName == excludedResource {
+			return true
+		}
+	}
+	return false
+}
+
+func (r *CodeCustomizer) ApplyToResource(resource *Resource) {
+	for resourceName, resourceCustomization := range r.Customizations.Resources {
 		if resource.StructName == resourceName {
 			resourceCustomization.ApplyTo(resource)
 		}
 	}
+}
+
+func (r *CodeCustomizer) ApplyToClient(client *ClientInfoBuilder) {
+	if client == nil || r.Customizations.Client == nil {
+		return
+	}
+	client.AddFunctions(r.Customizations.Client.Functions)
+	client.AddImports(r.Customizations.Client.Imports)
 }

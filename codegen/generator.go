@@ -51,12 +51,17 @@ func generateCode(fieldsDir string, outDir string, customizer CodeCustomizer) er
 	if err != nil {
 		return fmt.Errorf("failed to build resources from downloaded fields: %w", err)
 	}
-	client := newClientInfo(resources)
+	cb := NewClientInfoBuilder()
+	customizer.ApplyToClient(cb)
 	for _, resource := range resources {
+		if customizer.IsExcludedFromClient(resource.Name()) {
+			continue
+		}
+		cb.AddResource(resource)
 		customizer.ApplyToResource(resource)
 		generators = append(generators, resource)
 	}
-	generators = append(generators, client)
+	generators = append(generators, cb.Build())
 
 	for _, g := range generators {
 		var code string
