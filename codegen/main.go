@@ -120,7 +120,7 @@ func generate(opts options) error {
 	if err != nil {
 		return fmt.Errorf("unable to create code customizer: %w", err)
 	}
-	if err = generateCode(structuresDir, outDir, customizer); err != nil {
+	if err = generateCode(structuresDir, outDir, *customizer); err != nil {
 		return fmt.Errorf("unable to generate resources code: %w", err)
 	}
 

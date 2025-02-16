@@ -3,9 +3,8 @@ package main
 import (
 	_ "embed"
 	"fmt"
-	"os"
-
 	"gopkg.in/yaml.v3"
+	"os"
 )
 
 const (
@@ -13,15 +12,23 @@ const (
 	defaultCustomizationsPath     = "customizations.yml"
 )
 
+type Customizations struct {
+	Resources map[string]*ResourceCustomization `yaml:"resources"`
+	Client    *ClientCustomization              `yaml:"client"`
+}
+
 type Generate struct {
-	Customizations struct {
-		Resources map[string]*ResourceCustomization `yaml:"resources"`
-	} `yaml:"customizations"`
+	Customizations *Customizations `yaml:"customizations"`
 }
 
 type ResourceCustomization struct {
 	ResourceName string                         `yaml:"-"`
 	Fields       map[string]*FieldCustomization `yaml:"fields"`
+}
+
+type ClientCustomization struct {
+	Imports   []string               `yaml:"imports"`
+	Functions []CustomClientFunction `yaml:"functions"`
 }
 
 type FieldCustomization struct {
@@ -125,33 +132,37 @@ func unmarshalCustomizationYaml(customizationsPath string) (*Generate, error) {
 			field.FieldName = fieldName
 		}
 	}
+
 	return &generate, nil
 }
 
-type YamlConfigCodeCustomizer struct {
-	Customizations map[string]*ResourceCustomization
+type CodeCustomizer struct {
+	Customizations Customizations
 }
 
-type CodeCustomizer interface {
-	ApplyToResource(resource *Resource)
-}
-
-type noopCustomizer struct{}
-
-func (noopCustomizer) ApplyToResource(resource *Resource) {}
-
-func NewCodeCustomizer(customizationsPath string) (CodeCustomizer, error) { //nolint: ireturn
+func NewCodeCustomizer(customizationsPath string) (*CodeCustomizer, error) { //nolint: ireturn
 	generate, err := unmarshalCustomizationYaml(customizationsPath)
 	if err != nil {
 		return nil, err
 	}
-	return &YamlConfigCodeCustomizer{generate.Customizations.Resources}, nil
+	if generate.Customizations == nil {
+		generate.Customizations = &Customizations{}
+	}
+	return &CodeCustomizer{*generate.Customizations}, nil
 }
 
-func (r *YamlConfigCodeCustomizer) ApplyToResource(resource *Resource) {
-	for resourceName, resourceCustomization := range r.Customizations {
+func (r *CodeCustomizer) ApplyToResource(resource *Resource) {
+	for resourceName, resourceCustomization := range r.Customizations.Resources {
 		if resource.StructName == resourceName {
 			resourceCustomization.ApplyTo(resource)
 		}
 	}
+}
+
+func (r *CodeCustomizer) ApplyToClient(client *ClientInfoBuilder) {
+	if client == nil || r.Customizations.Client == nil {
+		return
+	}
+	client.AddFunctions(r.Customizations.Client.Functions)
+	client.AddImports(r.Customizations.Client.Imports)
 }

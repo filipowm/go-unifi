@@ -1,5 +1,19 @@
 ---
 customizations:
+  client:
+    functions:
+      - name: "Login"
+        comment: "Login logs in to the controller. Useful only for user/password authentication."
+        returns:
+          - "error"
+      - name: "Logout"
+        comment: "Logout logs out from the controller."
+        returns:
+          - "error"
+      - name: "BaseURL"
+        comment: "BaseURL returns the base URL of the controller."
+        returns:
+          - "string"
   resources:
     Account:
       fields:

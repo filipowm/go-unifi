@@ -3,13 +3,16 @@ package main
 import (
 	_ "embed"
 	"fmt"
+	"sort"
 	"strings"
 )
 
 // ClientFunction is the interface for client functions.
 type ClientFunction interface {
 	Name() string
-	IsSetting() bool
+	ResourceName() string
+	Comment() string
+	Signature() string
 }
 
 type FunctionParam struct {
@@ -17,21 +20,51 @@ type FunctionParam struct {
 	Type string
 }
 
+type Comment struct {
+	comment      string
+	resourceName string
+}
+
+func (c *Comment) Name() string {
+	return ""
+}
+func (c *Comment) Comment() string {
+	return c.comment
+}
+func (c *Comment) Signature() string {
+	return ""
+}
+func (c *Comment) ResourceName() string {
+	return c.resourceName
+}
+
 // CustomClientFunction represents a custom client function definition.
 type CustomClientFunction struct {
-	Name             string
-	Parameters       []FunctionParam
-	ReturnParameters []string
-	Comment          string
+	Resource         string          `yaml:"resource-name"`
+	FunctionName     string          `yaml:"name"`
+	Parameters       []FunctionParam `yaml:"parameters"`
+	ReturnParameters []string        `yaml:"returns"`
+	FunctionComment  string          `yaml:"comment"`
+}
+
+func (c *CustomClientFunction) Name() string {
+	return c.FunctionName
+}
+
+func (c *CustomClientFunction) ResourceName() string {
+	return c.Resource
 }
 
 // Signature returns the signature string for the custom client function.
 func (c *CustomClientFunction) Signature() string {
-	var b strings.Builder
-	if c.Comment != "" {
-		b.WriteString(fmt.Sprintf("// %s %s\n", c.Name, c.Comment))
+	if c.Name() == "" {
+		return ""
 	}
-	b.WriteString(c.Name)
+	var b strings.Builder
+	//if c.comment != "" {
+	//	b.WriteString(fmt.Sprintf("// %s %s\n", c.Name, c.Comment))
+	//}
+	b.WriteString(c.Name())
 	b.WriteString("(")
 
 	// Build parameters without trailing comma
@@ -52,20 +85,104 @@ func (c *CustomClientFunction) Signature() string {
 	return b.String()
 }
 
+func (c *CustomClientFunction) Comment() string {
+	return c.FunctionComment
+}
+
 // ClientInfo represents the client information used for code generation.
 type ClientInfo struct {
-	Imports         []string
-	Functions       []ClientFunction
-	CustomFunctions []CustomClientFunction
+	Imports   []string
+	Functions []ClientFunction
+}
+
+type ClientInfoBuilder struct {
+	imports   []string
+	functions []ClientFunction
+}
+
+func (c *ClientInfoBuilder) AddFunction(f ClientFunction) *ClientInfoBuilder {
+	c.functions = append(c.functions, f)
+	return c
+}
+
+func (c *ClientInfoBuilder) AddFunctions(f []CustomClientFunction) *ClientInfoBuilder {
+	for _, v := range f {
+		c.functions = append(c.functions, &v)
+	}
+	return c
+}
+
+func (c *ClientInfoBuilder) addResourceFunction(actionName, resourceName, comment string, additionalParams []FunctionParam, additionalReturns []string) {
+	fName := fmt.Sprintf("%s%s", actionName, resourceName)
+	params := []FunctionParam{
+		{"ctx", "context.Context"},
+		{"site", "string"},
+	}
+	params = append(params, additionalParams...)
+	returns := additionalReturns
+	returns = append(returns, "error")
+	f := CustomClientFunction{
+		FunctionName:     fName,
+		Resource:         resourceName,
+		Parameters:       params,
+		ReturnParameters: returns,
+		FunctionComment:  fmt.Sprintf("%s %s", fName, comment),
+	}
+	c.AddFunction(&f)
+}
+
+func singlePointerReturn(name string) []string {
+	return []string{fmt.Sprintf("*%s", name)}
+}
+
+func singlePointerParam(name string) []FunctionParam {
+	return []FunctionParam{{strings.ToLower(name[0:1]), fmt.Sprintf("*%s", name)}}
+}
+
+func (c *ClientInfoBuilder) AddResource(r *Resource) *ClientInfoBuilder {
+	c.AddFunction(&Comment{comment: fmt.Sprintf("client methods for %s resource", r.Name()), resourceName: r.Name()})
+	if r.IsSetting() {
+		c.addResourceFunction("Get", r.Name(), "retrieves the settings for a resource", nil, singlePointerReturn(r.Name()))
+		c.addResourceFunction("Update", r.Name(), "updates a resource", singlePointerParam(r.Name()), singlePointerReturn(r.Name()))
+		return c
+	}
+	c.addResourceFunction("Get", r.Name(), "retrieves a resource", []FunctionParam{{"id", "string"}}, singlePointerReturn(r.Name()))
+	c.addResourceFunction("List", r.Name(), "lists the resources", nil, []string{fmt.Sprintf("[]*%s", r.Name())})
+	c.addResourceFunction("Create", r.Name(), "creates a resource", singlePointerParam(r.Name()), singlePointerReturn(r.Name()))
+	c.addResourceFunction("Update", r.Name(), "updates a resource", singlePointerParam(r.Name()), singlePointerReturn(r.Name()))
+	c.addResourceFunction("Delete", r.Name(), "deletes a resource", []FunctionParam{{"id", "string"}}, nil)
+	return c
+}
+
+func (c *ClientInfoBuilder) AddImport(i string) *ClientInfoBuilder {
+	c.imports = append(c.imports, i)
+	return c
+}
+
+func (c *ClientInfoBuilder) AddImports(i []string) *ClientInfoBuilder {
+	c.imports = append(c.imports, i...)
+	return c
+}
+
+func (c *ClientInfoBuilder) Build() *ClientInfo {
+	// Sort the functions by resource name and then by name.
+	sort.Slice(c.functions, func(i, j int) bool {
+		if c.functions[i].ResourceName() == c.functions[j].ResourceName() {
+			return c.functions[i].Signature() < c.functions[j].Signature()
+		}
+		return c.functions[i].ResourceName() < c.functions[j].ResourceName()
+	})
+
+	return newClientInfo(c.imports, c.functions)
+}
+
+func NewClientInfoBuilder() *ClientInfoBuilder {
+	return &ClientInfoBuilder{}
 }
 
 // newClientInfo creates ClientInfo from the provided resources.
-func newClientInfo(resources []*Resource) *ClientInfo {
-	functions := make([]ClientFunction, 0)
-	for _, resource := range resources {
-		functions = append(functions, resource)
-	}
-	return &ClientInfo{Functions: functions}
+func newClientInfo(imports []string, functions []ClientFunction) *ClientInfo {
+	return &ClientInfo{imports, functions}
 }
 
 //go:embed client.go.tmpl

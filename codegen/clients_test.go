@@ -1,11 +1,10 @@
 package main
 
 import (
-	"strings"
+	"github.com/stretchr/testify/require"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestCustomClientFunctionSignature(t *testing.T) {
@@ -19,23 +18,21 @@ func TestCustomClientFunctionSignature(t *testing.T) {
 		{
 			name: "no comment, no params, no returns",
 			fn: CustomClientFunction{
-				Name: "Foo",
+				FunctionName: "Foo",
 			},
 			wantFunc: "Foo()",
 		},
 		{
 			name: "with comment, no params, no returns",
 			fn: CustomClientFunction{
-				Name:    "Bar",
-				Comment: "does something",
+				FunctionName: "Bar",
 			},
-			wantComment: "// Bar does something",
-			wantFunc:    "Bar()",
+			wantFunc: "Bar()",
 		},
 		{
 			name: "with one param and one return",
 			fn: CustomClientFunction{
-				Name:             "Baz",
+				FunctionName:     "Baz",
 				Parameters:       []FunctionParam{{"a", "int"}},
 				ReturnParameters: []string{"error"},
 			},
@@ -44,7 +41,7 @@ func TestCustomClientFunctionSignature(t *testing.T) {
 		{
 			name: "with multiple returns",
 			fn: CustomClientFunction{
-				Name:             "Qux",
+				FunctionName:     "Qux",
 				Parameters:       []FunctionParam{{"x", "string"}},
 				ReturnParameters: []string{"int", "error"},
 			},
@@ -53,13 +50,11 @@ func TestCustomClientFunctionSignature(t *testing.T) {
 		{
 			name: "with multiple params",
 			fn: CustomClientFunction{
-				Name:             "MultiParams",
+				FunctionName:     "MultiParams",
 				Parameters:       []FunctionParam{{"x", "string"}, {"y", "int"}},
 				ReturnParameters: []string{},
-				Comment:          "function with multiple parameters",
 			},
-			wantComment: "// MultiParams function with multiple parameters",
-			wantFunc:    "MultiParams(x string, y int)",
+			wantFunc: "MultiParams(x string, y int)",
 		},
 	}
 
@@ -67,19 +62,7 @@ func TestCustomClientFunctionSignature(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
-
-			got := tt.fn.Signature()
-
-			parts := strings.Split(got, "\n")
-			var comment, funcSig string
-			if len(tt.wantComment) > 0 {
-				comment = parts[0]
-				funcSig = parts[1]
-			} else {
-				funcSig = parts[0]
-			}
-			a.Equal(tt.wantComment, comment)
-			a.Equal(tt.wantFunc, funcSig)
+			a.Equal(tt.wantFunc, tt.fn.Signature())
 		})
 	}
 }
@@ -87,17 +70,16 @@ func TestCustomClientFunctionSignature(t *testing.T) {
 func TestGenerateCode(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
-	ci := &ClientInfo{
-		Imports: []string{"fmt"},
-		CustomFunctions: []CustomClientFunction{
-			{
-				Name:             "TestFunc",
-				Parameters:       []FunctionParam{{"x", "int"}},
-				ReturnParameters: []string{"error"},
-				Comment:          "This is a test function",
-			},
-		},
-	}
+
+	b := NewClientInfoBuilder()
+	b.AddImport("fmt")
+	b.AddFunction(&CustomClientFunction{
+		FunctionName:     "TestFunc",
+		Parameters:       []FunctionParam{{"x", "int"}},
+		ReturnParameters: []string{"error"},
+		FunctionComment:  "This is a test function",
+	})
+	ci := b.Build()
 	code, err := ci.GenerateCode()
 	require.NoError(t, err)
 	a.NotEmpty(code, "GenerateCode() returned empty code")
