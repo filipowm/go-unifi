@@ -79,7 +79,7 @@ func (s *Setting) newFields() (interface{}, error) {
 	return nil, fmt.Errorf("unexpected key %q", s.Key)
 }
 
-func (c *Client) GetSetting(ctx context.Context, site, key string) (*Setting, interface{}, error) {
+func (c *client) GetSetting(ctx context.Context, site, key string) (*Setting, interface{}, error) {
 	var respBody struct {
 		Meta Meta              `json:"Meta"`
 		Data []json.RawMessage `json:"data"`

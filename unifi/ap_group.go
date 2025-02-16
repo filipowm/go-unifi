@@ -25,7 +25,7 @@ type APGroup struct {
 	DeviceMACs []string `json:"device_macs"`
 }
 
-func (c *Client) ListAPGroup(ctx context.Context, site string) ([]APGroup, error) {
+func (c *client) ListAPGroup(ctx context.Context, site string) ([]APGroup, error) {
 	var respBody []APGroup
 
 	err := c.Get(ctx, fmt.Sprintf("%s/site/%s/apgroups", c.apiPaths.ApiV2Path, site), nil, &respBody)
@@ -36,7 +36,7 @@ func (c *Client) ListAPGroup(ctx context.Context, site string) ([]APGroup, error
 	return respBody, nil
 }
 
-// func (c *Client) getWLANGroup(ctx context.Context, site, id string) (*WLANGroup, error) {
+// func (c *client) getWLANGroup(ctx context.Context, site, id string) (*WLANGroup, error) {
 // 	var respBody struct {
 // 		Meta `json:"Meta"`
 // 		Data []WLANGroup `json:"data"`
@@ -55,7 +55,7 @@ func (c *Client) ListAPGroup(ctx context.Context, site string) ([]APGroup, error
 // 	return &d, nil
 // }
 
-// func (c *Client) deleteWLANGroup(ctx context.Context, site, id string) error {
+// func (c *client) deleteWLANGroup(ctx context.Context, site, id string) error {
 // 	err := c.Delete(ctx, fmt.Sprintf("s/%s/rest/wlangroup/%s", site, id), struct{}{}, nil)
 // 	if err != nil {
 // 		return err
@@ -63,7 +63,7 @@ func (c *Client) ListAPGroup(ctx context.Context, site string) ([]APGroup, error
 // 	return nil
 // }
 
-func (c *Client) CreateAPGroup(ctx context.Context, site string, d *APGroup) (*APGroup, error) {
+func (c *client) CreateAPGroup(ctx context.Context, site string, d *APGroup) (*APGroup, error) {
 	var respBody APGroup
 
 	err := c.Post(ctx, fmt.Sprintf("%s/site/%s/apgroups", c.apiPaths.ApiV2Path, site), d, &respBody)
@@ -74,7 +74,7 @@ func (c *Client) CreateAPGroup(ctx context.Context, site string, d *APGroup) (*A
 	return &respBody, nil
 }
 
-// func (c *Client) updateWLANGroup(ctx context.Context, site string, d *WLANGroup) (*WLANGroup, error) {
+// func (c *client) updateWLANGroup(ctx context.Context, site string, d *WLANGroup) (*WLANGroup, error) {
 // 	var respBody struct {
 // 		Meta `json:"Meta"`
 // 		Data []WLANGroup `json:"data"`

@@ -61,7 +61,7 @@ func (dst *Map) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) listMap(ctx context.Context, site string) ([]Map, error) {
+func (c *client) listMap(ctx context.Context, site string) ([]Map, error) {
 	var respBody struct {
 		Meta Meta  `json:"meta"`
 		Data []Map `json:"data"`
@@ -75,7 +75,7 @@ func (c *Client) listMap(ctx context.Context, site string) ([]Map, error) {
 	return respBody.Data, nil
 }
 
-func (c *Client) getMap(ctx context.Context, site, id string) (*Map, error) {
+func (c *client) getMap(ctx context.Context, site, id string) (*Map, error) {
 	var respBody struct {
 		Meta Meta  `json:"meta"`
 		Data []Map `json:"data"`
@@ -94,7 +94,7 @@ func (c *Client) getMap(ctx context.Context, site, id string) (*Map, error) {
 	return &d, nil
 }
 
-func (c *Client) deleteMap(ctx context.Context, site, id string) error {
+func (c *client) deleteMap(ctx context.Context, site, id string) error {
 	err := c.Delete(ctx, fmt.Sprintf("s/%s/rest/map/%s", site, id), struct{}{}, nil)
 	if err != nil {
 		return err
@@ -102,7 +102,7 @@ func (c *Client) deleteMap(ctx context.Context, site, id string) error {
 	return nil
 }
 
-func (c *Client) createMap(ctx context.Context, site string, d *Map) (*Map, error) {
+func (c *client) createMap(ctx context.Context, site string, d *Map) (*Map, error) {
 	var respBody struct {
 		Meta Meta  `json:"meta"`
 		Data []Map `json:"data"`
@@ -122,7 +122,7 @@ func (c *Client) createMap(ctx context.Context, site string, d *Map) (*Map, erro
 	return &new, nil
 }
 
-func (c *Client) updateMap(ctx context.Context, site string, d *Map) (*Map, error) {
+func (c *client) updateMap(ctx context.Context, site string, d *Map) (*Map, error) {
 	var respBody struct {
 		Meta Meta  `json:"meta"`
 		Data []Map `json:"data"`

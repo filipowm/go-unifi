@@ -47,7 +47,7 @@ func (dst *SettingSuperIdentity) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) getSettingSuperIdentity(ctx context.Context, site string) (*SettingSuperIdentity, error) {
+func (c *client) getSettingSuperIdentity(ctx context.Context, site string) (*SettingSuperIdentity, error) {
 	var respBody struct {
 		Meta Meta                   `json:"meta"`
 		Data []SettingSuperIdentity `json:"data"`
@@ -66,7 +66,7 @@ func (c *Client) getSettingSuperIdentity(ctx context.Context, site string) (*Set
 	return &d, nil
 }
 
-func (c *Client) updateSettingSuperIdentity(ctx context.Context, site string, d *SettingSuperIdentity) (*SettingSuperIdentity, error) {
+func (c *client) updateSettingSuperIdentity(ctx context.Context, site string, d *SettingSuperIdentity) (*SettingSuperIdentity, error) {
 	var respBody struct {
 		Meta Meta                   `json:"meta"`
 		Data []SettingSuperIdentity `json:"data"`

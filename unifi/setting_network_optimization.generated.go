@@ -46,7 +46,7 @@ func (dst *SettingNetworkOptimization) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) getSettingNetworkOptimization(ctx context.Context, site string) (*SettingNetworkOptimization, error) {
+func (c *client) getSettingNetworkOptimization(ctx context.Context, site string) (*SettingNetworkOptimization, error) {
 	var respBody struct {
 		Meta Meta                         `json:"meta"`
 		Data []SettingNetworkOptimization `json:"data"`
@@ -65,7 +65,7 @@ func (c *Client) getSettingNetworkOptimization(ctx context.Context, site string)
 	return &d, nil
 }
 
-func (c *Client) updateSettingNetworkOptimization(ctx context.Context, site string, d *SettingNetworkOptimization) (*SettingNetworkOptimization, error) {
+func (c *client) updateSettingNetworkOptimization(ctx context.Context, site string, d *SettingNetworkOptimization) (*SettingNetworkOptimization, error) {
 	var respBody struct {
 		Meta Meta                         `json:"meta"`
 		Data []SettingNetworkOptimization `json:"data"`

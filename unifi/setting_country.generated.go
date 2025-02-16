@@ -49,7 +49,7 @@ func (dst *SettingCountry) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) getSettingCountry(ctx context.Context, site string) (*SettingCountry, error) {
+func (c *client) getSettingCountry(ctx context.Context, site string) (*SettingCountry, error) {
 	var respBody struct {
 		Meta Meta             `json:"meta"`
 		Data []SettingCountry `json:"data"`
@@ -68,7 +68,7 @@ func (c *Client) getSettingCountry(ctx context.Context, site string) (*SettingCo
 	return &d, nil
 }
 
-func (c *Client) updateSettingCountry(ctx context.Context, site string, d *SettingCountry) (*SettingCountry, error) {
+func (c *client) updateSettingCountry(ctx context.Context, site string, d *SettingCountry) (*SettingCountry, error) {
 	var respBody struct {
 		Meta Meta             `json:"meta"`
 		Data []SettingCountry `json:"data"`

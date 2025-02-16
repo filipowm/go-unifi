@@ -76,7 +76,7 @@ func (dst *FirewallRule) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) listFirewallRule(ctx context.Context, site string) ([]FirewallRule, error) {
+func (c *client) listFirewallRule(ctx context.Context, site string) ([]FirewallRule, error) {
 	var respBody struct {
 		Meta Meta           `json:"meta"`
 		Data []FirewallRule `json:"data"`
@@ -90,7 +90,7 @@ func (c *Client) listFirewallRule(ctx context.Context, site string) ([]FirewallR
 	return respBody.Data, nil
 }
 
-func (c *Client) getFirewallRule(ctx context.Context, site, id string) (*FirewallRule, error) {
+func (c *client) getFirewallRule(ctx context.Context, site, id string) (*FirewallRule, error) {
 	var respBody struct {
 		Meta Meta           `json:"meta"`
 		Data []FirewallRule `json:"data"`
@@ -109,7 +109,7 @@ func (c *Client) getFirewallRule(ctx context.Context, site, id string) (*Firewal
 	return &d, nil
 }
 
-func (c *Client) deleteFirewallRule(ctx context.Context, site, id string) error {
+func (c *client) deleteFirewallRule(ctx context.Context, site, id string) error {
 	err := c.Delete(ctx, fmt.Sprintf("s/%s/rest/firewallrule/%s", site, id), struct{}{}, nil)
 	if err != nil {
 		return err
@@ -117,7 +117,7 @@ func (c *Client) deleteFirewallRule(ctx context.Context, site, id string) error 
 	return nil
 }
 
-func (c *Client) createFirewallRule(ctx context.Context, site string, d *FirewallRule) (*FirewallRule, error) {
+func (c *client) createFirewallRule(ctx context.Context, site string, d *FirewallRule) (*FirewallRule, error) {
 	var respBody struct {
 		Meta Meta           `json:"meta"`
 		Data []FirewallRule `json:"data"`
@@ -137,7 +137,7 @@ func (c *Client) createFirewallRule(ctx context.Context, site string, d *Firewal
 	return &new, nil
 }
 
-func (c *Client) updateFirewallRule(ctx context.Context, site string, d *FirewallRule) (*FirewallRule, error) {
+func (c *client) updateFirewallRule(ctx context.Context, site string, d *FirewallRule) (*FirewallRule, error) {
 	var respBody struct {
 		Meta Meta           `json:"meta"`
 		Data []FirewallRule `json:"data"`

@@ -222,7 +222,7 @@ func (dst *SettingIpsWhitelist) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) getSettingIps(ctx context.Context, site string) (*SettingIps, error) {
+func (c *client) getSettingIps(ctx context.Context, site string) (*SettingIps, error) {
 	var respBody struct {
 		Meta Meta         `json:"meta"`
 		Data []SettingIps `json:"data"`
@@ -241,7 +241,7 @@ func (c *Client) getSettingIps(ctx context.Context, site string) (*SettingIps, e
 	return &d, nil
 }
 
-func (c *Client) updateSettingIps(ctx context.Context, site string, d *SettingIps) (*SettingIps, error) {
+func (c *client) updateSettingIps(ctx context.Context, site string, d *SettingIps) (*SettingIps, error) {
 	var respBody struct {
 		Meta Meta         `json:"meta"`
 		Data []SettingIps `json:"data"`

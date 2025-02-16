@@ -46,7 +46,7 @@ func (dst *HotspotOp) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) listHotspotOp(ctx context.Context, site string) ([]HotspotOp, error) {
+func (c *client) listHotspotOp(ctx context.Context, site string) ([]HotspotOp, error) {
 	var respBody struct {
 		Meta Meta        `json:"meta"`
 		Data []HotspotOp `json:"data"`
@@ -60,7 +60,7 @@ func (c *Client) listHotspotOp(ctx context.Context, site string) ([]HotspotOp, e
 	return respBody.Data, nil
 }
 
-func (c *Client) getHotspotOp(ctx context.Context, site, id string) (*HotspotOp, error) {
+func (c *client) getHotspotOp(ctx context.Context, site, id string) (*HotspotOp, error) {
 	var respBody struct {
 		Meta Meta        `json:"meta"`
 		Data []HotspotOp `json:"data"`
@@ -79,7 +79,7 @@ func (c *Client) getHotspotOp(ctx context.Context, site, id string) (*HotspotOp,
 	return &d, nil
 }
 
-func (c *Client) deleteHotspotOp(ctx context.Context, site, id string) error {
+func (c *client) deleteHotspotOp(ctx context.Context, site, id string) error {
 	err := c.Delete(ctx, fmt.Sprintf("s/%s/rest/hotspotop/%s", site, id), struct{}{}, nil)
 	if err != nil {
 		return err
@@ -87,7 +87,7 @@ func (c *Client) deleteHotspotOp(ctx context.Context, site, id string) error {
 	return nil
 }
 
-func (c *Client) createHotspotOp(ctx context.Context, site string, d *HotspotOp) (*HotspotOp, error) {
+func (c *client) createHotspotOp(ctx context.Context, site string, d *HotspotOp) (*HotspotOp, error) {
 	var respBody struct {
 		Meta Meta        `json:"meta"`
 		Data []HotspotOp `json:"data"`
@@ -107,7 +107,7 @@ func (c *Client) createHotspotOp(ctx context.Context, site string, d *HotspotOp)
 	return &new, nil
 }
 
-func (c *Client) updateHotspotOp(ctx context.Context, site string, d *HotspotOp) (*HotspotOp, error) {
+func (c *client) updateHotspotOp(ctx context.Context, site string, d *HotspotOp) (*HotspotOp, error) {
 	var respBody struct {
 		Meta Meta        `json:"meta"`
 		Data []HotspotOp `json:"data"`

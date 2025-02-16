@@ -78,7 +78,7 @@ func (dst *PortForwardDestinationIPs) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) listPortForward(ctx context.Context, site string) ([]PortForward, error) {
+func (c *client) listPortForward(ctx context.Context, site string) ([]PortForward, error) {
 	var respBody struct {
 		Meta Meta          `json:"meta"`
 		Data []PortForward `json:"data"`
@@ -92,7 +92,7 @@ func (c *Client) listPortForward(ctx context.Context, site string) ([]PortForwar
 	return respBody.Data, nil
 }
 
-func (c *Client) getPortForward(ctx context.Context, site, id string) (*PortForward, error) {
+func (c *client) getPortForward(ctx context.Context, site, id string) (*PortForward, error) {
 	var respBody struct {
 		Meta Meta          `json:"meta"`
 		Data []PortForward `json:"data"`
@@ -111,7 +111,7 @@ func (c *Client) getPortForward(ctx context.Context, site, id string) (*PortForw
 	return &d, nil
 }
 
-func (c *Client) deletePortForward(ctx context.Context, site, id string) error {
+func (c *client) deletePortForward(ctx context.Context, site, id string) error {
 	err := c.Delete(ctx, fmt.Sprintf("s/%s/rest/portforward/%s", site, id), struct{}{}, nil)
 	if err != nil {
 		return err
@@ -119,7 +119,7 @@ func (c *Client) deletePortForward(ctx context.Context, site, id string) error {
 	return nil
 }
 
-func (c *Client) createPortForward(ctx context.Context, site string, d *PortForward) (*PortForward, error) {
+func (c *client) createPortForward(ctx context.Context, site string, d *PortForward) (*PortForward, error) {
 	var respBody struct {
 		Meta Meta          `json:"meta"`
 		Data []PortForward `json:"data"`
@@ -139,7 +139,7 @@ func (c *Client) createPortForward(ctx context.Context, site string, d *PortForw
 	return &new, nil
 }
 
-func (c *Client) updatePortForward(ctx context.Context, site string, d *PortForward) (*PortForward, error) {
+func (c *client) updatePortForward(ctx context.Context, site string, d *PortForward) (*PortForward, error) {
 	var respBody struct {
 		Meta Meta          `json:"meta"`
 		Data []PortForward `json:"data"`

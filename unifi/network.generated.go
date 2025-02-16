@@ -436,7 +436,7 @@ func (dst *NetworkWANProviderCapabilities) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) listNetwork(ctx context.Context, site string) ([]Network, error) {
+func (c *client) listNetwork(ctx context.Context, site string) ([]Network, error) {
 	var respBody struct {
 		Meta Meta      `json:"meta"`
 		Data []Network `json:"data"`
@@ -450,7 +450,7 @@ func (c *Client) listNetwork(ctx context.Context, site string) ([]Network, error
 	return respBody.Data, nil
 }
 
-func (c *Client) getNetwork(ctx context.Context, site, id string) (*Network, error) {
+func (c *client) getNetwork(ctx context.Context, site, id string) (*Network, error) {
 	var respBody struct {
 		Meta Meta      `json:"meta"`
 		Data []Network `json:"data"`
@@ -469,7 +469,7 @@ func (c *Client) getNetwork(ctx context.Context, site, id string) (*Network, err
 	return &d, nil
 }
 
-func (c *Client) deleteNetwork(ctx context.Context, site, id string) error {
+func (c *client) deleteNetwork(ctx context.Context, site, id string) error {
 	err := c.Delete(ctx, fmt.Sprintf("s/%s/rest/networkconf/%s", site, id), struct{}{}, nil)
 	if err != nil {
 		return err
@@ -477,7 +477,7 @@ func (c *Client) deleteNetwork(ctx context.Context, site, id string) error {
 	return nil
 }
 
-func (c *Client) createNetwork(ctx context.Context, site string, d *Network) (*Network, error) {
+func (c *client) createNetwork(ctx context.Context, site string, d *Network) (*Network, error) {
 	var respBody struct {
 		Meta Meta      `json:"meta"`
 		Data []Network `json:"data"`
@@ -497,7 +497,7 @@ func (c *Client) createNetwork(ctx context.Context, site string, d *Network) (*N
 	return &new, nil
 }
 
-func (c *Client) updateNetwork(ctx context.Context, site string, d *Network) (*Network, error) {
+func (c *client) updateNetwork(ctx context.Context, site string, d *Network) (*Network, error) {
 	var respBody struct {
 		Meta Meta      `json:"meta"`
 		Data []Network `json:"data"`

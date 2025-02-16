@@ -51,7 +51,7 @@ func (dst *UserGroup) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) listUserGroup(ctx context.Context, site string) ([]UserGroup, error) {
+func (c *client) listUserGroup(ctx context.Context, site string) ([]UserGroup, error) {
 	var respBody struct {
 		Meta Meta        `json:"meta"`
 		Data []UserGroup `json:"data"`
@@ -65,7 +65,7 @@ func (c *Client) listUserGroup(ctx context.Context, site string) ([]UserGroup, e
 	return respBody.Data, nil
 }
 
-func (c *Client) getUserGroup(ctx context.Context, site, id string) (*UserGroup, error) {
+func (c *client) getUserGroup(ctx context.Context, site, id string) (*UserGroup, error) {
 	var respBody struct {
 		Meta Meta        `json:"meta"`
 		Data []UserGroup `json:"data"`
@@ -84,7 +84,7 @@ func (c *Client) getUserGroup(ctx context.Context, site, id string) (*UserGroup,
 	return &d, nil
 }
 
-func (c *Client) deleteUserGroup(ctx context.Context, site, id string) error {
+func (c *client) deleteUserGroup(ctx context.Context, site, id string) error {
 	err := c.Delete(ctx, fmt.Sprintf("s/%s/rest/usergroup/%s", site, id), struct{}{}, nil)
 	if err != nil {
 		return err
@@ -92,7 +92,7 @@ func (c *Client) deleteUserGroup(ctx context.Context, site, id string) error {
 	return nil
 }
 
-func (c *Client) createUserGroup(ctx context.Context, site string, d *UserGroup) (*UserGroup, error) {
+func (c *client) createUserGroup(ctx context.Context, site string, d *UserGroup) (*UserGroup, error) {
 	var respBody struct {
 		Meta Meta        `json:"meta"`
 		Data []UserGroup `json:"data"`
@@ -112,7 +112,7 @@ func (c *Client) createUserGroup(ctx context.Context, site string, d *UserGroup)
 	return &new, nil
 }
 
-func (c *Client) updateUserGroup(ctx context.Context, site string, d *UserGroup) (*UserGroup, error) {
+func (c *client) updateUserGroup(ctx context.Context, site string, d *UserGroup) (*UserGroup, error) {
 	var respBody struct {
 		Meta Meta        `json:"meta"`
 		Data []UserGroup `json:"data"`

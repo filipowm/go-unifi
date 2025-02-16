@@ -46,7 +46,7 @@ func (dst *FirewallGroup) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) listFirewallGroup(ctx context.Context, site string) ([]FirewallGroup, error) {
+func (c *client) listFirewallGroup(ctx context.Context, site string) ([]FirewallGroup, error) {
 	var respBody struct {
 		Meta Meta            `json:"meta"`
 		Data []FirewallGroup `json:"data"`
@@ -60,7 +60,7 @@ func (c *Client) listFirewallGroup(ctx context.Context, site string) ([]Firewall
 	return respBody.Data, nil
 }
 
-func (c *Client) getFirewallGroup(ctx context.Context, site, id string) (*FirewallGroup, error) {
+func (c *client) getFirewallGroup(ctx context.Context, site, id string) (*FirewallGroup, error) {
 	var respBody struct {
 		Meta Meta            `json:"meta"`
 		Data []FirewallGroup `json:"data"`
@@ -79,7 +79,7 @@ func (c *Client) getFirewallGroup(ctx context.Context, site, id string) (*Firewa
 	return &d, nil
 }
 
-func (c *Client) deleteFirewallGroup(ctx context.Context, site, id string) error {
+func (c *client) deleteFirewallGroup(ctx context.Context, site, id string) error {
 	err := c.Delete(ctx, fmt.Sprintf("s/%s/rest/firewallgroup/%s", site, id), struct{}{}, nil)
 	if err != nil {
 		return err
@@ -87,7 +87,7 @@ func (c *Client) deleteFirewallGroup(ctx context.Context, site, id string) error
 	return nil
 }
 
-func (c *Client) createFirewallGroup(ctx context.Context, site string, d *FirewallGroup) (*FirewallGroup, error) {
+func (c *client) createFirewallGroup(ctx context.Context, site string, d *FirewallGroup) (*FirewallGroup, error) {
 	var respBody struct {
 		Meta Meta            `json:"meta"`
 		Data []FirewallGroup `json:"data"`
@@ -107,7 +107,7 @@ func (c *Client) createFirewallGroup(ctx context.Context, site string, d *Firewa
 	return &new, nil
 }
 
-func (c *Client) updateFirewallGroup(ctx context.Context, site string, d *FirewallGroup) (*FirewallGroup, error) {
+func (c *client) updateFirewallGroup(ctx context.Context, site string, d *FirewallGroup) (*FirewallGroup, error) {
 	var respBody struct {
 		Meta Meta            `json:"meta"`
 		Data []FirewallGroup `json:"data"`

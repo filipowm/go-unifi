@@ -48,7 +48,7 @@ func (dst *SettingSuperFwupdate) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) getSettingSuperFwupdate(ctx context.Context, site string) (*SettingSuperFwupdate, error) {
+func (c *client) getSettingSuperFwupdate(ctx context.Context, site string) (*SettingSuperFwupdate, error) {
 	var respBody struct {
 		Meta Meta                   `json:"meta"`
 		Data []SettingSuperFwupdate `json:"data"`
@@ -67,7 +67,7 @@ func (c *Client) getSettingSuperFwupdate(ctx context.Context, site string) (*Set
 	return &d, nil
 }
 
-func (c *Client) updateSettingSuperFwupdate(ctx context.Context, site string, d *SettingSuperFwupdate) (*SettingSuperFwupdate, error) {
+func (c *client) updateSettingSuperFwupdate(ctx context.Context, site string, d *SettingSuperFwupdate) (*SettingSuperFwupdate, error) {
 	var respBody struct {
 		Meta Meta                   `json:"meta"`
 		Data []SettingSuperFwupdate `json:"data"`

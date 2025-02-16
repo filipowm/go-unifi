@@ -46,7 +46,7 @@ func (dst *SettingSuperEvents) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) getSettingSuperEvents(ctx context.Context, site string) (*SettingSuperEvents, error) {
+func (c *client) getSettingSuperEvents(ctx context.Context, site string) (*SettingSuperEvents, error) {
 	var respBody struct {
 		Meta Meta                 `json:"meta"`
 		Data []SettingSuperEvents `json:"data"`
@@ -65,7 +65,7 @@ func (c *Client) getSettingSuperEvents(ctx context.Context, site string) (*Setti
 	return &d, nil
 }
 
-func (c *Client) updateSettingSuperEvents(ctx context.Context, site string, d *SettingSuperEvents) (*SettingSuperEvents, error) {
+func (c *client) updateSettingSuperEvents(ctx context.Context, site string, d *SettingSuperEvents) (*SettingSuperEvents, error) {
 	var respBody struct {
 		Meta Meta                 `json:"meta"`
 		Data []SettingSuperEvents `json:"data"`

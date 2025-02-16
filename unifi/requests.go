@@ -24,8 +24,8 @@ func marshalRequest(reqBody interface{}) (io.Reader, error) {
 	return bytes.NewReader(reqBytes), nil
 }
 
-// buildRequestURL constructs the full URL for a given apiPath using the client's BaseURL and apiPaths.
-func (c *Client) buildRequestURL(apiPath string) (*url.URL, error) {
+// buildRequestURL constructs the full URL for a given apiPath using the client's baseURL and apiPaths.
+func (c *client) buildRequestURL(apiPath string) (*url.URL, error) {
 	reqURL, err := url.Parse(apiPath)
 	if err != nil {
 		return nil, err
@@ -33,11 +33,11 @@ func (c *Client) buildRequestURL(apiPath string) (*url.URL, error) {
 	if !strings.HasPrefix(apiPath, "/") && !reqURL.IsAbs() {
 		reqURL.Path = path.Join(c.apiPaths.ApiPath, reqURL.Path)
 	}
-	return c.BaseURL.ResolveReference(reqURL), nil
+	return c.baseURL.ResolveReference(reqURL), nil
 }
 
 // validateRequestBody validates the request body if validation is enabled.
-func (c *Client) validateRequestBody(reqBody interface{}) error {
+func (c *client) validateRequestBody(reqBody interface{}) error {
 	if reqBody != nil && c.validationMode != DisableValidation {
 		if err := c.validator.Validate(reqBody); err != nil {
 			err = fmt.Errorf("failed validating request body: %w", err)
@@ -52,7 +52,7 @@ func (c *Client) validateRequestBody(reqBody interface{}) error {
 }
 
 // newRequestContext creates a new context for the request with a timeout if specified.
-func (c *Client) newRequestContext() (context.Context, context.CancelFunc) {
+func (c *client) newRequestContext() (context.Context, context.CancelFunc) {
 	ctx := context.Background()
 	if c.timeout != 0 {
 		return context.WithTimeout(ctx, c.timeout)
@@ -63,7 +63,7 @@ func (c *Client) newRequestContext() (context.Context, context.CancelFunc) {
 // Do performs an HTTP request using the given method, apiPath, request body, and decodes the response into respBody.
 // It validates the request body, applies interceptors, and decodes the HTTP response into respBody if provided.
 // It returns an error if the request or response handling fails.
-func (c *Client) Do(ctx context.Context, method, apiPath string, reqBody interface{}, respBody interface{}) error {
+func (c *client) Do(ctx context.Context, method, apiPath string, reqBody interface{}, respBody interface{}) error {
 	if err := c.validateRequestBody(reqBody); err != nil {
 		return err
 	}
@@ -122,27 +122,27 @@ func (c *Client) Do(ctx context.Context, method, apiPath string, reqBody interfa
 // Get sends an HTTP GET request to the specified API path with the provided request body,
 // and decodes the HTTP response into respBody.
 // It is a convenience wrapper around Do.
-func (c *Client) Get(ctx context.Context, apiPath string, reqBody interface{}, respBody interface{}) error {
+func (c *client) Get(ctx context.Context, apiPath string, reqBody interface{}, respBody interface{}) error {
 	return c.Do(ctx, http.MethodGet, apiPath, reqBody, respBody)
 }
 
 // Post sends an HTTP POST request to the specified API path with the provided request body,
 // and decodes the HTTP response into respBody.
 // It is a convenience wrapper around Do.
-func (c *Client) Post(ctx context.Context, apiPath string, reqBody interface{}, respBody interface{}) error {
+func (c *client) Post(ctx context.Context, apiPath string, reqBody interface{}, respBody interface{}) error {
 	return c.Do(ctx, http.MethodPost, apiPath, reqBody, respBody)
 }
 
 // Put sends an HTTP PUT request to the specified API path with the provided request body,
 // and decodes the HTTP response into respBody.
 // It is a convenience wrapper around Do.
-func (c *Client) Put(ctx context.Context, apiPath string, reqBody interface{}, respBody interface{}) error {
+func (c *client) Put(ctx context.Context, apiPath string, reqBody interface{}, respBody interface{}) error {
 	return c.Do(ctx, http.MethodPut, apiPath, reqBody, respBody)
 }
 
 // Delete sends an HTTP DELETE request to the specified API path with the provided request body,
 // and decodes the HTTP response into respBody.
 // It is a convenience wrapper around Do.
-func (c *Client) Delete(ctx context.Context, apiPath string, reqBody interface{}, respBody interface{}) error {
+func (c *client) Delete(ctx context.Context, apiPath string, reqBody interface{}, respBody interface{}) error {
 	return c.Do(ctx, http.MethodDelete, apiPath, reqBody, respBody)
 }

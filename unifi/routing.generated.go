@@ -56,7 +56,7 @@ func (dst *Routing) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) listRouting(ctx context.Context, site string) ([]Routing, error) {
+func (c *client) listRouting(ctx context.Context, site string) ([]Routing, error) {
 	var respBody struct {
 		Meta Meta      `json:"meta"`
 		Data []Routing `json:"data"`
@@ -70,7 +70,7 @@ func (c *Client) listRouting(ctx context.Context, site string) ([]Routing, error
 	return respBody.Data, nil
 }
 
-func (c *Client) getRouting(ctx context.Context, site, id string) (*Routing, error) {
+func (c *client) getRouting(ctx context.Context, site, id string) (*Routing, error) {
 	var respBody struct {
 		Meta Meta      `json:"meta"`
 		Data []Routing `json:"data"`
@@ -89,7 +89,7 @@ func (c *Client) getRouting(ctx context.Context, site, id string) (*Routing, err
 	return &d, nil
 }
 
-func (c *Client) deleteRouting(ctx context.Context, site, id string) error {
+func (c *client) deleteRouting(ctx context.Context, site, id string) error {
 	err := c.Delete(ctx, fmt.Sprintf("s/%s/rest/routing/%s", site, id), struct{}{}, nil)
 	if err != nil {
 		return err
@@ -97,7 +97,7 @@ func (c *Client) deleteRouting(ctx context.Context, site, id string) error {
 	return nil
 }
 
-func (c *Client) createRouting(ctx context.Context, site string, d *Routing) (*Routing, error) {
+func (c *client) createRouting(ctx context.Context, site string, d *Routing) (*Routing, error) {
 	var respBody struct {
 		Meta Meta      `json:"meta"`
 		Data []Routing `json:"data"`
@@ -117,7 +117,7 @@ func (c *Client) createRouting(ctx context.Context, site string, d *Routing) (*R
 	return &new, nil
 }
 
-func (c *Client) updateRouting(ctx context.Context, site string, d *Routing) (*Routing, error) {
+func (c *client) updateRouting(ctx context.Context, site string, d *Routing) (*Routing, error) {
 	var respBody struct {
 		Meta Meta      `json:"meta"`
 		Data []Routing `json:"data"`

@@ -466,7 +466,7 @@ func (dst *WLANVenueName) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) listWLAN(ctx context.Context, site string) ([]WLAN, error) {
+func (c *client) listWLAN(ctx context.Context, site string) ([]WLAN, error) {
 	var respBody struct {
 		Meta Meta   `json:"meta"`
 		Data []WLAN `json:"data"`
@@ -480,7 +480,7 @@ func (c *Client) listWLAN(ctx context.Context, site string) ([]WLAN, error) {
 	return respBody.Data, nil
 }
 
-func (c *Client) getWLAN(ctx context.Context, site, id string) (*WLAN, error) {
+func (c *client) getWLAN(ctx context.Context, site, id string) (*WLAN, error) {
 	var respBody struct {
 		Meta Meta   `json:"meta"`
 		Data []WLAN `json:"data"`
@@ -499,7 +499,7 @@ func (c *Client) getWLAN(ctx context.Context, site, id string) (*WLAN, error) {
 	return &d, nil
 }
 
-func (c *Client) deleteWLAN(ctx context.Context, site, id string) error {
+func (c *client) deleteWLAN(ctx context.Context, site, id string) error {
 	err := c.Delete(ctx, fmt.Sprintf("s/%s/rest/wlanconf/%s", site, id), struct{}{}, nil)
 	if err != nil {
 		return err
@@ -507,7 +507,7 @@ func (c *Client) deleteWLAN(ctx context.Context, site, id string) error {
 	return nil
 }
 
-func (c *Client) createWLAN(ctx context.Context, site string, d *WLAN) (*WLAN, error) {
+func (c *client) createWLAN(ctx context.Context, site string, d *WLAN) (*WLAN, error) {
 	var respBody struct {
 		Meta Meta   `json:"meta"`
 		Data []WLAN `json:"data"`
@@ -527,7 +527,7 @@ func (c *Client) createWLAN(ctx context.Context, site string, d *WLAN) (*WLAN, e
 	return &new, nil
 }
 
-func (c *Client) updateWLAN(ctx context.Context, site string, d *WLAN) (*WLAN, error) {
+func (c *client) updateWLAN(ctx context.Context, site string, d *WLAN) (*WLAN, error) {
 	var respBody struct {
 		Meta Meta   `json:"meta"`
 		Data []WLAN `json:"data"`

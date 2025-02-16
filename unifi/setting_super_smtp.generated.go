@@ -57,7 +57,7 @@ func (dst *SettingSuperSmtp) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) getSettingSuperSmtp(ctx context.Context, site string) (*SettingSuperSmtp, error) {
+func (c *client) getSettingSuperSmtp(ctx context.Context, site string) (*SettingSuperSmtp, error) {
 	var respBody struct {
 		Meta Meta               `json:"meta"`
 		Data []SettingSuperSmtp `json:"data"`
@@ -76,7 +76,7 @@ func (c *Client) getSettingSuperSmtp(ctx context.Context, site string) (*Setting
 	return &d, nil
 }
 
-func (c *Client) updateSettingSuperSmtp(ctx context.Context, site string, d *SettingSuperSmtp) (*SettingSuperSmtp, error) {
+func (c *client) updateSettingSuperSmtp(ctx context.Context, site string, d *SettingSuperSmtp) (*SettingSuperSmtp, error) {
 	var respBody struct {
 		Meta Meta               `json:"meta"`
 		Data []SettingSuperSmtp `json:"data"`

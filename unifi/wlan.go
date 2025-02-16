@@ -4,7 +4,7 @@ import (
 	"context"
 )
 
-func (c *Client) CreateWLAN(ctx context.Context, site string, d *WLAN) (*WLAN, error) {
+func (c *client) CreateWLAN(ctx context.Context, site string, d *WLAN) (*WLAN, error) {
 	if d.Schedule == nil {
 		d.Schedule = []string{}
 	}
@@ -12,18 +12,18 @@ func (c *Client) CreateWLAN(ctx context.Context, site string, d *WLAN) (*WLAN, e
 	return c.createWLAN(ctx, site, d)
 }
 
-func (c *Client) ListWLAN(ctx context.Context, site string) ([]WLAN, error) {
+func (c *client) ListWLAN(ctx context.Context, site string) ([]WLAN, error) {
 	return c.listWLAN(ctx, site)
 }
 
-func (c *Client) GetWLAN(ctx context.Context, site, id string) (*WLAN, error) {
+func (c *client) GetWLAN(ctx context.Context, site, id string) (*WLAN, error) {
 	return c.getWLAN(ctx, site, id)
 }
 
-func (c *Client) DeleteWLAN(ctx context.Context, site, id string) error {
+func (c *client) DeleteWLAN(ctx context.Context, site, id string) error {
 	return c.deleteWLAN(ctx, site, id)
 }
 
-func (c *Client) UpdateWLAN(ctx context.Context, site string, d *WLAN) (*WLAN, error) {
+func (c *client) UpdateWLAN(ctx context.Context, site string, d *WLAN) (*WLAN, error) {
 	return c.updateWLAN(ctx, site, d)
 }

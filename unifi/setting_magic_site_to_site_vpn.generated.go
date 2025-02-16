@@ -46,7 +46,7 @@ func (dst *SettingMagicSiteToSiteVpn) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) getSettingMagicSiteToSiteVpn(ctx context.Context, site string) (*SettingMagicSiteToSiteVpn, error) {
+func (c *client) getSettingMagicSiteToSiteVpn(ctx context.Context, site string) (*SettingMagicSiteToSiteVpn, error) {
 	var respBody struct {
 		Meta Meta                        `json:"meta"`
 		Data []SettingMagicSiteToSiteVpn `json:"data"`
@@ -65,7 +65,7 @@ func (c *Client) getSettingMagicSiteToSiteVpn(ctx context.Context, site string) 
 	return &d, nil
 }
 
-func (c *Client) updateSettingMagicSiteToSiteVpn(ctx context.Context, site string, d *SettingMagicSiteToSiteVpn) (*SettingMagicSiteToSiteVpn, error) {
+func (c *client) updateSettingMagicSiteToSiteVpn(ctx context.Context, site string, d *SettingMagicSiteToSiteVpn) (*SettingMagicSiteToSiteVpn, error) {
 	var respBody struct {
 		Meta Meta                        `json:"meta"`
 		Data []SettingMagicSiteToSiteVpn `json:"data"`

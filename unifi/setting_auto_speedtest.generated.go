@@ -47,7 +47,7 @@ func (dst *SettingAutoSpeedtest) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) getSettingAutoSpeedtest(ctx context.Context, site string) (*SettingAutoSpeedtest, error) {
+func (c *client) getSettingAutoSpeedtest(ctx context.Context, site string) (*SettingAutoSpeedtest, error) {
 	var respBody struct {
 		Meta Meta                   `json:"meta"`
 		Data []SettingAutoSpeedtest `json:"data"`
@@ -66,7 +66,7 @@ func (c *Client) getSettingAutoSpeedtest(ctx context.Context, site string) (*Set
 	return &d, nil
 }
 
-func (c *Client) updateSettingAutoSpeedtest(ctx context.Context, site string, d *SettingAutoSpeedtest) (*SettingAutoSpeedtest, error) {
+func (c *client) updateSettingAutoSpeedtest(ctx context.Context, site string, d *SettingAutoSpeedtest) (*SettingAutoSpeedtest, error) {
 	var respBody struct {
 		Meta Meta                   `json:"meta"`
 		Data []SettingAutoSpeedtest `json:"data"`

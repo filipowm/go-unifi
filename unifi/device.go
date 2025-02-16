@@ -23,27 +23,27 @@ const (
 	DeviceStateIsolated         DeviceState = 11
 )
 
-func (c *Client) ListDevice(ctx context.Context, site string) ([]Device, error) {
+func (c *client) ListDevice(ctx context.Context, site string) ([]Device, error) {
 	return c.listDevice(ctx, site)
 }
 
-func (c *Client) GetDeviceByMAC(ctx context.Context, site, mac string) (*Device, error) {
+func (c *client) GetDeviceByMAC(ctx context.Context, site, mac string) (*Device, error) {
 	return c.getDevice(ctx, site, mac)
 }
 
-func (c *Client) DeleteDevice(ctx context.Context, site, id string) error {
+func (c *client) DeleteDevice(ctx context.Context, site, id string) error {
 	return c.deleteDevice(ctx, site, id)
 }
 
-func (c *Client) CreateDevice(ctx context.Context, site string, d *Device) (*Device, error) {
+func (c *client) CreateDevice(ctx context.Context, site string, d *Device) (*Device, error) {
 	return c.createDevice(ctx, site, d)
 }
 
-func (c *Client) UpdateDevice(ctx context.Context, site string, d *Device) (*Device, error) {
+func (c *client) UpdateDevice(ctx context.Context, site string, d *Device) (*Device, error) {
 	return c.updateDevice(ctx, site, d)
 }
 
-func (c *Client) GetDevice(ctx context.Context, site, id string) (*Device, error) {
+func (c *client) GetDevice(ctx context.Context, site, id string) (*Device, error) {
 	devices, err := c.ListDevice(ctx, site)
 	if err != nil {
 		return nil, err
@@ -58,7 +58,7 @@ func (c *Client) GetDevice(ctx context.Context, site, id string) (*Device, error
 	return nil, ErrNotFound
 }
 
-func (c *Client) AdoptDevice(ctx context.Context, site, mac string) error {
+func (c *client) AdoptDevice(ctx context.Context, site, mac string) error {
 	reqBody := struct {
 		Cmd string `json:"cmd"`
 		MAC string `json:"mac"`
@@ -79,7 +79,7 @@ func (c *Client) AdoptDevice(ctx context.Context, site, mac string) error {
 	return nil
 }
 
-func (c *Client) ForgetDevice(ctx context.Context, site, mac string) error {
+func (c *client) ForgetDevice(ctx context.Context, site, mac string) error {
 	reqBody := struct {
 		Cmd  string   `json:"cmd"`
 		MACs []string `json:"macs"`

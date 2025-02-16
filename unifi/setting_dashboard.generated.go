@@ -68,7 +68,7 @@ func (dst *SettingDashboardWidgets) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) getSettingDashboard(ctx context.Context, site string) (*SettingDashboard, error) {
+func (c *client) getSettingDashboard(ctx context.Context, site string) (*SettingDashboard, error) {
 	var respBody struct {
 		Meta Meta               `json:"meta"`
 		Data []SettingDashboard `json:"data"`
@@ -87,7 +87,7 @@ func (c *Client) getSettingDashboard(ctx context.Context, site string) (*Setting
 	return &d, nil
 }
 
-func (c *Client) updateSettingDashboard(ctx context.Context, site string, d *SettingDashboard) (*SettingDashboard, error) {
+func (c *client) updateSettingDashboard(ctx context.Context, site string, d *SettingDashboard) (*SettingDashboard, error) {
 	var respBody struct {
 		Meta Meta               `json:"meta"`
 		Data []SettingDashboard `json:"data"`

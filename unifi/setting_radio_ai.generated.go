@@ -113,7 +113,7 @@ func (dst *SettingRadioAiChannelsBlacklist) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) getSettingRadioAi(ctx context.Context, site string) (*SettingRadioAi, error) {
+func (c *client) getSettingRadioAi(ctx context.Context, site string) (*SettingRadioAi, error) {
 	var respBody struct {
 		Meta Meta             `json:"meta"`
 		Data []SettingRadioAi `json:"data"`
@@ -132,7 +132,7 @@ func (c *Client) getSettingRadioAi(ctx context.Context, site string) (*SettingRa
 	return &d, nil
 }
 
-func (c *Client) updateSettingRadioAi(ctx context.Context, site string, d *SettingRadioAi) (*SettingRadioAi, error) {
+func (c *client) updateSettingRadioAi(ctx context.Context, site string, d *SettingRadioAi) (*SettingRadioAi, error) {
 	var respBody struct {
 		Meta Meta             `json:"meta"`
 		Data []SettingRadioAi `json:"data"`

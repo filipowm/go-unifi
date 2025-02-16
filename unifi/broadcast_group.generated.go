@@ -45,7 +45,7 @@ func (dst *BroadcastGroup) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) listBroadcastGroup(ctx context.Context, site string) ([]BroadcastGroup, error) {
+func (c *client) listBroadcastGroup(ctx context.Context, site string) ([]BroadcastGroup, error) {
 	var respBody struct {
 		Meta Meta             `json:"meta"`
 		Data []BroadcastGroup `json:"data"`
@@ -59,7 +59,7 @@ func (c *Client) listBroadcastGroup(ctx context.Context, site string) ([]Broadca
 	return respBody.Data, nil
 }
 
-func (c *Client) getBroadcastGroup(ctx context.Context, site, id string) (*BroadcastGroup, error) {
+func (c *client) getBroadcastGroup(ctx context.Context, site, id string) (*BroadcastGroup, error) {
 	var respBody struct {
 		Meta Meta             `json:"meta"`
 		Data []BroadcastGroup `json:"data"`
@@ -78,7 +78,7 @@ func (c *Client) getBroadcastGroup(ctx context.Context, site, id string) (*Broad
 	return &d, nil
 }
 
-func (c *Client) deleteBroadcastGroup(ctx context.Context, site, id string) error {
+func (c *client) deleteBroadcastGroup(ctx context.Context, site, id string) error {
 	err := c.Delete(ctx, fmt.Sprintf("s/%s/rest/broadcastgroup/%s", site, id), struct{}{}, nil)
 	if err != nil {
 		return err
@@ -86,7 +86,7 @@ func (c *Client) deleteBroadcastGroup(ctx context.Context, site, id string) erro
 	return nil
 }
 
-func (c *Client) createBroadcastGroup(ctx context.Context, site string, d *BroadcastGroup) (*BroadcastGroup, error) {
+func (c *client) createBroadcastGroup(ctx context.Context, site string, d *BroadcastGroup) (*BroadcastGroup, error) {
 	var respBody struct {
 		Meta Meta             `json:"meta"`
 		Data []BroadcastGroup `json:"data"`
@@ -106,7 +106,7 @@ func (c *Client) createBroadcastGroup(ctx context.Context, site string, d *Broad
 	return &new, nil
 }
 
-func (c *Client) updateBroadcastGroup(ctx context.Context, site string, d *BroadcastGroup) (*BroadcastGroup, error) {
+func (c *client) updateBroadcastGroup(ctx context.Context, site string, d *BroadcastGroup) (*BroadcastGroup, error) {
 	var respBody struct {
 		Meta Meta             `json:"meta"`
 		Data []BroadcastGroup `json:"data"`

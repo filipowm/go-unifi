@@ -134,7 +134,7 @@ func (dst *RADIUSProfileXCaCrts) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) listRADIUSProfile(ctx context.Context, site string) ([]RADIUSProfile, error) {
+func (c *client) listRADIUSProfile(ctx context.Context, site string) ([]RADIUSProfile, error) {
 	var respBody struct {
 		Meta Meta            `json:"meta"`
 		Data []RADIUSProfile `json:"data"`
@@ -148,7 +148,7 @@ func (c *Client) listRADIUSProfile(ctx context.Context, site string) ([]RADIUSPr
 	return respBody.Data, nil
 }
 
-func (c *Client) getRADIUSProfile(ctx context.Context, site, id string) (*RADIUSProfile, error) {
+func (c *client) getRADIUSProfile(ctx context.Context, site, id string) (*RADIUSProfile, error) {
 	var respBody struct {
 		Meta Meta            `json:"meta"`
 		Data []RADIUSProfile `json:"data"`
@@ -167,7 +167,7 @@ func (c *Client) getRADIUSProfile(ctx context.Context, site, id string) (*RADIUS
 	return &d, nil
 }
 
-func (c *Client) deleteRADIUSProfile(ctx context.Context, site, id string) error {
+func (c *client) deleteRADIUSProfile(ctx context.Context, site, id string) error {
 	err := c.Delete(ctx, fmt.Sprintf("s/%s/rest/radiusprofile/%s", site, id), struct{}{}, nil)
 	if err != nil {
 		return err
@@ -175,7 +175,7 @@ func (c *Client) deleteRADIUSProfile(ctx context.Context, site, id string) error
 	return nil
 }
 
-func (c *Client) createRADIUSProfile(ctx context.Context, site string, d *RADIUSProfile) (*RADIUSProfile, error) {
+func (c *client) createRADIUSProfile(ctx context.Context, site string, d *RADIUSProfile) (*RADIUSProfile, error) {
 	var respBody struct {
 		Meta Meta            `json:"meta"`
 		Data []RADIUSProfile `json:"data"`
@@ -195,7 +195,7 @@ func (c *Client) createRADIUSProfile(ctx context.Context, site string, d *RADIUS
 	return &new, nil
 }
 
-func (c *Client) updateRADIUSProfile(ctx context.Context, site string, d *RADIUSProfile) (*RADIUSProfile, error) {
+func (c *client) updateRADIUSProfile(ctx context.Context, site string, d *RADIUSProfile) (*RADIUSProfile, error) {
 	var respBody struct {
 		Meta Meta            `json:"meta"`
 		Data []RADIUSProfile `json:"data"`

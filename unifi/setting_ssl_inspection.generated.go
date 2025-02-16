@@ -46,7 +46,7 @@ func (dst *SettingSslInspection) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) getSettingSslInspection(ctx context.Context, site string) (*SettingSslInspection, error) {
+func (c *client) getSettingSslInspection(ctx context.Context, site string) (*SettingSslInspection, error) {
 	var respBody struct {
 		Meta Meta                   `json:"meta"`
 		Data []SettingSslInspection `json:"data"`
@@ -65,7 +65,7 @@ func (c *Client) getSettingSslInspection(ctx context.Context, site string) (*Set
 	return &d, nil
 }
 
-func (c *Client) updateSettingSslInspection(ctx context.Context, site string, d *SettingSslInspection) (*SettingSslInspection, error) {
+func (c *client) updateSettingSslInspection(ctx context.Context, site string, d *SettingSslInspection) (*SettingSslInspection, error) {
 	var respBody struct {
 		Meta Meta                   `json:"meta"`
 		Data []SettingSslInspection `json:"data"`

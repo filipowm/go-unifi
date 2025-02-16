@@ -111,7 +111,7 @@ func (dst *SettingSuperMgmt) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) getSettingSuperMgmt(ctx context.Context, site string) (*SettingSuperMgmt, error) {
+func (c *client) getSettingSuperMgmt(ctx context.Context, site string) (*SettingSuperMgmt, error) {
 	var respBody struct {
 		Meta Meta               `json:"meta"`
 		Data []SettingSuperMgmt `json:"data"`
@@ -130,7 +130,7 @@ func (c *Client) getSettingSuperMgmt(ctx context.Context, site string) (*Setting
 	return &d, nil
 }
 
-func (c *Client) updateSettingSuperMgmt(ctx context.Context, site string, d *SettingSuperMgmt) (*SettingSuperMgmt, error) {
+func (c *client) updateSettingSuperMgmt(ctx context.Context, site string, d *SettingSuperMgmt) (*SettingSuperMgmt, error) {
 	var respBody struct {
 		Meta Meta               `json:"meta"`
 		Data []SettingSuperMgmt `json:"data"`

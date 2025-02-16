@@ -65,7 +65,7 @@ func (dst *{{ $k }}) UnmarshalJSON(b []byte) error {
 {{ end }}
 
 {{ if not .IsSetting }}
-func (c *Client) list{{ .StructName }}(ctx context.Context, site string) ([]{{ .StructName }}, error) {
+func (c *client) list{{ .StructName }}(ctx context.Context, site string) ([]{{ .StructName }}, error) {
 	var respBody struct {
 		Meta Meta `json:"meta"`
 		Data []{{ .StructName }} `json:"data"`
@@ -80,7 +80,7 @@ func (c *Client) list{{ .StructName }}(ctx context.Context, site string) ([]{{ .
 }
 {{- end }}
 
-func (c *Client) get{{ .StructName }}(ctx context.Context, site{{ if not .IsSetting }}, id{{ end }} string) (*{{ .StructName }}, error) {
+func (c *client) get{{ .StructName }}(ctx context.Context, site{{ if not .IsSetting }}, id{{ end }} string) (*{{ .StructName }}, error) {
 	var respBody struct {
 		Meta Meta `json:"meta"`
 		Data []{{ .StructName }} `json:"data"`
@@ -103,7 +103,7 @@ func (c *Client) get{{ .StructName }}(ctx context.Context, site{{ if not .IsSett
 }
 
 {{ if not .IsSetting }}
-func (c *Client) delete{{ .StructName }}(ctx context.Context, site, id string) error {
+func (c *client) delete{{ .StructName }}(ctx context.Context, site, id string) error {
 	err := c.Delete(ctx, fmt.Sprintf("s/%s/rest/{{ .ResourcePath }}/%s", site, id), struct{}{}, nil)
 	if err != nil {
 		return err
@@ -111,7 +111,7 @@ func (c *Client) delete{{ .StructName }}(ctx context.Context, site, id string) e
 	return nil
 }
 
-func (c *Client) create{{ .StructName }}(ctx context.Context, site string, d *{{ .StructName }}) (*{{ .StructName }}, error) {
+func (c *client) create{{ .StructName }}(ctx context.Context, site string, d *{{ .StructName }}) (*{{ .StructName }}, error) {
 	var respBody struct {
 		Meta Meta      `json:"meta"`
 		Data []{{ .StructName }} `json:"data"`
@@ -132,7 +132,7 @@ func (c *Client) create{{ .StructName }}(ctx context.Context, site string, d *{{
 }
 {{- end }}
 
-func (c *Client) update{{ .StructName }}(ctx context.Context, site string, d *{{ .StructName }}) (*{{ .StructName }}, error) {
+func (c *client) update{{ .StructName }}(ctx context.Context, site string, d *{{ .StructName }}) (*{{ .StructName }}, error) {
 	var respBody struct {
 		Meta Meta      `json:"meta"`
 		Data []{{ .StructName }} `json:"data"`

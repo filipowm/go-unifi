@@ -88,7 +88,7 @@ func (dst *SpatialRecordPosition) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) listSpatialRecord(ctx context.Context, site string) ([]SpatialRecord, error) {
+func (c *client) listSpatialRecord(ctx context.Context, site string) ([]SpatialRecord, error) {
 	var respBody struct {
 		Meta Meta            `json:"meta"`
 		Data []SpatialRecord `json:"data"`
@@ -102,7 +102,7 @@ func (c *Client) listSpatialRecord(ctx context.Context, site string) ([]SpatialR
 	return respBody.Data, nil
 }
 
-func (c *Client) getSpatialRecord(ctx context.Context, site, id string) (*SpatialRecord, error) {
+func (c *client) getSpatialRecord(ctx context.Context, site, id string) (*SpatialRecord, error) {
 	var respBody struct {
 		Meta Meta            `json:"meta"`
 		Data []SpatialRecord `json:"data"`
@@ -121,7 +121,7 @@ func (c *Client) getSpatialRecord(ctx context.Context, site, id string) (*Spatia
 	return &d, nil
 }
 
-func (c *Client) deleteSpatialRecord(ctx context.Context, site, id string) error {
+func (c *client) deleteSpatialRecord(ctx context.Context, site, id string) error {
 	err := c.Delete(ctx, fmt.Sprintf("s/%s/rest/spatialrecord/%s", site, id), struct{}{}, nil)
 	if err != nil {
 		return err
@@ -129,7 +129,7 @@ func (c *Client) deleteSpatialRecord(ctx context.Context, site, id string) error
 	return nil
 }
 
-func (c *Client) createSpatialRecord(ctx context.Context, site string, d *SpatialRecord) (*SpatialRecord, error) {
+func (c *client) createSpatialRecord(ctx context.Context, site string, d *SpatialRecord) (*SpatialRecord, error) {
 	var respBody struct {
 		Meta Meta            `json:"meta"`
 		Data []SpatialRecord `json:"data"`
@@ -149,7 +149,7 @@ func (c *Client) createSpatialRecord(ctx context.Context, site string, d *Spatia
 	return &new, nil
 }
 
-func (c *Client) updateSpatialRecord(ctx context.Context, site string, d *SpatialRecord) (*SpatialRecord, error) {
+func (c *client) updateSpatialRecord(ctx context.Context, site string, d *SpatialRecord) (*SpatialRecord, error) {
 	var respBody struct {
 		Meta Meta            `json:"meta"`
 		Data []SpatialRecord `json:"data"`

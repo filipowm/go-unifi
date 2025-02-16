@@ -584,7 +584,7 @@ func (dst *DeviceRpsPortTable) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) listDevice(ctx context.Context, site string) ([]Device, error) {
+func (c *client) listDevice(ctx context.Context, site string) ([]Device, error) {
 	var respBody struct {
 		Meta Meta     `json:"meta"`
 		Data []Device `json:"data"`
@@ -598,7 +598,7 @@ func (c *Client) listDevice(ctx context.Context, site string) ([]Device, error) 
 	return respBody.Data, nil
 }
 
-func (c *Client) getDevice(ctx context.Context, site, id string) (*Device, error) {
+func (c *client) getDevice(ctx context.Context, site, id string) (*Device, error) {
 	var respBody struct {
 		Meta Meta     `json:"meta"`
 		Data []Device `json:"data"`
@@ -617,7 +617,7 @@ func (c *Client) getDevice(ctx context.Context, site, id string) (*Device, error
 	return &d, nil
 }
 
-func (c *Client) deleteDevice(ctx context.Context, site, id string) error {
+func (c *client) deleteDevice(ctx context.Context, site, id string) error {
 	err := c.Delete(ctx, fmt.Sprintf("s/%s/rest/device/%s", site, id), struct{}{}, nil)
 	if err != nil {
 		return err
@@ -625,7 +625,7 @@ func (c *Client) deleteDevice(ctx context.Context, site, id string) error {
 	return nil
 }
 
-func (c *Client) createDevice(ctx context.Context, site string, d *Device) (*Device, error) {
+func (c *client) createDevice(ctx context.Context, site string, d *Device) (*Device, error) {
 	var respBody struct {
 		Meta Meta     `json:"meta"`
 		Data []Device `json:"data"`
@@ -645,7 +645,7 @@ func (c *Client) createDevice(ctx context.Context, site string, d *Device) (*Dev
 	return &new, nil
 }
 
-func (c *Client) updateDevice(ctx context.Context, site string, d *Device) (*Device, error) {
+func (c *client) updateDevice(ctx context.Context, site string, d *Device) (*Device, error) {
 	var respBody struct {
 		Meta Meta     `json:"meta"`
 		Data []Device `json:"data"`

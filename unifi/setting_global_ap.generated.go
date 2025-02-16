@@ -68,7 +68,7 @@ func (dst *SettingGlobalAp) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) getSettingGlobalAp(ctx context.Context, site string) (*SettingGlobalAp, error) {
+func (c *client) getSettingGlobalAp(ctx context.Context, site string) (*SettingGlobalAp, error) {
 	var respBody struct {
 		Meta Meta              `json:"meta"`
 		Data []SettingGlobalAp `json:"data"`
@@ -87,7 +87,7 @@ func (c *Client) getSettingGlobalAp(ctx context.Context, site string) (*SettingG
 	return &d, nil
 }
 
-func (c *Client) updateSettingGlobalAp(ctx context.Context, site string, d *SettingGlobalAp) (*SettingGlobalAp, error) {
+func (c *client) updateSettingGlobalAp(ctx context.Context, site string, d *SettingGlobalAp) (*SettingGlobalAp, error) {
 	var respBody struct {
 		Meta Meta              `json:"meta"`
 		Data []SettingGlobalAp `json:"data"`
