@@ -6,7 +6,7 @@ toolchain go1.23.5
 require (
 	github.com/go-playground/locales v0.14.1
 	github.com/go-playground/universal-translator v0.18.1
-	github.com/go-playground/validator/v10 v10.24.0
+	github.com/go-playground/validator/v10 v10.25.0
 	github.com/golangci/golangci-lint v1.64.2
 	github.com/goreleaser/goreleaser v1.26.2
 	github.com/hashicorp/go-version v1.7.0
@@ -18,6 +18,7 @@ require (
 	github.com/xor-gate/ar v0.0.0-20170530204233-5c72ae81e2b7
 	golang.org/x/net v0.35.0
 	golang.org/x/tools v0.30.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -460,7 +461,6 @@ require (
 	gopkg.in/mail.v2 v2.3.1 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gotest.tools/v3 v3.1.0 // indirect
 	honnef.co/go/tools v0.6.0 // indirect
 	lukechampine.com/blake3 v1.2.1 // indirect
