@@ -131,8 +131,6 @@ func (c *client) BaseURL() string {
 	return c.baseURL.String()
 }
 
-//var _ client = &client{}
-
 // AddInterceptor adds a ClientInterceptor to the client's interceptor list if it is not already present.
 // It appends the interceptor only if it is not already included in the list.
 func (c *client) AddInterceptor(interceptor *ClientInterceptor) {
@@ -229,7 +227,7 @@ func newClientFromConfig(config *ClientConfig, v *validator) (*client, error) {
 // It validates the configuration, determines the API style, performs login if necessary,
 // and retrieves system information from the UniFi controller.
 // On success, it returns a pointer to a client; otherwise, it returns an error.
-func NewClient(config *ClientConfig) (Client, error) {
+func NewClient(config *ClientConfig) (Client, error) { // nolint: ireturn
 	c, err := newBareClient(config)
 	if err != nil {
 		return c, err
@@ -248,7 +246,7 @@ func NewClient(config *ClientConfig) (Client, error) {
 // NewBareClient creates a new UniFi client without performing login or system information retrieval.
 // When user/pass authentication is used, you must call Login before making requests.
 // It validates the configuration, determines the API style, and returns a pointer to the client on success.
-func NewBareClient(config *ClientConfig) (Client, error) {
+func NewBareClient(config *ClientConfig) (Client, error) { // nolint: ireturn
 	return newBareClient(config)
 }
 
