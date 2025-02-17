@@ -159,6 +159,9 @@ func NewCodeCustomizer(customizationsPath string) (*CodeCustomizer, error) {
 }
 
 func (r *CodeCustomizer) IsExcludedFromClient(resourceName string) bool {
+	if r.Customizations.Client == nil || r.Customizations.Client.ExcludeResources == nil {
+		return false
+	}
 	for _, excludedResource := range r.Customizations.Client.ExcludeResources {
 		prefixedAll := strings.HasPrefix(excludedResource, "*")
 		suffixedAll := strings.HasSuffix(excludedResource, "*")
