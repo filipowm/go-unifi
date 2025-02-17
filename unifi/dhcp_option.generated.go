@@ -51,7 +51,7 @@ func (dst *DHCPOption) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) listDHCPOption(ctx context.Context, site string) ([]DHCPOption, error) {
+func (c *client) listDHCPOption(ctx context.Context, site string) ([]DHCPOption, error) {
 	var respBody struct {
 		Meta Meta         `json:"meta"`
 		Data []DHCPOption `json:"data"`
@@ -65,7 +65,7 @@ func (c *Client) listDHCPOption(ctx context.Context, site string) ([]DHCPOption,
 	return respBody.Data, nil
 }
 
-func (c *Client) getDHCPOption(ctx context.Context, site, id string) (*DHCPOption, error) {
+func (c *client) getDHCPOption(ctx context.Context, site, id string) (*DHCPOption, error) {
 	var respBody struct {
 		Meta Meta         `json:"meta"`
 		Data []DHCPOption `json:"data"`
@@ -84,7 +84,7 @@ func (c *Client) getDHCPOption(ctx context.Context, site, id string) (*DHCPOptio
 	return &d, nil
 }
 
-func (c *Client) deleteDHCPOption(ctx context.Context, site, id string) error {
+func (c *client) deleteDHCPOption(ctx context.Context, site, id string) error {
 	err := c.Delete(ctx, fmt.Sprintf("s/%s/rest/dhcpoption/%s", site, id), struct{}{}, nil)
 	if err != nil {
 		return err
@@ -92,7 +92,7 @@ func (c *Client) deleteDHCPOption(ctx context.Context, site, id string) error {
 	return nil
 }
 
-func (c *Client) createDHCPOption(ctx context.Context, site string, d *DHCPOption) (*DHCPOption, error) {
+func (c *client) createDHCPOption(ctx context.Context, site string, d *DHCPOption) (*DHCPOption, error) {
 	var respBody struct {
 		Meta Meta         `json:"meta"`
 		Data []DHCPOption `json:"data"`
@@ -112,7 +112,7 @@ func (c *Client) createDHCPOption(ctx context.Context, site string, d *DHCPOptio
 	return &new, nil
 }
 
-func (c *Client) updateDHCPOption(ctx context.Context, site string, d *DHCPOption) (*DHCPOption, error) {
+func (c *client) updateDHCPOption(ctx context.Context, site string, d *DHCPOption) (*DHCPOption, error) {
 	var respBody struct {
 		Meta Meta         `json:"meta"`
 		Data []DHCPOption `json:"data"`

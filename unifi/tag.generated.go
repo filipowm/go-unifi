@@ -45,7 +45,7 @@ func (dst *Tag) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) listTag(ctx context.Context, site string) ([]Tag, error) {
+func (c *client) listTag(ctx context.Context, site string) ([]Tag, error) {
 	var respBody struct {
 		Meta Meta  `json:"meta"`
 		Data []Tag `json:"data"`
@@ -59,7 +59,7 @@ func (c *Client) listTag(ctx context.Context, site string) ([]Tag, error) {
 	return respBody.Data, nil
 }
 
-func (c *Client) getTag(ctx context.Context, site, id string) (*Tag, error) {
+func (c *client) getTag(ctx context.Context, site, id string) (*Tag, error) {
 	var respBody struct {
 		Meta Meta  `json:"meta"`
 		Data []Tag `json:"data"`
@@ -78,7 +78,7 @@ func (c *Client) getTag(ctx context.Context, site, id string) (*Tag, error) {
 	return &d, nil
 }
 
-func (c *Client) deleteTag(ctx context.Context, site, id string) error {
+func (c *client) deleteTag(ctx context.Context, site, id string) error {
 	err := c.Delete(ctx, fmt.Sprintf("s/%s/rest/tag/%s", site, id), struct{}{}, nil)
 	if err != nil {
 		return err
@@ -86,7 +86,7 @@ func (c *Client) deleteTag(ctx context.Context, site, id string) error {
 	return nil
 }
 
-func (c *Client) createTag(ctx context.Context, site string, d *Tag) (*Tag, error) {
+func (c *client) createTag(ctx context.Context, site string, d *Tag) (*Tag, error) {
 	var respBody struct {
 		Meta Meta  `json:"meta"`
 		Data []Tag `json:"data"`
@@ -106,7 +106,7 @@ func (c *Client) createTag(ctx context.Context, site string, d *Tag) (*Tag, erro
 	return &new, nil
 }
 
-func (c *Client) updateTag(ctx context.Context, site string, d *Tag) (*Tag, error) {
+func (c *client) updateTag(ctx context.Context, site string, d *Tag) (*Tag, error) {
 	var respBody struct {
 		Meta Meta  `json:"meta"`
 		Data []Tag `json:"data"`

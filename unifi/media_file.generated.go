@@ -44,7 +44,7 @@ func (dst *MediaFile) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) listMediaFile(ctx context.Context, site string) ([]MediaFile, error) {
+func (c *client) listMediaFile(ctx context.Context, site string) ([]MediaFile, error) {
 	var respBody struct {
 		Meta Meta        `json:"meta"`
 		Data []MediaFile `json:"data"`
@@ -58,7 +58,7 @@ func (c *Client) listMediaFile(ctx context.Context, site string) ([]MediaFile, e
 	return respBody.Data, nil
 }
 
-func (c *Client) getMediaFile(ctx context.Context, site, id string) (*MediaFile, error) {
+func (c *client) getMediaFile(ctx context.Context, site, id string) (*MediaFile, error) {
 	var respBody struct {
 		Meta Meta        `json:"meta"`
 		Data []MediaFile `json:"data"`
@@ -77,7 +77,7 @@ func (c *Client) getMediaFile(ctx context.Context, site, id string) (*MediaFile,
 	return &d, nil
 }
 
-func (c *Client) deleteMediaFile(ctx context.Context, site, id string) error {
+func (c *client) deleteMediaFile(ctx context.Context, site, id string) error {
 	err := c.Delete(ctx, fmt.Sprintf("s/%s/rest/mediafile/%s", site, id), struct{}{}, nil)
 	if err != nil {
 		return err
@@ -85,7 +85,7 @@ func (c *Client) deleteMediaFile(ctx context.Context, site, id string) error {
 	return nil
 }
 
-func (c *Client) createMediaFile(ctx context.Context, site string, d *MediaFile) (*MediaFile, error) {
+func (c *client) createMediaFile(ctx context.Context, site string, d *MediaFile) (*MediaFile, error) {
 	var respBody struct {
 		Meta Meta        `json:"meta"`
 		Data []MediaFile `json:"data"`
@@ -105,7 +105,7 @@ func (c *Client) createMediaFile(ctx context.Context, site string, d *MediaFile)
 	return &new, nil
 }
 
-func (c *Client) updateMediaFile(ctx context.Context, site string, d *MediaFile) (*MediaFile, error) {
+func (c *client) updateMediaFile(ctx context.Context, site string, d *MediaFile) (*MediaFile, error) {
 	var respBody struct {
 		Meta Meta        `json:"meta"`
 		Data []MediaFile `json:"data"`

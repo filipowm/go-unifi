@@ -50,7 +50,7 @@ func (dst *SettingSnmp) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) getSettingSnmp(ctx context.Context, site string) (*SettingSnmp, error) {
+func (c *client) getSettingSnmp(ctx context.Context, site string) (*SettingSnmp, error) {
 	var respBody struct {
 		Meta Meta          `json:"meta"`
 		Data []SettingSnmp `json:"data"`
@@ -69,7 +69,7 @@ func (c *Client) getSettingSnmp(ctx context.Context, site string) (*SettingSnmp,
 	return &d, nil
 }
 
-func (c *Client) updateSettingSnmp(ctx context.Context, site string, d *SettingSnmp) (*SettingSnmp, error) {
+func (c *client) updateSettingSnmp(ctx context.Context, site string, d *SettingSnmp) (*SettingSnmp, error) {
 	var respBody struct {
 		Meta Meta          `json:"meta"`
 		Data []SettingSnmp `json:"data"`

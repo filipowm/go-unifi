@@ -52,7 +52,7 @@ func (dst *SettingSuperCloudaccess) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) getSettingSuperCloudaccess(ctx context.Context, site string) (*SettingSuperCloudaccess, error) {
+func (c *client) getSettingSuperCloudaccess(ctx context.Context, site string) (*SettingSuperCloudaccess, error) {
 	var respBody struct {
 		Meta Meta                      `json:"meta"`
 		Data []SettingSuperCloudaccess `json:"data"`
@@ -71,7 +71,7 @@ func (c *Client) getSettingSuperCloudaccess(ctx context.Context, site string) (*
 	return &d, nil
 }
 
-func (c *Client) updateSettingSuperCloudaccess(ctx context.Context, site string, d *SettingSuperCloudaccess) (*SettingSuperCloudaccess, error) {
+func (c *client) updateSettingSuperCloudaccess(ctx context.Context, site string, d *SettingSuperCloudaccess) (*SettingSuperCloudaccess, error) {
 	var respBody struct {
 		Meta Meta                      `json:"meta"`
 		Data []SettingSuperCloudaccess `json:"data"`

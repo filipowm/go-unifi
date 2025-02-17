@@ -70,7 +70,7 @@ func (dst *SettingDohCustomServers) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) getSettingDoh(ctx context.Context, site string) (*SettingDoh, error) {
+func (c *client) getSettingDoh(ctx context.Context, site string) (*SettingDoh, error) {
 	var respBody struct {
 		Meta Meta         `json:"meta"`
 		Data []SettingDoh `json:"data"`
@@ -89,7 +89,7 @@ func (c *Client) getSettingDoh(ctx context.Context, site string) (*SettingDoh, e
 	return &d, nil
 }
 
-func (c *Client) updateSettingDoh(ctx context.Context, site string, d *SettingDoh) (*SettingDoh, error) {
+func (c *client) updateSettingDoh(ctx context.Context, site string, d *SettingDoh) (*SettingDoh, error) {
 	var respBody struct {
 		Meta Meta         `json:"meta"`
 		Data []SettingDoh `json:"data"`

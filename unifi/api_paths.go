@@ -58,11 +58,11 @@ var (
 )
 
 // determineApiStyle checks the base URL to decide which API style to use and sets the apiPaths accordingly.
-func (c *Client) determineApiStyle() error {
+func (c *client) determineApiStyle() error {
 	ctx, cancel := c.newRequestContext()
 	defer cancel()
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.BaseURL.String(), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.baseURL.String(), nil)
 	if err != nil {
 		return err
 	}

@@ -49,7 +49,7 @@ func (dst *VirtualDevice) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) listVirtualDevice(ctx context.Context, site string) ([]VirtualDevice, error) {
+func (c *client) listVirtualDevice(ctx context.Context, site string) ([]VirtualDevice, error) {
 	var respBody struct {
 		Meta Meta            `json:"meta"`
 		Data []VirtualDevice `json:"data"`
@@ -63,7 +63,7 @@ func (c *Client) listVirtualDevice(ctx context.Context, site string) ([]VirtualD
 	return respBody.Data, nil
 }
 
-func (c *Client) getVirtualDevice(ctx context.Context, site, id string) (*VirtualDevice, error) {
+func (c *client) getVirtualDevice(ctx context.Context, site, id string) (*VirtualDevice, error) {
 	var respBody struct {
 		Meta Meta            `json:"meta"`
 		Data []VirtualDevice `json:"data"`
@@ -82,7 +82,7 @@ func (c *Client) getVirtualDevice(ctx context.Context, site, id string) (*Virtua
 	return &d, nil
 }
 
-func (c *Client) deleteVirtualDevice(ctx context.Context, site, id string) error {
+func (c *client) deleteVirtualDevice(ctx context.Context, site, id string) error {
 	err := c.Delete(ctx, fmt.Sprintf("s/%s/rest/virtualdevice/%s", site, id), struct{}{}, nil)
 	if err != nil {
 		return err
@@ -90,7 +90,7 @@ func (c *Client) deleteVirtualDevice(ctx context.Context, site, id string) error
 	return nil
 }
 
-func (c *Client) createVirtualDevice(ctx context.Context, site string, d *VirtualDevice) (*VirtualDevice, error) {
+func (c *client) createVirtualDevice(ctx context.Context, site string, d *VirtualDevice) (*VirtualDevice, error) {
 	var respBody struct {
 		Meta Meta            `json:"meta"`
 		Data []VirtualDevice `json:"data"`
@@ -110,7 +110,7 @@ func (c *Client) createVirtualDevice(ctx context.Context, site string, d *Virtua
 	return &new, nil
 }
 
-func (c *Client) updateVirtualDevice(ctx context.Context, site string, d *VirtualDevice) (*VirtualDevice, error) {
+func (c *client) updateVirtualDevice(ctx context.Context, site string, d *VirtualDevice) (*VirtualDevice, error) {
 	var respBody struct {
 		Meta Meta            `json:"meta"`
 		Data []VirtualDevice `json:"data"`

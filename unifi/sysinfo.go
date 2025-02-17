@@ -74,7 +74,7 @@ type SysInfo struct {
 }
 
 // GetSystemInfo retrieves system info using the new API.
-func (c *Client) GetSystemInfo(ctx context.Context, id string) (*SysInfo, error) {
+func (c *client) GetSystemInfo(ctx context.Context, id string) (*SysInfo, error) {
 	var respBody struct {
 		Meta Meta      `json:"Meta"`
 		Data []SysInfo `json:"data"`
@@ -100,7 +100,7 @@ type serverInfo struct {
 }
 
 // getOldSysInfo retrieves system information using the old API style.
-func (c *Client) getOldSysInfo(ctx context.Context) (*SysInfo, error) {
+func (c *client) getOldSysInfo(ctx context.Context) (*SysInfo, error) {
 	var response struct {
 		Data serverInfo `json:"Meta"`
 	}
@@ -116,7 +116,7 @@ func (c *Client) getOldSysInfo(ctx context.Context) (*SysInfo, error) {
 }
 
 // GetSystemInformation retrieves system information, trying the new API first and falling back to the old API if necessary.
-func (c *Client) GetSystemInformation() (*SysInfo, error) {
+func (c *client) GetSystemInformation() (*SysInfo, error) {
 	ctx, cancel := c.newRequestContext()
 	defer cancel()
 

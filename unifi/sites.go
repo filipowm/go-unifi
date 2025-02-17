@@ -19,7 +19,7 @@ type Site struct {
 	// Role string `json:"role"`
 }
 
-func (c *Client) ListSites(ctx context.Context) ([]Site, error) {
+func (c *client) ListSites(ctx context.Context) ([]Site, error) {
 	var respBody struct {
 		Meta Meta   `json:"Meta"`
 		Data []Site `json:"data"`
@@ -33,7 +33,7 @@ func (c *Client) ListSites(ctx context.Context) ([]Site, error) {
 	return respBody.Data, nil
 }
 
-func (c *Client) GetSite(ctx context.Context, id string) (*Site, error) {
+func (c *client) GetSite(ctx context.Context, id string) (*Site, error) {
 	sites, err := c.ListSites(ctx)
 	if err != nil {
 		return nil, err
@@ -48,7 +48,7 @@ func (c *Client) GetSite(ctx context.Context, id string) (*Site, error) {
 	return nil, ErrNotFound
 }
 
-func (c *Client) CreateSite(ctx context.Context, description string) ([]Site, error) {
+func (c *client) CreateSite(ctx context.Context, description string) ([]Site, error) {
 	reqBody := struct {
 		Cmd  string `json:"cmd"`
 		Desc string `json:"desc"`
@@ -70,7 +70,7 @@ func (c *Client) CreateSite(ctx context.Context, description string) ([]Site, er
 	return respBody.Data, nil
 }
 
-func (c *Client) DeleteSite(ctx context.Context, id string) ([]Site, error) {
+func (c *client) DeleteSite(ctx context.Context, id string) ([]Site, error) {
 	reqBody := struct {
 		Cmd  string `json:"cmd"`
 		Site string `json:"site"`
@@ -92,7 +92,7 @@ func (c *Client) DeleteSite(ctx context.Context, id string) ([]Site, error) {
 	return respBody.Data, nil
 }
 
-func (c *Client) UpdateSite(ctx context.Context, name, description string) ([]Site, error) {
+func (c *client) UpdateSite(ctx context.Context, name, description string) ([]Site, error) {
 	reqBody := struct {
 		Cmd  string `json:"cmd"`
 		Desc string `json:"desc"`

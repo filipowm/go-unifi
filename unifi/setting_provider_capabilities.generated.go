@@ -53,7 +53,7 @@ func (dst *SettingProviderCapabilities) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) getSettingProviderCapabilities(ctx context.Context, site string) (*SettingProviderCapabilities, error) {
+func (c *client) getSettingProviderCapabilities(ctx context.Context, site string) (*SettingProviderCapabilities, error) {
 	var respBody struct {
 		Meta Meta                          `json:"Meta"`
 		Data []SettingProviderCapabilities `json:"data"`
@@ -72,7 +72,7 @@ func (c *Client) getSettingProviderCapabilities(ctx context.Context, site string
 	return &d, nil
 }
 
-func (c *Client) updateSettingProviderCapabilities(ctx context.Context, site string, d *SettingProviderCapabilities) (*SettingProviderCapabilities, error) {
+func (c *client) updateSettingProviderCapabilities(ctx context.Context, site string, d *SettingProviderCapabilities) (*SettingProviderCapabilities, error) {
 	var respBody struct {
 		Meta Meta                          `json:"Meta"`
 		Data []SettingProviderCapabilities `json:"data"`

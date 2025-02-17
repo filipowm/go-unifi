@@ -85,7 +85,7 @@ func (dst *HotspotPackage) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) listHotspotPackage(ctx context.Context, site string) ([]HotspotPackage, error) {
+func (c *client) listHotspotPackage(ctx context.Context, site string) ([]HotspotPackage, error) {
 	var respBody struct {
 		Meta Meta             `json:"meta"`
 		Data []HotspotPackage `json:"data"`
@@ -99,7 +99,7 @@ func (c *Client) listHotspotPackage(ctx context.Context, site string) ([]Hotspot
 	return respBody.Data, nil
 }
 
-func (c *Client) getHotspotPackage(ctx context.Context, site, id string) (*HotspotPackage, error) {
+func (c *client) getHotspotPackage(ctx context.Context, site, id string) (*HotspotPackage, error) {
 	var respBody struct {
 		Meta Meta             `json:"meta"`
 		Data []HotspotPackage `json:"data"`
@@ -118,7 +118,7 @@ func (c *Client) getHotspotPackage(ctx context.Context, site, id string) (*Hotsp
 	return &d, nil
 }
 
-func (c *Client) deleteHotspotPackage(ctx context.Context, site, id string) error {
+func (c *client) deleteHotspotPackage(ctx context.Context, site, id string) error {
 	err := c.Delete(ctx, fmt.Sprintf("s/%s/rest/hotspotpackage/%s", site, id), struct{}{}, nil)
 	if err != nil {
 		return err
@@ -126,7 +126,7 @@ func (c *Client) deleteHotspotPackage(ctx context.Context, site, id string) erro
 	return nil
 }
 
-func (c *Client) createHotspotPackage(ctx context.Context, site string, d *HotspotPackage) (*HotspotPackage, error) {
+func (c *client) createHotspotPackage(ctx context.Context, site string, d *HotspotPackage) (*HotspotPackage, error) {
 	var respBody struct {
 		Meta Meta             `json:"meta"`
 		Data []HotspotPackage `json:"data"`
@@ -146,7 +146,7 @@ func (c *Client) createHotspotPackage(ctx context.Context, site string, d *Hotsp
 	return &new, nil
 }
 
-func (c *Client) updateHotspotPackage(ctx context.Context, site string, d *HotspotPackage) (*HotspotPackage, error) {
+func (c *client) updateHotspotPackage(ctx context.Context, site string, d *HotspotPackage) (*HotspotPackage, error) {
 	var respBody struct {
 		Meta Meta             `json:"meta"`
 		Data []HotspotPackage `json:"data"`

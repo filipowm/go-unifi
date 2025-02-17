@@ -220,7 +220,7 @@ func (dst *PortProfileQOSProfile) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) listPortProfile(ctx context.Context, site string) ([]PortProfile, error) {
+func (c *client) listPortProfile(ctx context.Context, site string) ([]PortProfile, error) {
 	var respBody struct {
 		Meta Meta          `json:"meta"`
 		Data []PortProfile `json:"data"`
@@ -234,7 +234,7 @@ func (c *Client) listPortProfile(ctx context.Context, site string) ([]PortProfil
 	return respBody.Data, nil
 }
 
-func (c *Client) getPortProfile(ctx context.Context, site, id string) (*PortProfile, error) {
+func (c *client) getPortProfile(ctx context.Context, site, id string) (*PortProfile, error) {
 	var respBody struct {
 		Meta Meta          `json:"meta"`
 		Data []PortProfile `json:"data"`
@@ -253,7 +253,7 @@ func (c *Client) getPortProfile(ctx context.Context, site, id string) (*PortProf
 	return &d, nil
 }
 
-func (c *Client) deletePortProfile(ctx context.Context, site, id string) error {
+func (c *client) deletePortProfile(ctx context.Context, site, id string) error {
 	err := c.Delete(ctx, fmt.Sprintf("s/%s/rest/portconf/%s", site, id), struct{}{}, nil)
 	if err != nil {
 		return err
@@ -261,7 +261,7 @@ func (c *Client) deletePortProfile(ctx context.Context, site, id string) error {
 	return nil
 }
 
-func (c *Client) createPortProfile(ctx context.Context, site string, d *PortProfile) (*PortProfile, error) {
+func (c *client) createPortProfile(ctx context.Context, site string, d *PortProfile) (*PortProfile, error) {
 	var respBody struct {
 		Meta Meta          `json:"meta"`
 		Data []PortProfile `json:"data"`
@@ -281,7 +281,7 @@ func (c *Client) createPortProfile(ctx context.Context, site string, d *PortProf
 	return &new, nil
 }
 
-func (c *Client) updatePortProfile(ctx context.Context, site string, d *PortProfile) (*PortProfile, error) {
+func (c *client) updatePortProfile(ctx context.Context, site string, d *PortProfile) (*PortProfile, error) {
 	var respBody struct {
 		Meta Meta          `json:"meta"`
 		Data []PortProfile `json:"data"`

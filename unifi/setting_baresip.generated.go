@@ -49,7 +49,7 @@ func (dst *SettingBaresip) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) getSettingBaresip(ctx context.Context, site string) (*SettingBaresip, error) {
+func (c *client) getSettingBaresip(ctx context.Context, site string) (*SettingBaresip, error) {
 	var respBody struct {
 		Meta Meta             `json:"meta"`
 		Data []SettingBaresip `json:"data"`
@@ -68,7 +68,7 @@ func (c *Client) getSettingBaresip(ctx context.Context, site string) (*SettingBa
 	return &d, nil
 }
 
-func (c *Client) updateSettingBaresip(ctx context.Context, site string, d *SettingBaresip) (*SettingBaresip, error) {
+func (c *client) updateSettingBaresip(ctx context.Context, site string, d *SettingBaresip) (*SettingBaresip, error) {
 	var respBody struct {
 		Meta Meta             `json:"meta"`
 		Data []SettingBaresip `json:"data"`

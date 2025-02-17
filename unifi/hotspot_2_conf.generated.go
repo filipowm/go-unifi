@@ -427,7 +427,7 @@ func (dst *Hotspot2ConfVenueName) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) listHotspot2Conf(ctx context.Context, site string) ([]Hotspot2Conf, error) {
+func (c *client) listHotspot2Conf(ctx context.Context, site string) ([]Hotspot2Conf, error) {
 	var respBody struct {
 		Meta Meta           `json:"meta"`
 		Data []Hotspot2Conf `json:"data"`
@@ -441,7 +441,7 @@ func (c *Client) listHotspot2Conf(ctx context.Context, site string) ([]Hotspot2C
 	return respBody.Data, nil
 }
 
-func (c *Client) getHotspot2Conf(ctx context.Context, site, id string) (*Hotspot2Conf, error) {
+func (c *client) getHotspot2Conf(ctx context.Context, site, id string) (*Hotspot2Conf, error) {
 	var respBody struct {
 		Meta Meta           `json:"meta"`
 		Data []Hotspot2Conf `json:"data"`
@@ -460,7 +460,7 @@ func (c *Client) getHotspot2Conf(ctx context.Context, site, id string) (*Hotspot
 	return &d, nil
 }
 
-func (c *Client) deleteHotspot2Conf(ctx context.Context, site, id string) error {
+func (c *client) deleteHotspot2Conf(ctx context.Context, site, id string) error {
 	err := c.Delete(ctx, fmt.Sprintf("s/%s/rest/hotspot2conf/%s", site, id), struct{}{}, nil)
 	if err != nil {
 		return err
@@ -468,7 +468,7 @@ func (c *Client) deleteHotspot2Conf(ctx context.Context, site, id string) error 
 	return nil
 }
 
-func (c *Client) createHotspot2Conf(ctx context.Context, site string, d *Hotspot2Conf) (*Hotspot2Conf, error) {
+func (c *client) createHotspot2Conf(ctx context.Context, site string, d *Hotspot2Conf) (*Hotspot2Conf, error) {
 	var respBody struct {
 		Meta Meta           `json:"meta"`
 		Data []Hotspot2Conf `json:"data"`
@@ -488,7 +488,7 @@ func (c *Client) createHotspot2Conf(ctx context.Context, site string, d *Hotspot
 	return &new, nil
 }
 
-func (c *Client) updateHotspot2Conf(ctx context.Context, site string, d *Hotspot2Conf) (*Hotspot2Conf, error) {
+func (c *client) updateHotspot2Conf(ctx context.Context, site string, d *Hotspot2Conf) (*Hotspot2Conf, error) {
 	var respBody struct {
 		Meta Meta           `json:"meta"`
 		Data []Hotspot2Conf `json:"data"`

@@ -51,7 +51,7 @@ func (dst *DynamicDNS) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) listDynamicDNS(ctx context.Context, site string) ([]DynamicDNS, error) {
+func (c *client) listDynamicDNS(ctx context.Context, site string) ([]DynamicDNS, error) {
 	var respBody struct {
 		Meta Meta         `json:"meta"`
 		Data []DynamicDNS `json:"data"`
@@ -65,7 +65,7 @@ func (c *Client) listDynamicDNS(ctx context.Context, site string) ([]DynamicDNS,
 	return respBody.Data, nil
 }
 
-func (c *Client) getDynamicDNS(ctx context.Context, site, id string) (*DynamicDNS, error) {
+func (c *client) getDynamicDNS(ctx context.Context, site, id string) (*DynamicDNS, error) {
 	var respBody struct {
 		Meta Meta         `json:"meta"`
 		Data []DynamicDNS `json:"data"`
@@ -84,7 +84,7 @@ func (c *Client) getDynamicDNS(ctx context.Context, site, id string) (*DynamicDN
 	return &d, nil
 }
 
-func (c *Client) deleteDynamicDNS(ctx context.Context, site, id string) error {
+func (c *client) deleteDynamicDNS(ctx context.Context, site, id string) error {
 	err := c.Delete(ctx, fmt.Sprintf("s/%s/rest/dynamicdns/%s", site, id), struct{}{}, nil)
 	if err != nil {
 		return err
@@ -92,7 +92,7 @@ func (c *Client) deleteDynamicDNS(ctx context.Context, site, id string) error {
 	return nil
 }
 
-func (c *Client) createDynamicDNS(ctx context.Context, site string, d *DynamicDNS) (*DynamicDNS, error) {
+func (c *client) createDynamicDNS(ctx context.Context, site string, d *DynamicDNS) (*DynamicDNS, error) {
 	var respBody struct {
 		Meta Meta         `json:"meta"`
 		Data []DynamicDNS `json:"data"`
@@ -112,7 +112,7 @@ func (c *Client) createDynamicDNS(ctx context.Context, site string, d *DynamicDN
 	return &new, nil
 }
 
-func (c *Client) updateDynamicDNS(ctx context.Context, site string, d *DynamicDNS) (*DynamicDNS, error) {
+func (c *client) updateDynamicDNS(ctx context.Context, site string, d *DynamicDNS) (*DynamicDNS, error) {
 	var respBody struct {
 		Meta Meta         `json:"meta"`
 		Data []DynamicDNS `json:"data"`

@@ -71,7 +71,7 @@ func (dst *DashboardModules) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) listDashboard(ctx context.Context, site string) ([]Dashboard, error) {
+func (c *client) listDashboard(ctx context.Context, site string) ([]Dashboard, error) {
 	var respBody struct {
 		Meta Meta        `json:"meta"`
 		Data []Dashboard `json:"data"`
@@ -85,7 +85,7 @@ func (c *Client) listDashboard(ctx context.Context, site string) ([]Dashboard, e
 	return respBody.Data, nil
 }
 
-func (c *Client) getDashboard(ctx context.Context, site, id string) (*Dashboard, error) {
+func (c *client) getDashboard(ctx context.Context, site, id string) (*Dashboard, error) {
 	var respBody struct {
 		Meta Meta        `json:"meta"`
 		Data []Dashboard `json:"data"`
@@ -104,7 +104,7 @@ func (c *Client) getDashboard(ctx context.Context, site, id string) (*Dashboard,
 	return &d, nil
 }
 
-func (c *Client) deleteDashboard(ctx context.Context, site, id string) error {
+func (c *client) deleteDashboard(ctx context.Context, site, id string) error {
 	err := c.Delete(ctx, fmt.Sprintf("s/%s/rest/dashboard/%s", site, id), struct{}{}, nil)
 	if err != nil {
 		return err
@@ -112,7 +112,7 @@ func (c *Client) deleteDashboard(ctx context.Context, site, id string) error {
 	return nil
 }
 
-func (c *Client) createDashboard(ctx context.Context, site string, d *Dashboard) (*Dashboard, error) {
+func (c *client) createDashboard(ctx context.Context, site string, d *Dashboard) (*Dashboard, error) {
 	var respBody struct {
 		Meta Meta        `json:"meta"`
 		Data []Dashboard `json:"data"`
@@ -132,7 +132,7 @@ func (c *Client) createDashboard(ctx context.Context, site string, d *Dashboard)
 	return &new, nil
 }
 
-func (c *Client) updateDashboard(ctx context.Context, site string, d *Dashboard) (*Dashboard, error) {
+func (c *client) updateDashboard(ctx context.Context, site string, d *Dashboard) (*Dashboard, error) {
 	var respBody struct {
 		Meta Meta        `json:"meta"`
 		Data []Dashboard `json:"data"`

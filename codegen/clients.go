@@ -143,17 +143,18 @@ func singlePointerParam(name string) []FunctionParam {
 }
 
 func (c *ClientInfoBuilder) AddResource(r *Resource) *ClientInfoBuilder {
-	c.AddFunction(&Comment{comment: fmt.Sprintf("client methods for %s resource", r.Name()), resourceName: r.Name()})
+	c.AddFunction(&Comment{comment: fmt.Sprintf("==== client methods for %s resource ====", r.Name()), resourceName: r.Name()})
 	if r.IsSetting() {
 		c.addResourceFunction("Get", r.Name(), "retrieves the settings for a resource", nil, singlePointerReturn(r.Name()))
 		c.addResourceFunction("Update", r.Name(), "updates a resource", singlePointerParam(r.Name()), singlePointerReturn(r.Name()))
 		return c
 	}
 	c.addResourceFunction("Get", r.Name(), "retrieves a resource", []FunctionParam{{"id", "string"}}, singlePointerReturn(r.Name()))
-	c.addResourceFunction("List", r.Name(), "lists the resources", nil, []string{"[]*" + r.Name()})
+	c.addResourceFunction("List", r.Name(), "lists the resources", nil, []string{"[]" + r.Name()})
 	c.addResourceFunction("Create", r.Name(), "creates a resource", singlePointerParam(r.Name()), singlePointerReturn(r.Name()))
 	c.addResourceFunction("Update", r.Name(), "updates a resource", singlePointerParam(r.Name()), singlePointerReturn(r.Name()))
 	c.addResourceFunction("Delete", r.Name(), "deletes a resource", []FunctionParam{{"id", "string"}}, nil)
+	c.AddFunction(&Comment{comment: fmt.Sprintf("==== end of client methods for %s resource ====", r.Name()), resourceName: r.Name() + "_end"})
 	return c
 }
 
@@ -198,5 +199,5 @@ func (c *ClientInfo) GenerateCode() (string, error) {
 
 // Name returns the name of the client.
 func (c *ClientInfo) Name() string {
-	return "client"
+	return "Client"
 }

@@ -68,7 +68,7 @@ func (dst *ScheduleTaskUpgradeTargets) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) listScheduleTask(ctx context.Context, site string) ([]ScheduleTask, error) {
+func (c *client) listScheduleTask(ctx context.Context, site string) ([]ScheduleTask, error) {
 	var respBody struct {
 		Meta Meta           `json:"meta"`
 		Data []ScheduleTask `json:"data"`
@@ -82,7 +82,7 @@ func (c *Client) listScheduleTask(ctx context.Context, site string) ([]ScheduleT
 	return respBody.Data, nil
 }
 
-func (c *Client) getScheduleTask(ctx context.Context, site, id string) (*ScheduleTask, error) {
+func (c *client) getScheduleTask(ctx context.Context, site, id string) (*ScheduleTask, error) {
 	var respBody struct {
 		Meta Meta           `json:"meta"`
 		Data []ScheduleTask `json:"data"`
@@ -101,7 +101,7 @@ func (c *Client) getScheduleTask(ctx context.Context, site, id string) (*Schedul
 	return &d, nil
 }
 
-func (c *Client) deleteScheduleTask(ctx context.Context, site, id string) error {
+func (c *client) deleteScheduleTask(ctx context.Context, site, id string) error {
 	err := c.Delete(ctx, fmt.Sprintf("s/%s/rest/scheduletask/%s", site, id), struct{}{}, nil)
 	if err != nil {
 		return err
@@ -109,7 +109,7 @@ func (c *Client) deleteScheduleTask(ctx context.Context, site, id string) error 
 	return nil
 }
 
-func (c *Client) createScheduleTask(ctx context.Context, site string, d *ScheduleTask) (*ScheduleTask, error) {
+func (c *client) createScheduleTask(ctx context.Context, site string, d *ScheduleTask) (*ScheduleTask, error) {
 	var respBody struct {
 		Meta Meta           `json:"meta"`
 		Data []ScheduleTask `json:"data"`
@@ -129,7 +129,7 @@ func (c *Client) createScheduleTask(ctx context.Context, site string, d *Schedul
 	return &new, nil
 }
 
-func (c *Client) updateScheduleTask(ctx context.Context, site string, d *ScheduleTask) (*ScheduleTask, error) {
+func (c *client) updateScheduleTask(ctx context.Context, site string, d *ScheduleTask) (*ScheduleTask, error) {
 	var respBody struct {
 		Meta Meta           `json:"meta"`
 		Data []ScheduleTask `json:"data"`

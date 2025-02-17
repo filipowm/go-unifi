@@ -46,7 +46,7 @@ func (dst *DpiGroup) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) listDpiGroup(ctx context.Context, site string) ([]DpiGroup, error) {
+func (c *client) listDpiGroup(ctx context.Context, site string) ([]DpiGroup, error) {
 	var respBody struct {
 		Meta Meta       `json:"meta"`
 		Data []DpiGroup `json:"data"`
@@ -60,7 +60,7 @@ func (c *Client) listDpiGroup(ctx context.Context, site string) ([]DpiGroup, err
 	return respBody.Data, nil
 }
 
-func (c *Client) getDpiGroup(ctx context.Context, site, id string) (*DpiGroup, error) {
+func (c *client) getDpiGroup(ctx context.Context, site, id string) (*DpiGroup, error) {
 	var respBody struct {
 		Meta Meta       `json:"meta"`
 		Data []DpiGroup `json:"data"`
@@ -79,7 +79,7 @@ func (c *Client) getDpiGroup(ctx context.Context, site, id string) (*DpiGroup, e
 	return &d, nil
 }
 
-func (c *Client) deleteDpiGroup(ctx context.Context, site, id string) error {
+func (c *client) deleteDpiGroup(ctx context.Context, site, id string) error {
 	err := c.Delete(ctx, fmt.Sprintf("s/%s/rest/dpigroup/%s", site, id), struct{}{}, nil)
 	if err != nil {
 		return err
@@ -87,7 +87,7 @@ func (c *Client) deleteDpiGroup(ctx context.Context, site, id string) error {
 	return nil
 }
 
-func (c *Client) createDpiGroup(ctx context.Context, site string, d *DpiGroup) (*DpiGroup, error) {
+func (c *client) createDpiGroup(ctx context.Context, site string, d *DpiGroup) (*DpiGroup, error) {
 	var respBody struct {
 		Meta Meta       `json:"meta"`
 		Data []DpiGroup `json:"data"`
@@ -107,7 +107,7 @@ func (c *Client) createDpiGroup(ctx context.Context, site string, d *DpiGroup) (
 	return &new, nil
 }
 
-func (c *Client) updateDpiGroup(ctx context.Context, site string, d *DpiGroup) (*DpiGroup, error) {
+func (c *client) updateDpiGroup(ctx context.Context, site string, d *DpiGroup) (*DpiGroup, error) {
 	var respBody struct {
 		Meta Meta       `json:"meta"`
 		Data []DpiGroup `json:"data"`

@@ -76,7 +76,7 @@ func (dst *SettingGlobalSwitchAclL3Isolation) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) getSettingGlobalSwitch(ctx context.Context, site string) (*SettingGlobalSwitch, error) {
+func (c *client) getSettingGlobalSwitch(ctx context.Context, site string) (*SettingGlobalSwitch, error) {
 	var respBody struct {
 		Meta Meta                  `json:"meta"`
 		Data []SettingGlobalSwitch `json:"data"`
@@ -95,7 +95,7 @@ func (c *Client) getSettingGlobalSwitch(ctx context.Context, site string) (*Sett
 	return &d, nil
 }
 
-func (c *Client) updateSettingGlobalSwitch(ctx context.Context, site string, d *SettingGlobalSwitch) (*SettingGlobalSwitch, error) {
+func (c *client) updateSettingGlobalSwitch(ctx context.Context, site string, d *SettingGlobalSwitch) (*SettingGlobalSwitch, error) {
 	var respBody struct {
 		Meta Meta                  `json:"meta"`
 		Data []SettingGlobalSwitch `json:"data"`

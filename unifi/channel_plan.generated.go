@@ -188,7 +188,7 @@ func (dst *ChannelPlanSiteBlacklistedChannels) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) listChannelPlan(ctx context.Context, site string) ([]ChannelPlan, error) {
+func (c *client) listChannelPlan(ctx context.Context, site string) ([]ChannelPlan, error) {
 	var respBody struct {
 		Meta Meta          `json:"meta"`
 		Data []ChannelPlan `json:"data"`
@@ -202,7 +202,7 @@ func (c *Client) listChannelPlan(ctx context.Context, site string) ([]ChannelPla
 	return respBody.Data, nil
 }
 
-func (c *Client) getChannelPlan(ctx context.Context, site, id string) (*ChannelPlan, error) {
+func (c *client) getChannelPlan(ctx context.Context, site, id string) (*ChannelPlan, error) {
 	var respBody struct {
 		Meta Meta          `json:"meta"`
 		Data []ChannelPlan `json:"data"`
@@ -221,7 +221,7 @@ func (c *Client) getChannelPlan(ctx context.Context, site, id string) (*ChannelP
 	return &d, nil
 }
 
-func (c *Client) deleteChannelPlan(ctx context.Context, site, id string) error {
+func (c *client) deleteChannelPlan(ctx context.Context, site, id string) error {
 	err := c.Delete(ctx, fmt.Sprintf("s/%s/rest/channelplan/%s", site, id), struct{}{}, nil)
 	if err != nil {
 		return err
@@ -229,7 +229,7 @@ func (c *Client) deleteChannelPlan(ctx context.Context, site, id string) error {
 	return nil
 }
 
-func (c *Client) createChannelPlan(ctx context.Context, site string, d *ChannelPlan) (*ChannelPlan, error) {
+func (c *client) createChannelPlan(ctx context.Context, site string, d *ChannelPlan) (*ChannelPlan, error) {
 	var respBody struct {
 		Meta Meta          `json:"meta"`
 		Data []ChannelPlan `json:"data"`
@@ -249,7 +249,7 @@ func (c *Client) createChannelPlan(ctx context.Context, site string, d *ChannelP
 	return &new, nil
 }
 
-func (c *Client) updateChannelPlan(ctx context.Context, site string, d *ChannelPlan) (*ChannelPlan, error) {
+func (c *client) updateChannelPlan(ctx context.Context, site string, d *ChannelPlan) (*ChannelPlan, error) {
 	var respBody struct {
 		Meta Meta          `json:"meta"`
 		Data []ChannelPlan `json:"data"`

@@ -42,7 +42,7 @@ type ResponseErrorHandler interface {
 }
 
 /*
-ClientConfig holds configuration parameters for creating a UniFi Client.
+ClientConfig holds configuration parameters for creating a UniFi client.
 
 Fields:
 
@@ -108,10 +108,10 @@ func (u UserPassCredentials) GetAPIKey() string { return "" }
 func (u UserPassCredentials) GetUser() string   { return u.User }
 func (u UserPassCredentials) GetPass() string   { return u.Pass }
 
-// Client represents a UniFi client.
-type Client struct {
-	BaseURL        *url.URL
-	SysInfo        *SysInfo
+// client represents a UniFi client.
+type client struct {
+	baseURL        *url.URL
+	sysInfo        *SysInfo
 	apiPaths       *APIPaths
 	timeout        time.Duration
 	credentials    Credentials
@@ -125,9 +125,15 @@ type Client struct {
 	validator    *validator
 }
 
+var _ Client = &client{} // Ensure that client implements the Client interface. (compile-time check)
+
+func (c *client) BaseURL() string {
+	return c.baseURL.String()
+}
+
 // AddInterceptor adds a ClientInterceptor to the client's interceptor list if it is not already present.
 // It appends the interceptor only if it is not already included in the list.
-func (c *Client) AddInterceptor(interceptor *ClientInterceptor) {
+func (c *client) AddInterceptor(interceptor *ClientInterceptor) {
 	if !slices.Contains(c.interceptors, *interceptor) {
 		c.interceptors = append(c.interceptors, *interceptor)
 	}
@@ -145,7 +151,7 @@ func parseBaseURL(base string) (*url.URL, error) {
 	return baseURL, nil
 }
 
-func newClientFromConfig(config *ClientConfig, v *validator) (*Client, error) {
+func newClientFromConfig(config *ClientConfig, v *validator) (*client, error) {
 	var err error
 	config.URL = strings.TrimRight(config.URL, "/")
 	transport := &http.Transport{
@@ -157,7 +163,7 @@ func newClientFromConfig(config *ClientConfig, v *validator) (*Client, error) {
 			return nil, fmt.Errorf("failed customizing HTTP transport: %w", err)
 		}
 	}
-	client := &http.Client{
+	httpClient := &http.Client{
 		Timeout:   config.Timeout,
 		Transport: transport,
 	}
@@ -166,7 +172,7 @@ func newClientFromConfig(config *ClientConfig, v *validator) (*Client, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed creating cookiejar: %w", err)
 		}
-		client.Jar = jar
+		httpClient.Jar = jar
 	}
 	baseURL, err := parseBaseURL(config.URL)
 	if err != nil {
@@ -199,13 +205,13 @@ func newClientFromConfig(config *ClientConfig, v *validator) (*Client, error) {
 	if config.ValidationMode == "" {
 		config.ValidationMode = DefaultValidation
 	}
-	u := &Client{
-		BaseURL:        baseURL,
+	u := &client{
+		baseURL:        baseURL,
 		timeout:        config.Timeout,
 		credentials:    credentials,
 		validationMode: config.ValidationMode,
 		useLocking:     config.UseLocking,
-		http:           client,
+		http:           httpClient,
 		interceptors:   interceptors,
 		errorHandler:   errorHandler,
 		lock:           sync.Mutex{},
@@ -220,9 +226,9 @@ func newClientFromConfig(config *ClientConfig, v *validator) (*Client, error) {
 // NewClient creates and initializes a new UniFi client based on the provided ClientConfig.
 // It validates the configuration, determines the API style, performs login if necessary,
 // and retrieves system information from the UniFi controller.
-// On success, it returns a pointer to a Client; otherwise, it returns an error.
-func NewClient(config *ClientConfig) (*Client, error) {
-	c, err := NewBareClient(config)
+// On success, it returns a pointer to a client; otherwise, it returns an error.
+func NewClient(config *ClientConfig) (Client, error) { //nolint: ireturn
+	c, err := newBareClient(config)
 	if err != nil {
 		return c, err
 	}
@@ -232,7 +238,7 @@ func NewClient(config *ClientConfig) (*Client, error) {
 	if sysInfo, err := c.GetSystemInformation(); err != nil {
 		return c, fmt.Errorf("failed getting server info: %w", err)
 	} else {
-		c.SysInfo = sysInfo
+		c.sysInfo = sysInfo
 	}
 	return c, nil
 }
@@ -240,7 +246,11 @@ func NewClient(config *ClientConfig) (*Client, error) {
 // NewBareClient creates a new UniFi client without performing login or system information retrieval.
 // When user/pass authentication is used, you must call Login before making requests.
 // It validates the configuration, determines the API style, and returns a pointer to the client on success.
-func NewBareClient(config *ClientConfig) (*Client, error) {
+func NewBareClient(config *ClientConfig) (Client, error) { //nolint: ireturn
+	return newBareClient(config)
+}
+
+func newBareClient(config *ClientConfig) (*client, error) {
 	v, err := newValidator()
 	if err != nil {
 		return nil, fmt.Errorf("failed creating validator: %w", err)
@@ -261,7 +271,7 @@ func NewBareClient(config *ClientConfig) (*Client, error) {
 // Login authenticates the client using user/pass credentials.
 // For API key authentication, Login does nothing.
 // It returns an error if the authentication process fails.
-func (c *Client) Login() error {
+func (c *client) Login() error {
 	if c.credentials.IsAPIKey() {
 		return nil
 	}
@@ -285,7 +295,7 @@ func (c *Client) Login() error {
 // Logout terminates the client's session for user/pass authentication.
 // For API key authentication, Logout does nothing.
 // It returns an error if the logout process fails.
-func (c *Client) Logout() error {
+func (c *client) Logout() error {
 	if c.credentials.IsAPIKey() {
 		return nil
 	}

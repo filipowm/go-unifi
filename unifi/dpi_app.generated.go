@@ -66,7 +66,7 @@ func (dst *DpiApp) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) listDpiApp(ctx context.Context, site string) ([]DpiApp, error) {
+func (c *client) listDpiApp(ctx context.Context, site string) ([]DpiApp, error) {
 	var respBody struct {
 		Meta Meta     `json:"meta"`
 		Data []DpiApp `json:"data"`
@@ -80,7 +80,7 @@ func (c *Client) listDpiApp(ctx context.Context, site string) ([]DpiApp, error) 
 	return respBody.Data, nil
 }
 
-func (c *Client) getDpiApp(ctx context.Context, site, id string) (*DpiApp, error) {
+func (c *client) getDpiApp(ctx context.Context, site, id string) (*DpiApp, error) {
 	var respBody struct {
 		Meta Meta     `json:"meta"`
 		Data []DpiApp `json:"data"`
@@ -99,7 +99,7 @@ func (c *Client) getDpiApp(ctx context.Context, site, id string) (*DpiApp, error
 	return &d, nil
 }
 
-func (c *Client) deleteDpiApp(ctx context.Context, site, id string) error {
+func (c *client) deleteDpiApp(ctx context.Context, site, id string) error {
 	err := c.Delete(ctx, fmt.Sprintf("s/%s/rest/dpiapp/%s", site, id), struct{}{}, nil)
 	if err != nil {
 		return err
@@ -107,7 +107,7 @@ func (c *Client) deleteDpiApp(ctx context.Context, site, id string) error {
 	return nil
 }
 
-func (c *Client) createDpiApp(ctx context.Context, site string, d *DpiApp) (*DpiApp, error) {
+func (c *client) createDpiApp(ctx context.Context, site string, d *DpiApp) (*DpiApp, error) {
 	var respBody struct {
 		Meta Meta     `json:"meta"`
 		Data []DpiApp `json:"data"`
@@ -127,7 +127,7 @@ func (c *Client) createDpiApp(ctx context.Context, site string, d *DpiApp) (*Dpi
 	return &new, nil
 }
 
-func (c *Client) updateDpiApp(ctx context.Context, site string, d *DpiApp) (*DpiApp, error) {
+func (c *client) updateDpiApp(ctx context.Context, site string, d *DpiApp) (*DpiApp, error) {
 	var respBody struct {
 		Meta Meta     `json:"meta"`
 		Data []DpiApp `json:"data"`

@@ -46,7 +46,7 @@ func (dst *SettingEvaluationScore) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) getSettingEvaluationScore(ctx context.Context, site string) (*SettingEvaluationScore, error) {
+func (c *client) getSettingEvaluationScore(ctx context.Context, site string) (*SettingEvaluationScore, error) {
 	var respBody struct {
 		Meta Meta                     `json:"meta"`
 		Data []SettingEvaluationScore `json:"data"`
@@ -65,7 +65,7 @@ func (c *Client) getSettingEvaluationScore(ctx context.Context, site string) (*S
 	return &d, nil
 }
 
-func (c *Client) updateSettingEvaluationScore(ctx context.Context, site string, d *SettingEvaluationScore) (*SettingEvaluationScore, error) {
+func (c *client) updateSettingEvaluationScore(ctx context.Context, site string, d *SettingEvaluationScore) (*SettingEvaluationScore, error) {
 	var respBody struct {
 		Meta Meta                     `json:"meta"`
 		Data []SettingEvaluationScore `json:"data"`

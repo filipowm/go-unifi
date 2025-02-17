@@ -24,7 +24,7 @@ const (
 )
 
 // verifyInterceptorPresence checks each expected interceptor type for presence or absence in the client.
-func verifyInterceptorPresence(a *assert.Assertions, c *Client, interceptors []interface{}, shouldExist bool) {
+func verifyInterceptorPresence(a *assert.Assertions, c *client, interceptors []interface{}, shouldExist bool) {
 	expectedTypes := make([]reflect.Type, 0, len(interceptors))
 	for _, i := range interceptors {
 		expectedTypes = append(expectedTypes, reflect.TypeOf(i))
@@ -49,14 +49,14 @@ func verifyInterceptorPresence(a *assert.Assertions, c *Client, interceptors []i
 func TestNewBareClient(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
-	c, err := NewBareClient(&ClientConfig{
+	c, err := newBareClient(&ClientConfig{
 		URL:       localUrl,
 		User:      "admin",
 		Pass:      "password",
 		VerifySSL: false,
 	})
 	require.Error(t, err)
-	a.EqualValues(localUrl, c.BaseURL.String())
+	a.EqualValues(localUrl, c.BaseURL())
 	a.Contains(err.Error(), "connection refused", "an invalid destination should produce a connection error.")
 	verifyInterceptorPresence(a, c, []interface{}{&CSRFInterceptor{}, &DefaultHeadersInterceptor{}}, true)
 	verifyInterceptorPresence(a, c, []interface{}{&APIKeyAuthInterceptor{}}, false)
@@ -66,7 +66,7 @@ func TestNewClientWithApiKey(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
 	// when
-	c, err := NewClient(&ClientConfig{
+	c, err := newBareClient(&ClientConfig{
 		URL:       localUrl,
 		APIKey:    "test",
 		VerifySSL: false,
@@ -74,7 +74,7 @@ func TestNewClientWithApiKey(t *testing.T) {
 
 	// then
 	require.Error(t, err)
-	a.EqualValues(localUrl, c.BaseURL.String())
+	a.EqualValues(localUrl, c.BaseURL())
 	a.Contains(err.Error(), "connection refused", "an invalid destination should produce a connection error.")
 	verifyInterceptorPresence(a, c, []interface{}{&APIKeyAuthInterceptor{}, &DefaultHeadersInterceptor{}}, true)
 	verifyInterceptorPresence(a, c, []interface{}{&CSRFInterceptor{}}, false)
@@ -148,9 +148,9 @@ func (i *TestInterceptor) AsList() []ClientInterceptor {
 	return []ClientInterceptor{i}
 }
 
-func NewTestClientWithInterceptor() (*Client, *TestInterceptor) {
+func newTestClientWithInterceptor() (*client, *TestInterceptor) {
 	interceptor := NewTestInterceptor()
-	c, _ := NewClient(&ClientConfig{
+	c, _ := newBareClient(&ClientConfig{
 		URL:          testUrl,
 		APIKey:       "test-key",
 		Interceptors: interceptor.AsList(),
@@ -161,9 +161,9 @@ func NewTestClientWithInterceptor() (*Client, *TestInterceptor) {
 
 // runClientGetRequest creates a new test client, performs a GET request,
 // asserts that an error occurred, and returns the client and its interceptor.
-func runClientGetRequest(t *testing.T, path string, data interface{}) (*Client, *TestInterceptor) {
+func runClientGetRequest(t *testing.T, path string, data interface{}) (*client, *TestInterceptor) {
 	t.Helper()
-	c, interceptor := NewTestClientWithInterceptor()
+	c, interceptor := newTestClientWithInterceptor()
 	err := c.Get(context.Background(), path, data, nil)
 	require.Error(t, err)
 	return c, interceptor
@@ -171,9 +171,9 @@ func runClientGetRequest(t *testing.T, path string, data interface{}) (*Client, 
 
 // runClientRequest creates a new test client, performs a request with the given method,
 // asserts that an error occurred, and returns the client and its interceptor.
-func runClientRequest(t *testing.T, method, path string, body interface{}) (*Client, *TestInterceptor) {
+func runClientRequest(t *testing.T, method, path string, body interface{}) (*client, *TestInterceptor) {
 	t.Helper()
-	c, interceptor := NewTestClientWithInterceptor()
+	c, interceptor := newTestClientWithInterceptor()
 	err := c.Do(context.Background(), method, path, body, nil)
 	require.Error(t, err)
 	return c, interceptor
@@ -196,7 +196,7 @@ func TestRequestInterceptorBehavior(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			c, interceptor := NewTestClientWithInterceptor()
+			c, interceptor := newTestClientWithInterceptor()
 			interceptor.failOnRequest = tc.failOnRequest
 			err := c.Get(context.Background(), "/", nil, nil)
 			require.Error(t, err)
@@ -311,7 +311,7 @@ func TestUnifiIntegrationUserPassInjected(t *testing.T) {
 	// given
 	srv := runTestServer(NewStyleAPI.LoginPath)
 	interceptor := NewTestInterceptor()
-	c, _ := NewClient(&ClientConfig{
+	c, _ := newBareClient(&ClientConfig{
 		URL:          srv.URL,
 		User:         "test-user",
 		Pass:         "test-pass",
@@ -336,7 +336,7 @@ func TestResponseDataHandling(t *testing.T) {
 		Data: "request",
 	}
 	srv := runTestServer(NewStyleAPI.ApiPath + "/test")
-	c, _ := NewClient(&ClientConfig{
+	c, _ := newBareClient(&ClientConfig{
 		URL:    srv.URL,
 		APIKey: "test-key",
 	})
@@ -357,7 +357,7 @@ func TestCsrfHandling(t *testing.T) {
 	// given
 	srv := runTestServer("")
 	interceptor := NewTestInterceptor()
-	c, _ := NewClient(&ClientConfig{
+	c, _ := newBareClient(&ClientConfig{
 		URL:          srv.URL,
 		User:         "test-user",
 		Pass:         "test-pass",
@@ -386,7 +386,7 @@ func TestOverrideUserAgent(t *testing.T) {
 	a := assert.New(t)
 	// given
 	interceptor := NewTestInterceptor()
-	c, _ := NewClient(&ClientConfig{
+	c, _ := newBareClient(&ClientConfig{
 		URL:          testUrl,
 		APIKey:       "test-key",
 		Interceptors: interceptor.AsList(),
@@ -556,7 +556,7 @@ func TestValidationModes(t *testing.T) {
 			a := assert.New(t)
 			// given
 			interceptor := NewTestInterceptor()
-			c, _ := NewClient(&ClientConfig{
+			c, _ := newBareClient(&ClientConfig{
 				URL:            testUrl,
 				APIKey:         "test-key",
 				Interceptors:   []ClientInterceptor{interceptor},
@@ -693,7 +693,7 @@ func TestDetermineApiStyle_InvalidStatus(t *testing.T) {
 func TestRegisterInterceptor(t *testing.T) {
 	t.Parallel()
 	// Create a manual client with an empty interceptor slice.
-	client := &Client{
+	client := &client{
 		interceptors: []ClientInterceptor{},
 	}
 	// Create a dummy interceptor (using TestInterceptor already defined in the file).
@@ -727,12 +727,12 @@ func TestDoInvalidJsonResponse(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c, err := NewClient(&ClientConfig{
+	c, err := newBareClient(&ClientConfig{
 		URL:       ts.URL,
 		APIKey:    "test-key",
 		VerifySSL: false,
 	})
-	require.Error(t, err)
+	require.NoError(t, err)
 
 	var result map[string]interface{}
 	err = c.Get(context.Background(), "any", nil, &result)
@@ -767,13 +767,13 @@ func TestErrorHandlerCustom(t *testing.T) {
 	defer ts.Close()
 
 	customErrorHandler := &failingErrorHandler{}
-	c, err := NewClient(&ClientConfig{
+	c, err := newBareClient(&ClientConfig{
 		URL:          ts.URL,
 		APIKey:       "test-key",
 		VerifySSL:    false,
 		ErrorHandler: customErrorHandler,
 	})
-	require.Error(t, err)
+	require.NoError(t, err)
 
 	var result map[string]interface{}
 	err = c.Get(context.Background(), "error", nil, &result)
@@ -783,8 +783,8 @@ func TestErrorHandlerCustom(t *testing.T) {
 
 func TestCreateRequestURLInvalid(t *testing.T) {
 	t.Parallel()
-	c := &Client{
-		BaseURL:  &url.URL{Scheme: "http", Host: "localhost"},
+	c := &client{
+		baseURL:  &url.URL{Scheme: "http", Host: "localhost"},
 		apiPaths: &NewStyleAPI,
 	}
 	_, err := c.buildRequestURL("://bad-url")
@@ -794,8 +794,8 @@ func TestCreateRequestURLInvalid(t *testing.T) {
 
 func TestCreateRequestURLAbsolute(t *testing.T) {
 	t.Parallel()
-	c := &Client{
-		BaseURL:  &url.URL{Scheme: "http", Host: "localhost"},
+	c := &client{
+		baseURL:  &url.URL{Scheme: "http", Host: "localhost"},
 		apiPaths: &NewStyleAPI,
 	}
 	reqURL, err := c.buildRequestURL("http://example.com/test")
@@ -805,7 +805,7 @@ func TestCreateRequestURLAbsolute(t *testing.T) {
 
 func TestCreateRequestContextTimeout(t *testing.T) {
 	t.Parallel()
-	c := &Client{
+	c := &client{
 		timeout: 100 * time.Millisecond,
 	}
 	ctx, cancel := c.newRequestContext()
@@ -843,7 +843,7 @@ func TestMarshalRequestValid(t *testing.T) {
 func TestLoginWithAPIKeyDirect(t *testing.T) {
 	t.Parallel()
 	// Create a client manually with the APIKey set.
-	c := &Client{
+	c := &client{
 		credentials: APIKeyCredentials{APIKey: "abc"},
 	}
 	err := c.Login()

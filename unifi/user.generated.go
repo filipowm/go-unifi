@@ -65,7 +65,7 @@ func (dst *User) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) listUser(ctx context.Context, site string) ([]User, error) {
+func (c *client) listUser(ctx context.Context, site string) ([]User, error) {
 	var respBody struct {
 		Meta Meta   `json:"meta"`
 		Data []User `json:"data"`
@@ -79,7 +79,7 @@ func (c *Client) listUser(ctx context.Context, site string) ([]User, error) {
 	return respBody.Data, nil
 }
 
-func (c *Client) getUser(ctx context.Context, site, id string) (*User, error) {
+func (c *client) getUser(ctx context.Context, site, id string) (*User, error) {
 	var respBody struct {
 		Meta Meta   `json:"meta"`
 		Data []User `json:"data"`
@@ -98,7 +98,7 @@ func (c *Client) getUser(ctx context.Context, site, id string) (*User, error) {
 	return &d, nil
 }
 
-func (c *Client) deleteUser(ctx context.Context, site, id string) error {
+func (c *client) deleteUser(ctx context.Context, site, id string) error {
 	err := c.Delete(ctx, fmt.Sprintf("s/%s/rest/user/%s", site, id), struct{}{}, nil)
 	if err != nil {
 		return err
@@ -106,7 +106,7 @@ func (c *Client) deleteUser(ctx context.Context, site, id string) error {
 	return nil
 }
 
-func (c *Client) createUser(ctx context.Context, site string, d *User) (*User, error) {
+func (c *client) createUser(ctx context.Context, site string, d *User) (*User, error) {
 	var respBody struct {
 		Meta Meta   `json:"meta"`
 		Data []User `json:"data"`
@@ -126,7 +126,7 @@ func (c *Client) createUser(ctx context.Context, site string, d *User) (*User, e
 	return &new, nil
 }
 
-func (c *Client) updateUser(ctx context.Context, site string, d *User) (*User, error) {
+func (c *client) updateUser(ctx context.Context, site string, d *User) (*User, error) {
 	var respBody struct {
 		Meta Meta   `json:"meta"`
 		Data []User `json:"data"`

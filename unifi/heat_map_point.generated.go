@@ -48,7 +48,7 @@ func (dst *HeatMapPoint) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) listHeatMapPoint(ctx context.Context, site string) ([]HeatMapPoint, error) {
+func (c *client) listHeatMapPoint(ctx context.Context, site string) ([]HeatMapPoint, error) {
 	var respBody struct {
 		Meta Meta           `json:"meta"`
 		Data []HeatMapPoint `json:"data"`
@@ -62,7 +62,7 @@ func (c *Client) listHeatMapPoint(ctx context.Context, site string) ([]HeatMapPo
 	return respBody.Data, nil
 }
 
-func (c *Client) getHeatMapPoint(ctx context.Context, site, id string) (*HeatMapPoint, error) {
+func (c *client) getHeatMapPoint(ctx context.Context, site, id string) (*HeatMapPoint, error) {
 	var respBody struct {
 		Meta Meta           `json:"meta"`
 		Data []HeatMapPoint `json:"data"`
@@ -81,7 +81,7 @@ func (c *Client) getHeatMapPoint(ctx context.Context, site, id string) (*HeatMap
 	return &d, nil
 }
 
-func (c *Client) deleteHeatMapPoint(ctx context.Context, site, id string) error {
+func (c *client) deleteHeatMapPoint(ctx context.Context, site, id string) error {
 	err := c.Delete(ctx, fmt.Sprintf("s/%s/rest/heatmappoint/%s", site, id), struct{}{}, nil)
 	if err != nil {
 		return err
@@ -89,7 +89,7 @@ func (c *Client) deleteHeatMapPoint(ctx context.Context, site, id string) error 
 	return nil
 }
 
-func (c *Client) createHeatMapPoint(ctx context.Context, site string, d *HeatMapPoint) (*HeatMapPoint, error) {
+func (c *client) createHeatMapPoint(ctx context.Context, site string, d *HeatMapPoint) (*HeatMapPoint, error) {
 	var respBody struct {
 		Meta Meta           `json:"meta"`
 		Data []HeatMapPoint `json:"data"`
@@ -109,7 +109,7 @@ func (c *Client) createHeatMapPoint(ctx context.Context, site string, d *HeatMap
 	return &new, nil
 }
 
-func (c *Client) updateHeatMapPoint(ctx context.Context, site string, d *HeatMapPoint) (*HeatMapPoint, error) {
+func (c *client) updateHeatMapPoint(ctx context.Context, site string, d *HeatMapPoint) (*HeatMapPoint, error) {
 	var respBody struct {
 		Meta Meta           `json:"meta"`
 		Data []HeatMapPoint `json:"data"`

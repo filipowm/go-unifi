@@ -89,7 +89,7 @@ func (dst *SettingEtherLightingSpeedOverrides) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) getSettingEtherLighting(ctx context.Context, site string) (*SettingEtherLighting, error) {
+func (c *client) getSettingEtherLighting(ctx context.Context, site string) (*SettingEtherLighting, error) {
 	var respBody struct {
 		Meta Meta                   `json:"meta"`
 		Data []SettingEtherLighting `json:"data"`
@@ -108,7 +108,7 @@ func (c *Client) getSettingEtherLighting(ctx context.Context, site string) (*Set
 	return &d, nil
 }
 
-func (c *Client) updateSettingEtherLighting(ctx context.Context, site string, d *SettingEtherLighting) (*SettingEtherLighting, error) {
+func (c *client) updateSettingEtherLighting(ctx context.Context, site string, d *SettingEtherLighting) (*SettingEtherLighting, error) {
 	var respBody struct {
 		Meta Meta                   `json:"meta"`
 		Data []SettingEtherLighting `json:"data"`

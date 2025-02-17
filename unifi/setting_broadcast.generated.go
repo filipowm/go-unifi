@@ -51,7 +51,7 @@ func (dst *SettingBroadcast) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) getSettingBroadcast(ctx context.Context, site string) (*SettingBroadcast, error) {
+func (c *client) getSettingBroadcast(ctx context.Context, site string) (*SettingBroadcast, error) {
 	var respBody struct {
 		Meta Meta               `json:"meta"`
 		Data []SettingBroadcast `json:"data"`
@@ -70,7 +70,7 @@ func (c *Client) getSettingBroadcast(ctx context.Context, site string) (*Setting
 	return &d, nil
 }
 
-func (c *Client) updateSettingBroadcast(ctx context.Context, site string, d *SettingBroadcast) (*SettingBroadcast, error) {
+func (c *client) updateSettingBroadcast(ctx context.Context, site string, d *SettingBroadcast) (*SettingBroadcast, error) {
 	var respBody struct {
 		Meta Meta               `json:"meta"`
 		Data []SettingBroadcast `json:"data"`

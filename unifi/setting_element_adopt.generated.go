@@ -48,7 +48,7 @@ func (dst *SettingElementAdopt) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) getSettingElementAdopt(ctx context.Context, site string) (*SettingElementAdopt, error) {
+func (c *client) getSettingElementAdopt(ctx context.Context, site string) (*SettingElementAdopt, error) {
 	var respBody struct {
 		Meta Meta                  `json:"meta"`
 		Data []SettingElementAdopt `json:"data"`
@@ -67,7 +67,7 @@ func (c *Client) getSettingElementAdopt(ctx context.Context, site string) (*Sett
 	return &d, nil
 }
 
-func (c *Client) updateSettingElementAdopt(ctx context.Context, site string, d *SettingElementAdopt) (*SettingElementAdopt, error) {
+func (c *client) updateSettingElementAdopt(ctx context.Context, site string, d *SettingElementAdopt) (*SettingElementAdopt, error) {
 	var respBody struct {
 		Meta Meta                  `json:"meta"`
 		Data []SettingElementAdopt `json:"data"`

@@ -47,7 +47,7 @@ func (dst *SettingDpi) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) getSettingDpi(ctx context.Context, site string) (*SettingDpi, error) {
+func (c *client) getSettingDpi(ctx context.Context, site string) (*SettingDpi, error) {
 	var respBody struct {
 		Meta Meta         `json:"meta"`
 		Data []SettingDpi `json:"data"`
@@ -66,7 +66,7 @@ func (c *Client) getSettingDpi(ctx context.Context, site string) (*SettingDpi, e
 	return &d, nil
 }
 
-func (c *Client) updateSettingDpi(ctx context.Context, site string, d *SettingDpi) (*SettingDpi, error) {
+func (c *client) updateSettingDpi(ctx context.Context, site string, d *SettingDpi) (*SettingDpi, error) {
 	var respBody struct {
 		Meta Meta         `json:"meta"`
 		Data []SettingDpi `json:"data"`

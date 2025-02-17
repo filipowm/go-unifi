@@ -47,7 +47,7 @@ func (dst *SettingGlobalNat) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) getSettingGlobalNat(ctx context.Context, site string) (*SettingGlobalNat, error) {
+func (c *client) getSettingGlobalNat(ctx context.Context, site string) (*SettingGlobalNat, error) {
 	var respBody struct {
 		Meta Meta               `json:"meta"`
 		Data []SettingGlobalNat `json:"data"`
@@ -66,7 +66,7 @@ func (c *Client) getSettingGlobalNat(ctx context.Context, site string) (*Setting
 	return &d, nil
 }
 
-func (c *Client) updateSettingGlobalNat(ctx context.Context, site string, d *SettingGlobalNat) (*SettingGlobalNat, error) {
+func (c *client) updateSettingGlobalNat(ctx context.Context, site string, d *SettingGlobalNat) (*SettingGlobalNat, error) {
 	var respBody struct {
 		Meta Meta               `json:"meta"`
 		Data []SettingGlobalNat `json:"data"`

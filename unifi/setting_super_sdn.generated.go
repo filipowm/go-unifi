@@ -51,7 +51,7 @@ func (dst *SettingSuperSdn) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) getSettingSuperSdn(ctx context.Context, site string) (*SettingSuperSdn, error) {
+func (c *client) getSettingSuperSdn(ctx context.Context, site string) (*SettingSuperSdn, error) {
 	var respBody struct {
 		Meta Meta              `json:"meta"`
 		Data []SettingSuperSdn `json:"data"`
@@ -70,7 +70,7 @@ func (c *Client) getSettingSuperSdn(ctx context.Context, site string) (*SettingS
 	return &d, nil
 }
 
-func (c *Client) updateSettingSuperSdn(ctx context.Context, site string, d *SettingSuperSdn) (*SettingSuperSdn, error) {
+func (c *client) updateSettingSuperSdn(ctx context.Context, site string, d *SettingSuperSdn) (*SettingSuperSdn, error) {
 	var respBody struct {
 		Meta Meta              `json:"meta"`
 		Data []SettingSuperSdn `json:"data"`

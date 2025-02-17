@@ -60,7 +60,7 @@ func (dst *Account) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) listAccount(ctx context.Context, site string) ([]Account, error) {
+func (c *client) listAccount(ctx context.Context, site string) ([]Account, error) {
 	var respBody struct {
 		Meta Meta      `json:"meta"`
 		Data []Account `json:"data"`
@@ -74,7 +74,7 @@ func (c *Client) listAccount(ctx context.Context, site string) ([]Account, error
 	return respBody.Data, nil
 }
 
-func (c *Client) getAccount(ctx context.Context, site, id string) (*Account, error) {
+func (c *client) getAccount(ctx context.Context, site, id string) (*Account, error) {
 	var respBody struct {
 		Meta Meta      `json:"meta"`
 		Data []Account `json:"data"`
@@ -93,7 +93,7 @@ func (c *Client) getAccount(ctx context.Context, site, id string) (*Account, err
 	return &d, nil
 }
 
-func (c *Client) deleteAccount(ctx context.Context, site, id string) error {
+func (c *client) deleteAccount(ctx context.Context, site, id string) error {
 	err := c.Delete(ctx, fmt.Sprintf("s/%s/rest/account/%s", site, id), struct{}{}, nil)
 	if err != nil {
 		return err
@@ -101,7 +101,7 @@ func (c *Client) deleteAccount(ctx context.Context, site, id string) error {
 	return nil
 }
 
-func (c *Client) createAccount(ctx context.Context, site string, d *Account) (*Account, error) {
+func (c *client) createAccount(ctx context.Context, site string, d *Account) (*Account, error) {
 	var respBody struct {
 		Meta Meta      `json:"meta"`
 		Data []Account `json:"data"`
@@ -121,7 +121,7 @@ func (c *Client) createAccount(ctx context.Context, site string, d *Account) (*A
 	return &new, nil
 }
 
-func (c *Client) updateAccount(ctx context.Context, site string, d *Account) (*Account, error) {
+func (c *client) updateAccount(ctx context.Context, site string, d *Account) (*Account, error) {
 	var respBody struct {
 		Meta Meta      `json:"meta"`
 		Data []Account `json:"data"`

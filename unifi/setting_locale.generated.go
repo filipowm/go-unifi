@@ -46,7 +46,7 @@ func (dst *SettingLocale) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) getSettingLocale(ctx context.Context, site string) (*SettingLocale, error) {
+func (c *client) getSettingLocale(ctx context.Context, site string) (*SettingLocale, error) {
 	var respBody struct {
 		Meta Meta            `json:"meta"`
 		Data []SettingLocale `json:"data"`
@@ -65,7 +65,7 @@ func (c *Client) getSettingLocale(ctx context.Context, site string) (*SettingLoc
 	return &d, nil
 }
 
-func (c *Client) updateSettingLocale(ctx context.Context, site string, d *SettingLocale) (*SettingLocale, error) {
+func (c *client) updateSettingLocale(ctx context.Context, site string, d *SettingLocale) (*SettingLocale, error) {
 	var respBody struct {
 		Meta Meta            `json:"meta"`
 		Data []SettingLocale `json:"data"`

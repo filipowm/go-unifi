@@ -51,7 +51,7 @@ func (dst *SettingConnectivity) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) getSettingConnectivity(ctx context.Context, site string) (*SettingConnectivity, error) {
+func (c *client) getSettingConnectivity(ctx context.Context, site string) (*SettingConnectivity, error) {
 	var respBody struct {
 		Meta Meta                  `json:"meta"`
 		Data []SettingConnectivity `json:"data"`
@@ -70,7 +70,7 @@ func (c *Client) getSettingConnectivity(ctx context.Context, site string) (*Sett
 	return &d, nil
 }
 
-func (c *Client) updateSettingConnectivity(ctx context.Context, site string, d *SettingConnectivity) (*SettingConnectivity, error) {
+func (c *client) updateSettingConnectivity(ctx context.Context, site string, d *SettingConnectivity) (*SettingConnectivity, error) {
 	var respBody struct {
 		Meta Meta                  `json:"meta"`
 		Data []SettingConnectivity `json:"data"`
