@@ -354,7 +354,7 @@ func TestBuildResourcesFromDownloadedFields(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
-			resources, err := buildResourcesFromDownloadedFields(tc.dir, CodeCustomizer{})
+			resources, err := buildResourcesFromDownloadedFields(tc.dir, CodeCustomizer{}, false)
 			if tc.errorContains != "" {
 				require.ErrorContains(t, err, tc.errorContains)
 				a.Nil(resources)

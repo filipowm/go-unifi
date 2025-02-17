@@ -33,6 +33,25 @@ type Client interface {
 	// Put sends a PUT request to the controller.
 	Put(ctx context.Context, apiPath string, reqBody interface{}, respBody interface{}) error
 
+	// ==== client methods for APGroup resource ====
+
+	// CreateAPGroup creates a resource
+	CreateAPGroup(ctx context.Context, site string, a *APGroup) (*APGroup, error)
+
+	// DeleteAPGroup deletes a resource
+	DeleteAPGroup(ctx context.Context, site string, id string) error
+
+	// GetAPGroup retrieves a resource
+	GetAPGroup(ctx context.Context, site string, id string) (*APGroup, error)
+
+	// ListAPGroup lists the resources
+	ListAPGroup(ctx context.Context, site string) ([]APGroup, error)
+
+	// UpdateAPGroup updates a resource
+	UpdateAPGroup(ctx context.Context, site string, a *APGroup) (*APGroup, error)
+
+	// ==== end of client methods for APGroup resource ====
+
 	// ==== client methods for Account resource ====
 
 	// CreateAccount creates a resource
@@ -51,6 +70,25 @@ type Client interface {
 	UpdateAccount(ctx context.Context, site string, a *Account) (*Account, error)
 
 	// ==== end of client methods for Account resource ====
+
+	// ==== client methods for DNSRecord resource ====
+
+	// CreateDNSRecord creates a resource
+	CreateDNSRecord(ctx context.Context, site string, d *DNSRecord) (*DNSRecord, error)
+
+	// DeleteDNSRecord deletes a resource
+	DeleteDNSRecord(ctx context.Context, site string, id string) error
+
+	// GetDNSRecord retrieves a resource
+	GetDNSRecord(ctx context.Context, site string, id string) (*DNSRecord, error)
+
+	// ListDNSRecord lists the resources
+	ListDNSRecord(ctx context.Context, site string) ([]DNSRecord, error)
+
+	// UpdateDNSRecord updates a resource
+	UpdateDNSRecord(ctx context.Context, site string, d *DNSRecord) (*DNSRecord, error)
+
+	// ==== end of client methods for DNSRecord resource ====
 
 	// ==== client methods for Device resource ====
 

@@ -26,6 +26,7 @@ type Generate struct {
 type ResourceCustomization struct {
 	ResourceName string                         `yaml:"-"`
 	Fields       map[string]*FieldCustomization `yaml:"fields"`
+	ResourcePath string                         `yaml:"resourcePath"`
 }
 
 type ClientCustomization struct {
@@ -74,6 +75,9 @@ func (r *ResourceCustomization) ApplyTo(resource *Resource) {
 					return err
 				}
 				return currentProcessor(name, f)
+			}
+			if r.ResourcePath != "" {
+				resource.ResourcePath = r.ResourcePath
 			}
 		} else {
 			resource.FieldProcessor = compositeCustomizationsProcessor(customizationsProcessor)
@@ -155,6 +159,9 @@ func NewCodeCustomizer(customizationsPath string) (*CodeCustomizer, error) {
 }
 
 func (r *CodeCustomizer) IsExcludedFromClient(resourceName string) bool {
+	if r.Customizations.Client == nil || r.Customizations.Client.ExcludeResources == nil {
+		return false
+	}
 	for _, excludedResource := range r.Customizations.Client.ExcludeResources {
 		prefixedAll := strings.HasPrefix(excludedResource, "*")
 		suffixedAll := strings.HasSuffix(excludedResource, "*")

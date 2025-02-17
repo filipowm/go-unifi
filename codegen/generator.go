@@ -41,23 +41,32 @@ func generateCodeFromTemplate(templateName, templateContent string, toWrite any)
 }
 
 // generateCode generates code for each generation source and writes it to file.
-func generateCode(fieldsDir string, outDir string, customizer CodeCustomizer) error {
+func generateCode(fieldsDir, outDir string, customizer CodeCustomizer) error {
 	if _, err := ensurePath(outDir); err != nil {
 		return fmt.Errorf("unable to create output directory %s: %w", outDir, err)
 	}
 
 	generators := make([]Generatable, 0)
-	resources, err := buildResourcesFromDownloadedFields(fieldsDir, customizer)
+	resources, err := buildResourcesFromDownloadedFields(fieldsDir, customizer, false)
 	if err != nil {
 		return fmt.Errorf("failed to build resources from downloaded fields: %w", err)
 	}
+
+	codegenPath, err := findCodegenDir()
+	if err != nil {
+		return fmt.Errorf("failed to find codegen directory: %w", err)
+	}
+	resourcesCustomV2, err := buildCustomResources(filepath.Join(codegenPath, "v2"), customizer, true)
+	if err != nil {
+		return fmt.Errorf("failed to build resources from downloaded fields: %w", err)
+	}
+	resources = append(resources, resourcesCustomV2...)
 	cb := NewClientInfoBuilder()
 	customizer.ApplyToClient(cb)
 	for _, resource := range resources {
-		if customizer.IsExcludedFromClient(resource.Name()) {
-			continue
+		if !customizer.IsExcludedFromClient(resource.Name()) {
+			cb.AddResource(resource)
 		}
-		cb.AddResource(resource)
 		customizer.ApplyToResource(resource)
 		generators = append(generators, resource)
 	}

@@ -89,6 +89,11 @@ type Resource struct {
 	ResourcePath   string
 	Types          map[string]*FieldInfo
 	FieldProcessor FieldProcessor
+	V2             bool
+}
+
+func (r *Resource) IsV2() bool {
+	return r.V2
 }
 
 func (r *Resource) BaseType() *FieldInfo {
@@ -294,7 +299,13 @@ func (r *Resource) processJSON(b []byte) error {
 //go:embed api.go.tmpl
 var apiGoTemplate string
 
+//go:embed apiv2.go.tmpl
+var apiGoV2Template string
+
 func (r *Resource) GenerateCode() (string, error) {
+	if r.IsV2() {
+		return generateCodeFromTemplate("apiv2.go.tmpl", apiGoV2Template, r)
+	}
 	return generateCodeFromTemplate("api.go.tmpl", apiGoTemplate, r)
 }
 
@@ -320,7 +331,7 @@ func normalizeValidation(re string) string {
 
 var skippable = []string{"AuthenticationRequest.json", "Setting.json", "Wall.json"}
 
-func buildResourcesFromDownloadedFields(fieldsDir string, customizer CodeCustomizer) ([]*Resource, error) {
+func buildResourcesFromDownloadedFields(fieldsDir string, customizer CodeCustomizer, v2 bool) ([]*Resource, error) {
 	fieldsFiles, err := os.ReadDir(fieldsDir)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read fields directory %s: %w", fieldsDir, err)
@@ -349,7 +360,7 @@ func buildResourcesFromDownloadedFields(fieldsDir string, customizer CodeCustomi
 		}
 
 		resource := NewResource(structName, urlPath)
-		customizeResource(resource)
+		customizeResource(resource, v2)
 		customizer.ApplyToResource(resource)
 
 		err = resource.processJSON(b)
@@ -360,6 +371,10 @@ func buildResourcesFromDownloadedFields(fieldsDir string, customizer CodeCustomi
 		resources = append(resources, resource)
 	}
 	return resources, nil
+}
+
+func buildCustomResources(dir string, customizer CodeCustomizer, v2 bool) ([]*Resource, error) {
+	return buildResourcesFromDownloadedFields(dir, customizer, v2)
 }
 
 func customizeBaseType(resource *Resource) {
@@ -395,8 +410,11 @@ func customizeBaseType(resource *Resource) {
 	}
 }
 
-func customizeResource(resource *Resource) {
+func customizeResource(resource *Resource, v2 bool) {
 	customizeBaseType(resource)
+	if v2 {
+		resource.V2 = true
+	}
 
 	switch resource.StructName {
 	case "SettingGlobalAp":
