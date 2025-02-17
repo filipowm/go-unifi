@@ -44,8 +44,6 @@ func (s *Setting) newFields() (interface{}, error) {
 		return &SettingNtp{}, nil
 	case "porta":
 		return &SettingPorta{}, nil
-	case "provider_capabilities":
-		return &SettingProviderCapabilities{}, nil
 	case "radio_ai":
 		return &SettingRadioAi{}, nil
 	case "radius":
