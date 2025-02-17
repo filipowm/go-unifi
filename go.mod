@@ -1,7 +1,6 @@
 module github.com/filipowm/go-unifi
 
-go 1.23
-toolchain go1.23.5
+go 1.23.5
 
 require (
 	github.com/go-playground/locales v0.14.1
