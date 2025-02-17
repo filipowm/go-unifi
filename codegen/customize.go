@@ -26,6 +26,7 @@ type Generate struct {
 type ResourceCustomization struct {
 	ResourceName string                         `yaml:"-"`
 	Fields       map[string]*FieldCustomization `yaml:"fields"`
+	ResourcePath string                         `yaml:"resourcePath"`
 }
 
 type ClientCustomization struct {
@@ -74,6 +75,9 @@ func (r *ResourceCustomization) ApplyTo(resource *Resource) {
 					return err
 				}
 				return currentProcessor(name, f)
+			}
+			if r.ResourcePath != "" {
+				resource.ResourcePath = r.ResourcePath
 			}
 		} else {
 			resource.FieldProcessor = compositeCustomizationsProcessor(customizationsProcessor)

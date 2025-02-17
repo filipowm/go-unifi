@@ -301,6 +301,8 @@ customizations:
           omitEmpty: true
         NetworkID:
           omitEmpty: true
+    APGroup:
+      resourcePath: "apgroups"
     ChannelPlan:
       fields:
         Channel:
@@ -312,6 +314,8 @@ customizations:
         TxPower:
           ifFieldType: "string"
           customUnmarshalType: "numberOrString"
+    DNSRecord:
+      resourcePath: "static-dns"
     Device:
       fields:
         _all:
