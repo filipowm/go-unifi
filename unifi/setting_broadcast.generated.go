@@ -16,6 +16,8 @@ var (
 	_ json.Marshaler
 )
 
+const SettingBroadcastKey = "broadcast"
+
 type SettingBroadcast struct {
 	ID     string `json:"_id,omitempty"`
 	SiteID string `json:"site_id,omitempty"`
@@ -51,42 +53,23 @@ func (dst *SettingBroadcast) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *client) getSettingBroadcast(ctx context.Context, site string) (*SettingBroadcast, error) {
-	var respBody struct {
-		Meta Meta               `json:"meta"`
-		Data []SettingBroadcast `json:"data"`
-	}
-
-	err := c.Get(ctx, fmt.Sprintf("s/%s/get/setting/broadcast", site), nil, &respBody)
+// Update SettingBroadcast Experimental! This function is not yet stable and may change in the future.
+func (c *client) GetSettingBroadcast(ctx context.Context, site string) (*SettingBroadcast, error) {
+	s, f, err := c.GetSetting(ctx, site, SettingBroadcastKey)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
+	if s.Key != SettingBroadcastKey {
+		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingBroadcastKey, s.Key)
 	}
-
-	d := respBody.Data[0]
-	return &d, nil
+	return f.(*SettingBroadcast), nil
 }
 
-func (c *client) updateSettingBroadcast(ctx context.Context, site string, d *SettingBroadcast) (*SettingBroadcast, error) {
-	var respBody struct {
-		Meta Meta               `json:"meta"`
-		Data []SettingBroadcast `json:"data"`
-	}
-
-	d.Key = "broadcast"
-	err := c.Put(ctx, fmt.Sprintf("s/%s/set/setting/broadcast", site), d, &respBody)
+// Update SettingBroadcast Experimental! This function is not yet stable and may change in the future.
+func (c *client) UpdateSettingBroadcast(ctx context.Context, site string, s *SettingBroadcast) (*SettingBroadcast, error) {
+	result, err := c.SetSetting(ctx, site, SettingBroadcastKey, s)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
-	}
-
-	new := respBody.Data[0]
-
-	return &new, nil
+	return result.(*SettingBroadcast), nil
 }

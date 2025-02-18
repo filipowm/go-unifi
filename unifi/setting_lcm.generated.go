@@ -16,6 +16,8 @@ var (
 	_ json.Marshaler
 )
 
+const SettingLcmKey = "lcm"
+
 type SettingLcm struct {
 	ID     string `json:"_id,omitempty"`
 	SiteID string `json:"site_id,omitempty"`
@@ -55,42 +57,23 @@ func (dst *SettingLcm) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *client) getSettingLcm(ctx context.Context, site string) (*SettingLcm, error) {
-	var respBody struct {
-		Meta Meta         `json:"meta"`
-		Data []SettingLcm `json:"data"`
-	}
-
-	err := c.Get(ctx, fmt.Sprintf("s/%s/get/setting/lcm", site), nil, &respBody)
+// Update SettingLcm Experimental! This function is not yet stable and may change in the future.
+func (c *client) GetSettingLcm(ctx context.Context, site string) (*SettingLcm, error) {
+	s, f, err := c.GetSetting(ctx, site, SettingLcmKey)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
+	if s.Key != SettingLcmKey {
+		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingLcmKey, s.Key)
 	}
-
-	d := respBody.Data[0]
-	return &d, nil
+	return f.(*SettingLcm), nil
 }
 
-func (c *client) updateSettingLcm(ctx context.Context, site string, d *SettingLcm) (*SettingLcm, error) {
-	var respBody struct {
-		Meta Meta         `json:"meta"`
-		Data []SettingLcm `json:"data"`
-	}
-
-	d.Key = "lcm"
-	err := c.Put(ctx, fmt.Sprintf("s/%s/set/setting/lcm", site), d, &respBody)
+// Update SettingLcm Experimental! This function is not yet stable and may change in the future.
+func (c *client) UpdateSettingLcm(ctx context.Context, site string, s *SettingLcm) (*SettingLcm, error) {
+	result, err := c.SetSetting(ctx, site, SettingLcmKey, s)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
-	}
-
-	new := respBody.Data[0]
-
-	return &new, nil
+	return result.(*SettingLcm), nil
 }

@@ -16,6 +16,8 @@ var (
 	_ json.Marshaler
 )
 
+const SettingBaresipKey = "baresip"
+
 type SettingBaresip struct {
 	ID     string `json:"_id,omitempty"`
 	SiteID string `json:"site_id,omitempty"`
@@ -49,42 +51,23 @@ func (dst *SettingBaresip) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *client) getSettingBaresip(ctx context.Context, site string) (*SettingBaresip, error) {
-	var respBody struct {
-		Meta Meta             `json:"meta"`
-		Data []SettingBaresip `json:"data"`
-	}
-
-	err := c.Get(ctx, fmt.Sprintf("s/%s/get/setting/baresip", site), nil, &respBody)
+// Update SettingBaresip Experimental! This function is not yet stable and may change in the future.
+func (c *client) GetSettingBaresip(ctx context.Context, site string) (*SettingBaresip, error) {
+	s, f, err := c.GetSetting(ctx, site, SettingBaresipKey)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
+	if s.Key != SettingBaresipKey {
+		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingBaresipKey, s.Key)
 	}
-
-	d := respBody.Data[0]
-	return &d, nil
+	return f.(*SettingBaresip), nil
 }
 
-func (c *client) updateSettingBaresip(ctx context.Context, site string, d *SettingBaresip) (*SettingBaresip, error) {
-	var respBody struct {
-		Meta Meta             `json:"meta"`
-		Data []SettingBaresip `json:"data"`
-	}
-
-	d.Key = "baresip"
-	err := c.Put(ctx, fmt.Sprintf("s/%s/set/setting/baresip", site), d, &respBody)
+// Update SettingBaresip Experimental! This function is not yet stable and may change in the future.
+func (c *client) UpdateSettingBaresip(ctx context.Context, site string, s *SettingBaresip) (*SettingBaresip, error) {
+	result, err := c.SetSetting(ctx, site, SettingBaresipKey, s)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
-	}
-
-	new := respBody.Data[0]
-
-	return &new, nil
+	return result.(*SettingBaresip), nil
 }

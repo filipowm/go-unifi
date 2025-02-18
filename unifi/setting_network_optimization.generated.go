@@ -16,6 +16,8 @@ var (
 	_ json.Marshaler
 )
 
+const SettingNetworkOptimizationKey = "network_optimization"
+
 type SettingNetworkOptimization struct {
 	ID     string `json:"_id,omitempty"`
 	SiteID string `json:"site_id,omitempty"`
@@ -46,42 +48,23 @@ func (dst *SettingNetworkOptimization) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *client) getSettingNetworkOptimization(ctx context.Context, site string) (*SettingNetworkOptimization, error) {
-	var respBody struct {
-		Meta Meta                         `json:"meta"`
-		Data []SettingNetworkOptimization `json:"data"`
-	}
-
-	err := c.Get(ctx, fmt.Sprintf("s/%s/get/setting/network_optimization", site), nil, &respBody)
+// Update SettingNetworkOptimization Experimental! This function is not yet stable and may change in the future.
+func (c *client) GetSettingNetworkOptimization(ctx context.Context, site string) (*SettingNetworkOptimization, error) {
+	s, f, err := c.GetSetting(ctx, site, SettingNetworkOptimizationKey)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
+	if s.Key != SettingNetworkOptimizationKey {
+		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingNetworkOptimizationKey, s.Key)
 	}
-
-	d := respBody.Data[0]
-	return &d, nil
+	return f.(*SettingNetworkOptimization), nil
 }
 
-func (c *client) updateSettingNetworkOptimization(ctx context.Context, site string, d *SettingNetworkOptimization) (*SettingNetworkOptimization, error) {
-	var respBody struct {
-		Meta Meta                         `json:"meta"`
-		Data []SettingNetworkOptimization `json:"data"`
-	}
-
-	d.Key = "network_optimization"
-	err := c.Put(ctx, fmt.Sprintf("s/%s/set/setting/network_optimization", site), d, &respBody)
+// Update SettingNetworkOptimization Experimental! This function is not yet stable and may change in the future.
+func (c *client) UpdateSettingNetworkOptimization(ctx context.Context, site string, s *SettingNetworkOptimization) (*SettingNetworkOptimization, error) {
+	result, err := c.SetSetting(ctx, site, SettingNetworkOptimizationKey, s)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
-	}
-
-	new := respBody.Data[0]
-
-	return &new, nil
+	return result.(*SettingNetworkOptimization), nil
 }

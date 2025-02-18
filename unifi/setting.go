@@ -77,6 +77,43 @@ func (s *Setting) newFields() (interface{}, error) {
 	return nil, fmt.Errorf("unexpected key %q", s.Key)
 }
 
+func (c *client) SetSetting(ctx context.Context, site, key string, reqBody interface{}) (interface{}, error) {
+	var respBody struct {
+		Meta Meta              `json:"meta"`
+		Data []json.RawMessage `json:"data"`
+	}
+	err := c.Post(ctx, fmt.Sprintf("s/%s/set/setting/%s", site, key), reqBody, respBody)
+	if err != nil {
+		return nil, err
+	}
+	var raw json.RawMessage
+	var setting *Setting
+	for _, d := range respBody.Data {
+		err = json.Unmarshal(d, &setting)
+		if err != nil {
+			return nil, err
+		}
+		if setting.Key == key {
+			raw = d
+			break
+		}
+	}
+	if setting == nil {
+		return nil, ErrNotFound
+	}
+	fields, err := setting.newFields()
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(raw, &fields)
+	if err != nil {
+		return nil, err
+	}
+
+	return fields, nil
+}
+
 func (c *client) GetSetting(ctx context.Context, site, key string) (*Setting, interface{}, error) {
 	var respBody struct {
 		Meta Meta              `json:"Meta"`

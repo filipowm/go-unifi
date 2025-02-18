@@ -16,6 +16,8 @@ var (
 	_ json.Marshaler
 )
 
+const SettingConnectivityKey = "connectivity"
+
 type SettingConnectivity struct {
 	ID     string `json:"_id,omitempty"`
 	SiteID string `json:"site_id,omitempty"`
@@ -51,42 +53,23 @@ func (dst *SettingConnectivity) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *client) getSettingConnectivity(ctx context.Context, site string) (*SettingConnectivity, error) {
-	var respBody struct {
-		Meta Meta                  `json:"meta"`
-		Data []SettingConnectivity `json:"data"`
-	}
-
-	err := c.Get(ctx, fmt.Sprintf("s/%s/get/setting/connectivity", site), nil, &respBody)
+// Update SettingConnectivity Experimental! This function is not yet stable and may change in the future.
+func (c *client) GetSettingConnectivity(ctx context.Context, site string) (*SettingConnectivity, error) {
+	s, f, err := c.GetSetting(ctx, site, SettingConnectivityKey)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
+	if s.Key != SettingConnectivityKey {
+		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingConnectivityKey, s.Key)
 	}
-
-	d := respBody.Data[0]
-	return &d, nil
+	return f.(*SettingConnectivity), nil
 }
 
-func (c *client) updateSettingConnectivity(ctx context.Context, site string, d *SettingConnectivity) (*SettingConnectivity, error) {
-	var respBody struct {
-		Meta Meta                  `json:"meta"`
-		Data []SettingConnectivity `json:"data"`
-	}
-
-	d.Key = "connectivity"
-	err := c.Put(ctx, fmt.Sprintf("s/%s/set/setting/connectivity", site), d, &respBody)
+// Update SettingConnectivity Experimental! This function is not yet stable and may change in the future.
+func (c *client) UpdateSettingConnectivity(ctx context.Context, site string, s *SettingConnectivity) (*SettingConnectivity, error) {
+	result, err := c.SetSetting(ctx, site, SettingConnectivityKey, s)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
-	}
-
-	new := respBody.Data[0]
-
-	return &new, nil
+	return result.(*SettingConnectivity), nil
 }

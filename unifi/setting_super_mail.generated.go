@@ -16,6 +16,8 @@ var (
 	_ json.Marshaler
 )
 
+const SettingSuperMailKey = "super_mail"
+
 type SettingSuperMail struct {
 	ID     string `json:"_id,omitempty"`
 	SiteID string `json:"site_id,omitempty"`
@@ -46,42 +48,23 @@ func (dst *SettingSuperMail) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *client) getSettingSuperMail(ctx context.Context, site string) (*SettingSuperMail, error) {
-	var respBody struct {
-		Meta Meta               `json:"meta"`
-		Data []SettingSuperMail `json:"data"`
-	}
-
-	err := c.Get(ctx, fmt.Sprintf("s/%s/get/setting/super_mail", site), nil, &respBody)
+// Update SettingSuperMail Experimental! This function is not yet stable and may change in the future.
+func (c *client) GetSettingSuperMail(ctx context.Context, site string) (*SettingSuperMail, error) {
+	s, f, err := c.GetSetting(ctx, site, SettingSuperMailKey)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
+	if s.Key != SettingSuperMailKey {
+		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingSuperMailKey, s.Key)
 	}
-
-	d := respBody.Data[0]
-	return &d, nil
+	return f.(*SettingSuperMail), nil
 }
 
-func (c *client) updateSettingSuperMail(ctx context.Context, site string, d *SettingSuperMail) (*SettingSuperMail, error) {
-	var respBody struct {
-		Meta Meta               `json:"meta"`
-		Data []SettingSuperMail `json:"data"`
-	}
-
-	d.Key = "super_mail"
-	err := c.Put(ctx, fmt.Sprintf("s/%s/set/setting/super_mail", site), d, &respBody)
+// Update SettingSuperMail Experimental! This function is not yet stable and may change in the future.
+func (c *client) UpdateSettingSuperMail(ctx context.Context, site string, s *SettingSuperMail) (*SettingSuperMail, error) {
+	result, err := c.SetSetting(ctx, site, SettingSuperMailKey, s)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
-	}
-
-	new := respBody.Data[0]
-
-	return &new, nil
+	return result.(*SettingSuperMail), nil
 }

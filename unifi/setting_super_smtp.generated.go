@@ -16,6 +16,8 @@ var (
 	_ json.Marshaler
 )
 
+const SettingSuperSmtpKey = "super_smtp"
+
 type SettingSuperSmtp struct {
 	ID     string `json:"_id,omitempty"`
 	SiteID string `json:"site_id,omitempty"`
@@ -57,42 +59,23 @@ func (dst *SettingSuperSmtp) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *client) getSettingSuperSmtp(ctx context.Context, site string) (*SettingSuperSmtp, error) {
-	var respBody struct {
-		Meta Meta               `json:"meta"`
-		Data []SettingSuperSmtp `json:"data"`
-	}
-
-	err := c.Get(ctx, fmt.Sprintf("s/%s/get/setting/super_smtp", site), nil, &respBody)
+// Update SettingSuperSmtp Experimental! This function is not yet stable and may change in the future.
+func (c *client) GetSettingSuperSmtp(ctx context.Context, site string) (*SettingSuperSmtp, error) {
+	s, f, err := c.GetSetting(ctx, site, SettingSuperSmtpKey)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
+	if s.Key != SettingSuperSmtpKey {
+		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingSuperSmtpKey, s.Key)
 	}
-
-	d := respBody.Data[0]
-	return &d, nil
+	return f.(*SettingSuperSmtp), nil
 }
 
-func (c *client) updateSettingSuperSmtp(ctx context.Context, site string, d *SettingSuperSmtp) (*SettingSuperSmtp, error) {
-	var respBody struct {
-		Meta Meta               `json:"meta"`
-		Data []SettingSuperSmtp `json:"data"`
-	}
-
-	d.Key = "super_smtp"
-	err := c.Put(ctx, fmt.Sprintf("s/%s/set/setting/super_smtp", site), d, &respBody)
+// Update SettingSuperSmtp Experimental! This function is not yet stable and may change in the future.
+func (c *client) UpdateSettingSuperSmtp(ctx context.Context, site string, s *SettingSuperSmtp) (*SettingSuperSmtp, error) {
+	result, err := c.SetSetting(ctx, site, SettingSuperSmtpKey, s)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
-	}
-
-	new := respBody.Data[0]
-
-	return &new, nil
+	return result.(*SettingSuperSmtp), nil
 }

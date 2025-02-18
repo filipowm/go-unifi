@@ -16,6 +16,8 @@ var (
 	_ json.Marshaler
 )
 
+const SettingPortaKey = "porta"
+
 type SettingPorta struct {
 	ID     string `json:"_id,omitempty"`
 	SiteID string `json:"site_id,omitempty"`
@@ -46,42 +48,23 @@ func (dst *SettingPorta) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *client) getSettingPorta(ctx context.Context, site string) (*SettingPorta, error) {
-	var respBody struct {
-		Meta Meta           `json:"meta"`
-		Data []SettingPorta `json:"data"`
-	}
-
-	err := c.Get(ctx, fmt.Sprintf("s/%s/get/setting/porta", site), nil, &respBody)
+// Update SettingPorta Experimental! This function is not yet stable and may change in the future.
+func (c *client) GetSettingPorta(ctx context.Context, site string) (*SettingPorta, error) {
+	s, f, err := c.GetSetting(ctx, site, SettingPortaKey)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
+	if s.Key != SettingPortaKey {
+		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingPortaKey, s.Key)
 	}
-
-	d := respBody.Data[0]
-	return &d, nil
+	return f.(*SettingPorta), nil
 }
 
-func (c *client) updateSettingPorta(ctx context.Context, site string, d *SettingPorta) (*SettingPorta, error) {
-	var respBody struct {
-		Meta Meta           `json:"meta"`
-		Data []SettingPorta `json:"data"`
-	}
-
-	d.Key = "porta"
-	err := c.Put(ctx, fmt.Sprintf("s/%s/set/setting/porta", site), d, &respBody)
+// Update SettingPorta Experimental! This function is not yet stable and may change in the future.
+func (c *client) UpdateSettingPorta(ctx context.Context, site string, s *SettingPorta) (*SettingPorta, error) {
+	result, err := c.SetSetting(ctx, site, SettingPortaKey, s)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
-	}
-
-	new := respBody.Data[0]
-
-	return &new, nil
+	return result.(*SettingPorta), nil
 }

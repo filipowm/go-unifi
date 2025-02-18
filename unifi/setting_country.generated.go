@@ -16,6 +16,8 @@ var (
 	_ json.Marshaler
 )
 
+const SettingCountryKey = "country"
+
 type SettingCountry struct {
 	ID     string `json:"_id,omitempty"`
 	SiteID string `json:"site_id,omitempty"`
@@ -49,42 +51,23 @@ func (dst *SettingCountry) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *client) getSettingCountry(ctx context.Context, site string) (*SettingCountry, error) {
-	var respBody struct {
-		Meta Meta             `json:"meta"`
-		Data []SettingCountry `json:"data"`
-	}
-
-	err := c.Get(ctx, fmt.Sprintf("s/%s/get/setting/country", site), nil, &respBody)
+// Update SettingCountry Experimental! This function is not yet stable and may change in the future.
+func (c *client) GetSettingCountry(ctx context.Context, site string) (*SettingCountry, error) {
+	s, f, err := c.GetSetting(ctx, site, SettingCountryKey)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
+	if s.Key != SettingCountryKey {
+		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingCountryKey, s.Key)
 	}
-
-	d := respBody.Data[0]
-	return &d, nil
+	return f.(*SettingCountry), nil
 }
 
-func (c *client) updateSettingCountry(ctx context.Context, site string, d *SettingCountry) (*SettingCountry, error) {
-	var respBody struct {
-		Meta Meta             `json:"meta"`
-		Data []SettingCountry `json:"data"`
-	}
-
-	d.Key = "country"
-	err := c.Put(ctx, fmt.Sprintf("s/%s/set/setting/country", site), d, &respBody)
+// Update SettingCountry Experimental! This function is not yet stable and may change in the future.
+func (c *client) UpdateSettingCountry(ctx context.Context, site string, s *SettingCountry) (*SettingCountry, error) {
+	result, err := c.SetSetting(ctx, site, SettingCountryKey, s)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
-	}
-
-	new := respBody.Data[0]
-
-	return &new, nil
+	return result.(*SettingCountry), nil
 }

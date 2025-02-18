@@ -16,6 +16,8 @@ var (
 	_ json.Marshaler
 )
 
+const SettingSuperEventsKey = "super_events"
+
 type SettingSuperEvents struct {
 	ID     string `json:"_id,omitempty"`
 	SiteID string `json:"site_id,omitempty"`
@@ -46,42 +48,23 @@ func (dst *SettingSuperEvents) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *client) getSettingSuperEvents(ctx context.Context, site string) (*SettingSuperEvents, error) {
-	var respBody struct {
-		Meta Meta                 `json:"meta"`
-		Data []SettingSuperEvents `json:"data"`
-	}
-
-	err := c.Get(ctx, fmt.Sprintf("s/%s/get/setting/super_events", site), nil, &respBody)
+// Update SettingSuperEvents Experimental! This function is not yet stable and may change in the future.
+func (c *client) GetSettingSuperEvents(ctx context.Context, site string) (*SettingSuperEvents, error) {
+	s, f, err := c.GetSetting(ctx, site, SettingSuperEventsKey)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
+	if s.Key != SettingSuperEventsKey {
+		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingSuperEventsKey, s.Key)
 	}
-
-	d := respBody.Data[0]
-	return &d, nil
+	return f.(*SettingSuperEvents), nil
 }
 
-func (c *client) updateSettingSuperEvents(ctx context.Context, site string, d *SettingSuperEvents) (*SettingSuperEvents, error) {
-	var respBody struct {
-		Meta Meta                 `json:"meta"`
-		Data []SettingSuperEvents `json:"data"`
-	}
-
-	d.Key = "super_events"
-	err := c.Put(ctx, fmt.Sprintf("s/%s/set/setting/super_events", site), d, &respBody)
+// Update SettingSuperEvents Experimental! This function is not yet stable and may change in the future.
+func (c *client) UpdateSettingSuperEvents(ctx context.Context, site string, s *SettingSuperEvents) (*SettingSuperEvents, error) {
+	result, err := c.SetSetting(ctx, site, SettingSuperEventsKey, s)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
-	}
-
-	new := respBody.Data[0]
-
-	return &new, nil
+	return result.(*SettingSuperEvents), nil
 }

@@ -16,6 +16,8 @@ var (
 	_ json.Marshaler
 )
 
+const SettingMagicSiteToSiteVpnKey = "magic_site_to_site_vpn"
+
 type SettingMagicSiteToSiteVpn struct {
 	ID     string `json:"_id,omitempty"`
 	SiteID string `json:"site_id,omitempty"`
@@ -46,42 +48,23 @@ func (dst *SettingMagicSiteToSiteVpn) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *client) getSettingMagicSiteToSiteVpn(ctx context.Context, site string) (*SettingMagicSiteToSiteVpn, error) {
-	var respBody struct {
-		Meta Meta                        `json:"meta"`
-		Data []SettingMagicSiteToSiteVpn `json:"data"`
-	}
-
-	err := c.Get(ctx, fmt.Sprintf("s/%s/get/setting/magic_site_to_site_vpn", site), nil, &respBody)
+// Update SettingMagicSiteToSiteVpn Experimental! This function is not yet stable and may change in the future.
+func (c *client) GetSettingMagicSiteToSiteVpn(ctx context.Context, site string) (*SettingMagicSiteToSiteVpn, error) {
+	s, f, err := c.GetSetting(ctx, site, SettingMagicSiteToSiteVpnKey)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
+	if s.Key != SettingMagicSiteToSiteVpnKey {
+		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingMagicSiteToSiteVpnKey, s.Key)
 	}
-
-	d := respBody.Data[0]
-	return &d, nil
+	return f.(*SettingMagicSiteToSiteVpn), nil
 }
 
-func (c *client) updateSettingMagicSiteToSiteVpn(ctx context.Context, site string, d *SettingMagicSiteToSiteVpn) (*SettingMagicSiteToSiteVpn, error) {
-	var respBody struct {
-		Meta Meta                        `json:"meta"`
-		Data []SettingMagicSiteToSiteVpn `json:"data"`
-	}
-
-	d.Key = "magic_site_to_site_vpn"
-	err := c.Put(ctx, fmt.Sprintf("s/%s/set/setting/magic_site_to_site_vpn", site), d, &respBody)
+// Update SettingMagicSiteToSiteVpn Experimental! This function is not yet stable and may change in the future.
+func (c *client) UpdateSettingMagicSiteToSiteVpn(ctx context.Context, site string, s *SettingMagicSiteToSiteVpn) (*SettingMagicSiteToSiteVpn, error) {
+	result, err := c.SetSetting(ctx, site, SettingMagicSiteToSiteVpnKey, s)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
-	}
-
-	new := respBody.Data[0]
-
-	return &new, nil
+	return result.(*SettingMagicSiteToSiteVpn), nil
 }

@@ -12,7 +12,6 @@ customizations:
       - "Map"
       - "MediaFile"
       - "ScheduleTask"
-      - "Setting*"  # Exclude all resources that start with "Setting"
       - "SpatialRecord"
       - "Tag"
       - "VirtualDevice"

@@ -16,6 +16,8 @@ var (
 	_ json.Marshaler
 )
 
+const SettingSslInspectionKey = "ssl_inspection"
+
 type SettingSslInspection struct {
 	ID     string `json:"_id,omitempty"`
 	SiteID string `json:"site_id,omitempty"`
@@ -46,42 +48,23 @@ func (dst *SettingSslInspection) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *client) getSettingSslInspection(ctx context.Context, site string) (*SettingSslInspection, error) {
-	var respBody struct {
-		Meta Meta                   `json:"meta"`
-		Data []SettingSslInspection `json:"data"`
-	}
-
-	err := c.Get(ctx, fmt.Sprintf("s/%s/get/setting/ssl_inspection", site), nil, &respBody)
+// Update SettingSslInspection Experimental! This function is not yet stable and may change in the future.
+func (c *client) GetSettingSslInspection(ctx context.Context, site string) (*SettingSslInspection, error) {
+	s, f, err := c.GetSetting(ctx, site, SettingSslInspectionKey)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
+	if s.Key != SettingSslInspectionKey {
+		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingSslInspectionKey, s.Key)
 	}
-
-	d := respBody.Data[0]
-	return &d, nil
+	return f.(*SettingSslInspection), nil
 }
 
-func (c *client) updateSettingSslInspection(ctx context.Context, site string, d *SettingSslInspection) (*SettingSslInspection, error) {
-	var respBody struct {
-		Meta Meta                   `json:"meta"`
-		Data []SettingSslInspection `json:"data"`
-	}
-
-	d.Key = "ssl_inspection"
-	err := c.Put(ctx, fmt.Sprintf("s/%s/set/setting/ssl_inspection", site), d, &respBody)
+// Update SettingSslInspection Experimental! This function is not yet stable and may change in the future.
+func (c *client) UpdateSettingSslInspection(ctx context.Context, site string, s *SettingSslInspection) (*SettingSslInspection, error) {
+	result, err := c.SetSetting(ctx, site, SettingSslInspectionKey, s)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
-	}
-
-	new := respBody.Data[0]
-
-	return &new, nil
+	return result.(*SettingSslInspection), nil
 }

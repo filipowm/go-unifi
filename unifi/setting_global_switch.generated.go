@@ -16,6 +16,8 @@ var (
 	_ json.Marshaler
 )
 
+const SettingGlobalSwitchKey = "global_switch"
+
 type SettingGlobalSwitch struct {
 	ID     string `json:"_id,omitempty"`
 	SiteID string `json:"site_id,omitempty"`
@@ -76,42 +78,23 @@ func (dst *SettingGlobalSwitchAclL3Isolation) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *client) getSettingGlobalSwitch(ctx context.Context, site string) (*SettingGlobalSwitch, error) {
-	var respBody struct {
-		Meta Meta                  `json:"meta"`
-		Data []SettingGlobalSwitch `json:"data"`
-	}
-
-	err := c.Get(ctx, fmt.Sprintf("s/%s/get/setting/global_switch", site), nil, &respBody)
+// Update SettingGlobalSwitch Experimental! This function is not yet stable and may change in the future.
+func (c *client) GetSettingGlobalSwitch(ctx context.Context, site string) (*SettingGlobalSwitch, error) {
+	s, f, err := c.GetSetting(ctx, site, SettingGlobalSwitchKey)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
+	if s.Key != SettingGlobalSwitchKey {
+		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingGlobalSwitchKey, s.Key)
 	}
-
-	d := respBody.Data[0]
-	return &d, nil
+	return f.(*SettingGlobalSwitch), nil
 }
 
-func (c *client) updateSettingGlobalSwitch(ctx context.Context, site string, d *SettingGlobalSwitch) (*SettingGlobalSwitch, error) {
-	var respBody struct {
-		Meta Meta                  `json:"meta"`
-		Data []SettingGlobalSwitch `json:"data"`
-	}
-
-	d.Key = "global_switch"
-	err := c.Put(ctx, fmt.Sprintf("s/%s/set/setting/global_switch", site), d, &respBody)
+// Update SettingGlobalSwitch Experimental! This function is not yet stable and may change in the future.
+func (c *client) UpdateSettingGlobalSwitch(ctx context.Context, site string, s *SettingGlobalSwitch) (*SettingGlobalSwitch, error) {
+	result, err := c.SetSetting(ctx, site, SettingGlobalSwitchKey, s)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
-	}
-
-	new := respBody.Data[0]
-
-	return &new, nil
+	return result.(*SettingGlobalSwitch), nil
 }

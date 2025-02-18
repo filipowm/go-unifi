@@ -16,6 +16,8 @@ var (
 	_ json.Marshaler
 )
 
+const SettingDpiKey = "dpi"
+
 type SettingDpi struct {
 	ID     string `json:"_id,omitempty"`
 	SiteID string `json:"site_id,omitempty"`
@@ -47,42 +49,23 @@ func (dst *SettingDpi) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *client) getSettingDpi(ctx context.Context, site string) (*SettingDpi, error) {
-	var respBody struct {
-		Meta Meta         `json:"meta"`
-		Data []SettingDpi `json:"data"`
-	}
-
-	err := c.Get(ctx, fmt.Sprintf("s/%s/get/setting/dpi", site), nil, &respBody)
+// Update SettingDpi Experimental! This function is not yet stable and may change in the future.
+func (c *client) GetSettingDpi(ctx context.Context, site string) (*SettingDpi, error) {
+	s, f, err := c.GetSetting(ctx, site, SettingDpiKey)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
+	if s.Key != SettingDpiKey {
+		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingDpiKey, s.Key)
 	}
-
-	d := respBody.Data[0]
-	return &d, nil
+	return f.(*SettingDpi), nil
 }
 
-func (c *client) updateSettingDpi(ctx context.Context, site string, d *SettingDpi) (*SettingDpi, error) {
-	var respBody struct {
-		Meta Meta         `json:"meta"`
-		Data []SettingDpi `json:"data"`
-	}
-
-	d.Key = "dpi"
-	err := c.Put(ctx, fmt.Sprintf("s/%s/set/setting/dpi", site), d, &respBody)
+// Update SettingDpi Experimental! This function is not yet stable and may change in the future.
+func (c *client) UpdateSettingDpi(ctx context.Context, site string, s *SettingDpi) (*SettingDpi, error) {
+	result, err := c.SetSetting(ctx, site, SettingDpiKey, s)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
-	}
-
-	new := respBody.Data[0]
-
-	return &new, nil
+	return result.(*SettingDpi), nil
 }

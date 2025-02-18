@@ -16,6 +16,8 @@ var (
 	_ json.Marshaler
 )
 
+const SettingSuperCloudaccessKey = "super_cloudaccess"
+
 type SettingSuperCloudaccess struct {
 	ID     string `json:"_id,omitempty"`
 	SiteID string `json:"site_id,omitempty"`
@@ -52,42 +54,23 @@ func (dst *SettingSuperCloudaccess) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *client) getSettingSuperCloudaccess(ctx context.Context, site string) (*SettingSuperCloudaccess, error) {
-	var respBody struct {
-		Meta Meta                      `json:"meta"`
-		Data []SettingSuperCloudaccess `json:"data"`
-	}
-
-	err := c.Get(ctx, fmt.Sprintf("s/%s/get/setting/super_cloudaccess", site), nil, &respBody)
+// Update SettingSuperCloudaccess Experimental! This function is not yet stable and may change in the future.
+func (c *client) GetSettingSuperCloudaccess(ctx context.Context, site string) (*SettingSuperCloudaccess, error) {
+	s, f, err := c.GetSetting(ctx, site, SettingSuperCloudaccessKey)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
+	if s.Key != SettingSuperCloudaccessKey {
+		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingSuperCloudaccessKey, s.Key)
 	}
-
-	d := respBody.Data[0]
-	return &d, nil
+	return f.(*SettingSuperCloudaccess), nil
 }
 
-func (c *client) updateSettingSuperCloudaccess(ctx context.Context, site string, d *SettingSuperCloudaccess) (*SettingSuperCloudaccess, error) {
-	var respBody struct {
-		Meta Meta                      `json:"meta"`
-		Data []SettingSuperCloudaccess `json:"data"`
-	}
-
-	d.Key = "super_cloudaccess"
-	err := c.Put(ctx, fmt.Sprintf("s/%s/set/setting/super_cloudaccess", site), d, &respBody)
+// Update SettingSuperCloudaccess Experimental! This function is not yet stable and may change in the future.
+func (c *client) UpdateSettingSuperCloudaccess(ctx context.Context, site string, s *SettingSuperCloudaccess) (*SettingSuperCloudaccess, error) {
+	result, err := c.SetSetting(ctx, site, SettingSuperCloudaccessKey, s)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
-	}
-
-	new := respBody.Data[0]
-
-	return &new, nil
+	return result.(*SettingSuperCloudaccess), nil
 }

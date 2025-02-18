@@ -16,6 +16,8 @@ var (
 	_ json.Marshaler
 )
 
+const SettingNtpKey = "ntp"
+
 type SettingNtp struct {
 	ID     string `json:"_id,omitempty"`
 	SiteID string `json:"site_id,omitempty"`
@@ -50,42 +52,23 @@ func (dst *SettingNtp) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *client) getSettingNtp(ctx context.Context, site string) (*SettingNtp, error) {
-	var respBody struct {
-		Meta Meta         `json:"meta"`
-		Data []SettingNtp `json:"data"`
-	}
-
-	err := c.Get(ctx, fmt.Sprintf("s/%s/get/setting/ntp", site), nil, &respBody)
+// Update SettingNtp Experimental! This function is not yet stable and may change in the future.
+func (c *client) GetSettingNtp(ctx context.Context, site string) (*SettingNtp, error) {
+	s, f, err := c.GetSetting(ctx, site, SettingNtpKey)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
+	if s.Key != SettingNtpKey {
+		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingNtpKey, s.Key)
 	}
-
-	d := respBody.Data[0]
-	return &d, nil
+	return f.(*SettingNtp), nil
 }
 
-func (c *client) updateSettingNtp(ctx context.Context, site string, d *SettingNtp) (*SettingNtp, error) {
-	var respBody struct {
-		Meta Meta         `json:"meta"`
-		Data []SettingNtp `json:"data"`
-	}
-
-	d.Key = "ntp"
-	err := c.Put(ctx, fmt.Sprintf("s/%s/set/setting/ntp", site), d, &respBody)
+// Update SettingNtp Experimental! This function is not yet stable and may change in the future.
+func (c *client) UpdateSettingNtp(ctx context.Context, site string, s *SettingNtp) (*SettingNtp, error) {
+	result, err := c.SetSetting(ctx, site, SettingNtpKey, s)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
-	}
-
-	new := respBody.Data[0]
-
-	return &new, nil
+	return result.(*SettingNtp), nil
 }

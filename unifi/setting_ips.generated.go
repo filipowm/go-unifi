@@ -16,6 +16,8 @@ var (
 	_ json.Marshaler
 )
 
+const SettingIpsKey = "ips"
+
 type SettingIps struct {
 	ID     string `json:"_id,omitempty"`
 	SiteID string `json:"site_id,omitempty"`
@@ -222,42 +224,23 @@ func (dst *SettingIpsWhitelist) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *client) getSettingIps(ctx context.Context, site string) (*SettingIps, error) {
-	var respBody struct {
-		Meta Meta         `json:"meta"`
-		Data []SettingIps `json:"data"`
-	}
-
-	err := c.Get(ctx, fmt.Sprintf("s/%s/get/setting/ips", site), nil, &respBody)
+// Update SettingIps Experimental! This function is not yet stable and may change in the future.
+func (c *client) GetSettingIps(ctx context.Context, site string) (*SettingIps, error) {
+	s, f, err := c.GetSetting(ctx, site, SettingIpsKey)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
+	if s.Key != SettingIpsKey {
+		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingIpsKey, s.Key)
 	}
-
-	d := respBody.Data[0]
-	return &d, nil
+	return f.(*SettingIps), nil
 }
 
-func (c *client) updateSettingIps(ctx context.Context, site string, d *SettingIps) (*SettingIps, error) {
-	var respBody struct {
-		Meta Meta         `json:"meta"`
-		Data []SettingIps `json:"data"`
-	}
-
-	d.Key = "ips"
-	err := c.Put(ctx, fmt.Sprintf("s/%s/set/setting/ips", site), d, &respBody)
+// Update SettingIps Experimental! This function is not yet stable and may change in the future.
+func (c *client) UpdateSettingIps(ctx context.Context, site string, s *SettingIps) (*SettingIps, error) {
+	result, err := c.SetSetting(ctx, site, SettingIpsKey, s)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
-	}
-
-	new := respBody.Data[0]
-
-	return &new, nil
+	return result.(*SettingIps), nil
 }

@@ -16,6 +16,8 @@ var (
 	_ json.Marshaler
 )
 
+const SettingEtherLightingKey = "ether_lighting"
+
 type SettingEtherLighting struct {
 	ID     string `json:"_id,omitempty"`
 	SiteID string `json:"site_id,omitempty"`
@@ -89,42 +91,23 @@ func (dst *SettingEtherLightingSpeedOverrides) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *client) getSettingEtherLighting(ctx context.Context, site string) (*SettingEtherLighting, error) {
-	var respBody struct {
-		Meta Meta                   `json:"meta"`
-		Data []SettingEtherLighting `json:"data"`
-	}
-
-	err := c.Get(ctx, fmt.Sprintf("s/%s/get/setting/ether_lighting", site), nil, &respBody)
+// Update SettingEtherLighting Experimental! This function is not yet stable and may change in the future.
+func (c *client) GetSettingEtherLighting(ctx context.Context, site string) (*SettingEtherLighting, error) {
+	s, f, err := c.GetSetting(ctx, site, SettingEtherLightingKey)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
+	if s.Key != SettingEtherLightingKey {
+		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingEtherLightingKey, s.Key)
 	}
-
-	d := respBody.Data[0]
-	return &d, nil
+	return f.(*SettingEtherLighting), nil
 }
 
-func (c *client) updateSettingEtherLighting(ctx context.Context, site string, d *SettingEtherLighting) (*SettingEtherLighting, error) {
-	var respBody struct {
-		Meta Meta                   `json:"meta"`
-		Data []SettingEtherLighting `json:"data"`
-	}
-
-	d.Key = "ether_lighting"
-	err := c.Put(ctx, fmt.Sprintf("s/%s/set/setting/ether_lighting", site), d, &respBody)
+// Update SettingEtherLighting Experimental! This function is not yet stable and may change in the future.
+func (c *client) UpdateSettingEtherLighting(ctx context.Context, site string, s *SettingEtherLighting) (*SettingEtherLighting, error) {
+	result, err := c.SetSetting(ctx, site, SettingEtherLightingKey, s)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
-	}
-
-	new := respBody.Data[0]
-
-	return &new, nil
+	return result.(*SettingEtherLighting), nil
 }
