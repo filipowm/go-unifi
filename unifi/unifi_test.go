@@ -52,7 +52,7 @@ func TestNewBareClient(t *testing.T) {
 	c, err := newBareClient(&ClientConfig{
 		URL:       localUrl,
 		User:      "admin",
-		Pass:      "password",
+		Password:  "password",
 		VerifySSL: false,
 	})
 	require.Error(t, err)
@@ -314,7 +314,7 @@ func TestUnifiIntegrationUserPassInjected(t *testing.T) {
 	c, _ := newBareClient(&ClientConfig{
 		URL:          srv.URL,
 		User:         "test-user",
-		Pass:         "test-pass",
+		Password:     "test-pass",
 		Interceptors: interceptor.AsList(),
 	})
 	c.apiPaths = &NewStyleAPI
@@ -360,7 +360,7 @@ func TestCsrfHandling(t *testing.T) {
 	c, _ := newBareClient(&ClientConfig{
 		URL:          srv.URL,
 		User:         "test-user",
-		Pass:         "test-pass",
+		Password:     "test-pass",
 		Interceptors: interceptor.AsList(),
 	})
 	c.apiPaths = &NewStyleAPI
@@ -425,10 +425,10 @@ func TestAuthConfigurationValidation(t *testing.T) {
 			t.Parallel()
 			// given
 			cc := &ClientConfig{
-				URL:    testUrl,
-				User:   tc.User,
-				Pass:   tc.Pass,
-				APIKey: tc.APIKey,
+				URL:      testUrl,
+				User:     tc.User,
+				Password: tc.Pass,
+				APIKey:   tc.APIKey,
 			}
 
 			// when
