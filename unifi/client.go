@@ -48,8 +48,8 @@ Fields:
 
 	URL:           The base URL of the UniFi controller. Must be a valid URL and should not include the `/api` suffix.
 	APIKey:        An API key used for authentication. Provide this if user/password credentials are not used.
-	User:          The username for user/password authentication. Must be provided with Pass if APIKey is not used.
-	Pass:          The password for user/password authentication. Must be provided with User if APIKey is not used.
+	User:          The username for user/password authentication. Must be provided with Password if APIKey is not used.
+	Password:          The password for user/password authentication. Must be provided with User if APIKey is not used.
 	Timeout:       The maximum duration to wait for responses; default is no timeout.
 	VerifySSL:     When false, disables SSL certificate verification.
 	Interceptors:  A slice of ClientInterceptor implementations that can modify requests and responses.
@@ -61,9 +61,9 @@ Fields:
 */
 type ClientConfig struct {
 	URL            string        `validate:"required,http_url"`
-	APIKey         string        `validate:"required_without_all=User Pass"`
-	User           string        `validate:"excluded_with=APIKey,required_with=Pass"`
-	Pass           string        `validate:"excluded_with=APIKey,required_with=User"`
+	APIKey         string        `validate:"required_without_all=User Password"`
+	User           string        `validate:"excluded_with=APIKey,required_with=Password"`
+	Password       string        `validate:"excluded_with=APIKey,required_with=User"`
 	Timeout        time.Duration // How long to wait for replies, default: forever.
 	VerifySSL      bool
 	Interceptors   []ClientInterceptor
@@ -99,14 +99,14 @@ func (a APIKeyCredentials) GetPass() string   { return "" }
 
 // UserPassCredentials holds user/password authentication.
 type UserPassCredentials struct {
-	User string
-	Pass string
+	User     string
+	Password string
 }
 
 func (u UserPassCredentials) IsAPIKey() bool    { return false }
 func (u UserPassCredentials) GetAPIKey() string { return "" }
 func (u UserPassCredentials) GetUser() string   { return u.User }
-func (u UserPassCredentials) GetPass() string   { return u.Pass }
+func (u UserPassCredentials) GetPass() string   { return u.Password }
 
 // client represents a UniFi client.
 type client struct {
@@ -185,7 +185,7 @@ func newClientFromConfig(config *ClientConfig, v *validator) (*client, error) {
 		credentials = APIKeyCredentials{APIKey: config.APIKey}
 		interceptors = append(interceptors, &APIKeyAuthInterceptor{apiKey: config.APIKey})
 	} else {
-		credentials = UserPassCredentials{User: config.User, Pass: config.Pass}
+		credentials = UserPassCredentials{User: config.User, Password: config.Password}
 		interceptors = append(interceptors, &CSRFInterceptor{})
 	}
 	if len(config.UserAgent) == 0 {
