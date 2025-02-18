@@ -2,19 +2,7 @@
 customizations:
   client:
     excludeResources:
-      - "BroadcastGroup"
-      - "ChannelPlan"
-      - "Dashboard"
-      - "DHCPOption"
       - "Dpi*"
-      - "HeatMap*"
-      - "Hotspot*"
-      - "Map"
-      - "MediaFile"
-      - "ScheduleTask"
-      - "SpatialRecord"
-      - "Tag"
-      - "VirtualDevice"
     functions:
       - name: "Login"
         comment: "Login logs in to the controller. Useful only for user/password authentication."
