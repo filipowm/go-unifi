@@ -1,4 +1,5 @@
 # UniFi Go SDK
+[![Docs](https://img.shields.io/badge/docs-reference-blue)](https://pkg.go.dev/github.com/filipowm/go-unifi)
 [![GoDoc](https://godoc.org/github.com/filipowm/go-unifi?status.svg)](https://godoc.org/github.com/filipowm/go-unifi)
 ![GitHub Release](https://img.shields.io/github/v/release/filipowm/go-unifi)
 ![GitHub branch check runs](https://img.shields.io/github/check-runs/filipowm/go-unifi/main)
@@ -10,11 +11,17 @@ but can be used independently for any Go project requiring UniFi Network Control
 ## Features
 
 - Great UniFi Network Controller API coverage through automated code generation and manually added code for undocumented endpoints
+- Easy to use client with support for API Key and username/password authentication
 - Generated data models from UniFi Controller API specifications
 - Daily automated updates to track the latest UniFi Controller versions
-- Easy to use client with support for API Key and username/password authentication
 - Support for multiple UniFi Controller versions
 - Strong typing for all API models with Go structs
+
+## Supported UniFi Controller Versions
+
+Any version after 5.12.35 is supported as of now. **Latest version: 9.0.114**.
+The SDK is updated daily to track the latest UniFi Controller versions. 
+If you encounter any issues with the latest UniFi Controller version, please open an issue.
 
 ## Code Generation
 
@@ -176,15 +183,15 @@ user, err := c.CreateUser(ctx, "site-name", &unifi.User{
 
 ## Plans
 
-- [ ] Increase API coverage, or modify code generation to rely on the official UniFi Controller API specifications
+- [x] Increase API coverage, or modify code generation to rely on the official UniFi Controller API specifications
 - [x] Improve error handling (currently only basic error handling is implemented and error details are not propagated)
 - [x] Improve client code for better usability
 - [x] Support API Key authentication
-- [ ] Generate client code for currently generated API structures, for use within or outside the Terraform provider
+- [x] Generate client code for currently generated API structures, for use within or outside the Terraform provider
 - [ ] Increase test coverage
 - [x] Implement validation for fields and structures
 - [ ] Extend validators for more complex cases
-- [ ] Add more documentation and examples
+- [x] Add more documentation and examples
 - [ ] Bugfixing...
 
 ## Contributing
