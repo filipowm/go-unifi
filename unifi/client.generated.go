@@ -71,6 +71,63 @@ type Client interface {
 
 	// ==== end of client methods for Account resource ====
 
+	// ==== client methods for BroadcastGroup resource ====
+
+	// CreateBroadcastGroup creates a resource
+	CreateBroadcastGroup(ctx context.Context, site string, b *BroadcastGroup) (*BroadcastGroup, error)
+
+	// DeleteBroadcastGroup deletes a resource
+	DeleteBroadcastGroup(ctx context.Context, site string, id string) error
+
+	// GetBroadcastGroup retrieves a resource
+	GetBroadcastGroup(ctx context.Context, site string, id string) (*BroadcastGroup, error)
+
+	// ListBroadcastGroup lists the resources
+	ListBroadcastGroup(ctx context.Context, site string) ([]BroadcastGroup, error)
+
+	// UpdateBroadcastGroup updates a resource
+	UpdateBroadcastGroup(ctx context.Context, site string, b *BroadcastGroup) (*BroadcastGroup, error)
+
+	// ==== end of client methods for BroadcastGroup resource ====
+
+	// ==== client methods for ChannelPlan resource ====
+
+	// CreateChannelPlan creates a resource
+	CreateChannelPlan(ctx context.Context, site string, c *ChannelPlan) (*ChannelPlan, error)
+
+	// DeleteChannelPlan deletes a resource
+	DeleteChannelPlan(ctx context.Context, site string, id string) error
+
+	// GetChannelPlan retrieves a resource
+	GetChannelPlan(ctx context.Context, site string, id string) (*ChannelPlan, error)
+
+	// ListChannelPlan lists the resources
+	ListChannelPlan(ctx context.Context, site string) ([]ChannelPlan, error)
+
+	// UpdateChannelPlan updates a resource
+	UpdateChannelPlan(ctx context.Context, site string, c *ChannelPlan) (*ChannelPlan, error)
+
+	// ==== end of client methods for ChannelPlan resource ====
+
+	// ==== client methods for DHCPOption resource ====
+
+	// CreateDHCPOption creates a resource
+	CreateDHCPOption(ctx context.Context, site string, d *DHCPOption) (*DHCPOption, error)
+
+	// DeleteDHCPOption deletes a resource
+	DeleteDHCPOption(ctx context.Context, site string, id string) error
+
+	// GetDHCPOption retrieves a resource
+	GetDHCPOption(ctx context.Context, site string, id string) (*DHCPOption, error)
+
+	// ListDHCPOption lists the resources
+	ListDHCPOption(ctx context.Context, site string) ([]DHCPOption, error)
+
+	// UpdateDHCPOption updates a resource
+	UpdateDHCPOption(ctx context.Context, site string, d *DHCPOption) (*DHCPOption, error)
+
+	// ==== end of client methods for DHCPOption resource ====
+
 	// ==== client methods for DNSRecord resource ====
 
 	// CreateDNSRecord creates a resource
@@ -89,6 +146,25 @@ type Client interface {
 	UpdateDNSRecord(ctx context.Context, site string, d *DNSRecord) (*DNSRecord, error)
 
 	// ==== end of client methods for DNSRecord resource ====
+
+	// ==== client methods for Dashboard resource ====
+
+	// CreateDashboard creates a resource
+	CreateDashboard(ctx context.Context, site string, d *Dashboard) (*Dashboard, error)
+
+	// DeleteDashboard deletes a resource
+	DeleteDashboard(ctx context.Context, site string, id string) error
+
+	// GetDashboard retrieves a resource
+	GetDashboard(ctx context.Context, site string, id string) (*Dashboard, error)
+
+	// ListDashboard lists the resources
+	ListDashboard(ctx context.Context, site string) ([]Dashboard, error)
+
+	// UpdateDashboard updates a resource
+	UpdateDashboard(ctx context.Context, site string, d *Dashboard) (*Dashboard, error)
+
+	// ==== end of client methods for Dashboard resource ====
 
 	// ==== client methods for Device resource ====
 
@@ -175,6 +251,139 @@ type Client interface {
 	UpdateFirewallRule(ctx context.Context, site string, f *FirewallRule) (*FirewallRule, error)
 
 	// ==== end of client methods for FirewallRule resource ====
+
+	// ==== client methods for HeatMap resource ====
+
+	// CreateHeatMap creates a resource
+	CreateHeatMap(ctx context.Context, site string, h *HeatMap) (*HeatMap, error)
+
+	// DeleteHeatMap deletes a resource
+	DeleteHeatMap(ctx context.Context, site string, id string) error
+
+	// GetHeatMap retrieves a resource
+	GetHeatMap(ctx context.Context, site string, id string) (*HeatMap, error)
+
+	// ListHeatMap lists the resources
+	ListHeatMap(ctx context.Context, site string) ([]HeatMap, error)
+
+	// UpdateHeatMap updates a resource
+	UpdateHeatMap(ctx context.Context, site string, h *HeatMap) (*HeatMap, error)
+
+	// ==== client methods for HeatMapPoint resource ====
+
+	// CreateHeatMapPoint creates a resource
+	CreateHeatMapPoint(ctx context.Context, site string, h *HeatMapPoint) (*HeatMapPoint, error)
+
+	// DeleteHeatMapPoint deletes a resource
+	DeleteHeatMapPoint(ctx context.Context, site string, id string) error
+
+	// GetHeatMapPoint retrieves a resource
+	GetHeatMapPoint(ctx context.Context, site string, id string) (*HeatMapPoint, error)
+
+	// ListHeatMapPoint lists the resources
+	ListHeatMapPoint(ctx context.Context, site string) ([]HeatMapPoint, error)
+
+	// UpdateHeatMapPoint updates a resource
+	UpdateHeatMapPoint(ctx context.Context, site string, h *HeatMapPoint) (*HeatMapPoint, error)
+
+	// ==== end of client methods for HeatMapPoint resource ====
+
+	// ==== end of client methods for HeatMap resource ====
+
+	// ==== client methods for Hotspot2Conf resource ====
+
+	// CreateHotspot2Conf creates a resource
+	CreateHotspot2Conf(ctx context.Context, site string, h *Hotspot2Conf) (*Hotspot2Conf, error)
+
+	// DeleteHotspot2Conf deletes a resource
+	DeleteHotspot2Conf(ctx context.Context, site string, id string) error
+
+	// GetHotspot2Conf retrieves a resource
+	GetHotspot2Conf(ctx context.Context, site string, id string) (*Hotspot2Conf, error)
+
+	// ListHotspot2Conf lists the resources
+	ListHotspot2Conf(ctx context.Context, site string) ([]Hotspot2Conf, error)
+
+	// UpdateHotspot2Conf updates a resource
+	UpdateHotspot2Conf(ctx context.Context, site string, h *Hotspot2Conf) (*Hotspot2Conf, error)
+
+	// ==== end of client methods for Hotspot2Conf resource ====
+
+	// ==== client methods for HotspotOp resource ====
+
+	// CreateHotspotOp creates a resource
+	CreateHotspotOp(ctx context.Context, site string, h *HotspotOp) (*HotspotOp, error)
+
+	// DeleteHotspotOp deletes a resource
+	DeleteHotspotOp(ctx context.Context, site string, id string) error
+
+	// GetHotspotOp retrieves a resource
+	GetHotspotOp(ctx context.Context, site string, id string) (*HotspotOp, error)
+
+	// ListHotspotOp lists the resources
+	ListHotspotOp(ctx context.Context, site string) ([]HotspotOp, error)
+
+	// UpdateHotspotOp updates a resource
+	UpdateHotspotOp(ctx context.Context, site string, h *HotspotOp) (*HotspotOp, error)
+
+	// ==== end of client methods for HotspotOp resource ====
+
+	// ==== client methods for HotspotPackage resource ====
+
+	// CreateHotspotPackage creates a resource
+	CreateHotspotPackage(ctx context.Context, site string, h *HotspotPackage) (*HotspotPackage, error)
+
+	// DeleteHotspotPackage deletes a resource
+	DeleteHotspotPackage(ctx context.Context, site string, id string) error
+
+	// GetHotspotPackage retrieves a resource
+	GetHotspotPackage(ctx context.Context, site string, id string) (*HotspotPackage, error)
+
+	// ListHotspotPackage lists the resources
+	ListHotspotPackage(ctx context.Context, site string) ([]HotspotPackage, error)
+
+	// UpdateHotspotPackage updates a resource
+	UpdateHotspotPackage(ctx context.Context, site string, h *HotspotPackage) (*HotspotPackage, error)
+
+	// ==== end of client methods for HotspotPackage resource ====
+
+	// ==== client methods for Map resource ====
+
+	// CreateMap creates a resource
+	CreateMap(ctx context.Context, site string, m *Map) (*Map, error)
+
+	// DeleteMap deletes a resource
+	DeleteMap(ctx context.Context, site string, id string) error
+
+	// GetMap retrieves a resource
+	GetMap(ctx context.Context, site string, id string) (*Map, error)
+
+	// ListMap lists the resources
+	ListMap(ctx context.Context, site string) ([]Map, error)
+
+	// UpdateMap updates a resource
+	UpdateMap(ctx context.Context, site string, m *Map) (*Map, error)
+
+	// ==== end of client methods for Map resource ====
+
+	// ==== client methods for MediaFile resource ====
+
+	// CreateMediaFile creates a resource
+	CreateMediaFile(ctx context.Context, site string, m *MediaFile) (*MediaFile, error)
+
+	// DeleteMediaFile deletes a resource
+	DeleteMediaFile(ctx context.Context, site string, id string) error
+
+	// GetMediaFile retrieves a resource
+	GetMediaFile(ctx context.Context, site string, id string) (*MediaFile, error)
+
+	// ListMediaFile lists the resources
+	ListMediaFile(ctx context.Context, site string) ([]MediaFile, error)
+
+	// UpdateMediaFile updates a resource
+	UpdateMediaFile(ctx context.Context, site string, m *MediaFile) (*MediaFile, error)
+
+	// ==== end of client methods for MediaFile resource ====
 
 	// ==== client methods for Network resource ====
 
@@ -270,6 +479,25 @@ type Client interface {
 	UpdateRouting(ctx context.Context, site string, r *Routing) (*Routing, error)
 
 	// ==== end of client methods for Routing resource ====
+
+	// ==== client methods for ScheduleTask resource ====
+
+	// CreateScheduleTask creates a resource
+	CreateScheduleTask(ctx context.Context, site string, s *ScheduleTask) (*ScheduleTask, error)
+
+	// DeleteScheduleTask deletes a resource
+	DeleteScheduleTask(ctx context.Context, site string, id string) error
+
+	// GetScheduleTask retrieves a resource
+	GetScheduleTask(ctx context.Context, site string, id string) (*ScheduleTask, error)
+
+	// ListScheduleTask lists the resources
+	ListScheduleTask(ctx context.Context, site string) ([]ScheduleTask, error)
+
+	// UpdateScheduleTask updates a resource
+	UpdateScheduleTask(ctx context.Context, site string, s *ScheduleTask) (*ScheduleTask, error)
+
+	// ==== end of client methods for ScheduleTask resource ====
 
 	GetSetting(ctx context.Context, site string, key string) (*Setting, interface{}, error)
 
@@ -603,9 +831,47 @@ type Client interface {
 
 	UpdateSite(ctx context.Context, name string, description string) ([]Site, error)
 
+	// ==== client methods for SpatialRecord resource ====
+
+	// CreateSpatialRecord creates a resource
+	CreateSpatialRecord(ctx context.Context, site string, s *SpatialRecord) (*SpatialRecord, error)
+
+	// DeleteSpatialRecord deletes a resource
+	DeleteSpatialRecord(ctx context.Context, site string, id string) error
+
+	// GetSpatialRecord retrieves a resource
+	GetSpatialRecord(ctx context.Context, site string, id string) (*SpatialRecord, error)
+
+	// ListSpatialRecord lists the resources
+	ListSpatialRecord(ctx context.Context, site string) ([]SpatialRecord, error)
+
+	// UpdateSpatialRecord updates a resource
+	UpdateSpatialRecord(ctx context.Context, site string, s *SpatialRecord) (*SpatialRecord, error)
+
+	// ==== end of client methods for SpatialRecord resource ====
+
 	GetSystemInfo(ctx context.Context, id string) (*SysInfo, error)
 
 	GetSystemInformation() (*SysInfo, error)
+
+	// ==== client methods for Tag resource ====
+
+	// CreateTag creates a resource
+	CreateTag(ctx context.Context, site string, t *Tag) (*Tag, error)
+
+	// DeleteTag deletes a resource
+	DeleteTag(ctx context.Context, site string, id string) error
+
+	// GetTag retrieves a resource
+	GetTag(ctx context.Context, site string, id string) (*Tag, error)
+
+	// ListTag lists the resources
+	ListTag(ctx context.Context, site string) ([]Tag, error)
+
+	// UpdateTag updates a resource
+	UpdateTag(ctx context.Context, site string, t *Tag) (*Tag, error)
+
+	// ==== end of client methods for Tag resource ====
 
 	// ==== client methods for User resource ====
 
@@ -656,6 +922,25 @@ type Client interface {
 	// ==== end of client methods for UserGroup resource ====
 
 	// ==== end of client methods for User resource ====
+
+	// ==== client methods for VirtualDevice resource ====
+
+	// CreateVirtualDevice creates a resource
+	CreateVirtualDevice(ctx context.Context, site string, v *VirtualDevice) (*VirtualDevice, error)
+
+	// DeleteVirtualDevice deletes a resource
+	DeleteVirtualDevice(ctx context.Context, site string, id string) error
+
+	// GetVirtualDevice retrieves a resource
+	GetVirtualDevice(ctx context.Context, site string, id string) (*VirtualDevice, error)
+
+	// ListVirtualDevice lists the resources
+	ListVirtualDevice(ctx context.Context, site string) ([]VirtualDevice, error)
+
+	// UpdateVirtualDevice updates a resource
+	UpdateVirtualDevice(ctx context.Context, site string, v *VirtualDevice) (*VirtualDevice, error)
+
+	// ==== end of client methods for VirtualDevice resource ====
 
 	// ==== client methods for WLAN resource ====
 
