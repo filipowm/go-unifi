@@ -1,7 +1,7 @@
 # UniFi Go SDK
-[![Docs](https://img.shields.io/badge/docs-reference-blue)](https://pkg.go.dev/github.com/filipowm/go-unifi)
-[![GoDoc](https://godoc.org/github.com/filipowm/go-unifi?status.svg)](https://godoc.org/github.com/filipowm/go-unifi)
 ![GitHub Release](https://img.shields.io/github/v/release/filipowm/go-unifi)
+[![Docs](https://img.shields.io/badge/docs-reference-blue)](https://github.com/filipowm/go-unifi/blob/main/docs/readme.md)
+[![GoDoc](https://godoc.org/github.com/filipowm/go-unifi?status.svg)](https://godoc.org/github.com/filipowm/go-unifi)
 ![GitHub branch check runs](https://img.shields.io/github/check-runs/filipowm/go-unifi/main)
 ![GitHub License](https://img.shields.io/github/license/filipowm/go-unifi)
 

@@ -31,7 +31,7 @@ contributions. 🎉
 
 ## I Have a Question
 
-> If you want to ask a question, we assume that you have read the available [Documentation](https://github.com/filipowm/go-unifi/blob/main/docs/readme.go).
+> If you want to ask a question, we assume that you have read the available [Documentation](https://github.com/filipowm/go-unifi/blob/main/docs/readme.md).
 
 Before you ask a question, it is best to search for existing [Discussions](https://github.com/filipowm/go-unifi/discussions) or [issues](https://github.com/filipowm/go-unifi/issues)
 that might help you. In case you have found a suitable issue and still need clarification, you can write your question in this issue. It is also advisable to search the internet for answers first.
@@ -57,7 +57,7 @@ report. Please complete the following steps in advance to help us fix any potent
 
 - Make sure that you are using the latest version, especially importat in case of minor/patch versions that may contain fixes of your issue.
 - Determine if your bug is really a bug and not an error on your side e.g. using incompatible environment components/versions (Make sure that you have read
-  the [documentation](https://github.com/filipowm/go-unifi/blob/main/docs/readme.go). If you are looking for support, you might want to check [this section](#i-have-a-question)).
+  the [documentation](https://github.com/filipowm/go-unifi/blob/main/docs/readme.md). If you are looking for support, you might want to check [this section](#i-have-a-question)).
 - To see if other users have experienced (and potentially already solved) the same issue you are having, check if there is not already a bug report existing for your bug or error in
   the [bug tracker](https://github.com/filipowm/go-unifi/issues?q=label%3Abug).
 - Also make sure to search the internet (including Stack Overflow, Reddit) to see if users outside of the GitHub community have discussed the issue.
@@ -104,7 +104,7 @@ will help maintainers and the community to understand your suggestion and find r
 #### Before Submitting an Enhancement
 
 - Make sure that you are using the latest version.
-- Read the [documentation](https://github.com/filipowm/go-unifi/blob/main/docs/readme.go) carefully and find out if the functionality is already covered, maybe by an individual configuration.
+- Read the [documentation](https://github.com/filipowm/go-unifi/blob/main/docs/readme.md) carefully and find out if the functionality is already covered, maybe by an individual configuration.
 - Perform a [search](https://github.com/filipowm/go-unifi/issues) to see if the enhancement has already been suggested. If it has, add a comment to the existing issue instead of opening a new one.
 - Find out whether your idea fits with the scope and aims of the project. It's up to you to make a strong case to convince the project's developers of the merits of this feature. Keep in mind that we
   want features that will be useful to the majority of our users and not just a small subset. If you're just targeting a minority of users, consider writing an add-on/plugin library.
