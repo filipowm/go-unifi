@@ -16,6 +16,8 @@ var (
 	_ json.Marshaler
 )
 
+const SettingRadiusKey = "radius"
+
 type SettingRadius struct {
 	ID     string `json:"_id,omitempty"`
 	SiteID string `json:"site_id,omitempty"`
@@ -60,42 +62,23 @@ func (dst *SettingRadius) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *client) getSettingRadius(ctx context.Context, site string) (*SettingRadius, error) {
-	var respBody struct {
-		Meta Meta            `json:"meta"`
-		Data []SettingRadius `json:"data"`
-	}
-
-	err := c.Get(ctx, fmt.Sprintf("s/%s/get/setting/radius", site), nil, &respBody)
+// Update SettingRadius Experimental! This function is not yet stable and may change in the future.
+func (c *client) GetSettingRadius(ctx context.Context, site string) (*SettingRadius, error) {
+	s, f, err := c.GetSetting(ctx, site, SettingRadiusKey)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
+	if s.Key != SettingRadiusKey {
+		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingRadiusKey, s.Key)
 	}
-
-	d := respBody.Data[0]
-	return &d, nil
+	return f.(*SettingRadius), nil
 }
 
-func (c *client) updateSettingRadius(ctx context.Context, site string, d *SettingRadius) (*SettingRadius, error) {
-	var respBody struct {
-		Meta Meta            `json:"meta"`
-		Data []SettingRadius `json:"data"`
-	}
-
-	d.Key = "radius"
-	err := c.Put(ctx, fmt.Sprintf("s/%s/set/setting/radius", site), d, &respBody)
+// Update SettingRadius Experimental! This function is not yet stable and may change in the future.
+func (c *client) UpdateSettingRadius(ctx context.Context, site string, s *SettingRadius) (*SettingRadius, error) {
+	result, err := c.SetSetting(ctx, site, SettingRadiusKey, s)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
-	}
-
-	new := respBody.Data[0]
-
-	return &new, nil
+	return result.(*SettingRadius), nil
 }

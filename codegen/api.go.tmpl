@@ -35,6 +35,10 @@ var (
 	_ json.Marshaler
 )
 
+{{ if .IsSetting }}
+const {{ .StructName }}Key = "{{ .ResourcePath }}"
+{{- end }}
+
 {{ range $k, $v := .Types }}
 type {{ $k }} struct {
 	{{ range $fk, $fv := $v.Fields }}{{ if not $fv }}
@@ -80,16 +84,26 @@ func (c *client) list{{ .StructName }}(ctx context.Context, site string) ([]{{ .
 }
 {{- end }}
 
-func (c *client) get{{ .StructName }}(ctx context.Context, site{{ if not .IsSetting }}, id{{ end }} string) (*{{ .StructName }}, error) {
+{{ if .IsSetting }}
+// Update {{ .StructName }} Experimental! This function is not yet stable and may change in the future.
+func (c *client) Get{{ .StructName }}(ctx context.Context, site string) (*{{ .StructName }}, error) {
+	s, f, err := c.GetSetting(ctx, site, {{ .StructName }}Key)
+    if err != nil {
+    	return nil, err
+    }
+    if s.Key != {{ .StructName }}Key {
+    	return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", {{ .StructName }}Key, s.Key)
+    }
+    return f.(*{{ .StructName }}), nil
+}
+{{- else }}
+func (c *client) get{{ .StructName }}(ctx context.Context, site, id string) (*{{ .StructName }}, error) {
 	var respBody struct {
 		Meta Meta `json:"meta"`
 		Data []{{ .StructName }} `json:"data"`
 	}
-{{ if .IsSetting }}
-	err := c.Get(ctx, fmt.Sprintf("s/%s/get/setting/{{ .ResourcePath }}", site), nil, &respBody)
-{{- else }}
+
 	err := c.Get(ctx, fmt.Sprintf("s/%s/{{ if eq .StructName "Device" }}stat{{ else }}rest{{ end }}/{{ .ResourcePath }}/%s", site, id), nil, &respBody)
-{{- end }}
 	if err != nil {
 		return nil, err
 	}
@@ -101,6 +115,7 @@ func (c *client) get{{ .StructName }}(ctx context.Context, site{{ if not .IsSett
 	d := respBody.Data[0]
 	return &d, nil
 }
+{{- end }}
 
 {{ if not .IsSetting }}
 func (c *client) delete{{ .StructName }}(ctx context.Context, site, id string) error {
@@ -132,17 +147,25 @@ func (c *client) create{{ .StructName }}(ctx context.Context, site string, d *{{
 }
 {{- end }}
 
+{{ if .IsSetting }}
+// Update {{ .StructName }} Experimental! This function is not yet stable and may change in the future.
+func (c *client) Update{{ .StructName }}(ctx context.Context, site string, s *{{ .StructName}}) (*{{ .StructName }}, error) {
+    result, err := c.SetSetting(ctx, site, {{ .StructName }}Key, s)
+    if err != nil {
+    	return nil, err
+    }
+    return result.(*{{ .StructName }}), nil
+}
+
+{{- else }}
+
 func (c *client) update{{ .StructName }}(ctx context.Context, site string, d *{{ .StructName }}) (*{{ .StructName }}, error) {
 	var respBody struct {
 		Meta Meta      `json:"meta"`
 		Data []{{ .StructName }} `json:"data"`
 	}
-{{ if .IsSetting }}
-	d.Key = "{{ .ResourcePath }}"
-	err := c.Put(ctx, fmt.Sprintf("s/%s/set/setting/{{ .ResourcePath }}", site), d, &respBody)
-{{- else }}
+
 	err := c.Put(ctx, fmt.Sprintf("s/%s/rest/{{ .ResourcePath }}/%s", site, d.ID), d, &respBody)
-{{- end }}
 	if err != nil {
 		return nil, err
 	}
@@ -155,3 +178,4 @@ func (c *client) update{{ .StructName }}(ctx context.Context, site string, d *{{
 
 	return &new, nil
 }
+{{- end }}

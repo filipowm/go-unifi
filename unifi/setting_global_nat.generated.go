@@ -16,6 +16,8 @@ var (
 	_ json.Marshaler
 )
 
+const SettingGlobalNatKey = "global_nat"
+
 type SettingGlobalNat struct {
 	ID     string `json:"_id,omitempty"`
 	SiteID string `json:"site_id,omitempty"`
@@ -47,42 +49,23 @@ func (dst *SettingGlobalNat) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *client) getSettingGlobalNat(ctx context.Context, site string) (*SettingGlobalNat, error) {
-	var respBody struct {
-		Meta Meta               `json:"meta"`
-		Data []SettingGlobalNat `json:"data"`
-	}
-
-	err := c.Get(ctx, fmt.Sprintf("s/%s/get/setting/global_nat", site), nil, &respBody)
+// Update SettingGlobalNat Experimental! This function is not yet stable and may change in the future.
+func (c *client) GetSettingGlobalNat(ctx context.Context, site string) (*SettingGlobalNat, error) {
+	s, f, err := c.GetSetting(ctx, site, SettingGlobalNatKey)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
+	if s.Key != SettingGlobalNatKey {
+		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingGlobalNatKey, s.Key)
 	}
-
-	d := respBody.Data[0]
-	return &d, nil
+	return f.(*SettingGlobalNat), nil
 }
 
-func (c *client) updateSettingGlobalNat(ctx context.Context, site string, d *SettingGlobalNat) (*SettingGlobalNat, error) {
-	var respBody struct {
-		Meta Meta               `json:"meta"`
-		Data []SettingGlobalNat `json:"data"`
-	}
-
-	d.Key = "global_nat"
-	err := c.Put(ctx, fmt.Sprintf("s/%s/set/setting/global_nat", site), d, &respBody)
+// Update SettingGlobalNat Experimental! This function is not yet stable and may change in the future.
+func (c *client) UpdateSettingGlobalNat(ctx context.Context, site string, s *SettingGlobalNat) (*SettingGlobalNat, error) {
+	result, err := c.SetSetting(ctx, site, SettingGlobalNatKey, s)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
-	}
-
-	new := respBody.Data[0]
-
-	return &new, nil
+	return result.(*SettingGlobalNat), nil
 }

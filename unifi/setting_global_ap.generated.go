@@ -16,6 +16,8 @@ var (
 	_ json.Marshaler
 )
 
+const SettingGlobalApKey = "global_ap"
+
 type SettingGlobalAp struct {
 	ID     string `json:"_id,omitempty"`
 	SiteID string `json:"site_id,omitempty"`
@@ -68,42 +70,23 @@ func (dst *SettingGlobalAp) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *client) getSettingGlobalAp(ctx context.Context, site string) (*SettingGlobalAp, error) {
-	var respBody struct {
-		Meta Meta              `json:"meta"`
-		Data []SettingGlobalAp `json:"data"`
-	}
-
-	err := c.Get(ctx, fmt.Sprintf("s/%s/get/setting/global_ap", site), nil, &respBody)
+// Update SettingGlobalAp Experimental! This function is not yet stable and may change in the future.
+func (c *client) GetSettingGlobalAp(ctx context.Context, site string) (*SettingGlobalAp, error) {
+	s, f, err := c.GetSetting(ctx, site, SettingGlobalApKey)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
+	if s.Key != SettingGlobalApKey {
+		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingGlobalApKey, s.Key)
 	}
-
-	d := respBody.Data[0]
-	return &d, nil
+	return f.(*SettingGlobalAp), nil
 }
 
-func (c *client) updateSettingGlobalAp(ctx context.Context, site string, d *SettingGlobalAp) (*SettingGlobalAp, error) {
-	var respBody struct {
-		Meta Meta              `json:"meta"`
-		Data []SettingGlobalAp `json:"data"`
-	}
-
-	d.Key = "global_ap"
-	err := c.Put(ctx, fmt.Sprintf("s/%s/set/setting/global_ap", site), d, &respBody)
+// Update SettingGlobalAp Experimental! This function is not yet stable and may change in the future.
+func (c *client) UpdateSettingGlobalAp(ctx context.Context, site string, s *SettingGlobalAp) (*SettingGlobalAp, error) {
+	result, err := c.SetSetting(ctx, site, SettingGlobalApKey, s)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
-	}
-
-	new := respBody.Data[0]
-
-	return &new, nil
+	return result.(*SettingGlobalAp), nil
 }

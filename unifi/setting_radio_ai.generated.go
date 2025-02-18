@@ -16,6 +16,8 @@ var (
 	_ json.Marshaler
 )
 
+const SettingRadioAiKey = "radio_ai"
+
 type SettingRadioAi struct {
 	ID     string `json:"_id,omitempty"`
 	SiteID string `json:"site_id,omitempty"`
@@ -113,42 +115,23 @@ func (dst *SettingRadioAiChannelsBlacklist) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *client) getSettingRadioAi(ctx context.Context, site string) (*SettingRadioAi, error) {
-	var respBody struct {
-		Meta Meta             `json:"meta"`
-		Data []SettingRadioAi `json:"data"`
-	}
-
-	err := c.Get(ctx, fmt.Sprintf("s/%s/get/setting/radio_ai", site), nil, &respBody)
+// Update SettingRadioAi Experimental! This function is not yet stable and may change in the future.
+func (c *client) GetSettingRadioAi(ctx context.Context, site string) (*SettingRadioAi, error) {
+	s, f, err := c.GetSetting(ctx, site, SettingRadioAiKey)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
+	if s.Key != SettingRadioAiKey {
+		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingRadioAiKey, s.Key)
 	}
-
-	d := respBody.Data[0]
-	return &d, nil
+	return f.(*SettingRadioAi), nil
 }
 
-func (c *client) updateSettingRadioAi(ctx context.Context, site string, d *SettingRadioAi) (*SettingRadioAi, error) {
-	var respBody struct {
-		Meta Meta             `json:"meta"`
-		Data []SettingRadioAi `json:"data"`
-	}
-
-	d.Key = "radio_ai"
-	err := c.Put(ctx, fmt.Sprintf("s/%s/set/setting/radio_ai", site), d, &respBody)
+// Update SettingRadioAi Experimental! This function is not yet stable and may change in the future.
+func (c *client) UpdateSettingRadioAi(ctx context.Context, site string, s *SettingRadioAi) (*SettingRadioAi, error) {
+	result, err := c.SetSetting(ctx, site, SettingRadioAiKey, s)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
-	}
-
-	new := respBody.Data[0]
-
-	return &new, nil
+	return result.(*SettingRadioAi), nil
 }

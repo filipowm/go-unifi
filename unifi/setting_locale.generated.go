@@ -16,6 +16,8 @@ var (
 	_ json.Marshaler
 )
 
+const SettingLocaleKey = "locale"
+
 type SettingLocale struct {
 	ID     string `json:"_id,omitempty"`
 	SiteID string `json:"site_id,omitempty"`
@@ -46,42 +48,23 @@ func (dst *SettingLocale) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *client) getSettingLocale(ctx context.Context, site string) (*SettingLocale, error) {
-	var respBody struct {
-		Meta Meta            `json:"meta"`
-		Data []SettingLocale `json:"data"`
-	}
-
-	err := c.Get(ctx, fmt.Sprintf("s/%s/get/setting/locale", site), nil, &respBody)
+// Update SettingLocale Experimental! This function is not yet stable and may change in the future.
+func (c *client) GetSettingLocale(ctx context.Context, site string) (*SettingLocale, error) {
+	s, f, err := c.GetSetting(ctx, site, SettingLocaleKey)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
+	if s.Key != SettingLocaleKey {
+		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingLocaleKey, s.Key)
 	}
-
-	d := respBody.Data[0]
-	return &d, nil
+	return f.(*SettingLocale), nil
 }
 
-func (c *client) updateSettingLocale(ctx context.Context, site string, d *SettingLocale) (*SettingLocale, error) {
-	var respBody struct {
-		Meta Meta            `json:"meta"`
-		Data []SettingLocale `json:"data"`
-	}
-
-	d.Key = "locale"
-	err := c.Put(ctx, fmt.Sprintf("s/%s/set/setting/locale", site), d, &respBody)
+// Update SettingLocale Experimental! This function is not yet stable and may change in the future.
+func (c *client) UpdateSettingLocale(ctx context.Context, site string, s *SettingLocale) (*SettingLocale, error) {
+	result, err := c.SetSetting(ctx, site, SettingLocaleKey, s)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
-	}
-
-	new := respBody.Data[0]
-
-	return &new, nil
+	return result.(*SettingLocale), nil
 }

@@ -16,6 +16,8 @@ var (
 	_ json.Marshaler
 )
 
+const SettingDashboardKey = "dashboard"
+
 type SettingDashboard struct {
 	ID     string `json:"_id,omitempty"`
 	SiteID string `json:"site_id,omitempty"`
@@ -68,42 +70,23 @@ func (dst *SettingDashboardWidgets) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *client) getSettingDashboard(ctx context.Context, site string) (*SettingDashboard, error) {
-	var respBody struct {
-		Meta Meta               `json:"meta"`
-		Data []SettingDashboard `json:"data"`
-	}
-
-	err := c.Get(ctx, fmt.Sprintf("s/%s/get/setting/dashboard", site), nil, &respBody)
+// Update SettingDashboard Experimental! This function is not yet stable and may change in the future.
+func (c *client) GetSettingDashboard(ctx context.Context, site string) (*SettingDashboard, error) {
+	s, f, err := c.GetSetting(ctx, site, SettingDashboardKey)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
+	if s.Key != SettingDashboardKey {
+		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingDashboardKey, s.Key)
 	}
-
-	d := respBody.Data[0]
-	return &d, nil
+	return f.(*SettingDashboard), nil
 }
 
-func (c *client) updateSettingDashboard(ctx context.Context, site string, d *SettingDashboard) (*SettingDashboard, error) {
-	var respBody struct {
-		Meta Meta               `json:"meta"`
-		Data []SettingDashboard `json:"data"`
-	}
-
-	d.Key = "dashboard"
-	err := c.Put(ctx, fmt.Sprintf("s/%s/set/setting/dashboard", site), d, &respBody)
+// Update SettingDashboard Experimental! This function is not yet stable and may change in the future.
+func (c *client) UpdateSettingDashboard(ctx context.Context, site string, s *SettingDashboard) (*SettingDashboard, error) {
+	result, err := c.SetSetting(ctx, site, SettingDashboardKey, s)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
-	}
-
-	new := respBody.Data[0]
-
-	return &new, nil
+	return result.(*SettingDashboard), nil
 }

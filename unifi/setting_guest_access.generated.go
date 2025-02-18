@@ -16,6 +16,8 @@ var (
 	_ json.Marshaler
 )
 
+const SettingGuestAccessKey = "guest_access"
+
 type SettingGuestAccess struct {
 	ID     string `json:"_id,omitempty"`
 	SiteID string `json:"site_id,omitempty"`
@@ -155,42 +157,23 @@ func (dst *SettingGuestAccess) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *client) getSettingGuestAccess(ctx context.Context, site string) (*SettingGuestAccess, error) {
-	var respBody struct {
-		Meta Meta                 `json:"meta"`
-		Data []SettingGuestAccess `json:"data"`
-	}
-
-	err := c.Get(ctx, fmt.Sprintf("s/%s/get/setting/guest_access", site), nil, &respBody)
+// Update SettingGuestAccess Experimental! This function is not yet stable and may change in the future.
+func (c *client) GetSettingGuestAccess(ctx context.Context, site string) (*SettingGuestAccess, error) {
+	s, f, err := c.GetSetting(ctx, site, SettingGuestAccessKey)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
+	if s.Key != SettingGuestAccessKey {
+		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingGuestAccessKey, s.Key)
 	}
-
-	d := respBody.Data[0]
-	return &d, nil
+	return f.(*SettingGuestAccess), nil
 }
 
-func (c *client) updateSettingGuestAccess(ctx context.Context, site string, d *SettingGuestAccess) (*SettingGuestAccess, error) {
-	var respBody struct {
-		Meta Meta                 `json:"meta"`
-		Data []SettingGuestAccess `json:"data"`
-	}
-
-	d.Key = "guest_access"
-	err := c.Put(ctx, fmt.Sprintf("s/%s/set/setting/guest_access", site), d, &respBody)
+// Update SettingGuestAccess Experimental! This function is not yet stable and may change in the future.
+func (c *client) UpdateSettingGuestAccess(ctx context.Context, site string, s *SettingGuestAccess) (*SettingGuestAccess, error) {
+	result, err := c.SetSetting(ctx, site, SettingGuestAccessKey, s)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
-	}
-
-	new := respBody.Data[0]
-
-	return &new, nil
+	return result.(*SettingGuestAccess), nil
 }

@@ -16,6 +16,8 @@ var (
 	_ json.Marshaler
 )
 
+const SettingDohKey = "doh"
+
 type SettingDoh struct {
 	ID     string `json:"_id,omitempty"`
 	SiteID string `json:"site_id,omitempty"`
@@ -70,42 +72,23 @@ func (dst *SettingDohCustomServers) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *client) getSettingDoh(ctx context.Context, site string) (*SettingDoh, error) {
-	var respBody struct {
-		Meta Meta         `json:"meta"`
-		Data []SettingDoh `json:"data"`
-	}
-
-	err := c.Get(ctx, fmt.Sprintf("s/%s/get/setting/doh", site), nil, &respBody)
+// Update SettingDoh Experimental! This function is not yet stable and may change in the future.
+func (c *client) GetSettingDoh(ctx context.Context, site string) (*SettingDoh, error) {
+	s, f, err := c.GetSetting(ctx, site, SettingDohKey)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
+	if s.Key != SettingDohKey {
+		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingDohKey, s.Key)
 	}
-
-	d := respBody.Data[0]
-	return &d, nil
+	return f.(*SettingDoh), nil
 }
 
-func (c *client) updateSettingDoh(ctx context.Context, site string, d *SettingDoh) (*SettingDoh, error) {
-	var respBody struct {
-		Meta Meta         `json:"meta"`
-		Data []SettingDoh `json:"data"`
-	}
-
-	d.Key = "doh"
-	err := c.Put(ctx, fmt.Sprintf("s/%s/set/setting/doh", site), d, &respBody)
+// Update SettingDoh Experimental! This function is not yet stable and may change in the future.
+func (c *client) UpdateSettingDoh(ctx context.Context, site string, s *SettingDoh) (*SettingDoh, error) {
+	result, err := c.SetSetting(ctx, site, SettingDohKey, s)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
-	}
-
-	new := respBody.Data[0]
-
-	return &new, nil
+	return result.(*SettingDoh), nil
 }

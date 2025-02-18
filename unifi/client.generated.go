@@ -273,6 +273,326 @@ type Client interface {
 
 	GetSetting(ctx context.Context, site string, key string) (*Setting, interface{}, error)
 
+	// ==== client methods for SettingAutoSpeedtest resource ====
+
+	// GetSettingAutoSpeedtest retrieves the settings for a resource
+	GetSettingAutoSpeedtest(ctx context.Context, site string) (*SettingAutoSpeedtest, error)
+
+	// UpdateSettingAutoSpeedtest updates a resource
+	UpdateSettingAutoSpeedtest(ctx context.Context, site string, s *SettingAutoSpeedtest) (*SettingAutoSpeedtest, error)
+
+	// ==== client methods for SettingBaresip resource ====
+
+	// GetSettingBaresip retrieves the settings for a resource
+	GetSettingBaresip(ctx context.Context, site string) (*SettingBaresip, error)
+
+	// UpdateSettingBaresip updates a resource
+	UpdateSettingBaresip(ctx context.Context, site string, s *SettingBaresip) (*SettingBaresip, error)
+
+	// ==== client methods for SettingBroadcast resource ====
+
+	// GetSettingBroadcast retrieves the settings for a resource
+	GetSettingBroadcast(ctx context.Context, site string) (*SettingBroadcast, error)
+
+	// UpdateSettingBroadcast updates a resource
+	UpdateSettingBroadcast(ctx context.Context, site string, s *SettingBroadcast) (*SettingBroadcast, error)
+
+	// ==== client methods for SettingConnectivity resource ====
+
+	// GetSettingConnectivity retrieves the settings for a resource
+	GetSettingConnectivity(ctx context.Context, site string) (*SettingConnectivity, error)
+
+	// UpdateSettingConnectivity updates a resource
+	UpdateSettingConnectivity(ctx context.Context, site string, s *SettingConnectivity) (*SettingConnectivity, error)
+
+	// ==== client methods for SettingCountry resource ====
+
+	// GetSettingCountry retrieves the settings for a resource
+	GetSettingCountry(ctx context.Context, site string) (*SettingCountry, error)
+
+	// UpdateSettingCountry updates a resource
+	UpdateSettingCountry(ctx context.Context, site string, s *SettingCountry) (*SettingCountry, error)
+
+	// ==== client methods for SettingDashboard resource ====
+
+	// GetSettingDashboard retrieves the settings for a resource
+	GetSettingDashboard(ctx context.Context, site string) (*SettingDashboard, error)
+
+	// UpdateSettingDashboard updates a resource
+	UpdateSettingDashboard(ctx context.Context, site string, s *SettingDashboard) (*SettingDashboard, error)
+
+	// ==== client methods for SettingDoh resource ====
+
+	// GetSettingDoh retrieves the settings for a resource
+	GetSettingDoh(ctx context.Context, site string) (*SettingDoh, error)
+
+	// UpdateSettingDoh updates a resource
+	UpdateSettingDoh(ctx context.Context, site string, s *SettingDoh) (*SettingDoh, error)
+
+	// ==== client methods for SettingDpi resource ====
+
+	// GetSettingDpi retrieves the settings for a resource
+	GetSettingDpi(ctx context.Context, site string) (*SettingDpi, error)
+
+	// UpdateSettingDpi updates a resource
+	UpdateSettingDpi(ctx context.Context, site string, s *SettingDpi) (*SettingDpi, error)
+
+	// ==== client methods for SettingElementAdopt resource ====
+
+	// GetSettingElementAdopt retrieves the settings for a resource
+	GetSettingElementAdopt(ctx context.Context, site string) (*SettingElementAdopt, error)
+
+	// UpdateSettingElementAdopt updates a resource
+	UpdateSettingElementAdopt(ctx context.Context, site string, s *SettingElementAdopt) (*SettingElementAdopt, error)
+
+	// ==== client methods for SettingEtherLighting resource ====
+
+	// GetSettingEtherLighting retrieves the settings for a resource
+	GetSettingEtherLighting(ctx context.Context, site string) (*SettingEtherLighting, error)
+
+	// UpdateSettingEtherLighting updates a resource
+	UpdateSettingEtherLighting(ctx context.Context, site string, s *SettingEtherLighting) (*SettingEtherLighting, error)
+
+	// ==== client methods for SettingEvaluationScore resource ====
+
+	// GetSettingEvaluationScore retrieves the settings for a resource
+	GetSettingEvaluationScore(ctx context.Context, site string) (*SettingEvaluationScore, error)
+
+	// UpdateSettingEvaluationScore updates a resource
+	UpdateSettingEvaluationScore(ctx context.Context, site string, s *SettingEvaluationScore) (*SettingEvaluationScore, error)
+
+	// ==== client methods for SettingGlobalAp resource ====
+
+	// GetSettingGlobalAp retrieves the settings for a resource
+	GetSettingGlobalAp(ctx context.Context, site string) (*SettingGlobalAp, error)
+
+	// UpdateSettingGlobalAp updates a resource
+	UpdateSettingGlobalAp(ctx context.Context, site string, s *SettingGlobalAp) (*SettingGlobalAp, error)
+
+	// ==== client methods for SettingGlobalNat resource ====
+
+	// GetSettingGlobalNat retrieves the settings for a resource
+	GetSettingGlobalNat(ctx context.Context, site string) (*SettingGlobalNat, error)
+
+	// UpdateSettingGlobalNat updates a resource
+	UpdateSettingGlobalNat(ctx context.Context, site string, s *SettingGlobalNat) (*SettingGlobalNat, error)
+
+	// ==== client methods for SettingGlobalSwitch resource ====
+
+	// GetSettingGlobalSwitch retrieves the settings for a resource
+	GetSettingGlobalSwitch(ctx context.Context, site string) (*SettingGlobalSwitch, error)
+
+	// UpdateSettingGlobalSwitch updates a resource
+	UpdateSettingGlobalSwitch(ctx context.Context, site string, s *SettingGlobalSwitch) (*SettingGlobalSwitch, error)
+
+	// ==== client methods for SettingGuestAccess resource ====
+
+	// GetSettingGuestAccess retrieves the settings for a resource
+	GetSettingGuestAccess(ctx context.Context, site string) (*SettingGuestAccess, error)
+
+	// UpdateSettingGuestAccess updates a resource
+	UpdateSettingGuestAccess(ctx context.Context, site string, s *SettingGuestAccess) (*SettingGuestAccess, error)
+
+	// ==== client methods for SettingIps resource ====
+
+	// GetSettingIps retrieves the settings for a resource
+	GetSettingIps(ctx context.Context, site string) (*SettingIps, error)
+
+	// UpdateSettingIps updates a resource
+	UpdateSettingIps(ctx context.Context, site string, s *SettingIps) (*SettingIps, error)
+
+	// ==== client methods for SettingLcm resource ====
+
+	// GetSettingLcm retrieves the settings for a resource
+	GetSettingLcm(ctx context.Context, site string) (*SettingLcm, error)
+
+	// UpdateSettingLcm updates a resource
+	UpdateSettingLcm(ctx context.Context, site string, s *SettingLcm) (*SettingLcm, error)
+
+	// ==== client methods for SettingLocale resource ====
+
+	// GetSettingLocale retrieves the settings for a resource
+	GetSettingLocale(ctx context.Context, site string) (*SettingLocale, error)
+
+	// UpdateSettingLocale updates a resource
+	UpdateSettingLocale(ctx context.Context, site string, s *SettingLocale) (*SettingLocale, error)
+
+	// ==== client methods for SettingMagicSiteToSiteVpn resource ====
+
+	// GetSettingMagicSiteToSiteVpn retrieves the settings for a resource
+	GetSettingMagicSiteToSiteVpn(ctx context.Context, site string) (*SettingMagicSiteToSiteVpn, error)
+
+	// UpdateSettingMagicSiteToSiteVpn updates a resource
+	UpdateSettingMagicSiteToSiteVpn(ctx context.Context, site string, s *SettingMagicSiteToSiteVpn) (*SettingMagicSiteToSiteVpn, error)
+
+	// ==== client methods for SettingMgmt resource ====
+
+	// GetSettingMgmt retrieves the settings for a resource
+	GetSettingMgmt(ctx context.Context, site string) (*SettingMgmt, error)
+
+	// UpdateSettingMgmt updates a resource
+	UpdateSettingMgmt(ctx context.Context, site string, s *SettingMgmt) (*SettingMgmt, error)
+
+	// ==== client methods for SettingNetflow resource ====
+
+	// GetSettingNetflow retrieves the settings for a resource
+	GetSettingNetflow(ctx context.Context, site string) (*SettingNetflow, error)
+
+	// UpdateSettingNetflow updates a resource
+	UpdateSettingNetflow(ctx context.Context, site string, s *SettingNetflow) (*SettingNetflow, error)
+
+	// ==== client methods for SettingNetworkOptimization resource ====
+
+	// GetSettingNetworkOptimization retrieves the settings for a resource
+	GetSettingNetworkOptimization(ctx context.Context, site string) (*SettingNetworkOptimization, error)
+
+	// UpdateSettingNetworkOptimization updates a resource
+	UpdateSettingNetworkOptimization(ctx context.Context, site string, s *SettingNetworkOptimization) (*SettingNetworkOptimization, error)
+
+	// ==== client methods for SettingNtp resource ====
+
+	// GetSettingNtp retrieves the settings for a resource
+	GetSettingNtp(ctx context.Context, site string) (*SettingNtp, error)
+
+	// UpdateSettingNtp updates a resource
+	UpdateSettingNtp(ctx context.Context, site string, s *SettingNtp) (*SettingNtp, error)
+
+	// ==== client methods for SettingPorta resource ====
+
+	// GetSettingPorta retrieves the settings for a resource
+	GetSettingPorta(ctx context.Context, site string) (*SettingPorta, error)
+
+	// UpdateSettingPorta updates a resource
+	UpdateSettingPorta(ctx context.Context, site string, s *SettingPorta) (*SettingPorta, error)
+
+	// ==== client methods for SettingRadioAi resource ====
+
+	// GetSettingRadioAi retrieves the settings for a resource
+	GetSettingRadioAi(ctx context.Context, site string) (*SettingRadioAi, error)
+
+	// UpdateSettingRadioAi updates a resource
+	UpdateSettingRadioAi(ctx context.Context, site string, s *SettingRadioAi) (*SettingRadioAi, error)
+
+	// ==== client methods for SettingRadius resource ====
+
+	// GetSettingRadius retrieves the settings for a resource
+	GetSettingRadius(ctx context.Context, site string) (*SettingRadius, error)
+
+	// UpdateSettingRadius updates a resource
+	UpdateSettingRadius(ctx context.Context, site string, s *SettingRadius) (*SettingRadius, error)
+
+	// ==== client methods for SettingRsyslogd resource ====
+
+	// GetSettingRsyslogd retrieves the settings for a resource
+	GetSettingRsyslogd(ctx context.Context, site string) (*SettingRsyslogd, error)
+
+	// UpdateSettingRsyslogd updates a resource
+	UpdateSettingRsyslogd(ctx context.Context, site string, s *SettingRsyslogd) (*SettingRsyslogd, error)
+
+	// ==== client methods for SettingSnmp resource ====
+
+	// GetSettingSnmp retrieves the settings for a resource
+	GetSettingSnmp(ctx context.Context, site string) (*SettingSnmp, error)
+
+	// UpdateSettingSnmp updates a resource
+	UpdateSettingSnmp(ctx context.Context, site string, s *SettingSnmp) (*SettingSnmp, error)
+
+	// ==== client methods for SettingSslInspection resource ====
+
+	// GetSettingSslInspection retrieves the settings for a resource
+	GetSettingSslInspection(ctx context.Context, site string) (*SettingSslInspection, error)
+
+	// UpdateSettingSslInspection updates a resource
+	UpdateSettingSslInspection(ctx context.Context, site string, s *SettingSslInspection) (*SettingSslInspection, error)
+
+	// ==== client methods for SettingSuperCloudaccess resource ====
+
+	// GetSettingSuperCloudaccess retrieves the settings for a resource
+	GetSettingSuperCloudaccess(ctx context.Context, site string) (*SettingSuperCloudaccess, error)
+
+	// UpdateSettingSuperCloudaccess updates a resource
+	UpdateSettingSuperCloudaccess(ctx context.Context, site string, s *SettingSuperCloudaccess) (*SettingSuperCloudaccess, error)
+
+	// ==== client methods for SettingSuperEvents resource ====
+
+	// GetSettingSuperEvents retrieves the settings for a resource
+	GetSettingSuperEvents(ctx context.Context, site string) (*SettingSuperEvents, error)
+
+	// UpdateSettingSuperEvents updates a resource
+	UpdateSettingSuperEvents(ctx context.Context, site string, s *SettingSuperEvents) (*SettingSuperEvents, error)
+
+	// ==== client methods for SettingSuperFwupdate resource ====
+
+	// GetSettingSuperFwupdate retrieves the settings for a resource
+	GetSettingSuperFwupdate(ctx context.Context, site string) (*SettingSuperFwupdate, error)
+
+	// UpdateSettingSuperFwupdate updates a resource
+	UpdateSettingSuperFwupdate(ctx context.Context, site string, s *SettingSuperFwupdate) (*SettingSuperFwupdate, error)
+
+	// ==== client methods for SettingSuperIdentity resource ====
+
+	// GetSettingSuperIdentity retrieves the settings for a resource
+	GetSettingSuperIdentity(ctx context.Context, site string) (*SettingSuperIdentity, error)
+
+	// UpdateSettingSuperIdentity updates a resource
+	UpdateSettingSuperIdentity(ctx context.Context, site string, s *SettingSuperIdentity) (*SettingSuperIdentity, error)
+
+	// ==== client methods for SettingSuperMail resource ====
+
+	// GetSettingSuperMail retrieves the settings for a resource
+	GetSettingSuperMail(ctx context.Context, site string) (*SettingSuperMail, error)
+
+	// UpdateSettingSuperMail updates a resource
+	UpdateSettingSuperMail(ctx context.Context, site string, s *SettingSuperMail) (*SettingSuperMail, error)
+
+	// ==== client methods for SettingSuperMgmt resource ====
+
+	// GetSettingSuperMgmt retrieves the settings for a resource
+	GetSettingSuperMgmt(ctx context.Context, site string) (*SettingSuperMgmt, error)
+
+	// UpdateSettingSuperMgmt updates a resource
+	UpdateSettingSuperMgmt(ctx context.Context, site string, s *SettingSuperMgmt) (*SettingSuperMgmt, error)
+
+	// ==== client methods for SettingSuperSdn resource ====
+
+	// GetSettingSuperSdn retrieves the settings for a resource
+	GetSettingSuperSdn(ctx context.Context, site string) (*SettingSuperSdn, error)
+
+	// UpdateSettingSuperSdn updates a resource
+	UpdateSettingSuperSdn(ctx context.Context, site string, s *SettingSuperSdn) (*SettingSuperSdn, error)
+
+	// ==== client methods for SettingSuperSmtp resource ====
+
+	// GetSettingSuperSmtp retrieves the settings for a resource
+	GetSettingSuperSmtp(ctx context.Context, site string) (*SettingSuperSmtp, error)
+
+	// UpdateSettingSuperSmtp updates a resource
+	UpdateSettingSuperSmtp(ctx context.Context, site string, s *SettingSuperSmtp) (*SettingSuperSmtp, error)
+
+	// ==== client methods for SettingTeleport resource ====
+
+	// GetSettingTeleport retrieves the settings for a resource
+	GetSettingTeleport(ctx context.Context, site string) (*SettingTeleport, error)
+
+	// UpdateSettingTeleport updates a resource
+	UpdateSettingTeleport(ctx context.Context, site string, s *SettingTeleport) (*SettingTeleport, error)
+
+	// ==== client methods for SettingUsg resource ====
+
+	// GetSettingUsg retrieves the settings for a resource
+	GetSettingUsg(ctx context.Context, site string) (*SettingUsg, error)
+
+	// UpdateSettingUsg updates a resource
+	UpdateSettingUsg(ctx context.Context, site string, s *SettingUsg) (*SettingUsg, error)
+
+	// ==== client methods for SettingUsw resource ====
+
+	// GetSettingUsw retrieves the settings for a resource
+	GetSettingUsw(ctx context.Context, site string) (*SettingUsw, error)
+
+	// UpdateSettingUsw updates a resource
+	UpdateSettingUsw(ctx context.Context, site string, s *SettingUsw) (*SettingUsw, error)
+
 	CreateSite(ctx context.Context, description string) ([]Site, error)
 
 	DeleteSite(ctx context.Context, id string) ([]Site, error)

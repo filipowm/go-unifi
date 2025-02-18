@@ -16,6 +16,8 @@ var (
 	_ json.Marshaler
 )
 
+const SettingEvaluationScoreKey = "evaluation_score"
+
 type SettingEvaluationScore struct {
 	ID     string `json:"_id,omitempty"`
 	SiteID string `json:"site_id,omitempty"`
@@ -46,42 +48,23 @@ func (dst *SettingEvaluationScore) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *client) getSettingEvaluationScore(ctx context.Context, site string) (*SettingEvaluationScore, error) {
-	var respBody struct {
-		Meta Meta                     `json:"meta"`
-		Data []SettingEvaluationScore `json:"data"`
-	}
-
-	err := c.Get(ctx, fmt.Sprintf("s/%s/get/setting/evaluation_score", site), nil, &respBody)
+// Update SettingEvaluationScore Experimental! This function is not yet stable and may change in the future.
+func (c *client) GetSettingEvaluationScore(ctx context.Context, site string) (*SettingEvaluationScore, error) {
+	s, f, err := c.GetSetting(ctx, site, SettingEvaluationScoreKey)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
+	if s.Key != SettingEvaluationScoreKey {
+		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingEvaluationScoreKey, s.Key)
 	}
-
-	d := respBody.Data[0]
-	return &d, nil
+	return f.(*SettingEvaluationScore), nil
 }
 
-func (c *client) updateSettingEvaluationScore(ctx context.Context, site string, d *SettingEvaluationScore) (*SettingEvaluationScore, error) {
-	var respBody struct {
-		Meta Meta                     `json:"meta"`
-		Data []SettingEvaluationScore `json:"data"`
-	}
-
-	d.Key = "evaluation_score"
-	err := c.Put(ctx, fmt.Sprintf("s/%s/set/setting/evaluation_score", site), d, &respBody)
+// Update SettingEvaluationScore Experimental! This function is not yet stable and may change in the future.
+func (c *client) UpdateSettingEvaluationScore(ctx context.Context, site string, s *SettingEvaluationScore) (*SettingEvaluationScore, error) {
+	result, err := c.SetSetting(ctx, site, SettingEvaluationScoreKey, s)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
-	}
-
-	new := respBody.Data[0]
-
-	return &new, nil
+	return result.(*SettingEvaluationScore), nil
 }

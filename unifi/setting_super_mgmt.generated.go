@@ -16,6 +16,8 @@ var (
 	_ json.Marshaler
 )
 
+const SettingSuperMgmtKey = "super_mgmt"
+
 type SettingSuperMgmt struct {
 	ID     string `json:"_id,omitempty"`
 	SiteID string `json:"site_id,omitempty"`
@@ -111,42 +113,23 @@ func (dst *SettingSuperMgmt) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *client) getSettingSuperMgmt(ctx context.Context, site string) (*SettingSuperMgmt, error) {
-	var respBody struct {
-		Meta Meta               `json:"meta"`
-		Data []SettingSuperMgmt `json:"data"`
-	}
-
-	err := c.Get(ctx, fmt.Sprintf("s/%s/get/setting/super_mgmt", site), nil, &respBody)
+// Update SettingSuperMgmt Experimental! This function is not yet stable and may change in the future.
+func (c *client) GetSettingSuperMgmt(ctx context.Context, site string) (*SettingSuperMgmt, error) {
+	s, f, err := c.GetSetting(ctx, site, SettingSuperMgmtKey)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
+	if s.Key != SettingSuperMgmtKey {
+		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingSuperMgmtKey, s.Key)
 	}
-
-	d := respBody.Data[0]
-	return &d, nil
+	return f.(*SettingSuperMgmt), nil
 }
 
-func (c *client) updateSettingSuperMgmt(ctx context.Context, site string, d *SettingSuperMgmt) (*SettingSuperMgmt, error) {
-	var respBody struct {
-		Meta Meta               `json:"meta"`
-		Data []SettingSuperMgmt `json:"data"`
-	}
-
-	d.Key = "super_mgmt"
-	err := c.Put(ctx, fmt.Sprintf("s/%s/set/setting/super_mgmt", site), d, &respBody)
+// Update SettingSuperMgmt Experimental! This function is not yet stable and may change in the future.
+func (c *client) UpdateSettingSuperMgmt(ctx context.Context, site string, s *SettingSuperMgmt) (*SettingSuperMgmt, error) {
+	result, err := c.SetSetting(ctx, site, SettingSuperMgmtKey, s)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
-	}
-
-	new := respBody.Data[0]
-
-	return &new, nil
+	return result.(*SettingSuperMgmt), nil
 }

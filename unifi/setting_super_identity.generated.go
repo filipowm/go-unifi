@@ -16,6 +16,8 @@ var (
 	_ json.Marshaler
 )
 
+const SettingSuperIdentityKey = "super_identity"
+
 type SettingSuperIdentity struct {
 	ID     string `json:"_id,omitempty"`
 	SiteID string `json:"site_id,omitempty"`
@@ -47,42 +49,23 @@ func (dst *SettingSuperIdentity) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *client) getSettingSuperIdentity(ctx context.Context, site string) (*SettingSuperIdentity, error) {
-	var respBody struct {
-		Meta Meta                   `json:"meta"`
-		Data []SettingSuperIdentity `json:"data"`
-	}
-
-	err := c.Get(ctx, fmt.Sprintf("s/%s/get/setting/super_identity", site), nil, &respBody)
+// Update SettingSuperIdentity Experimental! This function is not yet stable and may change in the future.
+func (c *client) GetSettingSuperIdentity(ctx context.Context, site string) (*SettingSuperIdentity, error) {
+	s, f, err := c.GetSetting(ctx, site, SettingSuperIdentityKey)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
+	if s.Key != SettingSuperIdentityKey {
+		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingSuperIdentityKey, s.Key)
 	}
-
-	d := respBody.Data[0]
-	return &d, nil
+	return f.(*SettingSuperIdentity), nil
 }
 
-func (c *client) updateSettingSuperIdentity(ctx context.Context, site string, d *SettingSuperIdentity) (*SettingSuperIdentity, error) {
-	var respBody struct {
-		Meta Meta                   `json:"meta"`
-		Data []SettingSuperIdentity `json:"data"`
-	}
-
-	d.Key = "super_identity"
-	err := c.Put(ctx, fmt.Sprintf("s/%s/set/setting/super_identity", site), d, &respBody)
+// Update SettingSuperIdentity Experimental! This function is not yet stable and may change in the future.
+func (c *client) UpdateSettingSuperIdentity(ctx context.Context, site string, s *SettingSuperIdentity) (*SettingSuperIdentity, error) {
+	result, err := c.SetSetting(ctx, site, SettingSuperIdentityKey, s)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
-	}
-
-	new := respBody.Data[0]
-
-	return &new, nil
+	return result.(*SettingSuperIdentity), nil
 }

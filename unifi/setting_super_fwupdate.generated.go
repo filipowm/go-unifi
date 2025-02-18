@@ -16,6 +16,8 @@ var (
 	_ json.Marshaler
 )
 
+const SettingSuperFwupdateKey = "super_fwupdate"
+
 type SettingSuperFwupdate struct {
 	ID     string `json:"_id,omitempty"`
 	SiteID string `json:"site_id,omitempty"`
@@ -48,42 +50,23 @@ func (dst *SettingSuperFwupdate) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *client) getSettingSuperFwupdate(ctx context.Context, site string) (*SettingSuperFwupdate, error) {
-	var respBody struct {
-		Meta Meta                   `json:"meta"`
-		Data []SettingSuperFwupdate `json:"data"`
-	}
-
-	err := c.Get(ctx, fmt.Sprintf("s/%s/get/setting/super_fwupdate", site), nil, &respBody)
+// Update SettingSuperFwupdate Experimental! This function is not yet stable and may change in the future.
+func (c *client) GetSettingSuperFwupdate(ctx context.Context, site string) (*SettingSuperFwupdate, error) {
+	s, f, err := c.GetSetting(ctx, site, SettingSuperFwupdateKey)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
+	if s.Key != SettingSuperFwupdateKey {
+		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingSuperFwupdateKey, s.Key)
 	}
-
-	d := respBody.Data[0]
-	return &d, nil
+	return f.(*SettingSuperFwupdate), nil
 }
 
-func (c *client) updateSettingSuperFwupdate(ctx context.Context, site string, d *SettingSuperFwupdate) (*SettingSuperFwupdate, error) {
-	var respBody struct {
-		Meta Meta                   `json:"meta"`
-		Data []SettingSuperFwupdate `json:"data"`
-	}
-
-	d.Key = "super_fwupdate"
-	err := c.Put(ctx, fmt.Sprintf("s/%s/set/setting/super_fwupdate", site), d, &respBody)
+// Update SettingSuperFwupdate Experimental! This function is not yet stable and may change in the future.
+func (c *client) UpdateSettingSuperFwupdate(ctx context.Context, site string, s *SettingSuperFwupdate) (*SettingSuperFwupdate, error) {
+	result, err := c.SetSetting(ctx, site, SettingSuperFwupdateKey, s)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
-	}
-
-	new := respBody.Data[0]
-
-	return &new, nil
+	return result.(*SettingSuperFwupdate), nil
 }

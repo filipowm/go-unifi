@@ -16,6 +16,8 @@ var (
 	_ json.Marshaler
 )
 
+const SettingAutoSpeedtestKey = "auto_speedtest"
+
 type SettingAutoSpeedtest struct {
 	ID     string `json:"_id,omitempty"`
 	SiteID string `json:"site_id,omitempty"`
@@ -47,42 +49,23 @@ func (dst *SettingAutoSpeedtest) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *client) getSettingAutoSpeedtest(ctx context.Context, site string) (*SettingAutoSpeedtest, error) {
-	var respBody struct {
-		Meta Meta                   `json:"meta"`
-		Data []SettingAutoSpeedtest `json:"data"`
-	}
-
-	err := c.Get(ctx, fmt.Sprintf("s/%s/get/setting/auto_speedtest", site), nil, &respBody)
+// Update SettingAutoSpeedtest Experimental! This function is not yet stable and may change in the future.
+func (c *client) GetSettingAutoSpeedtest(ctx context.Context, site string) (*SettingAutoSpeedtest, error) {
+	s, f, err := c.GetSetting(ctx, site, SettingAutoSpeedtestKey)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
+	if s.Key != SettingAutoSpeedtestKey {
+		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingAutoSpeedtestKey, s.Key)
 	}
-
-	d := respBody.Data[0]
-	return &d, nil
+	return f.(*SettingAutoSpeedtest), nil
 }
 
-func (c *client) updateSettingAutoSpeedtest(ctx context.Context, site string, d *SettingAutoSpeedtest) (*SettingAutoSpeedtest, error) {
-	var respBody struct {
-		Meta Meta                   `json:"meta"`
-		Data []SettingAutoSpeedtest `json:"data"`
-	}
-
-	d.Key = "auto_speedtest"
-	err := c.Put(ctx, fmt.Sprintf("s/%s/set/setting/auto_speedtest", site), d, &respBody)
+// Update SettingAutoSpeedtest Experimental! This function is not yet stable and may change in the future.
+func (c *client) UpdateSettingAutoSpeedtest(ctx context.Context, site string, s *SettingAutoSpeedtest) (*SettingAutoSpeedtest, error) {
+	result, err := c.SetSetting(ctx, site, SettingAutoSpeedtestKey, s)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
-	}
-
-	new := respBody.Data[0]
-
-	return &new, nil
+	return result.(*SettingAutoSpeedtest), nil
 }

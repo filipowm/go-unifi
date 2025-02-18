@@ -16,6 +16,8 @@ var (
 	_ json.Marshaler
 )
 
+const SettingMgmtKey = "mgmt"
+
 type SettingMgmt struct {
 	ID     string `json:"_id,omitempty"`
 	SiteID string `json:"site_id,omitempty"`
@@ -93,42 +95,23 @@ func (dst *SettingMgmtXSshKeys) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *client) getSettingMgmt(ctx context.Context, site string) (*SettingMgmt, error) {
-	var respBody struct {
-		Meta Meta          `json:"meta"`
-		Data []SettingMgmt `json:"data"`
-	}
-
-	err := c.Get(ctx, fmt.Sprintf("s/%s/get/setting/mgmt", site), nil, &respBody)
+// Update SettingMgmt Experimental! This function is not yet stable and may change in the future.
+func (c *client) GetSettingMgmt(ctx context.Context, site string) (*SettingMgmt, error) {
+	s, f, err := c.GetSetting(ctx, site, SettingMgmtKey)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
+	if s.Key != SettingMgmtKey {
+		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingMgmtKey, s.Key)
 	}
-
-	d := respBody.Data[0]
-	return &d, nil
+	return f.(*SettingMgmt), nil
 }
 
-func (c *client) updateSettingMgmt(ctx context.Context, site string, d *SettingMgmt) (*SettingMgmt, error) {
-	var respBody struct {
-		Meta Meta          `json:"meta"`
-		Data []SettingMgmt `json:"data"`
-	}
-
-	d.Key = "mgmt"
-	err := c.Put(ctx, fmt.Sprintf("s/%s/set/setting/mgmt", site), d, &respBody)
+// Update SettingMgmt Experimental! This function is not yet stable and may change in the future.
+func (c *client) UpdateSettingMgmt(ctx context.Context, site string, s *SettingMgmt) (*SettingMgmt, error) {
+	result, err := c.SetSetting(ctx, site, SettingMgmtKey, s)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
-	}
-
-	new := respBody.Data[0]
-
-	return &new, nil
+	return result.(*SettingMgmt), nil
 }

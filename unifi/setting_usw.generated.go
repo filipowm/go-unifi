@@ -16,6 +16,8 @@ var (
 	_ json.Marshaler
 )
 
+const SettingUswKey = "usw"
+
 type SettingUsw struct {
 	ID     string `json:"_id,omitempty"`
 	SiteID string `json:"site_id,omitempty"`
@@ -46,42 +48,23 @@ func (dst *SettingUsw) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *client) getSettingUsw(ctx context.Context, site string) (*SettingUsw, error) {
-	var respBody struct {
-		Meta Meta         `json:"meta"`
-		Data []SettingUsw `json:"data"`
-	}
-
-	err := c.Get(ctx, fmt.Sprintf("s/%s/get/setting/usw", site), nil, &respBody)
+// Update SettingUsw Experimental! This function is not yet stable and may change in the future.
+func (c *client) GetSettingUsw(ctx context.Context, site string) (*SettingUsw, error) {
+	s, f, err := c.GetSetting(ctx, site, SettingUswKey)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
+	if s.Key != SettingUswKey {
+		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingUswKey, s.Key)
 	}
-
-	d := respBody.Data[0]
-	return &d, nil
+	return f.(*SettingUsw), nil
 }
 
-func (c *client) updateSettingUsw(ctx context.Context, site string, d *SettingUsw) (*SettingUsw, error) {
-	var respBody struct {
-		Meta Meta         `json:"meta"`
-		Data []SettingUsw `json:"data"`
-	}
-
-	d.Key = "usw"
-	err := c.Put(ctx, fmt.Sprintf("s/%s/set/setting/usw", site), d, &respBody)
+// Update SettingUsw Experimental! This function is not yet stable and may change in the future.
+func (c *client) UpdateSettingUsw(ctx context.Context, site string, s *SettingUsw) (*SettingUsw, error) {
+	result, err := c.SetSetting(ctx, site, SettingUswKey, s)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
-	}
-
-	new := respBody.Data[0]
-
-	return &new, nil
+	return result.(*SettingUsw), nil
 }

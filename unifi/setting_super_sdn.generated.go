@@ -16,6 +16,8 @@ var (
 	_ json.Marshaler
 )
 
+const SettingSuperSdnKey = "super_sdn"
+
 type SettingSuperSdn struct {
 	ID     string `json:"_id,omitempty"`
 	SiteID string `json:"site_id,omitempty"`
@@ -51,42 +53,23 @@ func (dst *SettingSuperSdn) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *client) getSettingSuperSdn(ctx context.Context, site string) (*SettingSuperSdn, error) {
-	var respBody struct {
-		Meta Meta              `json:"meta"`
-		Data []SettingSuperSdn `json:"data"`
-	}
-
-	err := c.Get(ctx, fmt.Sprintf("s/%s/get/setting/super_sdn", site), nil, &respBody)
+// Update SettingSuperSdn Experimental! This function is not yet stable and may change in the future.
+func (c *client) GetSettingSuperSdn(ctx context.Context, site string) (*SettingSuperSdn, error) {
+	s, f, err := c.GetSetting(ctx, site, SettingSuperSdnKey)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
+	if s.Key != SettingSuperSdnKey {
+		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingSuperSdnKey, s.Key)
 	}
-
-	d := respBody.Data[0]
-	return &d, nil
+	return f.(*SettingSuperSdn), nil
 }
 
-func (c *client) updateSettingSuperSdn(ctx context.Context, site string, d *SettingSuperSdn) (*SettingSuperSdn, error) {
-	var respBody struct {
-		Meta Meta              `json:"meta"`
-		Data []SettingSuperSdn `json:"data"`
-	}
-
-	d.Key = "super_sdn"
-	err := c.Put(ctx, fmt.Sprintf("s/%s/set/setting/super_sdn", site), d, &respBody)
+// Update SettingSuperSdn Experimental! This function is not yet stable and may change in the future.
+func (c *client) UpdateSettingSuperSdn(ctx context.Context, site string, s *SettingSuperSdn) (*SettingSuperSdn, error) {
+	result, err := c.SetSetting(ctx, site, SettingSuperSdnKey, s)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
-	}
-
-	new := respBody.Data[0]
-
-	return &new, nil
+	return result.(*SettingSuperSdn), nil
 }

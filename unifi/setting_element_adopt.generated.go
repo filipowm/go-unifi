@@ -16,6 +16,8 @@ var (
 	_ json.Marshaler
 )
 
+const SettingElementAdoptKey = "element_adopt"
+
 type SettingElementAdopt struct {
 	ID     string `json:"_id,omitempty"`
 	SiteID string `json:"site_id,omitempty"`
@@ -48,42 +50,23 @@ func (dst *SettingElementAdopt) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *client) getSettingElementAdopt(ctx context.Context, site string) (*SettingElementAdopt, error) {
-	var respBody struct {
-		Meta Meta                  `json:"meta"`
-		Data []SettingElementAdopt `json:"data"`
-	}
-
-	err := c.Get(ctx, fmt.Sprintf("s/%s/get/setting/element_adopt", site), nil, &respBody)
+// Update SettingElementAdopt Experimental! This function is not yet stable and may change in the future.
+func (c *client) GetSettingElementAdopt(ctx context.Context, site string) (*SettingElementAdopt, error) {
+	s, f, err := c.GetSetting(ctx, site, SettingElementAdoptKey)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
+	if s.Key != SettingElementAdoptKey {
+		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingElementAdoptKey, s.Key)
 	}
-
-	d := respBody.Data[0]
-	return &d, nil
+	return f.(*SettingElementAdopt), nil
 }
 
-func (c *client) updateSettingElementAdopt(ctx context.Context, site string, d *SettingElementAdopt) (*SettingElementAdopt, error) {
-	var respBody struct {
-		Meta Meta                  `json:"meta"`
-		Data []SettingElementAdopt `json:"data"`
-	}
-
-	d.Key = "element_adopt"
-	err := c.Put(ctx, fmt.Sprintf("s/%s/set/setting/element_adopt", site), d, &respBody)
+// Update SettingElementAdopt Experimental! This function is not yet stable and may change in the future.
+func (c *client) UpdateSettingElementAdopt(ctx context.Context, site string, s *SettingElementAdopt) (*SettingElementAdopt, error) {
+	result, err := c.SetSetting(ctx, site, SettingElementAdoptKey, s)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
-	}
-
-	new := respBody.Data[0]
-
-	return &new, nil
+	return result.(*SettingElementAdopt), nil
 }
