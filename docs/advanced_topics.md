@@ -57,29 +57,6 @@ if err != nil {
 These helper methods abstract away the boilerplate of manually constructing HTTP requests and processing responses, allowing you to focus on your application's logic while leveraging built-in
 validation and error handling provided by the SDK.
 
-## Customizing the HTTP Client
-
-While the basic configuration allows simple modifications, you can fully customize the underlying HTTP client for more
-control over connection settings, proxy configuration, TLS settings, and connection pooling.
-
-Example:
-
-```go
-c, err := unifi.NewClient(&unifi.ClientConfig{
-    BaseURL: "https://unifi.localdomain",
-    APIKey: "your-api-key",
-    HttpCustomizer: func (transport *http.Transport) error {
-        transport.MaxIdleConns = 20
-        transport.IdleConnTimeout = 90 * time.Second
-        // Customize TLS settings or add a proxy configuration
-        return nil
-    },
-})
-if err != nil {
-    log.Fatalf("Error creating client: %v", err)
-}
-```
-
 ## Interceptors and Middleware
 
 Interceptors provide hooks into the request/response cycle and can be used for logging, metrics collection, or modifying

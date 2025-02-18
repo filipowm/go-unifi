@@ -30,9 +30,9 @@ const (
 	DefaultValidation validationMode = SoftValidation // TODO: change to hard in next major version
 )
 
-// HttpCustomizer is a function type for customizing the HTTP transport.
+// HttpTransportCustomizer is a function type for customizing the HTTP transport.
 // It receives a pointer to an http.Transport and returns an error if customization fails.
-type HttpCustomizer func(transport *http.Transport) error
+type HttpTransportCustomizer func(transport *http.Transport) (*http.Transport, error)
 
 // ResponseErrorHandler defines a method for handling HTTP response errors.
 // HandleError processes the HTTP response and returns an error if the response indicates failure.
@@ -53,25 +53,25 @@ Fields:
 	Timeout:       The maximum duration to wait for responses; default is no timeout.
 	VerifySSL:     When false, disables SSL certificate verification.
 	Interceptors:  A slice of ClientInterceptor implementations that can modify requests and responses.
-	HttpCustomizer:An optional function to customize the HTTP transport (e.g., for custom TLS settings).
+	HttpTransportCustomizer:An optional function to customize the HTTP transport (e.g., for custom TLS settings).
 	UserAgent:     The User-Agent header string for outgoing HTTP requests.
 	ErrorHandler:  A custom handler for processing HTTP response errors.
 	UseLocking:    If true, enables internal locking for concurrent request processing.
 	ValidationMode:The mode for validating request bodies. Can be "soft", "hard", or "disable".
 */
 type ClientConfig struct {
-	URL            string        `validate:"required,http_url"`
-	APIKey         string        `validate:"required_without_all=User Password"`
-	User           string        `validate:"excluded_with=APIKey,required_with=Password"`
-	Password       string        `validate:"excluded_with=APIKey,required_with=User"`
-	Timeout        time.Duration // How long to wait for replies, default: forever.
-	VerifySSL      bool
-	Interceptors   []ClientInterceptor
-	HttpCustomizer HttpCustomizer
-	UserAgent      string
-	ErrorHandler   ResponseErrorHandler
-	UseLocking     bool
-	ValidationMode validationMode `validate:"omitempty,oneof=soft hard disable"`
+	URL                     string        `validate:"required,http_url"`
+	APIKey                  string        `validate:"required_without_all=User Password"`
+	User                    string        `validate:"excluded_with=APIKey,required_with=Password"`
+	Password                string        `validate:"excluded_with=APIKey,required_with=User"`
+	Timeout                 time.Duration // How long to wait for replies, default: forever.
+	VerifySSL               bool
+	Interceptors            []ClientInterceptor
+	HttpTransportCustomizer HttpTransportCustomizer
+	UserAgent               string
+	ErrorHandler            ResponseErrorHandler
+	UseLocking              bool
+	ValidationMode          validationMode `validate:"omitempty,oneof=soft hard disable"`
 }
 
 // Credentials abstracts authentication credentials.
@@ -158,8 +158,8 @@ func newClientFromConfig(config *ClientConfig, v *validator) (*client, error) {
 		Proxy:           http.ProxyFromEnvironment,
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: !config.VerifySSL},
 	}
-	if config.HttpCustomizer != nil {
-		if err = config.HttpCustomizer(transport); err != nil {
+	if config.HttpTransportCustomizer != nil {
+		if transport, err = config.HttpTransportCustomizer(transport); err != nil {
 			return nil, fmt.Errorf("failed customizing HTTP transport: %w", err)
 		}
 	}

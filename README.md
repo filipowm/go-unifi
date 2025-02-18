@@ -84,14 +84,14 @@ List of available client configuration options is available [here](https://pkg.g
 
 ### Customizing HTTP Client
 
-You can customize underlying HTTP client by using `HttpCustomizer` interface:
+You can customize underlying HTTP client by using `HttpTransportCustomizer` interface:
 
 ```go
 c, err := unifi.NewClient(&unifi.ClientConfig{
     ...
-    HttpCustomizer: func(transport *http.Transport) error {
+    HttpTransportCustomizer: func(transport *http.Transport) (*http.Transport, error) {
         transport.MaxIdleConns = 10
-        return nil
+        return transport, nil
     },
 })
 ```
