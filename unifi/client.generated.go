@@ -33,6 +33,9 @@ type Client interface {
 	// Put sends a PUT request to the controller.
 	Put(ctx context.Context, apiPath string, reqBody interface{}, respBody interface{}) error
 
+	// Version returns the version of the UniFi Controller API.
+	Version() string
+
 	// ==== client methods for APGroup resource ====
 
 	// CreateAPGroup creates a resource
