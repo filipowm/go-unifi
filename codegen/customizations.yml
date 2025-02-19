@@ -16,6 +16,10 @@ customizations:
         comment: "BaseURL returns the base URL of the controller."
         returns:
           - "string"
+      - name: "Version"
+        comment: "Version returns the version of the UniFi Controller API."
+        returns:
+          - "string"
       - name: "Do"
         comment: "Do sends a request to the controller."
         params:

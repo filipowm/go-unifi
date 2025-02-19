@@ -153,6 +153,20 @@ func parseBaseURL(base string) (*url.URL, error) {
 	return baseURL, nil
 }
 
+func (c *client) Version() string {
+	if c.sysInfo != nil {
+		return c.sysInfo.Version
+	}
+	c.lock.Lock()
+	defer c.lock.Unlock()
+	i, err := c.GetSystemInformation()
+	if err != nil {
+		return ""
+	}
+	c.sysInfo = i
+	return c.sysInfo.Version
+}
+
 func newClientFromConfig(config *ClientConfig, v *validator) (*client, error) {
 	var rt http.RoundTripper
 	var err error
