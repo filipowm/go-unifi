@@ -90,9 +90,9 @@ func TestCustomizeHttpClient(t *testing.T) {
 	_, err := NewClient(&ClientConfig{
 		URL:    localUrl,
 		APIKey: "test-key",
-		HttpCustomizer: func(transport *http.Transport) error {
+		HttpTransportCustomizer: func(transport *http.Transport) (*http.Transport, error) {
 			called = true
-			return nil
+			return transport, nil
 		},
 	})
 
@@ -850,16 +850,16 @@ func TestLoginWithAPIKeyDirect(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestHttpCustomizerError(t *testing.T) {
+func TestHttpTransportCustomizerError(t *testing.T) {
 	t.Parallel()
-	customizer := func(transport *http.Transport) error {
-		return errors.New("customization failed")
+	customizer := func(transport *http.Transport) (*http.Transport, error) {
+		return nil, errors.New("customization failed")
 	}
 	_, err := NewClient(&ClientConfig{
-		URL:            testUrl,
-		APIKey:         "test-key",
-		VerifySSL:      false,
-		HttpCustomizer: customizer,
+		URL:                     testUrl,
+		APIKey:                  "test-key",
+		VerifySSL:               false,
+		HttpTransportCustomizer: customizer,
 	})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "failed customizing HTTP transport")

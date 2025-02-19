@@ -15,6 +15,9 @@ ij_smart_tabs = false
 ij_wrap_on_typing = false
 ij_any_block_comment_add_space = true
 
+[*.go]
+indent_style = tab
+
 [*.conf]
 ij_continuation_indent_size = 2
 

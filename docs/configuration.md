@@ -58,16 +58,17 @@ if err != nil {
 
 ## Customizing the HTTP Client
 
-You can provide your own HTTP client configuration using the `HttpCustomizer` callback. This is useful if you need to tweak connection settings like timeouts, idle connection settings, or TLS configurations:
+You can provide your own HTTP client configuration using the `HttpTransportCustomizer` callback. This is useful if you need to tweak connection settings like timeouts, idle connection settings, or TLS configurations:
 
 ```go
 c, err := unifi.NewClient(&unifi.ClientConfig{
     BaseURL: "https://unifi.localdomain",
     APIKey: "your-api-key",
-    HttpCustomizer: func(transport *http.Transport) error {
+    HttpTransportCustomizer: func(transport *http.Transport) (*http.Transport, error) {
         transport.MaxIdleConns = 10
         // Customize TLS settings, proxy, etc. as needed
-        return nil
+        // You can also create new instance of transport and return it, instead of customizing pre-configured
+        return transport, nil
     },
 })
 if err != nil {
@@ -132,14 +133,14 @@ import (
 )
 
 // customTransportCustomizer customizes the HTTP transport, e.g., setting idle connection limits and TLS options.
-func customTransportCustomizer(transport *http.Transport) error {
+func customTransportCustomizer(transport *http.Transport) (*http.Transport, error) {
 	transport.MaxIdleConns = 50
 	transport.IdleConnTimeout = 120 * time.Second
 	// Set a custom TLS configuration
 	transport.TLSClientConfig = &tls.Config{
 		MinVersion: tls.VersionTLS12,
 	}
-	return nil
+	return transport, nil
 }
 
 // myErrorHandler implements a custom error handler for HTTP responses.
@@ -175,7 +176,7 @@ func main() {
 		Timeout:        30 * time.Second,                                // Maximum duration to wait for a response
 		VerifySSL:      true,                                            // Enable SSL certificate verification
 		Interceptors:   []unifi.ClientInterceptor{&customInterceptor{}}, // Custom interceptors for request/response manipulation
-		HttpCustomizer: customTransportCustomizer,                       // Function to customize the underlying HTTP transport
+		HttpTransportCustomizer: customTransportCustomizer,              // Function to customize the underlying HTTP transport
 		UserAgent:      "MyCustomAgent/1.0",                             // Custom User-Agent string
 		ErrorHandler:   &myErrorHandler{},                               // Custom error handler for processing HTTP response errors
 		UseLocking:     true,                                            // Enable internal locking for safe concurrent request processing
