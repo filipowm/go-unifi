@@ -58,7 +58,17 @@ if err != nil {
 
 ## Customizing the HTTP Client
 
-You can provide your own HTTP client configuration using the `HttpTransportCustomizer` callback. This is useful if you need to tweak connection settings like timeouts, idle connection settings, or TLS configurations:
+There are two ways to customize the HTTP client used by the UniFi client:
+1. Using the `HttpTransportCustomizer`.
+2. Using the `HttpRoundTripperProvider`.
+
+Those methods are mutually exclusive, and only one can be used at a time. If both are provided, the `HttpRoundTripperProvider` takes precedence,
+unless it returns `nil`, in which case the `HttpTransportCustomizer` is used if defined (or default transport is used).
+
+### Using `HttpTransportCustomizer`
+
+You can provide your own HTTP client transport configuration using the `HttpTransportCustomizer` callback. This is useful if you need to tweak connection settings like timeouts, idle connection settings, 
+or TLS configurations:
 
 ```go
 c, err := unifi.NewClient(&unifi.ClientConfig{
@@ -74,6 +84,21 @@ c, err := unifi.NewClient(&unifi.ClientConfig{
 if err != nil {
     log.Fatalf("Error creating client: %v", err)
 }
+```
+
+### Using `HttpRoundTripperProvider`
+
+You can provide your own HTTP client configuration using the `HttpRoundTripperProvider` callback. This is useful if you need to create a custom round tripper, when `http.Transport` is not enough:
+
+```go
+c, err := unifi.NewClient(&unifi.ClientConfig{
+    BaseURL: "https://unifi.localdomain",
+    APIKey: "your-api-key",
+    HttpRoundTripperProvider: func() http.RoundTripper {
+        // Create a custom HTTP Round Tripper instance
+        return &http.Transport{}, nil
+    },
+})
 ```
 
 ## Using Interceptors
