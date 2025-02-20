@@ -34,7 +34,7 @@ func (c *client) UpdateFirewallZonePolicy(ctx context.Context, site string, d *F
 
 func (c *client) ReorderFirewallPolicies(ctx context.Context, site string, d *FirewallPolicyOrderUpdate) ([]FirewallZonePolicy, error) {
 	var res []FirewallZonePolicy
-	err := c.Put(ctx, fmt.Sprintf("%s/site/%s/firewall-policies/batch-reorder", site), d, res)
+	err := c.Put(ctx, fmt.Sprintf("%s/site/%s/firewall-policies/batch-reorder", c.apiPaths.ApiV2Path, site), d, res)
 	if err != nil {
 		return nil, err
 	}
