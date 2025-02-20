@@ -255,6 +255,46 @@ type Client interface {
 
 	// ==== end of client methods for FirewallRule resource ====
 
+	// ==== client methods for FirewallZone resource ====
+
+	// CreateFirewallZone creates a resource
+	CreateFirewallZone(ctx context.Context, site string, f *FirewallZone) (*FirewallZone, error)
+
+	// DeleteFirewallZone deletes a resource
+	DeleteFirewallZone(ctx context.Context, site string, id string) error
+
+	// GetFirewallZone retrieves a resource
+	GetFirewallZone(ctx context.Context, site string, id string) (*FirewallZone, error)
+
+	// ListFirewallZone lists the resources
+	ListFirewallZone(ctx context.Context, site string) ([]FirewallZone, error)
+
+	// UpdateFirewallZone updates a resource
+	UpdateFirewallZone(ctx context.Context, site string, f *FirewallZone) (*FirewallZone, error)
+
+	ListFirewallZoneMatrix(ctx context.Context, site string) ([]FirewallZoneMatrix, error)
+
+	// ==== client methods for FirewallZonePolicy resource ====
+
+	// CreateFirewallZonePolicy creates a resource
+	CreateFirewallZonePolicy(ctx context.Context, site string, f *FirewallZonePolicy) (*FirewallZonePolicy, error)
+
+	// DeleteFirewallZonePolicy deletes a resource
+	DeleteFirewallZonePolicy(ctx context.Context, site string, id string) error
+
+	// GetFirewallZonePolicy retrieves a resource
+	GetFirewallZonePolicy(ctx context.Context, site string, id string) (*FirewallZonePolicy, error)
+
+	// ListFirewallZonePolicy lists the resources
+	ListFirewallZonePolicy(ctx context.Context, site string) ([]FirewallZonePolicy, error)
+
+	// UpdateFirewallZonePolicy updates a resource
+	UpdateFirewallZonePolicy(ctx context.Context, site string, f *FirewallZonePolicy) (*FirewallZonePolicy, error)
+
+	// ==== end of client methods for FirewallZonePolicy resource ====
+
+	// ==== end of client methods for FirewallZone resource ====
+
 	// ==== client methods for HeatMap resource ====
 
 	// CreateHeatMap creates a resource

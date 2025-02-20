@@ -3,6 +3,7 @@ customizations:
   client:
     excludeResources:
       - "Dpi*"
+      - "FirewallZoneMatrix"
     functions:
       - name: "Login"
         comment: "Login logs in to the controller. Useful only for user/password authentication."
@@ -285,6 +286,16 @@ customizations:
             type: "int"
         returns:
           - "error"
+      - name: "ListFirewallZoneMatrix"
+        resourceName: "FirewallZoneMatrix"
+        params:
+          - name: "ctx"
+            type: "context.Context"
+          - name: "site"
+            type: "string"
+        returns:
+          - "[]FirewallZoneMatrix"
+          - "error"
   resources:
     Account:
       fields:
@@ -335,6 +346,15 @@ customizations:
           customUnmarshalType: "booleanishString"
         PortOverrides:
           omitEmpty: false
+    FirewallZone:
+      resourcePath: "firewall/zone"
+      fields:
+        NetworkIDs:
+          omitEmpty: false
+    FirewallZoneMatrix:
+      resourcePath: "firewall/zone-matrix"
+    FirewallZonePolicy:
+      resourcePath: "firewall-policies"
     Network:
       fields:
         InternetAccessEnabled:

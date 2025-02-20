@@ -183,6 +183,12 @@ user, err := c.CreateUser(ctx, "site-name", &unifi.User{
 
 ## Plans
 
+- [ ] Support Unifi Controller API V2
+  - [x] AP Groups
+  - [x] DNS Records
+  - [x] Zone-based firewalls
+  - [ ] Traffic management
+  - [ ] other...?
 - [x] Increase API coverage, or modify code generation to rely on the official UniFi Controller API specifications
 - [x] Improve error handling (currently only basic error handling is implemented and error details are not propagated)
 - [x] Improve client code for better usability
