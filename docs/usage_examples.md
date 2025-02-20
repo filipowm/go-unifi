@@ -53,3 +53,45 @@ if err != nil {
 }
 // Use the updated setting
 ```
+
+## Create a Firewall Zone
+
+To create firewall zone:
+
+```go
+fz, err := c.CreateFirewallZone(ctx, "default", &unifi.FirewallZone{
+		Name:       "my-zone",
+		NetworkIDs: []string{},
+})
+if err != nil {
+    fmt.Printf("Error: %v\n", err)
+} else {
+    fmt.Printf("Firewall Zone created: %v\n", fz)
+}
+```
+
+Then you can create a firewall zone policy (minimal example):
+
+```go
+fzp, err := c.CreateFirewallZonePolicy(ctx, "default", &unifi.FirewallZonePolicy{
+	Name:                "my-zone-policy",
+	Action:              "REJECT",
+	Enabled:             true,
+	IPVersion:           "BOTH",
+	Source: unifi.FirewallZonePolicySource{
+		ZoneID: fz.ID,
+	},
+	Destination: unifi.FirewallZonePolicyDestination{
+		ZoneID: fz.ID,
+	},
+	Schedule: unifi.FirewallZonePolicySchedule{
+		Mode: "ALWAYS",
+	},
+})
+if err != nil {
+	fmt.Printf("Error: %v\n", err)
+	return
+} else {
+	fmt.Printf("Firewall Zone Policy created: %v\n", fzp)
+}
+```
