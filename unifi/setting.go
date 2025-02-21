@@ -82,7 +82,7 @@ func (c *client) SetSetting(ctx context.Context, site, key string, reqBody inter
 		Meta Meta              `json:"meta"`
 		Data []json.RawMessage `json:"data"`
 	}
-	err := c.Post(ctx, fmt.Sprintf("s/%s/set/setting/%s", site, key), reqBody, respBody)
+	err := c.Post(ctx, fmt.Sprintf("s/%s/set/setting/%s", site, key), reqBody, &respBody)
 	if err != nil {
 		return nil, err
 	}
