@@ -8,6 +8,8 @@
 This SDK provides a Go client for the UniFi Network Controller API. It is used primarily in the [Terraform provider for UniFi](https://github.com/filipowm/terraform-provider-unifi),
 but can be used independently for any Go project requiring UniFi Network Controller API integration.
 
+Check out the detailed [documentation](docs/readme.md) for more information.
+
 ## Features
 
 - Great UniFi Network Controller API coverage through automated code generation and manually added code for undocumented endpoints
@@ -36,6 +38,11 @@ go generate unifi/codegen.go
 
 **Note:** While the current code generation approach works, we're exploring better ways to extract API specifications. There is no official API specifications available, and the UniFi Controller JAR is obfuscated, making it
 challenging to directly use Java classes. Contributions and suggestions for improvements are welcome!
+
+## Migrating from `paultyng/go-unifi`
+
+If you already use `paultyng/go-unifi`, you can easily migrate to this SDK, because it is a fork and the SDK is fully compatible with the original one. 
+Check out the [migration guide](docs/migrating_from_upstream.md) for information on how to migrate from the upstream `paultyng/go-unifi` SDK.
 
 ## Usage
 
