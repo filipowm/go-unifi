@@ -369,6 +369,11 @@ customizations:
           omitEmpty: true
         XWANPassword:
           omitEmpty: true
+    SettingGuestAccess:
+      fields:
+        Expire:
+          fieldType: "int"
+          customUnmarshalType: "emptyStringInt"
     User:
       fields:
         Blocked:
