@@ -14,63 +14,85 @@ type Setting struct {
 
 func (s *Setting) newFields() (interface{}, error) {
 	switch s.Key {
-	case "auto_speedtest":
+	case SettingAutoSpeedtestKey:
 		return &SettingAutoSpeedtest{}, nil
-	case "baresip":
+	case SettingBaresipKey:
 		return &SettingBaresip{}, nil
-	case "broadcast":
+	case SettingBroadcastKey:
 		return &SettingBroadcast{}, nil
-	case "connectivity":
+	case SettingConnectivityKey:
 		return &SettingConnectivity{}, nil
-	case "country":
+	case SettingCountryKey:
 		return &SettingCountry{}, nil
-	case "dpi":
+	case SettingDashboardKey:
+		return &SettingDashboard{}, nil
+	case SettingDohKey:
+		return &SettingDoh{}, nil
+	case SettingDpiKey:
 		return &SettingDpi{}, nil
-	case "element_adopt":
+	case SettingElementAdoptKey:
 		return &SettingElementAdopt{}, nil
-	case "guest_access":
+	case SettingEtherLightingKey:
+		return &SettingEtherLighting{}, nil
+	case SettingEvaluationScoreKey:
+		return &SettingEvaluationScore{}, nil
+	case SettingGlobalApKey:
+		return &SettingGlobalAp{}, nil
+	case SettingGlobalNatKey:
+		return &SettingGlobalNat{}, nil
+	case SettingGlobalSwitchKey:
+		return &SettingGlobalSwitch{}, nil
+	case SettingGuestAccessKey:
 		return &SettingGuestAccess{}, nil
-	// case "ips":
-	// 	return &SettingI
-	case "lcm":
+	case SettingIpsKey:
+		return &SettingIps{}, nil
+	case SettingLcmKey:
 		return &SettingLcm{}, nil
-	case "locale":
+	case SettingLocaleKey:
 		return &SettingLocale{}, nil
-	case "mgmt":
+	case SettingMagicSiteToSiteVpnKey:
+		return &SettingMagicSiteToSiteVpn{}, nil
+	case SettingMgmtKey:
 		return &SettingMgmt{}, nil
-	case "network_optimization":
+	case SettingNetflowKey:
+		return &SettingNetflow{}, nil
+	case SettingNetworkOptimizationKey:
 		return &SettingNetworkOptimization{}, nil
-	case "ntp":
+	case SettingNtpKey:
 		return &SettingNtp{}, nil
-	case "porta":
+	case SettingPortaKey:
 		return &SettingPorta{}, nil
-	case "radio_ai":
+	case SettingRadioAiKey:
 		return &SettingRadioAi{}, nil
-	case "radius":
+	case SettingRadiusKey:
 		return &SettingRadius{}, nil
-	case "rsyslogd":
+	case SettingRsyslogdKey:
 		return &SettingRsyslogd{}, nil
-	case "snmp":
+	case SettingSnmpKey:
 		return &SettingSnmp{}, nil
-	case "super_cloudaccess":
+	case SettingSslInspectionKey:
+		return &SettingSslInspection{}, nil
+	case SettingSuperCloudaccessKey:
 		return &SettingSuperCloudaccess{}, nil
-	case "super_events":
+	case SettingSuperEventsKey:
 		return &SettingSuperEvents{}, nil
-	case "super_fwupdate":
+	case SettingSuperFwupdateKey:
 		return &SettingSuperFwupdate{}, nil
-	case "super_identity":
+	case SettingSuperIdentityKey:
 		return &SettingSuperIdentity{}, nil
-	case "super_mail":
+	case SettingSuperMailKey:
 		return &SettingSuperMail{}, nil
-	case "super_mgmt":
+	case SettingSuperMgmtKey:
 		return &SettingSuperMgmt{}, nil
-	case "super_sdn":
+	case SettingSuperSdnKey:
 		return &SettingSuperSdn{}, nil
-	case "super_smtp":
+	case SettingSuperSmtpKey:
 		return &SettingSuperSmtp{}, nil
-	case "usg":
+	case SettingTeleportKey:
+		return &SettingTeleport{}, nil
+	case SettingUsgKey:
 		return &SettingUsg{}, nil
-	case "usw":
+	case SettingUswKey:
 		return &SettingUsw{}, nil
 	}
 
@@ -98,7 +120,7 @@ func (c *client) SetSetting(ctx context.Context, site, key string, reqBody inter
 			break
 		}
 	}
-	if setting == nil {
+	if setting == nil || setting.Key != key {
 		return nil, ErrNotFound
 	}
 	fields, err := setting.newFields()
@@ -122,7 +144,7 @@ func (c *client) GetSetting(ctx context.Context, site, key string) (*Setting, in
 
 	err := c.Get(ctx, fmt.Sprintf("s/%s/get/setting", site), nil, &respBody)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("unable to get setting %s: %w", key, err)
 	}
 
 	var raw json.RawMessage
@@ -130,14 +152,14 @@ func (c *client) GetSetting(ctx context.Context, site, key string) (*Setting, in
 	for _, d := range respBody.Data {
 		err = json.Unmarshal(d, &setting)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, fmt.Errorf("unable to decode get setting %s: %w", key, err)
 		}
 		if setting.Key == key {
 			raw = d
 			break
 		}
 	}
-	if setting == nil {
+	if setting == nil || setting.Key != key {
 		return nil, nil, ErrNotFound
 	}
 
@@ -148,7 +170,7 @@ func (c *client) GetSetting(ctx context.Context, site, key string) (*Setting, in
 
 	err = json.Unmarshal(raw, &fields)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("unable to decode get setting fields %s: %w", key, err)
 	}
 
 	return setting, fields, nil

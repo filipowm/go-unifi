@@ -35,7 +35,7 @@ type SettingGuestAccess struct {
 	AuthorizeUseSandbox                    bool     `json:"authorize_use_sandbox"`
 	CustomIP                               string   `json:"custom_ip" validate:"omitempty,ipv4"` // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
 	EcEnabled                              bool     `json:"ec_enabled"`
-	Expire                                 string   `json:"expire,omitempty"`                                           // [\d]+|custom
+	Expire                                 int      `json:"expire,omitempty"`                                           // [\d]+|custom
 	ExpireNumber                           int      `json:"expire_number,omitempty"`                                    // ^[1-9][0-9]{0,5}|1000000$
 	ExpireUnit                             int      `json:"expire_unit,omitempty" validate:"omitempty,oneof=1 60 1440"` // 1|60|1440
 	FacebookAppID                          string   `json:"facebook_app_id"`
@@ -131,6 +131,7 @@ type SettingGuestAccess struct {
 func (dst *SettingGuestAccess) UnmarshalJSON(b []byte) error {
 	type Alias SettingGuestAccess
 	aux := &struct {
+		Expire                     emptyStringInt `json:"expire"`
 		ExpireNumber               emptyStringInt `json:"expire_number"`
 		ExpireUnit                 emptyStringInt `json:"expire_unit"`
 		PortalCustomizedBoxOpacity emptyStringInt `json:"portal_customized_box_opacity"`
@@ -147,6 +148,7 @@ func (dst *SettingGuestAccess) UnmarshalJSON(b []byte) error {
 	if err != nil {
 		return fmt.Errorf("unable to unmarshal alias: %w", err)
 	}
+	dst.Expire = int(aux.Expire)
 	dst.ExpireNumber = int(aux.ExpireNumber)
 	dst.ExpireUnit = int(aux.ExpireUnit)
 	dst.PortalCustomizedBoxOpacity = int(aux.PortalCustomizedBoxOpacity)
