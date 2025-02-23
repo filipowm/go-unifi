@@ -63,6 +63,7 @@ func (c *client) GetSettingGlobalNat(ctx context.Context, site string) (*Setting
 
 // Update SettingGlobalNat Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingGlobalNat(ctx context.Context, site string, s *SettingGlobalNat) (*SettingGlobalNat, error) {
+	s.Key = SettingGlobalNatKey
 	result, err := c.SetSetting(ctx, site, SettingGlobalNatKey, s)
 	if err != nil {
 		return nil, err

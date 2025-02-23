@@ -84,6 +84,7 @@ func (c *client) GetSettingGlobalAp(ctx context.Context, site string) (*SettingG
 
 // Update SettingGlobalAp Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingGlobalAp(ctx context.Context, site string, s *SettingGlobalAp) (*SettingGlobalAp, error) {
+	s.Key = SettingGlobalApKey
 	result, err := c.SetSetting(ctx, site, SettingGlobalApKey, s)
 	if err != nil {
 		return nil, err

@@ -73,6 +73,7 @@ func (c *client) GetSettingSuperSmtp(ctx context.Context, site string) (*Setting
 
 // Update SettingSuperSmtp Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingSuperSmtp(ctx context.Context, site string, s *SettingSuperSmtp) (*SettingSuperSmtp, error) {
+	s.Key = SettingSuperSmtpKey
 	result, err := c.SetSetting(ctx, site, SettingSuperSmtpKey, s)
 	if err != nil {
 		return nil, err

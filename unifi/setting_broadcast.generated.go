@@ -67,6 +67,7 @@ func (c *client) GetSettingBroadcast(ctx context.Context, site string) (*Setting
 
 // Update SettingBroadcast Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingBroadcast(ctx context.Context, site string, s *SettingBroadcast) (*SettingBroadcast, error) {
+	s.Key = SettingBroadcastKey
 	result, err := c.SetSetting(ctx, site, SettingBroadcastKey, s)
 	if err != nil {
 		return nil, err

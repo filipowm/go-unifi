@@ -67,6 +67,7 @@ func (c *client) GetSettingConnectivity(ctx context.Context, site string) (*Sett
 
 // Update SettingConnectivity Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingConnectivity(ctx context.Context, site string, s *SettingConnectivity) (*SettingConnectivity, error) {
+	s.Key = SettingConnectivityKey
 	result, err := c.SetSetting(ctx, site, SettingConnectivityKey, s)
 	if err != nil {
 		return nil, err

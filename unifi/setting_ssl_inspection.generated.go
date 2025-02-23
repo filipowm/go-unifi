@@ -62,6 +62,7 @@ func (c *client) GetSettingSslInspection(ctx context.Context, site string) (*Set
 
 // Update SettingSslInspection Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingSslInspection(ctx context.Context, site string, s *SettingSslInspection) (*SettingSslInspection, error) {
+	s.Key = SettingSslInspectionKey
 	result, err := c.SetSetting(ctx, site, SettingSslInspectionKey, s)
 	if err != nil {
 		return nil, err

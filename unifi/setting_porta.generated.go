@@ -62,6 +62,7 @@ func (c *client) GetSettingPorta(ctx context.Context, site string) (*SettingPort
 
 // Update SettingPorta Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingPorta(ctx context.Context, site string, s *SettingPorta) (*SettingPorta, error) {
+	s.Key = SettingPortaKey
 	result, err := c.SetSetting(ctx, site, SettingPortaKey, s)
 	if err != nil {
 		return nil, err

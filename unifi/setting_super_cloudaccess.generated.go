@@ -68,6 +68,7 @@ func (c *client) GetSettingSuperCloudaccess(ctx context.Context, site string) (*
 
 // Update SettingSuperCloudaccess Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingSuperCloudaccess(ctx context.Context, site string, s *SettingSuperCloudaccess) (*SettingSuperCloudaccess, error) {
+	s.Key = SettingSuperCloudaccessKey
 	result, err := c.SetSetting(ctx, site, SettingSuperCloudaccessKey, s)
 	if err != nil {
 		return nil, err

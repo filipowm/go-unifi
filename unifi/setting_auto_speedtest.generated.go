@@ -63,6 +63,7 @@ func (c *client) GetSettingAutoSpeedtest(ctx context.Context, site string) (*Set
 
 // Update SettingAutoSpeedtest Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingAutoSpeedtest(ctx context.Context, site string, s *SettingAutoSpeedtest) (*SettingAutoSpeedtest, error) {
+	s.Key = SettingAutoSpeedtestKey
 	result, err := c.SetSetting(ctx, site, SettingAutoSpeedtestKey, s)
 	if err != nil {
 		return nil, err

@@ -127,6 +127,7 @@ func (c *client) GetSettingSuperMgmt(ctx context.Context, site string) (*Setting
 
 // Update SettingSuperMgmt Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingSuperMgmt(ctx context.Context, site string, s *SettingSuperMgmt) (*SettingSuperMgmt, error) {
+	s.Key = SettingSuperMgmtKey
 	result, err := c.SetSetting(ctx, site, SettingSuperMgmtKey, s)
 	if err != nil {
 		return nil, err

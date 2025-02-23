@@ -76,6 +76,7 @@ func (c *client) GetSettingRadius(ctx context.Context, site string) (*SettingRad
 
 // Update SettingRadius Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingRadius(ctx context.Context, site string, s *SettingRadius) (*SettingRadius, error) {
+	s.Key = SettingRadiusKey
 	result, err := c.SetSetting(ctx, site, SettingRadiusKey, s)
 	if err != nil {
 		return nil, err

@@ -86,6 +86,7 @@ func (c *client) GetSettingDoh(ctx context.Context, site string) (*SettingDoh, e
 
 // Update SettingDoh Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingDoh(ctx context.Context, site string, s *SettingDoh) (*SettingDoh, error) {
+	s.Key = SettingDohKey
 	result, err := c.SetSetting(ctx, site, SettingDohKey, s)
 	if err != nil {
 		return nil, err

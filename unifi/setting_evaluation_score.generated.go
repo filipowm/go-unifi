@@ -62,6 +62,7 @@ func (c *client) GetSettingEvaluationScore(ctx context.Context, site string) (*S
 
 // Update SettingEvaluationScore Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingEvaluationScore(ctx context.Context, site string, s *SettingEvaluationScore) (*SettingEvaluationScore, error) {
+	s.Key = SettingEvaluationScoreKey
 	result, err := c.SetSetting(ctx, site, SettingEvaluationScoreKey, s)
 	if err != nil {
 		return nil, err

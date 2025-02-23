@@ -174,6 +174,7 @@ func (c *client) GetSettingUsg(ctx context.Context, site string) (*SettingUsg, e
 
 // Update SettingUsg Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingUsg(ctx context.Context, site string, s *SettingUsg) (*SettingUsg, error) {
+	s.Key = SettingUsgKey
 	result, err := c.SetSetting(ctx, site, SettingUsgKey, s)
 	if err != nil {
 		return nil, err

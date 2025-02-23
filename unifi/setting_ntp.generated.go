@@ -66,6 +66,7 @@ func (c *client) GetSettingNtp(ctx context.Context, site string) (*SettingNtp, e
 
 // Update SettingNtp Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingNtp(ctx context.Context, site string, s *SettingNtp) (*SettingNtp, error) {
+	s.Key = SettingNtpKey
 	result, err := c.SetSetting(ctx, site, SettingNtpKey, s)
 	if err != nil {
 		return nil, err

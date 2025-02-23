@@ -84,6 +84,7 @@ func (c *client) GetSettingDashboard(ctx context.Context, site string) (*Setting
 
 // Update SettingDashboard Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingDashboard(ctx context.Context, site string, s *SettingDashboard) (*SettingDashboard, error) {
+	s.Key = SettingDashboardKey
 	result, err := c.SetSetting(ctx, site, SettingDashboardKey, s)
 	if err != nil {
 		return nil, err

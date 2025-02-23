@@ -105,6 +105,7 @@ func (c *client) GetSettingEtherLighting(ctx context.Context, site string) (*Set
 
 // Update SettingEtherLighting Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingEtherLighting(ctx context.Context, site string, s *SettingEtherLighting) (*SettingEtherLighting, error) {
+	s.Key = SettingEtherLightingKey
 	result, err := c.SetSetting(ctx, site, SettingEtherLightingKey, s)
 	if err != nil {
 		return nil, err

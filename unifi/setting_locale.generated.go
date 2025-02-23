@@ -62,6 +62,7 @@ func (c *client) GetSettingLocale(ctx context.Context, site string) (*SettingLoc
 
 // Update SettingLocale Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingLocale(ctx context.Context, site string, s *SettingLocale) (*SettingLocale, error) {
+	s.Key = SettingLocaleKey
 	result, err := c.SetSetting(ctx, site, SettingLocaleKey, s)
 	if err != nil {
 		return nil, err

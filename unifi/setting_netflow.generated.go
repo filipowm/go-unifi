@@ -85,6 +85,7 @@ func (c *client) GetSettingNetflow(ctx context.Context, site string) (*SettingNe
 
 // Update SettingNetflow Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingNetflow(ctx context.Context, site string, s *SettingNetflow) (*SettingNetflow, error) {
+	s.Key = SettingNetflowKey
 	result, err := c.SetSetting(ctx, site, SettingNetflowKey, s)
 	if err != nil {
 		return nil, err

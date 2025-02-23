@@ -77,6 +77,7 @@ func (c *client) GetSettingRsyslogd(ctx context.Context, site string) (*SettingR
 
 // Update SettingRsyslogd Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingRsyslogd(ctx context.Context, site string, s *SettingRsyslogd) (*SettingRsyslogd, error) {
+	s.Key = SettingRsyslogdKey
 	result, err := c.SetSetting(ctx, site, SettingRsyslogdKey, s)
 	if err != nil {
 		return nil, err

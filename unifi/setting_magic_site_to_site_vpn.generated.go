@@ -62,6 +62,7 @@ func (c *client) GetSettingMagicSiteToSiteVpn(ctx context.Context, site string) 
 
 // Update SettingMagicSiteToSiteVpn Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingMagicSiteToSiteVpn(ctx context.Context, site string, s *SettingMagicSiteToSiteVpn) (*SettingMagicSiteToSiteVpn, error) {
+	s.Key = SettingMagicSiteToSiteVpnKey
 	result, err := c.SetSetting(ctx, site, SettingMagicSiteToSiteVpnKey, s)
 	if err != nil {
 		return nil, err
