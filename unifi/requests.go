@@ -39,12 +39,12 @@ func (c *client) buildRequestURL(apiPath string) (*url.URL, error) {
 // validateRequestBody validates the request body if validation is enabled.
 func (c *client) validateRequestBody(reqBody interface{}) error {
 	if reqBody != nil && c.validationMode != DisableValidation {
+		c.Trace("Validating request body")
 		if err := c.validator.Validate(reqBody); err != nil {
-			err = fmt.Errorf("failed validating request body: %w", err)
 			if c.validationMode == HardValidation {
-				return err
+				return fmt.Errorf("failed validating request body: %w", err)
 			} else {
-				fmt.Println(err)
+				c.Warnf("failed validating request body: %s", err)
 			}
 		}
 	}
@@ -64,6 +64,7 @@ func (c *client) newRequestContext() (context.Context, context.CancelFunc) {
 // It validates the request body, applies interceptors, and decodes the HTTP response into respBody if provided.
 // It returns an error if the request or response handling fails.
 func (c *client) Do(ctx context.Context, method, apiPath string, reqBody interface{}, respBody interface{}) error {
+	c.Tracef("Performing request: %s %s", method, apiPath)
 	if err := c.validateRequestBody(reqBody); err != nil {
 		return err
 	}
@@ -76,6 +77,7 @@ func (c *client) Do(ctx context.Context, method, apiPath string, reqBody interfa
 	if err != nil {
 		return fmt.Errorf("unable to create request URL: %w", err)
 	}
+	c.Debugf("Executing request: %s %s", method, url.String())
 
 	req, err := http.NewRequestWithContext(ctx, method, url.String(), reqReader)
 	if err != nil {
@@ -84,8 +86,10 @@ func (c *client) Do(ctx context.Context, method, apiPath string, reqBody interfa
 
 	if c.useLocking {
 		c.lock.Lock()
+		c.Trace("Acquired lock fo request")
 		defer c.lock.Unlock()
 	}
+	c.Trace("Executing request interceptors")
 	for _, interceptor := range c.interceptors {
 		if err := interceptor.InterceptRequest(req); err != nil {
 			return err
@@ -98,20 +102,24 @@ func (c *client) Do(ctx context.Context, method, apiPath string, reqBody interfa
 	}
 	defer resp.Body.Close()
 
+	c.Trace("Executing response interceptors")
 	for _, interceptor := range c.interceptors {
 		if err := interceptor.InterceptResponse(resp); err != nil {
 			return err
 		}
 	}
 
+	c.Trace("Checking for errors in response")
 	if err := c.errorHandler.HandleError(resp); err != nil {
 		return err
 	}
 
 	if respBody == nil || resp.ContentLength == 0 {
+		c.Trace("No response body to decode")
 		return nil
 	}
 
+	c.Trace("Decoding response body")
 	err = json.NewDecoder(resp.Body).Decode(respBody)
 	if err != nil {
 		return fmt.Errorf("unable to decode body: %s %s %w", method, apiPath, err)

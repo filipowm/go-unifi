@@ -8,6 +8,7 @@ import (
 )
 
 type Client interface {
+	Logger
 
 	// BaseURL returns the base URL of the controller.
 	BaseURL() string

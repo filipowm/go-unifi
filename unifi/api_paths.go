@@ -59,6 +59,7 @@ var (
 
 // determineApiStyle checks the base URL to decide which API style to use and sets the apiPaths accordingly.
 func (c *client) determineApiStyle() error {
+	c.Debug("Determining API style")
 	ctx, cancel := c.newRequestContext()
 	defer cancel()
 
@@ -85,8 +86,10 @@ func (c *client) determineApiStyle() error {
 
 	switch resp.StatusCode {
 	case http.StatusOK:
+		c.Debug("Using new style API")
 		c.apiPaths = &NewStyleAPI
 	case http.StatusFound:
+		c.Debug("Using old style API")
 		c.apiPaths = &OldStyleAPI
 	default:
 		return fmt.Errorf("expected 200 or 302 status code, but got: %d", resp.StatusCode)

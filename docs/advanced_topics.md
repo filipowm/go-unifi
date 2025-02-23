@@ -94,8 +94,76 @@ if err != nil {
 
 ## Debugging and Logging
 
-For troubleshooting, it might be useful to enable verbose logging. You can implement an interceptor to log additional
-details like headers, body content, and timings. This can be enabled conditionally in your application's debug mode.
+The SDK provides flexible logging capabilities through the `Logger` interface. You can either use the default logger or implement your own custom logger.
+
+### Using the Default Logger
+
+The SDK includes a default logger based on [logrus](https://github.com/sirupsen/logrus). You can configure it with different logging levels:
+
+```go
+// Configure client with default logger at Debug level
+config := &unifi.ClientConfig{
+    URL:    "https://unifi.localdomain",
+    APIKey: "your-api-key",
+    Logger: unifi.NewDefaultLogger(unifi.DebugLevel),
+}
+client, err := unifi.NewClient(config)
+```
+
+Available logging levels are:
+- `unifi.DisabledLevel` - no logging
+- `unifi.TraceLevel` - most verbose level
+- `unifi.DebugLevel` - debug information
+- `unifi.InfoLevel` - default level, informational messages
+- `unifi.WarnLevel` - warning messages
+- `unifi.ErrorLevel` - error messages only
+
+Then `Logger` methods are available to be used within the client:
+
+```go
+client.Logger.Trace("Trace message")
+client.Logger.Tracef("Trace message with %s", "formatting")
+client.Logger.Debug("Debug message")
+client.Logger.Debugf("Debug message with %s", "formatting")
+client.Logger.Info("Info message")
+client.Logger.Infof("Info message with %s", "formatting")
+client.Logger.Warn("Warn message")
+client.Logger.Warnf("Warn message with %s", "formatting")
+client.Logger.Error("Error message")
+client.Logger.Errorf("Error message with %s", "formatting")
+```
+
+### Custom Logger Implementation
+
+You can implement your own logger by implementing the `Logger` interface:
+
+```go
+type MyCustomLogger struct {
+    // your logger fields
+}
+
+// Implement all required methods
+func (l *MyCustomLogger) Trace(msg string)                              { /* implementation */ }
+func (l *MyCustomLogger) Debug(msg string)                              { /* implementation */ }
+func (l *MyCustomLogger) Info(msg string)                              { /* implementation */ }
+func (l *MyCustomLogger) Error(msg string)                             { /* implementation */ }
+func (l *MyCustomLogger) Warn(msg string)                              { /* implementation */ }
+func (l *MyCustomLogger) Tracef(format string, args ...interface{})    { /* implementation */ }
+func (l *MyCustomLogger) Debugf(format string, args ...interface{})    { /* implementation */ }
+func (l *MyCustomLogger) Infof(format string, args ...interface{})     { /* implementation */ }
+func (l *MyCustomLogger) Errorf(format string, args ...interface{})    { /* implementation */ }
+func (l *MyCustomLogger) Warnf(format string, args ...interface{})     { /* implementation */ }
+
+// Use custom logger in client configuration
+config := &unifi.ClientConfig{
+    URL:    "https://unifi.localdomain",
+    APIKey: "your-api-key",
+    Logger: &MyCustomLogger{},
+}
+client, err := unifi.NewClient(config)
+```
+
+If no logger is specified in the configuration, the SDK will use the default logger with `Info` level.
 
 ## Advanced Error Handling
 
@@ -143,4 +211,4 @@ For more details on contributing, see the [Contributing Guidelines](https://gith
 ---
 
 This document is intended for advanced users who need deeper control and customization over the UniFi client.
-For most users, the basic configuration and usage examples should suffice. 
+For most users, the basic configuration and usage examples should suffice.

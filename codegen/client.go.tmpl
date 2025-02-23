@@ -10,6 +10,8 @@ import (
 
 type {{ .Name }} interface {
 
+    Logger
+
     {{- range $k, $v := .Functions }}
 
     {{ if $v.Comment }}// {{ $v.Comment }}{{ end }}
