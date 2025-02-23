@@ -10,26 +10,6 @@ import (
 
 var ErrNotFound = errors.New("not found")
 
-// TODO old-style error handling to be removed in future versions.
-type APIError struct {
-	RC      string
-	Message string
-}
-
-func (err *APIError) Error() string {
-	return err.Message
-}
-
-func (err *APIError) Is(target error) bool {
-	var apiError *APIError
-	if errors.As(target, &apiError) {
-		if err.RC == apiError.RC && err.Message == apiError.Message {
-			return true
-		}
-	}
-	return false
-}
-
 type Meta struct {
 	RC      string `json:"rc"`
 	Message string `json:"msg"`
@@ -37,9 +17,9 @@ type Meta struct {
 
 func (m *Meta) error() error {
 	if m.RC != "ok" {
-		return &APIError{
-			RC:      m.RC,
-			Message: m.Message,
+		return &ServerError{
+			ErrorCode: m.RC,
+			Message:   m.Message,
 		}
 	}
 

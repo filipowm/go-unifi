@@ -841,7 +841,7 @@ func TestLoginWithAPIKeyDirect(t *testing.T) {
 		APIKey: "abc",
 		URL:    testUrl,
 	})
-	require.NoError(t, err)
+	require.Error(t, err)
 	err = c.Login()
 	require.NoError(t, err)
 }

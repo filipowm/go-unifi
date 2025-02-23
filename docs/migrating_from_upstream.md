@@ -71,6 +71,10 @@ if err != nil {
      - `HttpTransportCustomizer` for transport-level customization
      - `HttpRoundTripperProvider` for complete HTTP client control
 
+4. **Removed unifi.APIError**:
+   - Old: `unifi.APIError` struct for API errors
+   - New: Standard `unifi.ServerError` struct for API errors
+
 5. **Additional Features in filipowm/go-unifi**:
    - Validation modes (Soft, Hard, Disabled)
    - Request/Response interceptors
@@ -90,6 +94,7 @@ if err != nil {
    })
    ```
 4. Remove explicit `Login()` calls as they are now handled automatically, unless you use [bare client initialization](./getting_started.md#BareClientInitialization)
+5. Replace usage of `unifi.APIError` with `unifi.ServerError`
 
 The rest of your code using the client methods should continue to work as before, as the API methods remain the same.
 
