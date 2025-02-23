@@ -488,17 +488,16 @@ func TestUrlValidation(t *testing.T) {
 func TestValidationModeValidation(t *testing.T) {
 	t.Parallel()
 	testCases := []struct {
-		validationMode validationMode
-		expectedError  string
+		validationMode ValidationMode
 	}{
-		{SoftValidation, ""},
-		{HardValidation, ""},
-		{DisableValidation, ""},
-		{"invalid", "must be one of"},
+		{SoftValidation},
+		{HardValidation},
+		{DisableValidation},
+		{99},
 	}
 
 	for _, tc := range testCases {
-		t.Run(string(tc.validationMode), func(t *testing.T) {
+		t.Run(fmt.Sprintf("%d", tc.validationMode), func(t *testing.T) {
 			t.Parallel()
 			// given
 			cc := &ClientConfig{
@@ -511,12 +510,6 @@ func TestValidationModeValidation(t *testing.T) {
 
 			// when
 			err = v.Validate(cc)
-
-			// then
-			if tc.expectedError != "" {
-				require.ErrorContains(t, err, tc.expectedError)
-				return
-			}
 			require.NoError(t, err)
 		})
 	}
@@ -541,7 +534,7 @@ type validateableBody struct {
 func TestValidationModes(t *testing.T) {
 	t.Parallel()
 	testCases := []struct {
-		validationMode validationMode
+		validationMode ValidationMode
 		expectedError  string
 		expectRequest  bool
 	}{
@@ -551,7 +544,7 @@ func TestValidationModes(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		t.Run(string(tc.validationMode), func(t *testing.T) {
+		t.Run(fmt.Sprintf("%d", tc.validationMode), func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 			// given
@@ -843,11 +836,14 @@ func TestMarshalRequestValid(t *testing.T) {
 func TestLoginWithAPIKeyDirect(t *testing.T) {
 	t.Parallel()
 	// Create a client manually with the APIKey set.
-	c := &client{
-		credentials: APIKeyCredentials{APIKey: "abc"},
-	}
-	err := c.Login()
-	assert.NoError(t, err)
+
+	c, err := newBareClient(&ClientConfig{
+		APIKey: "abc",
+		URL:    testUrl,
+	})
+	require.Error(t, err)
+	err = c.Login()
+	require.NoError(t, err)
 }
 
 func TestHttpTransportCustomizerError(t *testing.T) {

@@ -117,6 +117,7 @@ func (c *client) getOldSysInfo(ctx context.Context) (*SysInfo, error) {
 
 // GetSystemInformation retrieves system information, trying the new API first and falling back to the old API if necessary.
 func (c *client) GetSystemInformation() (*SysInfo, error) {
+	c.Trace("Reading system information")
 	ctx, cancel := c.newRequestContext()
 	defer cancel()
 

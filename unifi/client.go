@@ -14,20 +14,17 @@ import (
 	"golang.org/x/net/publicsuffix"
 )
 
-// validationMode represents the mode for request validation.
+// ValidationMode represents the mode for request validation.
 // It may be set to "soft", "hard", or "disable". The default is "soft".
-type validationMode string
+type ValidationMode int
 
 const (
 	// SoftValidation indicates that validation errors are logged as warnings but do not prevent the request from proceeding.
-	SoftValidation validationMode = "soft"
+	SoftValidation ValidationMode = iota
 	// HardValidation indicates that validation errors are treated as fatal and will cause the request to be rejected.
-	HardValidation validationMode = "hard"
+	HardValidation
 	// DisableValidation indicates that no validation is performed on the request body.
-	DisableValidation validationMode = "disable"
-	// DefaultValidation is the default validation mode used if none is specified.
-	// Currently set to SoftValidation, but may change to HardValidation in a future major version.
-	DefaultValidation validationMode = SoftValidation // TODO: change to hard in next major version
+	DisableValidation
 )
 
 // HttpTransportCustomizer is a function type for customizing the HTTP transport.
@@ -73,7 +70,8 @@ type ClientConfig struct {
 	UserAgent                string
 	ErrorHandler             ResponseErrorHandler
 	UseLocking               bool
-	ValidationMode           validationMode `validate:"omitempty,oneof=soft hard disable"`
+	ValidationMode           ValidationMode
+	Logger                   Logger
 }
 
 // Credentials abstracts authentication credentials.
@@ -112,12 +110,13 @@ func (u UserPassCredentials) GetPass() string   { return u.Password }
 
 // client represents a UniFi client.
 type client struct {
+	Logger
 	baseURL        *url.URL
 	sysInfo        *SysInfo
 	apiPaths       *APIPaths
 	timeout        time.Duration
 	credentials    Credentials
-	validationMode validationMode
+	validationMode ValidationMode
 	useLocking     bool
 
 	http         *http.Client
@@ -168,10 +167,19 @@ func (c *client) Version() string {
 }
 
 func newClientFromConfig(config *ClientConfig, v *validator) (*client, error) {
+	var log Logger
+	if config.Logger != nil {
+		log = config.Logger
+	} else {
+		log = NewDefaultLogger(InfoLevel)
+	}
+	log.Info("Initializing new UniFi client")
 	var rt http.RoundTripper
 	var err error
 	config.URL = strings.TrimRight(config.URL, "/")
+	log.Debugf("Connecting to UniFi controller at %s", config.URL)
 	if config.HttpRoundTripperProvider != nil {
+		log.Debug("Using custom HTTP round tripper provider")
 		rt = config.HttpRoundTripperProvider()
 	}
 	if rt == nil {
@@ -180,6 +188,7 @@ func newClientFromConfig(config *ClientConfig, v *validator) (*client, error) {
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: !config.VerifySSL},
 		}
 		if config.HttpTransportCustomizer != nil {
+			log.Debug("Customizing HTTP transport")
 			if transport, err = config.HttpTransportCustomizer(transport); err != nil {
 				return nil, fmt.Errorf("failed customizing HTTP transport: %w", err)
 			}
@@ -205,14 +214,18 @@ func newClientFromConfig(config *ClientConfig, v *validator) (*client, error) {
 	var credentials Credentials
 
 	if config.APIKey != "" {
+		log.Debug("Using API key authentication")
 		credentials = APIKeyCredentials{APIKey: config.APIKey}
 		interceptors = append(interceptors, &APIKeyAuthInterceptor{apiKey: config.APIKey})
 	} else {
+		log.Debug("Using user/pass authentication")
 		credentials = UserPassCredentials{User: config.User, Password: config.Password}
 		interceptors = append(interceptors, &CSRFInterceptor{})
 	}
 	if len(config.UserAgent) == 0 {
 		config.UserAgent = defaultUserAgent
+	} else {
+		log.Debugf("Using custom User-Agent header: %s", config.UserAgent)
 	}
 	interceptors = append(interceptors, &DefaultHeadersInterceptor{headers: map[string]string{
 		UserAgentHeader:   config.UserAgent,
@@ -221,13 +234,13 @@ func newClientFromConfig(config *ClientConfig, v *validator) (*client, error) {
 	}})
 	var errorHandler ResponseErrorHandler
 	if config.ErrorHandler != nil {
+		log.Debug("Using custom response error handler")
 		errorHandler = config.ErrorHandler
 	} else {
+		log.Debug("Using default response error handler")
 		errorHandler = &DefaultResponseErrorHandler{}
 	}
-	if config.ValidationMode == "" {
-		config.ValidationMode = DefaultValidation
-	}
+	log.Tracef("Validation mode: %d", config.ValidationMode)
 	u := &client{
 		baseURL:        baseURL,
 		timeout:        config.Timeout,
@@ -239,6 +252,7 @@ func newClientFromConfig(config *ClientConfig, v *validator) (*client, error) {
 		errorHandler:   errorHandler,
 		lock:           sync.Mutex{},
 		validator:      v,
+		Logger:         log,
 	}
 	for _, interceptor := range config.Interceptors {
 		u.AddInterceptor(&interceptor)
@@ -262,6 +276,7 @@ func NewClient(config *ClientConfig) (Client, error) { //nolint: ireturn
 		return c, fmt.Errorf("failed getting server info: %w", err)
 	} else {
 		c.sysInfo = sysInfo
+		c.Debugf("Connected to UniFi controller\nversion: %s; name: %s; build: %s; hostname: %s", sysInfo.Version, sysInfo.Name, sysInfo.Build, sysInfo.Hostname)
 	}
 	return c, nil
 }
@@ -296,8 +311,10 @@ func newBareClient(config *ClientConfig) (*client, error) {
 // It returns an error if the authentication process fails.
 func (c *client) Login() error {
 	if c.credentials.IsAPIKey() {
+		c.Trace("API key authentication; skipping login")
 		return nil
 	}
+	c.Trace("Logging in with user/pass credentials")
 
 	ctx, cancel := c.newRequestContext()
 	defer cancel()
