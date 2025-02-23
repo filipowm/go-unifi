@@ -71,6 +71,7 @@ func (c *client) GetSettingLcm(ctx context.Context, site string) (*SettingLcm, e
 
 // Update SettingLcm Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingLcm(ctx context.Context, site string, s *SettingLcm) (*SettingLcm, error) {
+	s.Key = SettingLcmKey
 	result, err := c.SetSetting(ctx, site, SettingLcmKey, s)
 	if err != nil {
 		return nil, err

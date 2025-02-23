@@ -62,6 +62,7 @@ func (c *client) GetSettingUsw(ctx context.Context, site string) (*SettingUsw, e
 
 // Update SettingUsw Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingUsw(ctx context.Context, site string, s *SettingUsw) (*SettingUsw, error) {
+	s.Key = SettingUswKey
 	result, err := c.SetSetting(ctx, site, SettingUswKey, s)
 	if err != nil {
 		return nil, err

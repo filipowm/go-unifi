@@ -64,6 +64,7 @@ func (c *client) GetSettingElementAdopt(ctx context.Context, site string) (*Sett
 
 // Update SettingElementAdopt Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingElementAdopt(ctx context.Context, site string, s *SettingElementAdopt) (*SettingElementAdopt, error) {
+	s.Key = SettingElementAdoptKey
 	result, err := c.SetSetting(ctx, site, SettingElementAdoptKey, s)
 	if err != nil {
 		return nil, err

@@ -238,6 +238,7 @@ func (c *client) GetSettingIps(ctx context.Context, site string) (*SettingIps, e
 
 // Update SettingIps Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingIps(ctx context.Context, site string, s *SettingIps) (*SettingIps, error) {
+	s.Key = SettingIpsKey
 	result, err := c.SetSetting(ctx, site, SettingIpsKey, s)
 	if err != nil {
 		return nil, err

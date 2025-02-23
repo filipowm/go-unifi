@@ -173,6 +173,7 @@ func (c *client) GetSettingGuestAccess(ctx context.Context, site string) (*Setti
 
 // Update SettingGuestAccess Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingGuestAccess(ctx context.Context, site string, s *SettingGuestAccess) (*SettingGuestAccess, error) {
+	s.Key = SettingGuestAccessKey
 	result, err := c.SetSetting(ctx, site, SettingGuestAccessKey, s)
 	if err != nil {
 		return nil, err

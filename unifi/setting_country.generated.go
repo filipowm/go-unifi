@@ -65,6 +65,7 @@ func (c *client) GetSettingCountry(ctx context.Context, site string) (*SettingCo
 
 // Update SettingCountry Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingCountry(ctx context.Context, site string, s *SettingCountry) (*SettingCountry, error) {
+	s.Key = SettingCountryKey
 	result, err := c.SetSetting(ctx, site, SettingCountryKey, s)
 	if err != nil {
 		return nil, err

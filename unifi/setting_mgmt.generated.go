@@ -109,6 +109,7 @@ func (c *client) GetSettingMgmt(ctx context.Context, site string) (*SettingMgmt,
 
 // Update SettingMgmt Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingMgmt(ctx context.Context, site string, s *SettingMgmt) (*SettingMgmt, error) {
+	s.Key = SettingMgmtKey
 	result, err := c.SetSetting(ctx, site, SettingMgmtKey, s)
 	if err != nil {
 		return nil, err

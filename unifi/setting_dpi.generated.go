@@ -63,6 +63,7 @@ func (c *client) GetSettingDpi(ctx context.Context, site string) (*SettingDpi, e
 
 // Update SettingDpi Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingDpi(ctx context.Context, site string, s *SettingDpi) (*SettingDpi, error) {
+	s.Key = SettingDpiKey
 	result, err := c.SetSetting(ctx, site, SettingDpiKey, s)
 	if err != nil {
 		return nil, err

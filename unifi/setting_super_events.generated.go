@@ -62,6 +62,7 @@ func (c *client) GetSettingSuperEvents(ctx context.Context, site string) (*Setti
 
 // Update SettingSuperEvents Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingSuperEvents(ctx context.Context, site string, s *SettingSuperEvents) (*SettingSuperEvents, error) {
+	s.Key = SettingSuperEventsKey
 	result, err := c.SetSetting(ctx, site, SettingSuperEventsKey, s)
 	if err != nil {
 		return nil, err

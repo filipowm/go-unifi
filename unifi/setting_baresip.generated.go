@@ -65,6 +65,7 @@ func (c *client) GetSettingBaresip(ctx context.Context, site string) (*SettingBa
 
 // Update SettingBaresip Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingBaresip(ctx context.Context, site string, s *SettingBaresip) (*SettingBaresip, error) {
+	s.Key = SettingBaresipKey
 	result, err := c.SetSetting(ctx, site, SettingBaresipKey, s)
 	if err != nil {
 		return nil, err

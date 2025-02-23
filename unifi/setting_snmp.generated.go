@@ -66,6 +66,7 @@ func (c *client) GetSettingSnmp(ctx context.Context, site string) (*SettingSnmp,
 
 // Update SettingSnmp Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingSnmp(ctx context.Context, site string, s *SettingSnmp) (*SettingSnmp, error) {
+	s.Key = SettingSnmpKey
 	result, err := c.SetSetting(ctx, site, SettingSnmpKey, s)
 	if err != nil {
 		return nil, err

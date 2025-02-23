@@ -150,6 +150,7 @@ func (c *client) create{{ .StructName }}(ctx context.Context, site string, d *{{
 {{ if .IsSetting }}
 // Update {{ .StructName }} Experimental! This function is not yet stable and may change in the future.
 func (c *client) Update{{ .StructName }}(ctx context.Context, site string, s *{{ .StructName}}) (*{{ .StructName }}, error) {
+    s.Key = {{ .StructName }}Key
     result, err := c.SetSetting(ctx, site, {{ .StructName }}Key, s)
     if err != nil {
     	return nil, err

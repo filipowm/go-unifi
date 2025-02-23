@@ -63,6 +63,7 @@ func (c *client) GetSettingSuperIdentity(ctx context.Context, site string) (*Set
 
 // Update SettingSuperIdentity Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingSuperIdentity(ctx context.Context, site string, s *SettingSuperIdentity) (*SettingSuperIdentity, error) {
+	s.Key = SettingSuperIdentityKey
 	result, err := c.SetSetting(ctx, site, SettingSuperIdentityKey, s)
 	if err != nil {
 		return nil, err

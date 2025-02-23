@@ -62,6 +62,7 @@ func (c *client) GetSettingNetworkOptimization(ctx context.Context, site string)
 
 // Update SettingNetworkOptimization Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingNetworkOptimization(ctx context.Context, site string, s *SettingNetworkOptimization) (*SettingNetworkOptimization, error) {
+	s.Key = SettingNetworkOptimizationKey
 	result, err := c.SetSetting(ctx, site, SettingNetworkOptimizationKey, s)
 	if err != nil {
 		return nil, err

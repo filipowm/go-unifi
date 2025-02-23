@@ -62,6 +62,7 @@ func (c *client) GetSettingSuperMail(ctx context.Context, site string) (*Setting
 
 // Update SettingSuperMail Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingSuperMail(ctx context.Context, site string, s *SettingSuperMail) (*SettingSuperMail, error) {
+	s.Key = SettingSuperMailKey
 	result, err := c.SetSetting(ctx, site, SettingSuperMailKey, s)
 	if err != nil {
 		return nil, err

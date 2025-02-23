@@ -129,6 +129,7 @@ func (c *client) GetSettingRadioAi(ctx context.Context, site string) (*SettingRa
 
 // Update SettingRadioAi Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingRadioAi(ctx context.Context, site string, s *SettingRadioAi) (*SettingRadioAi, error) {
+	s.Key = SettingRadioAiKey
 	result, err := c.SetSetting(ctx, site, SettingRadioAiKey, s)
 	if err != nil {
 		return nil, err

@@ -64,6 +64,7 @@ func (c *client) GetSettingSuperFwupdate(ctx context.Context, site string) (*Set
 
 // Update SettingSuperFwupdate Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingSuperFwupdate(ctx context.Context, site string, s *SettingSuperFwupdate) (*SettingSuperFwupdate, error) {
+	s.Key = SettingSuperFwupdateKey
 	result, err := c.SetSetting(ctx, site, SettingSuperFwupdateKey, s)
 	if err != nil {
 		return nil, err
