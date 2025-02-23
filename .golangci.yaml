@@ -6,6 +6,7 @@ linters:
     - 'mnd'
     - 'nlreturn'
     - 'tagliatelle'
+    - 'ireturn'
 
     # Temporary
     - 'cyclop'

@@ -40,7 +40,7 @@ type defaultUnifiVersionProvider struct {
 	firmwareUpdateApi string
 }
 
-func NewUnifiVersionProvider(firmwareUpdateApi string) UnifiVersionProvider { //nolint:ireturn
+func NewUnifiVersionProvider(firmwareUpdateApi string) UnifiVersionProvider {
 	return &defaultUnifiVersionProvider{
 		firmwareUpdateApi: firmwareUpdateApi,
 	}
