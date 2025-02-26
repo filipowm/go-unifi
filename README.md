@@ -137,9 +137,9 @@ to the UniFi Controller is correct. The validation is based on the regex and val
 the UniFi Controller API specs extracted from the JAR files.
 
 Client supports 3 modes of validation:
-- `soft`, `unifi.SoftValidation` (_default_) - will log a warning if any of the fields are invalid before sending the request, but will not stop the request
-- `hard`, `unifi.HardValidation` - will return an error if any of the fields are invalid before sending the request
-- `disable`, `unifi.DisableValidation` - will disable validation completely
+- `unifi.SoftValidation` (_default_) - will log a warning if any of the fields are invalid before sending the request, but will not stop the request
+- `unifi.HardValidation` - will return an error if any of the fields are invalid before sending the request
+- `unifi.DisableValidation` - will disable validation completely
 
 To change the validation mode, you can use the `ValidationMode` field in the client configuration:
 
