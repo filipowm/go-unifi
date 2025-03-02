@@ -355,6 +355,11 @@ customizations:
       resourcePath: "firewall/zone-matrix"
     FirewallZonePolicy:
       resourcePath: "firewall-policies"
+      fields:
+        IPGroupID:
+          omitEmpty: true
+        PortGroupID:
+          omitEmpty: true
     Network:
       fields:
         InternetAccessEnabled:
