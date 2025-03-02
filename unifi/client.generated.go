@@ -170,6 +170,15 @@ type Client interface {
 
 	// ==== end of client methods for Dashboard resource ====
 
+	// GetFeature returns a specific feature by it's name. Name is case-insensitive.
+	GetFeature(ctx context.Context, site string, name string) (*DescribedFeature, error)
+
+	// IsFeatureEnabled returns if a specific feature is enabled by it's name. Name is case-insensitive.
+	IsFeatureEnabled(ctx context.Context, site string, name string) (bool, error)
+
+	// ListFeatures returns all features of the UniFi controller.
+	ListFeatures(ctx context.Context, site string) ([]DescribedFeature, error)
+
 	// ==== client methods for Device resource ====
 
 	// AdoptDevice adopts a device by MAC address.

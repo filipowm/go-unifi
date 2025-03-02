@@ -2,6 +2,7 @@
 customizations:
   client:
     excludeResources:
+      - "DescribedFeature"
       - "Dpi*"
       - "FirewallZoneMatrix"
     functions:
@@ -296,6 +297,43 @@ customizations:
         returns:
           - "[]FirewallZoneMatrix"
           - "error"
+      - name: "ListFeatures"
+        resourceName: "DescribedFeature"
+        comment: "ListFeatures returns all features of the UniFi controller."
+        params:
+            - name: "ctx"
+              type: "context.Context"
+            - name: "site"
+              type: "string"
+        returns:
+            - "[]DescribedFeature"
+            - "error"
+      - name: "GetFeature"
+        resourceName: "DescribedFeature"
+        comment: "GetFeature returns a specific feature by it's name. Name is case-insensitive."
+        params:
+            - name: "ctx"
+              type: "context.Context"
+            - name: "site"
+              type: "string"
+            - name: "name"
+              type: "string"
+        returns:
+            - "*DescribedFeature"
+            - "error"
+      - name: "IsFeatureEnabled"
+        resourceName: "DescribedFeature"
+        comment: "IsFeatureEnabled returns if a specific feature is enabled by it's name. Name is case-insensitive."
+        params:
+            - name: "ctx"
+              type: "context.Context"
+            - name: "site"
+              type: "string"
+            - name: "name"
+              type: "string"
+        returns:
+            - "bool"
+            - "error"
   resources:
     Account:
       fields:
@@ -318,6 +356,8 @@ customizations:
           customUnmarshalType: "numberOrString"
     DNSRecord:
       resourcePath: "static-dns"
+    DescribedFeature:
+      resourcePath: "described-features?includeSystemFeatures=true" # TODO hack to get all features, because query params in requests are not yet supported
     Device:
       fields:
         _all:

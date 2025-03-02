@@ -114,3 +114,34 @@ for _, network := range networks {
     fmt.Printf("Network: %s\n", network.Name)
 }
 ```
+
+## Checking if features are supported and enabled
+
+The UniFi Go SDK provides a way to check if a feature is supported and enabled/disabled on the UniFi Controller. 
+This can be useful when you want to check if a feature is available before using it. Passed feature names are case-insensitive.
+
+**Example:**
+
+```go
+if c.IsFeatureEnabled(ctx, "default", "feature-name") {
+    // Feature is enabled
+} else {
+    // Feature is disabled
+}
+```
+
+Library comes with a set of predefined feature names, which can be found in `github.com/filipowm/go-unifi/unifi/features` module. You can also use custom feature names.
+
+For example, you can check if the `features.ZoneBasedFirewallMigration` is available on the controller (no `unifi.ErrNotFound` raised) and enabled:
+```go
+f, err := c.GetFeature(ctx, "default", features.ZoneBasedFirewallMigration)
+if err != nil {
+    if errors.Is(err, unifi.ErrNotFound) {
+        log.Printf("Feature %s unavailable (not found)", features.ZoneBasedFirewallMigration)
+    } else {
+        log.Fatalf("Error getting feature: %v", err)
+    }
+    return false
+}
+return f.FeatureExists // `FeatureExists` is a boolean indicating if the feature is enabled
+```
