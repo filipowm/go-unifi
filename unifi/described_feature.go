@@ -8,6 +8,7 @@ import (
 func (c *client) ListFeatures(ctx context.Context, site string) ([]DescribedFeature, error) {
 	return c.listDescribedFeature(ctx, site)
 }
+
 func (c *client) GetFeature(ctx context.Context, site string, name string) (*DescribedFeature, error) {
 	features, err := c.ListFeatures(ctx, site)
 	if err != nil {
@@ -21,6 +22,7 @@ func (c *client) GetFeature(ctx context.Context, site string, name string) (*Des
 	}
 	return nil, ErrNotFound
 }
+
 func (c *client) IsFeatureEnabled(ctx context.Context, site string, name string) (bool, error) {
 	f, err := c.GetFeature(ctx, site, name)
 	if err != nil {
