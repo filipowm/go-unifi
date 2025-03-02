@@ -66,6 +66,7 @@ func (dst *FirewallZonePolicy) UnmarshalJSON(b []byte) error {
 type FirewallZonePolicyDestination struct {
 	AppCategoryIDs     []string `json:"app_category_ids,omitempty"`
 	AppIDs             []string `json:"app_ids,omitempty"`
+	IPGroupID          string   `json:"ip_group_id,omitempty"`
 	IPs                []string `json:"ips,omitempty" validate:"omitempty,ipv4"` // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
 	MatchMAC           bool     `json:"match_mac"`
 	MatchOppositeIPs   bool     `json:"match_opposite_ips"`
@@ -73,7 +74,7 @@ type FirewallZonePolicyDestination struct {
 	MatchingTarget     string   `json:"matching_target,omitempty" validate:"omitempty,oneof=ANY APP APP_CATEGORY IP REGION WEB"` // ANY|APP|APP_CATEGORY|IP|REGION|WEB
 	MatchingTargetType string   `json:"matching_target_type,omitempty" validate:"omitempty,oneof=ANY OBJECT SPECIFIC"`           // ANY|OBJECT|SPECIFIC
 	Port               int      `json:"port,omitempty"`                                                                          // ^[0-9][0-9]?$|^
-	PortGroupID        string   `json:"port_group_id"`
+	PortGroupID        string   `json:"port_group_id,omitempty"`
 	PortMatchingType   string   `json:"port_matching_type,omitempty" validate:"omitempty,oneof=ANY SPECIFIC OBJECT"` // ANY|SPECIFIC|OBJECT
 	Regions            []string `json:"regions,omitempty"`
 	WebDomains         []string `json:"web_domains,omitempty"`
@@ -135,8 +136,9 @@ func (dst *FirewallZonePolicySchedule) UnmarshalJSON(b []byte) error {
 
 type FirewallZonePolicySource struct {
 	ClientMACs            []string `json:"client_macs,omitempty" validate:"omitempty,mac"` // ^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$
-	IPs                   []string `json:"ips,omitempty" validate:"omitempty,ipv4"`        // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
-	MAC                   string   `json:"mac,omitempty" validate:"omitempty,mac"`         // ^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$
+	IPGroupID             string   `json:"ip_group_id,omitempty"`
+	IPs                   []string `json:"ips,omitempty" validate:"omitempty,ipv4"` // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
+	MAC                   string   `json:"mac,omitempty" validate:"omitempty,mac"`  // ^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$
 	MatchMAC              bool     `json:"match_mac"`
 	MatchOppositeIPs      bool     `json:"match_opposite_ips"`
 	MatchOppositeNetworks bool     `json:"match_opposite_networks"`
@@ -145,7 +147,7 @@ type FirewallZonePolicySource struct {
 	MatchingTargetType    string   `json:"matching_target_type,omitempty" validate:"omitempty,oneof=OBJECT SPECIFIC"`      // OBJECT|SPECIFIC
 	NetworkIDs            []string `json:"network_ids,omitempty"`
 	Port                  int      `json:"port,omitempty"` // ^[0-9][0-9]?$|^
-	PortGroupID           string   `json:"port_group_id"`
+	PortGroupID           string   `json:"port_group_id,omitempty"`
 	PortMatchingType      string   `json:"port_matching_type,omitempty" validate:"omitempty,oneof=ANY SPECIFIC OBJECT"` // ANY|SPECIFIC|OBJECT
 	ZoneID                string   `json:"zone_id"`
 }
