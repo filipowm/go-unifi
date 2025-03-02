@@ -48,7 +48,7 @@ func (dst *SettingUsw) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Update SettingUsw Experimental! This function is not yet stable and may change in the future.
+// GetSettingUsw Experimental! This function is not yet stable and may change in the future.
 func (c *client) GetSettingUsw(ctx context.Context, site string) (*SettingUsw, error) {
 	s, f, err := c.GetSetting(ctx, site, SettingUswKey)
 	if err != nil {
@@ -60,7 +60,7 @@ func (c *client) GetSettingUsw(ctx context.Context, site string) (*SettingUsw, e
 	return f.(*SettingUsw), nil
 }
 
-// Update SettingUsw Experimental! This function is not yet stable and may change in the future.
+// UpdateSettingUsw Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingUsw(ctx context.Context, site string, s *SettingUsw) (*SettingUsw, error) {
 	s.Key = SettingUswKey
 	result, err := c.SetSetting(ctx, site, SettingUswKey, s)

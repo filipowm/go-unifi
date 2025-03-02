@@ -95,7 +95,7 @@ func (dst *SettingMgmtXSshKeys) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Update SettingMgmt Experimental! This function is not yet stable and may change in the future.
+// GetSettingMgmt Experimental! This function is not yet stable and may change in the future.
 func (c *client) GetSettingMgmt(ctx context.Context, site string) (*SettingMgmt, error) {
 	s, f, err := c.GetSetting(ctx, site, SettingMgmtKey)
 	if err != nil {
@@ -107,7 +107,7 @@ func (c *client) GetSettingMgmt(ctx context.Context, site string) (*SettingMgmt,
 	return f.(*SettingMgmt), nil
 }
 
-// Update SettingMgmt Experimental! This function is not yet stable and may change in the future.
+// UpdateSettingMgmt Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingMgmt(ctx context.Context, site string, s *SettingMgmt) (*SettingMgmt, error) {
 	s.Key = SettingMgmtKey
 	result, err := c.SetSetting(ctx, site, SettingMgmtKey, s)

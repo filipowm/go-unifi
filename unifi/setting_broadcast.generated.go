@@ -53,7 +53,7 @@ func (dst *SettingBroadcast) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Update SettingBroadcast Experimental! This function is not yet stable and may change in the future.
+// GetSettingBroadcast Experimental! This function is not yet stable and may change in the future.
 func (c *client) GetSettingBroadcast(ctx context.Context, site string) (*SettingBroadcast, error) {
 	s, f, err := c.GetSetting(ctx, site, SettingBroadcastKey)
 	if err != nil {
@@ -65,7 +65,7 @@ func (c *client) GetSettingBroadcast(ctx context.Context, site string) (*Setting
 	return f.(*SettingBroadcast), nil
 }
 
-// Update SettingBroadcast Experimental! This function is not yet stable and may change in the future.
+// UpdateSettingBroadcast Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingBroadcast(ctx context.Context, site string, s *SettingBroadcast) (*SettingBroadcast, error) {
 	s.Key = SettingBroadcastKey
 	result, err := c.SetSetting(ctx, site, SettingBroadcastKey, s)

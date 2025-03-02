@@ -48,7 +48,7 @@ func (dst *SettingSslInspection) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Update SettingSslInspection Experimental! This function is not yet stable and may change in the future.
+// GetSettingSslInspection Experimental! This function is not yet stable and may change in the future.
 func (c *client) GetSettingSslInspection(ctx context.Context, site string) (*SettingSslInspection, error) {
 	s, f, err := c.GetSetting(ctx, site, SettingSslInspectionKey)
 	if err != nil {
@@ -60,7 +60,7 @@ func (c *client) GetSettingSslInspection(ctx context.Context, site string) (*Set
 	return f.(*SettingSslInspection), nil
 }
 
-// Update SettingSslInspection Experimental! This function is not yet stable and may change in the future.
+// UpdateSettingSslInspection Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingSslInspection(ctx context.Context, site string, s *SettingSslInspection) (*SettingSslInspection, error) {
 	s.Key = SettingSslInspectionKey
 	result, err := c.SetSetting(ctx, site, SettingSslInspectionKey, s)

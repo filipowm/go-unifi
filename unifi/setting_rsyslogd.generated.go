@@ -63,7 +63,7 @@ func (dst *SettingRsyslogd) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Update SettingRsyslogd Experimental! This function is not yet stable and may change in the future.
+// GetSettingRsyslogd Experimental! This function is not yet stable and may change in the future.
 func (c *client) GetSettingRsyslogd(ctx context.Context, site string) (*SettingRsyslogd, error) {
 	s, f, err := c.GetSetting(ctx, site, SettingRsyslogdKey)
 	if err != nil {
@@ -75,7 +75,7 @@ func (c *client) GetSettingRsyslogd(ctx context.Context, site string) (*SettingR
 	return f.(*SettingRsyslogd), nil
 }
 
-// Update SettingRsyslogd Experimental! This function is not yet stable and may change in the future.
+// UpdateSettingRsyslogd Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingRsyslogd(ctx context.Context, site string, s *SettingRsyslogd) (*SettingRsyslogd, error) {
 	s.Key = SettingRsyslogdKey
 	result, err := c.SetSetting(ctx, site, SettingRsyslogdKey, s)

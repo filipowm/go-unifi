@@ -71,7 +71,7 @@ func (dst *SettingNetflow) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Update SettingNetflow Experimental! This function is not yet stable and may change in the future.
+// GetSettingNetflow Experimental! This function is not yet stable and may change in the future.
 func (c *client) GetSettingNetflow(ctx context.Context, site string) (*SettingNetflow, error) {
 	s, f, err := c.GetSetting(ctx, site, SettingNetflowKey)
 	if err != nil {
@@ -83,7 +83,7 @@ func (c *client) GetSettingNetflow(ctx context.Context, site string) (*SettingNe
 	return f.(*SettingNetflow), nil
 }
 
-// Update SettingNetflow Experimental! This function is not yet stable and may change in the future.
+// UpdateSettingNetflow Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingNetflow(ctx context.Context, site string, s *SettingNetflow) (*SettingNetflow, error) {
 	s.Key = SettingNetflowKey
 	result, err := c.SetSetting(ctx, site, SettingNetflowKey, s)

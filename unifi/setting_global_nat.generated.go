@@ -49,7 +49,7 @@ func (dst *SettingGlobalNat) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Update SettingGlobalNat Experimental! This function is not yet stable and may change in the future.
+// GetSettingGlobalNat Experimental! This function is not yet stable and may change in the future.
 func (c *client) GetSettingGlobalNat(ctx context.Context, site string) (*SettingGlobalNat, error) {
 	s, f, err := c.GetSetting(ctx, site, SettingGlobalNatKey)
 	if err != nil {
@@ -61,7 +61,7 @@ func (c *client) GetSettingGlobalNat(ctx context.Context, site string) (*Setting
 	return f.(*SettingGlobalNat), nil
 }
 
-// Update SettingGlobalNat Experimental! This function is not yet stable and may change in the future.
+// UpdateSettingGlobalNat Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingGlobalNat(ctx context.Context, site string, s *SettingGlobalNat) (*SettingGlobalNat, error) {
 	s.Key = SettingGlobalNatKey
 	result, err := c.SetSetting(ctx, site, SettingGlobalNatKey, s)

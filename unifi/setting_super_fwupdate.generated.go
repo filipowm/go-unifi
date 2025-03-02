@@ -50,7 +50,7 @@ func (dst *SettingSuperFwupdate) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Update SettingSuperFwupdate Experimental! This function is not yet stable and may change in the future.
+// GetSettingSuperFwupdate Experimental! This function is not yet stable and may change in the future.
 func (c *client) GetSettingSuperFwupdate(ctx context.Context, site string) (*SettingSuperFwupdate, error) {
 	s, f, err := c.GetSetting(ctx, site, SettingSuperFwupdateKey)
 	if err != nil {
@@ -62,7 +62,7 @@ func (c *client) GetSettingSuperFwupdate(ctx context.Context, site string) (*Set
 	return f.(*SettingSuperFwupdate), nil
 }
 
-// Update SettingSuperFwupdate Experimental! This function is not yet stable and may change in the future.
+// UpdateSettingSuperFwupdate Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingSuperFwupdate(ctx context.Context, site string, s *SettingSuperFwupdate) (*SettingSuperFwupdate, error) {
 	s.Key = SettingSuperFwupdateKey
 	result, err := c.SetSetting(ctx, site, SettingSuperFwupdateKey, s)

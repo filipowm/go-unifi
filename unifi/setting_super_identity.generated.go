@@ -49,7 +49,7 @@ func (dst *SettingSuperIdentity) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Update SettingSuperIdentity Experimental! This function is not yet stable and may change in the future.
+// GetSettingSuperIdentity Experimental! This function is not yet stable and may change in the future.
 func (c *client) GetSettingSuperIdentity(ctx context.Context, site string) (*SettingSuperIdentity, error) {
 	s, f, err := c.GetSetting(ctx, site, SettingSuperIdentityKey)
 	if err != nil {
@@ -61,7 +61,7 @@ func (c *client) GetSettingSuperIdentity(ctx context.Context, site string) (*Set
 	return f.(*SettingSuperIdentity), nil
 }
 
-// Update SettingSuperIdentity Experimental! This function is not yet stable and may change in the future.
+// UpdateSettingSuperIdentity Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingSuperIdentity(ctx context.Context, site string, s *SettingSuperIdentity) (*SettingSuperIdentity, error) {
 	s.Key = SettingSuperIdentityKey
 	result, err := c.SetSetting(ctx, site, SettingSuperIdentityKey, s)

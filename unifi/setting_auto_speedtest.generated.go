@@ -49,7 +49,7 @@ func (dst *SettingAutoSpeedtest) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Update SettingAutoSpeedtest Experimental! This function is not yet stable and may change in the future.
+// GetSettingAutoSpeedtest Experimental! This function is not yet stable and may change in the future.
 func (c *client) GetSettingAutoSpeedtest(ctx context.Context, site string) (*SettingAutoSpeedtest, error) {
 	s, f, err := c.GetSetting(ctx, site, SettingAutoSpeedtestKey)
 	if err != nil {
@@ -61,7 +61,7 @@ func (c *client) GetSettingAutoSpeedtest(ctx context.Context, site string) (*Set
 	return f.(*SettingAutoSpeedtest), nil
 }
 
-// Update SettingAutoSpeedtest Experimental! This function is not yet stable and may change in the future.
+// UpdateSettingAutoSpeedtest Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingAutoSpeedtest(ctx context.Context, site string, s *SettingAutoSpeedtest) (*SettingAutoSpeedtest, error) {
 	s.Key = SettingAutoSpeedtestKey
 	result, err := c.SetSetting(ctx, site, SettingAutoSpeedtestKey, s)

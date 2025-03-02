@@ -48,7 +48,7 @@ func (dst *SettingSuperEvents) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Update SettingSuperEvents Experimental! This function is not yet stable and may change in the future.
+// GetSettingSuperEvents Experimental! This function is not yet stable and may change in the future.
 func (c *client) GetSettingSuperEvents(ctx context.Context, site string) (*SettingSuperEvents, error) {
 	s, f, err := c.GetSetting(ctx, site, SettingSuperEventsKey)
 	if err != nil {
@@ -60,7 +60,7 @@ func (c *client) GetSettingSuperEvents(ctx context.Context, site string) (*Setti
 	return f.(*SettingSuperEvents), nil
 }
 
-// Update SettingSuperEvents Experimental! This function is not yet stable and may change in the future.
+// UpdateSettingSuperEvents Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingSuperEvents(ctx context.Context, site string, s *SettingSuperEvents) (*SettingSuperEvents, error) {
 	s.Key = SettingSuperEventsKey
 	result, err := c.SetSetting(ctx, site, SettingSuperEventsKey, s)

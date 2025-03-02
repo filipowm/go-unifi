@@ -113,7 +113,7 @@ func (dst *SettingSuperMgmt) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Update SettingSuperMgmt Experimental! This function is not yet stable and may change in the future.
+// GetSettingSuperMgmt Experimental! This function is not yet stable and may change in the future.
 func (c *client) GetSettingSuperMgmt(ctx context.Context, site string) (*SettingSuperMgmt, error) {
 	s, f, err := c.GetSetting(ctx, site, SettingSuperMgmtKey)
 	if err != nil {
@@ -125,7 +125,7 @@ func (c *client) GetSettingSuperMgmt(ctx context.Context, site string) (*Setting
 	return f.(*SettingSuperMgmt), nil
 }
 
-// Update SettingSuperMgmt Experimental! This function is not yet stable and may change in the future.
+// UpdateSettingSuperMgmt Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingSuperMgmt(ctx context.Context, site string, s *SettingSuperMgmt) (*SettingSuperMgmt, error) {
 	s.Key = SettingSuperMgmtKey
 	result, err := c.SetSetting(ctx, site, SettingSuperMgmtKey, s)

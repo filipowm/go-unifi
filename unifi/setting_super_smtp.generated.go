@@ -59,7 +59,7 @@ func (dst *SettingSuperSmtp) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Update SettingSuperSmtp Experimental! This function is not yet stable and may change in the future.
+// GetSettingSuperSmtp Experimental! This function is not yet stable and may change in the future.
 func (c *client) GetSettingSuperSmtp(ctx context.Context, site string) (*SettingSuperSmtp, error) {
 	s, f, err := c.GetSetting(ctx, site, SettingSuperSmtpKey)
 	if err != nil {
@@ -71,7 +71,7 @@ func (c *client) GetSettingSuperSmtp(ctx context.Context, site string) (*Setting
 	return f.(*SettingSuperSmtp), nil
 }
 
-// Update SettingSuperSmtp Experimental! This function is not yet stable and may change in the future.
+// UpdateSettingSuperSmtp Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingSuperSmtp(ctx context.Context, site string, s *SettingSuperSmtp) (*SettingSuperSmtp, error) {
 	s.Key = SettingSuperSmtpKey
 	result, err := c.SetSetting(ctx, site, SettingSuperSmtpKey, s)

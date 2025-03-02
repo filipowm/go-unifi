@@ -160,7 +160,7 @@ func (dst *SettingUsgDNSVerification) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Update SettingUsg Experimental! This function is not yet stable and may change in the future.
+// GetSettingUsg Experimental! This function is not yet stable and may change in the future.
 func (c *client) GetSettingUsg(ctx context.Context, site string) (*SettingUsg, error) {
 	s, f, err := c.GetSetting(ctx, site, SettingUsgKey)
 	if err != nil {
@@ -172,7 +172,7 @@ func (c *client) GetSettingUsg(ctx context.Context, site string) (*SettingUsg, e
 	return f.(*SettingUsg), nil
 }
 
-// Update SettingUsg Experimental! This function is not yet stable and may change in the future.
+// UpdateSettingUsg Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingUsg(ctx context.Context, site string, s *SettingUsg) (*SettingUsg, error) {
 	s.Key = SettingUsgKey
 	result, err := c.SetSetting(ctx, site, SettingUsgKey, s)

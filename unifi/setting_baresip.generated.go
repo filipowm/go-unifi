@@ -51,7 +51,7 @@ func (dst *SettingBaresip) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Update SettingBaresip Experimental! This function is not yet stable and may change in the future.
+// GetSettingBaresip Experimental! This function is not yet stable and may change in the future.
 func (c *client) GetSettingBaresip(ctx context.Context, site string) (*SettingBaresip, error) {
 	s, f, err := c.GetSetting(ctx, site, SettingBaresipKey)
 	if err != nil {
@@ -63,7 +63,7 @@ func (c *client) GetSettingBaresip(ctx context.Context, site string) (*SettingBa
 	return f.(*SettingBaresip), nil
 }
 
-// Update SettingBaresip Experimental! This function is not yet stable and may change in the future.
+// UpdateSettingBaresip Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingBaresip(ctx context.Context, site string, s *SettingBaresip) (*SettingBaresip, error) {
 	s.Key = SettingBaresipKey
 	result, err := c.SetSetting(ctx, site, SettingBaresipKey, s)

@@ -48,7 +48,7 @@ func (dst *SettingPorta) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Update SettingPorta Experimental! This function is not yet stable and may change in the future.
+// GetSettingPorta Experimental! This function is not yet stable and may change in the future.
 func (c *client) GetSettingPorta(ctx context.Context, site string) (*SettingPorta, error) {
 	s, f, err := c.GetSetting(ctx, site, SettingPortaKey)
 	if err != nil {
@@ -60,7 +60,7 @@ func (c *client) GetSettingPorta(ctx context.Context, site string) (*SettingPort
 	return f.(*SettingPorta), nil
 }
 
-// Update SettingPorta Experimental! This function is not yet stable and may change in the future.
+// UpdateSettingPorta Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingPorta(ctx context.Context, site string, s *SettingPorta) (*SettingPorta, error) {
 	s.Key = SettingPortaKey
 	result, err := c.SetSetting(ctx, site, SettingPortaKey, s)

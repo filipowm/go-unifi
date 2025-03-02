@@ -224,7 +224,7 @@ func (dst *SettingIpsWhitelist) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Update SettingIps Experimental! This function is not yet stable and may change in the future.
+// GetSettingIps Experimental! This function is not yet stable and may change in the future.
 func (c *client) GetSettingIps(ctx context.Context, site string) (*SettingIps, error) {
 	s, f, err := c.GetSetting(ctx, site, SettingIpsKey)
 	if err != nil {
@@ -236,7 +236,7 @@ func (c *client) GetSettingIps(ctx context.Context, site string) (*SettingIps, e
 	return f.(*SettingIps), nil
 }
 
-// Update SettingIps Experimental! This function is not yet stable and may change in the future.
+// UpdateSettingIps Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingIps(ctx context.Context, site string, s *SettingIps) (*SettingIps, error) {
 	s.Key = SettingIpsKey
 	result, err := c.SetSetting(ctx, site, SettingIpsKey, s)

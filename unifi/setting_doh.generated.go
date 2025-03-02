@@ -72,7 +72,7 @@ func (dst *SettingDohCustomServers) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Update SettingDoh Experimental! This function is not yet stable and may change in the future.
+// GetSettingDoh Experimental! This function is not yet stable and may change in the future.
 func (c *client) GetSettingDoh(ctx context.Context, site string) (*SettingDoh, error) {
 	s, f, err := c.GetSetting(ctx, site, SettingDohKey)
 	if err != nil {
@@ -84,7 +84,7 @@ func (c *client) GetSettingDoh(ctx context.Context, site string) (*SettingDoh, e
 	return f.(*SettingDoh), nil
 }
 
-// Update SettingDoh Experimental! This function is not yet stable and may change in the future.
+// UpdateSettingDoh Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingDoh(ctx context.Context, site string, s *SettingDoh) (*SettingDoh, error) {
 	s.Key = SettingDohKey
 	result, err := c.SetSetting(ctx, site, SettingDohKey, s)

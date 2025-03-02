@@ -48,7 +48,7 @@ func (dst *SettingMagicSiteToSiteVpn) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Update SettingMagicSiteToSiteVpn Experimental! This function is not yet stable and may change in the future.
+// GetSettingMagicSiteToSiteVpn Experimental! This function is not yet stable and may change in the future.
 func (c *client) GetSettingMagicSiteToSiteVpn(ctx context.Context, site string) (*SettingMagicSiteToSiteVpn, error) {
 	s, f, err := c.GetSetting(ctx, site, SettingMagicSiteToSiteVpnKey)
 	if err != nil {
@@ -60,7 +60,7 @@ func (c *client) GetSettingMagicSiteToSiteVpn(ctx context.Context, site string) 
 	return f.(*SettingMagicSiteToSiteVpn), nil
 }
 
-// Update SettingMagicSiteToSiteVpn Experimental! This function is not yet stable and may change in the future.
+// UpdateSettingMagicSiteToSiteVpn Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingMagicSiteToSiteVpn(ctx context.Context, site string, s *SettingMagicSiteToSiteVpn) (*SettingMagicSiteToSiteVpn, error) {
 	s.Key = SettingMagicSiteToSiteVpnKey
 	result, err := c.SetSetting(ctx, site, SettingMagicSiteToSiteVpnKey, s)

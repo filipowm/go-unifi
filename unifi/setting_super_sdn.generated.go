@@ -53,7 +53,7 @@ func (dst *SettingSuperSdn) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Update SettingSuperSdn Experimental! This function is not yet stable and may change in the future.
+// GetSettingSuperSdn Experimental! This function is not yet stable and may change in the future.
 func (c *client) GetSettingSuperSdn(ctx context.Context, site string) (*SettingSuperSdn, error) {
 	s, f, err := c.GetSetting(ctx, site, SettingSuperSdnKey)
 	if err != nil {
@@ -65,7 +65,7 @@ func (c *client) GetSettingSuperSdn(ctx context.Context, site string) (*SettingS
 	return f.(*SettingSuperSdn), nil
 }
 
-// Update SettingSuperSdn Experimental! This function is not yet stable and may change in the future.
+// UpdateSettingSuperSdn Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingSuperSdn(ctx context.Context, site string, s *SettingSuperSdn) (*SettingSuperSdn, error) {
 	s.Key = SettingSuperSdnKey
 	result, err := c.SetSetting(ctx, site, SettingSuperSdnKey, s)

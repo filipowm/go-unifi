@@ -70,7 +70,7 @@ func (dst *SettingGlobalAp) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Update SettingGlobalAp Experimental! This function is not yet stable and may change in the future.
+// GetSettingGlobalAp Experimental! This function is not yet stable and may change in the future.
 func (c *client) GetSettingGlobalAp(ctx context.Context, site string) (*SettingGlobalAp, error) {
 	s, f, err := c.GetSetting(ctx, site, SettingGlobalApKey)
 	if err != nil {
@@ -82,7 +82,7 @@ func (c *client) GetSettingGlobalAp(ctx context.Context, site string) (*SettingG
 	return f.(*SettingGlobalAp), nil
 }
 
-// Update SettingGlobalAp Experimental! This function is not yet stable and may change in the future.
+// UpdateSettingGlobalAp Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingGlobalAp(ctx context.Context, site string, s *SettingGlobalAp) (*SettingGlobalAp, error) {
 	s.Key = SettingGlobalApKey
 	result, err := c.SetSetting(ctx, site, SettingGlobalApKey, s)

@@ -54,7 +54,7 @@ func (dst *SettingSuperCloudaccess) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Update SettingSuperCloudaccess Experimental! This function is not yet stable and may change in the future.
+// GetSettingSuperCloudaccess Experimental! This function is not yet stable and may change in the future.
 func (c *client) GetSettingSuperCloudaccess(ctx context.Context, site string) (*SettingSuperCloudaccess, error) {
 	s, f, err := c.GetSetting(ctx, site, SettingSuperCloudaccessKey)
 	if err != nil {
@@ -66,7 +66,7 @@ func (c *client) GetSettingSuperCloudaccess(ctx context.Context, site string) (*
 	return f.(*SettingSuperCloudaccess), nil
 }
 
-// Update SettingSuperCloudaccess Experimental! This function is not yet stable and may change in the future.
+// UpdateSettingSuperCloudaccess Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingSuperCloudaccess(ctx context.Context, site string, s *SettingSuperCloudaccess) (*SettingSuperCloudaccess, error) {
 	s.Key = SettingSuperCloudaccessKey
 	result, err := c.SetSetting(ctx, site, SettingSuperCloudaccessKey, s)

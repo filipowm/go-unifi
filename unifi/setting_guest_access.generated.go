@@ -159,7 +159,7 @@ func (dst *SettingGuestAccess) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Update SettingGuestAccess Experimental! This function is not yet stable and may change in the future.
+// GetSettingGuestAccess Experimental! This function is not yet stable and may change in the future.
 func (c *client) GetSettingGuestAccess(ctx context.Context, site string) (*SettingGuestAccess, error) {
 	s, f, err := c.GetSetting(ctx, site, SettingGuestAccessKey)
 	if err != nil {
@@ -171,7 +171,7 @@ func (c *client) GetSettingGuestAccess(ctx context.Context, site string) (*Setti
 	return f.(*SettingGuestAccess), nil
 }
 
-// Update SettingGuestAccess Experimental! This function is not yet stable and may change in the future.
+// UpdateSettingGuestAccess Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingGuestAccess(ctx context.Context, site string, s *SettingGuestAccess) (*SettingGuestAccess, error) {
 	s.Key = SettingGuestAccessKey
 	result, err := c.SetSetting(ctx, site, SettingGuestAccessKey, s)

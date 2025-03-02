@@ -62,7 +62,7 @@ func (dst *SettingRadius) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Update SettingRadius Experimental! This function is not yet stable and may change in the future.
+// GetSettingRadius Experimental! This function is not yet stable and may change in the future.
 func (c *client) GetSettingRadius(ctx context.Context, site string) (*SettingRadius, error) {
 	s, f, err := c.GetSetting(ctx, site, SettingRadiusKey)
 	if err != nil {
@@ -74,7 +74,7 @@ func (c *client) GetSettingRadius(ctx context.Context, site string) (*SettingRad
 	return f.(*SettingRadius), nil
 }
 
-// Update SettingRadius Experimental! This function is not yet stable and may change in the future.
+// UpdateSettingRadius Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingRadius(ctx context.Context, site string, s *SettingRadius) (*SettingRadius, error) {
 	s.Key = SettingRadiusKey
 	result, err := c.SetSetting(ctx, site, SettingRadiusKey, s)

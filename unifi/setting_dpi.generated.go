@@ -49,7 +49,7 @@ func (dst *SettingDpi) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Update SettingDpi Experimental! This function is not yet stable and may change in the future.
+// GetSettingDpi Experimental! This function is not yet stable and may change in the future.
 func (c *client) GetSettingDpi(ctx context.Context, site string) (*SettingDpi, error) {
 	s, f, err := c.GetSetting(ctx, site, SettingDpiKey)
 	if err != nil {
@@ -61,7 +61,7 @@ func (c *client) GetSettingDpi(ctx context.Context, site string) (*SettingDpi, e
 	return f.(*SettingDpi), nil
 }
 
-// Update SettingDpi Experimental! This function is not yet stable and may change in the future.
+// UpdateSettingDpi Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingDpi(ctx context.Context, site string, s *SettingDpi) (*SettingDpi, error) {
 	s.Key = SettingDpiKey
 	result, err := c.SetSetting(ctx, site, SettingDpiKey, s)

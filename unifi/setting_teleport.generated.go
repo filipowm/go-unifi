@@ -49,7 +49,7 @@ func (dst *SettingTeleport) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Update SettingTeleport Experimental! This function is not yet stable and may change in the future.
+// GetSettingTeleport Experimental! This function is not yet stable and may change in the future.
 func (c *client) GetSettingTeleport(ctx context.Context, site string) (*SettingTeleport, error) {
 	s, f, err := c.GetSetting(ctx, site, SettingTeleportKey)
 	if err != nil {
@@ -61,7 +61,7 @@ func (c *client) GetSettingTeleport(ctx context.Context, site string) (*SettingT
 	return f.(*SettingTeleport), nil
 }
 
-// Update SettingTeleport Experimental! This function is not yet stable and may change in the future.
+// UpdateSettingTeleport Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingTeleport(ctx context.Context, site string, s *SettingTeleport) (*SettingTeleport, error) {
 	s.Key = SettingTeleportKey
 	result, err := c.SetSetting(ctx, site, SettingTeleportKey, s)

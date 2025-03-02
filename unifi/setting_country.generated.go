@@ -51,7 +51,7 @@ func (dst *SettingCountry) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Update SettingCountry Experimental! This function is not yet stable and may change in the future.
+// GetSettingCountry Experimental! This function is not yet stable and may change in the future.
 func (c *client) GetSettingCountry(ctx context.Context, site string) (*SettingCountry, error) {
 	s, f, err := c.GetSetting(ctx, site, SettingCountryKey)
 	if err != nil {
@@ -63,7 +63,7 @@ func (c *client) GetSettingCountry(ctx context.Context, site string) (*SettingCo
 	return f.(*SettingCountry), nil
 }
 
-// Update SettingCountry Experimental! This function is not yet stable and may change in the future.
+// UpdateSettingCountry Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingCountry(ctx context.Context, site string, s *SettingCountry) (*SettingCountry, error) {
 	s.Key = SettingCountryKey
 	result, err := c.SetSetting(ctx, site, SettingCountryKey, s)

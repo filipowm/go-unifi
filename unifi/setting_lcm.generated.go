@@ -57,7 +57,7 @@ func (dst *SettingLcm) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Update SettingLcm Experimental! This function is not yet stable and may change in the future.
+// GetSettingLcm Experimental! This function is not yet stable and may change in the future.
 func (c *client) GetSettingLcm(ctx context.Context, site string) (*SettingLcm, error) {
 	s, f, err := c.GetSetting(ctx, site, SettingLcmKey)
 	if err != nil {
@@ -69,7 +69,7 @@ func (c *client) GetSettingLcm(ctx context.Context, site string) (*SettingLcm, e
 	return f.(*SettingLcm), nil
 }
 
-// Update SettingLcm Experimental! This function is not yet stable and may change in the future.
+// UpdateSettingLcm Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingLcm(ctx context.Context, site string, s *SettingLcm) (*SettingLcm, error) {
 	s.Key = SettingLcmKey
 	result, err := c.SetSetting(ctx, site, SettingLcmKey, s)

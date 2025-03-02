@@ -50,7 +50,7 @@ func (dst *SettingElementAdopt) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Update SettingElementAdopt Experimental! This function is not yet stable and may change in the future.
+// GetSettingElementAdopt Experimental! This function is not yet stable and may change in the future.
 func (c *client) GetSettingElementAdopt(ctx context.Context, site string) (*SettingElementAdopt, error) {
 	s, f, err := c.GetSetting(ctx, site, SettingElementAdoptKey)
 	if err != nil {
@@ -62,7 +62,7 @@ func (c *client) GetSettingElementAdopt(ctx context.Context, site string) (*Sett
 	return f.(*SettingElementAdopt), nil
 }
 
-// Update SettingElementAdopt Experimental! This function is not yet stable and may change in the future.
+// UpdateSettingElementAdopt Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingElementAdopt(ctx context.Context, site string, s *SettingElementAdopt) (*SettingElementAdopt, error) {
 	s.Key = SettingElementAdoptKey
 	result, err := c.SetSetting(ctx, site, SettingElementAdoptKey, s)

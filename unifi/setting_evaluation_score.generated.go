@@ -48,7 +48,7 @@ func (dst *SettingEvaluationScore) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Update SettingEvaluationScore Experimental! This function is not yet stable and may change in the future.
+// GetSettingEvaluationScore Experimental! This function is not yet stable and may change in the future.
 func (c *client) GetSettingEvaluationScore(ctx context.Context, site string) (*SettingEvaluationScore, error) {
 	s, f, err := c.GetSetting(ctx, site, SettingEvaluationScoreKey)
 	if err != nil {
@@ -60,7 +60,7 @@ func (c *client) GetSettingEvaluationScore(ctx context.Context, site string) (*S
 	return f.(*SettingEvaluationScore), nil
 }
 
-// Update SettingEvaluationScore Experimental! This function is not yet stable and may change in the future.
+// UpdateSettingEvaluationScore Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingEvaluationScore(ctx context.Context, site string, s *SettingEvaluationScore) (*SettingEvaluationScore, error) {
 	s.Key = SettingEvaluationScoreKey
 	result, err := c.SetSetting(ctx, site, SettingEvaluationScoreKey, s)

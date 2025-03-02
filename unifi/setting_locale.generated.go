@@ -48,7 +48,7 @@ func (dst *SettingLocale) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Update SettingLocale Experimental! This function is not yet stable and may change in the future.
+// GetSettingLocale Experimental! This function is not yet stable and may change in the future.
 func (c *client) GetSettingLocale(ctx context.Context, site string) (*SettingLocale, error) {
 	s, f, err := c.GetSetting(ctx, site, SettingLocaleKey)
 	if err != nil {
@@ -60,7 +60,7 @@ func (c *client) GetSettingLocale(ctx context.Context, site string) (*SettingLoc
 	return f.(*SettingLocale), nil
 }
 
-// Update SettingLocale Experimental! This function is not yet stable and may change in the future.
+// UpdateSettingLocale Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingLocale(ctx context.Context, site string, s *SettingLocale) (*SettingLocale, error) {
 	s.Key = SettingLocaleKey
 	result, err := c.SetSetting(ctx, site, SettingLocaleKey, s)

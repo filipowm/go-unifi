@@ -115,7 +115,7 @@ func (dst *SettingRadioAiChannelsBlacklist) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Update SettingRadioAi Experimental! This function is not yet stable and may change in the future.
+// GetSettingRadioAi Experimental! This function is not yet stable and may change in the future.
 func (c *client) GetSettingRadioAi(ctx context.Context, site string) (*SettingRadioAi, error) {
 	s, f, err := c.GetSetting(ctx, site, SettingRadioAiKey)
 	if err != nil {
@@ -127,7 +127,7 @@ func (c *client) GetSettingRadioAi(ctx context.Context, site string) (*SettingRa
 	return f.(*SettingRadioAi), nil
 }
 
-// Update SettingRadioAi Experimental! This function is not yet stable and may change in the future.
+// UpdateSettingRadioAi Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingRadioAi(ctx context.Context, site string, s *SettingRadioAi) (*SettingRadioAi, error) {
 	s.Key = SettingRadioAiKey
 	result, err := c.SetSetting(ctx, site, SettingRadioAiKey, s)

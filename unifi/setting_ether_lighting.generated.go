@@ -91,7 +91,7 @@ func (dst *SettingEtherLightingSpeedOverrides) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Update SettingEtherLighting Experimental! This function is not yet stable and may change in the future.
+// GetSettingEtherLighting Experimental! This function is not yet stable and may change in the future.
 func (c *client) GetSettingEtherLighting(ctx context.Context, site string) (*SettingEtherLighting, error) {
 	s, f, err := c.GetSetting(ctx, site, SettingEtherLightingKey)
 	if err != nil {
@@ -103,7 +103,7 @@ func (c *client) GetSettingEtherLighting(ctx context.Context, site string) (*Set
 	return f.(*SettingEtherLighting), nil
 }
 
-// Update SettingEtherLighting Experimental! This function is not yet stable and may change in the future.
+// UpdateSettingEtherLighting Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingEtherLighting(ctx context.Context, site string, s *SettingEtherLighting) (*SettingEtherLighting, error) {
 	s.Key = SettingEtherLightingKey
 	result, err := c.SetSetting(ctx, site, SettingEtherLightingKey, s)

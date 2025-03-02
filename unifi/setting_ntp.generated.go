@@ -52,7 +52,7 @@ func (dst *SettingNtp) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Update SettingNtp Experimental! This function is not yet stable and may change in the future.
+// GetSettingNtp Experimental! This function is not yet stable and may change in the future.
 func (c *client) GetSettingNtp(ctx context.Context, site string) (*SettingNtp, error) {
 	s, f, err := c.GetSetting(ctx, site, SettingNtpKey)
 	if err != nil {
@@ -64,7 +64,7 @@ func (c *client) GetSettingNtp(ctx context.Context, site string) (*SettingNtp, e
 	return f.(*SettingNtp), nil
 }
 
-// Update SettingNtp Experimental! This function is not yet stable and may change in the future.
+// UpdateSettingNtp Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingNtp(ctx context.Context, site string, s *SettingNtp) (*SettingNtp, error) {
 	s.Key = SettingNtpKey
 	result, err := c.SetSetting(ctx, site, SettingNtpKey, s)

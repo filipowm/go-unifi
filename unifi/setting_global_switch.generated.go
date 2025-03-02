@@ -78,7 +78,7 @@ func (dst *SettingGlobalSwitchAclL3Isolation) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Update SettingGlobalSwitch Experimental! This function is not yet stable and may change in the future.
+// GetSettingGlobalSwitch Experimental! This function is not yet stable and may change in the future.
 func (c *client) GetSettingGlobalSwitch(ctx context.Context, site string) (*SettingGlobalSwitch, error) {
 	s, f, err := c.GetSetting(ctx, site, SettingGlobalSwitchKey)
 	if err != nil {
@@ -90,7 +90,7 @@ func (c *client) GetSettingGlobalSwitch(ctx context.Context, site string) (*Sett
 	return f.(*SettingGlobalSwitch), nil
 }
 
-// Update SettingGlobalSwitch Experimental! This function is not yet stable and may change in the future.
+// UpdateSettingGlobalSwitch Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingGlobalSwitch(ctx context.Context, site string, s *SettingGlobalSwitch) (*SettingGlobalSwitch, error) {
 	s.Key = SettingGlobalSwitchKey
 	result, err := c.SetSetting(ctx, site, SettingGlobalSwitchKey, s)

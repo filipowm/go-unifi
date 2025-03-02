@@ -85,7 +85,7 @@ func (c *client) list{{ .StructName }}(ctx context.Context, site string) ([]{{ .
 {{- end }}
 
 {{ if .IsSetting }}
-// Update {{ .StructName }} Experimental! This function is not yet stable and may change in the future.
+// Get{{ .StructName }} Experimental! This function is not yet stable and may change in the future.
 func (c *client) Get{{ .StructName }}(ctx context.Context, site string) (*{{ .StructName }}, error) {
 	s, f, err := c.GetSetting(ctx, site, {{ .StructName }}Key)
     if err != nil {
@@ -148,7 +148,7 @@ func (c *client) create{{ .StructName }}(ctx context.Context, site string, d *{{
 {{- end }}
 
 {{ if .IsSetting }}
-// Update {{ .StructName }} Experimental! This function is not yet stable and may change in the future.
+// Update{{ .StructName }} Experimental! This function is not yet stable and may change in the future.
 func (c *client) Update{{ .StructName }}(ctx context.Context, site string, s *{{ .StructName}}) (*{{ .StructName }}, error) {
     s.Key = {{ .StructName }}Key
     result, err := c.SetSetting(ctx, site, {{ .StructName }}Key, s)

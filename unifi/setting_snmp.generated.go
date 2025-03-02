@@ -52,7 +52,7 @@ func (dst *SettingSnmp) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Update SettingSnmp Experimental! This function is not yet stable and may change in the future.
+// GetSettingSnmp Experimental! This function is not yet stable and may change in the future.
 func (c *client) GetSettingSnmp(ctx context.Context, site string) (*SettingSnmp, error) {
 	s, f, err := c.GetSetting(ctx, site, SettingSnmpKey)
 	if err != nil {
@@ -64,7 +64,7 @@ func (c *client) GetSettingSnmp(ctx context.Context, site string) (*SettingSnmp,
 	return f.(*SettingSnmp), nil
 }
 
-// Update SettingSnmp Experimental! This function is not yet stable and may change in the future.
+// UpdateSettingSnmp Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingSnmp(ctx context.Context, site string, s *SettingSnmp) (*SettingSnmp, error) {
 	s.Key = SettingSnmpKey
 	result, err := c.SetSetting(ctx, site, SettingSnmpKey, s)

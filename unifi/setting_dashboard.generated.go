@@ -70,7 +70,7 @@ func (dst *SettingDashboardWidgets) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Update SettingDashboard Experimental! This function is not yet stable and may change in the future.
+// GetSettingDashboard Experimental! This function is not yet stable and may change in the future.
 func (c *client) GetSettingDashboard(ctx context.Context, site string) (*SettingDashboard, error) {
 	s, f, err := c.GetSetting(ctx, site, SettingDashboardKey)
 	if err != nil {
@@ -82,7 +82,7 @@ func (c *client) GetSettingDashboard(ctx context.Context, site string) (*Setting
 	return f.(*SettingDashboard), nil
 }
 
-// Update SettingDashboard Experimental! This function is not yet stable and may change in the future.
+// UpdateSettingDashboard Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingDashboard(ctx context.Context, site string, s *SettingDashboard) (*SettingDashboard, error) {
 	s.Key = SettingDashboardKey
 	result, err := c.SetSetting(ctx, site, SettingDashboardKey, s)

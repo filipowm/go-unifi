@@ -48,7 +48,7 @@ func (dst *SettingNetworkOptimization) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Update SettingNetworkOptimization Experimental! This function is not yet stable and may change in the future.
+// GetSettingNetworkOptimization Experimental! This function is not yet stable and may change in the future.
 func (c *client) GetSettingNetworkOptimization(ctx context.Context, site string) (*SettingNetworkOptimization, error) {
 	s, f, err := c.GetSetting(ctx, site, SettingNetworkOptimizationKey)
 	if err != nil {
@@ -60,7 +60,7 @@ func (c *client) GetSettingNetworkOptimization(ctx context.Context, site string)
 	return f.(*SettingNetworkOptimization), nil
 }
 
-// Update SettingNetworkOptimization Experimental! This function is not yet stable and may change in the future.
+// UpdateSettingNetworkOptimization Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingNetworkOptimization(ctx context.Context, site string, s *SettingNetworkOptimization) (*SettingNetworkOptimization, error) {
 	s.Key = SettingNetworkOptimizationKey
 	result, err := c.SetSetting(ctx, site, SettingNetworkOptimizationKey, s)

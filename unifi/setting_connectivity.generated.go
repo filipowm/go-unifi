@@ -53,7 +53,7 @@ func (dst *SettingConnectivity) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Update SettingConnectivity Experimental! This function is not yet stable and may change in the future.
+// GetSettingConnectivity Experimental! This function is not yet stable and may change in the future.
 func (c *client) GetSettingConnectivity(ctx context.Context, site string) (*SettingConnectivity, error) {
 	s, f, err := c.GetSetting(ctx, site, SettingConnectivityKey)
 	if err != nil {
@@ -65,7 +65,7 @@ func (c *client) GetSettingConnectivity(ctx context.Context, site string) (*Sett
 	return f.(*SettingConnectivity), nil
 }
 
-// Update SettingConnectivity Experimental! This function is not yet stable and may change in the future.
+// UpdateSettingConnectivity Experimental! This function is not yet stable and may change in the future.
 func (c *client) UpdateSettingConnectivity(ctx context.Context, site string, s *SettingConnectivity) (*SettingConnectivity, error) {
 	s.Key = SettingConnectivityKey
 	result, err := c.SetSetting(ctx, site, SettingConnectivityKey, s)
