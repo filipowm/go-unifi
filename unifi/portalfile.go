@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 )
 
 // just to fix compile issues with the import.
@@ -48,6 +49,23 @@ func (c *client) UploadPortalFile(ctx context.Context, site string, filepath str
 	}
 
 	err := c.UploadFile(ctx, fmt.Sprintf("%s/s/%s/portalfile", c.apiPaths.UploadPath, site), filepath, "file", &respBody)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(respBody.Data) == 0 {
+		return nil, ErrNotFound
+	}
+	return &respBody.Data[0], nil
+}
+
+func (c *client) UploadPortalFileFromReader(ctx context.Context, site string, reader io.Reader, filename string) (*PortalFile, error) {
+	var respBody struct {
+		Meta Meta         `json:"meta"`
+		Data []PortalFile `json:"data"`
+	}
+
+	err := c.UploadFileFromReader(ctx, fmt.Sprintf("%s/s/%s/portalfile", c.apiPaths.UploadPath, site), reader, filename, "file", &respBody)
 	if err != nil {
 		return nil, err
 	}

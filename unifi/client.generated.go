@@ -5,6 +5,7 @@ package unifi
 
 import (
 	"context"
+	"io"
 )
 
 type Client interface {
@@ -506,6 +507,9 @@ type Client interface {
 
 	// UploadPortalFile uploads a Hotspot Portal file to the controller.
 	UploadPortalFile(ctx context.Context, site string, filepath string) (*PortalFile, error)
+
+	// UploadPortalFileFromReader uploads a Hotspot Portal file using io.Reader to the controller.
+	UploadPortalFileFromReader(ctx context.Context, site string, reader io.Reader, filename string) (*PortalFile, error)
 
 	// ==== client methods for RADIUSProfile resource ====
 

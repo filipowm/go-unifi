@@ -1,6 +1,8 @@
 ---
 customizations:
   client:
+    imports:
+      - "io"
     excludeResources:
       - "DescribedFeature"
       - "Dpi*"
@@ -343,6 +345,21 @@ customizations:
           - name: "site"
             type: "string"
           - name: "filepath"
+            type: "string"
+        returns:
+          - "*PortalFile"
+          - "error"
+      - name: "UploadPortalFileFromReader"
+        resourceName: "PortalFile"
+        comment: "UploadPortalFileFromReader uploads a Hotspot Portal file using io.Reader to the controller."
+        params:
+          - name: "ctx"
+            type: "context.Context"
+          - name: "site"
+            type: "string"
+          - name: "reader"
+            type: "io.Reader"
+          - name: "filename"
             type: "string"
         returns:
           - "*PortalFile"
