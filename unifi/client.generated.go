@@ -5,6 +5,7 @@ package unifi
 
 import (
 	"context"
+	"io"
 )
 
 type Client interface {
@@ -494,6 +495,21 @@ type Client interface {
 	UpdatePortProfile(ctx context.Context, site string, p *PortProfile) (*PortProfile, error)
 
 	// ==== end of client methods for PortProfile resource ====
+
+	// DeletePortalFile deletes a Hotspot Portal file from the controller.
+	DeletePortalFile(ctx context.Context, site string, id string) error
+
+	// GetPortalFile returns a specific Hotspot Portal file by it's ID.
+	GetPortalFile(ctx context.Context, site string, id string) (*PortalFile, error)
+
+	// ListPortalFiles lists all Hotspot Portal files on the controller.
+	ListPortalFiles(ctx context.Context, site string) ([]PortalFile, error)
+
+	// UploadPortalFile uploads a Hotspot Portal file to the controller.
+	UploadPortalFile(ctx context.Context, site string, filepath string) (*PortalFile, error)
+
+	// UploadPortalFileFromReader uploads a Hotspot Portal file using io.Reader to the controller.
+	UploadPortalFileFromReader(ctx context.Context, site string, reader io.Reader, filename string) (*PortalFile, error)
 
 	// ==== client methods for RADIUSProfile resource ====
 
