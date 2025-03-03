@@ -334,6 +334,55 @@ customizations:
         returns:
           - "bool"
           - "error"
+      - name: "UploadPortalFile"
+        resourceName: "PortalFile"
+        comment: "UploadPortalFile uploads a Hotspot Portal file to the controller."
+        params:
+          - name: "ctx"
+            type: "context.Context"
+          - name: "site"
+            type: "string"
+          - name: "filepath"
+            type: "string"
+        returns:
+          - "*PortalFile"
+          - "error"
+      - name: "DeletePortalFile"
+        resourceName: "PortalFile"
+        comment: "DeletePortalFile deletes a Hotspot Portal file from the controller."
+        params:
+          - name: "ctx"
+            type: "context.Context"
+          - name: "site"
+            type: "string"
+          - name: "id"
+            type: "string"
+        returns:
+          - "error"
+      - name: "ListPortalFiles"
+        resourceName: "PortalFile"
+        comment: "ListPortalFiles lists all Hotspot Portal files on the controller."
+        params:
+          - name: "ctx"
+            type: "context.Context"
+          - name: "site"
+            type: "string"
+        returns:
+          - "[]PortalFile"
+          - "error"
+      - name: "GetPortalFile"
+        resourceName: "PortalFile"
+        comment: "GetPortalFile returns a specific Hotspot Portal file by it's ID."
+        params:
+          - name: "ctx"
+            type: "context.Context"
+          - name: "site"
+            type: "string"
+          - name: "id"
+            type: "string"
+        returns:
+          - "*PortalFile"
+          - "error"
   resources:
     Account:
       fields:

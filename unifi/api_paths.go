@@ -20,6 +20,9 @@ const (
 	statusPath    = "/status"
 	statusPathNew = "/proxy/network/status"
 
+	uploadPath    = "/upload"
+	uploadPathNew = "/proxy/network/upload"
+
 	logoutPath = "/api/logout"
 
 	defaultUserAgent = "go-unifi/0.0.1"
@@ -38,6 +41,7 @@ type APIPaths struct {
 	LoginPath  string
 	StatusPath string
 	LogoutPath string
+	UploadPath string
 }
 
 var (
@@ -47,6 +51,7 @@ var (
 		LoginPath:  loginPath,
 		StatusPath: statusPath,
 		LogoutPath: logoutPath,
+		UploadPath: uploadPath,
 	}
 	NewStyleAPI = APIPaths{
 		ApiPath:    apiPathNew,
@@ -54,6 +59,7 @@ var (
 		LoginPath:  loginPathNew,
 		StatusPath: statusPathNew,
 		LogoutPath: logoutPath,
+		UploadPath: uploadPathNew,
 	}
 )
 

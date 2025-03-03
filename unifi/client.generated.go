@@ -495,6 +495,18 @@ type Client interface {
 
 	// ==== end of client methods for PortProfile resource ====
 
+	// DeletePortalFile deletes a Hotspot Portal file from the controller.
+	DeletePortalFile(ctx context.Context, site string, id string) error
+
+	// GetPortalFile returns a specific Hotspot Portal file by it's ID.
+	GetPortalFile(ctx context.Context, site string, id string) (*PortalFile, error)
+
+	// ListPortalFiles lists all Hotspot Portal files on the controller.
+	ListPortalFiles(ctx context.Context, site string) ([]PortalFile, error)
+
+	// UploadPortalFile uploads a Hotspot Portal file to the controller.
+	UploadPortalFile(ctx context.Context, site string, filepath string) (*PortalFile, error)
+
 	// ==== client methods for RADIUSProfile resource ====
 
 	// CreateRADIUSProfile creates a resource
