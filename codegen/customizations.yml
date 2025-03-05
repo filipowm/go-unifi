@@ -485,6 +485,26 @@ customizations:
         Expire:
           fieldType: "int"
           customUnmarshalType: "emptyStringInt"
+    SettingIps:
+      fields:
+        _all:
+          omitEmpty: false
+    SettingNtp:
+      fields:
+        _all:
+          omitEmpty: false
+    SettingRsyslogd:
+      fields:
+        Contents:
+          omitEmpty: false
+        IP:
+          omitEmpty: false
+        NetconsoleHost:
+          omitEmpty: false
+    SettingUsg:
+      fields:
+        GeoIPFilteringCountries:
+          omitEmpty: false
     User:
       fields:
         Blocked:
