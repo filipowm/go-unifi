@@ -48,7 +48,7 @@ type SettingUsg struct {
 	EchoServer                     string                    `json:"echo_server,omitempty"` // [^\"\' ]{1,255}
 	FtpModule                      bool                      `json:"ftp_module"`
 	GeoIPFilteringBlock            string                    `json:"geo_ip_filtering_block,omitempty" validate:"omitempty,oneof=block allow"` // block|allow
-	GeoIPFilteringCountries        string                    `json:"geo_ip_filtering_countries,omitempty"`                                    // ^([A-Z]{2})?(,[A-Z]{2}){0,149}$
+	GeoIPFilteringCountries        string                    `json:"geo_ip_filtering_countries"`                                              // ^([A-Z]{2})?(,[A-Z]{2}){0,149}$
 	GeoIPFilteringEnabled          bool                      `json:"geo_ip_filtering_enabled"`
 	GeoIPFilteringTrafficDirection string                    `json:"geo_ip_filtering_traffic_direction,omitempty" validate:"omitempty,oneof=both ingress egress"` // ^(both|ingress|egress)$
 	GreModule                      bool                      `json:"gre_module"`
