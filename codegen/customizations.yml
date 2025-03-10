@@ -489,10 +489,6 @@ customizations:
       fields:
         _all:
           omitEmpty: false
-    SettingNtp:
-      fields:
-        _all:
-          omitEmpty: false
     SettingRsyslogd:
       fields:
         Contents:
