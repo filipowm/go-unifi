@@ -489,6 +489,12 @@ customizations:
       fields:
         _all:
           omitEmpty: false
+    SettingMgmt:
+      fields:
+        AutoUpgradeHour:
+          omitEmpty: false
+        XSshKeys:
+          omitEmpty: false
     SettingRsyslogd:
       fields:
         Contents:
