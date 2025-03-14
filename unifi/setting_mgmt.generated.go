@@ -32,7 +32,7 @@ type SettingMgmt struct {
 	AdvancedFeatureEnabled  bool                  `json:"advanced_feature_enabled"`
 	AlertEnabled            bool                  `json:"alert_enabled"`
 	AutoUpgrade             bool                  `json:"auto_upgrade"`
-	AutoUpgradeHour         int                   `json:"auto_upgrade_hour,omitempty"` // [0-9]|1[0-9]|2[0-3]|^$
+	AutoUpgradeHour         int                   `json:"auto_upgrade_hour"` // [0-9]|1[0-9]|2[0-3]|^$
 	BootSound               bool                  `json:"boot_sound"`
 	DebugToolsEnabled       bool                  `json:"debug_tools_enabled"`
 	DirectConnectEnabled    bool                  `json:"direct_connect_enabled"`
@@ -44,7 +44,7 @@ type SettingMgmt struct {
 	XSshAuthPasswordEnabled bool                  `json:"x_ssh_auth_password_enabled"`
 	XSshBindWildcard        bool                  `json:"x_ssh_bind_wildcard"`
 	XSshEnabled             bool                  `json:"x_ssh_enabled"`
-	XSshKeys                []SettingMgmtXSshKeys `json:"x_ssh_keys,omitempty"`
+	XSshKeys                []SettingMgmtXSshKeys `json:"x_ssh_keys"`
 	XSshMd5Passwd           string                `json:"x_ssh_md5passwd,omitempty"`
 	XSshPassword            string                `json:"x_ssh_password,omitempty" validate:"omitempty,gte=1,lte=128"` // .{1,128}
 	XSshSha512Passwd        string                `json:"x_ssh_sha512passwd,omitempty"`
