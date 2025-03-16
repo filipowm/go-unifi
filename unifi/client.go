@@ -46,7 +46,8 @@ Fields:
 	URL:           The base URL of the UniFi controller. Must be a valid URL and should not include the `/api` suffix.
 	APIKey:        An API key used for authentication. Provide this if user/password credentials are not used.
 	User:          The username for user/password authentication. Must be provided with Password if APIKey is not used.
-	Password:          The password for user/password authentication. Must be provided with User if APIKey is not used.
+	Password:      The password for user/password authentication. Must be provided with User if APIKey is not used.
+	RememberMe:    If true, the session is remembered for future requests. Useful for long-running processes. Default: false. Only used for user/password authentication.
 	Timeout:       The maximum duration to wait for responses; default is no timeout.
 	VerifySSL:     When false, disables SSL certificate verification.
 	Interceptors:  A slice of ClientInterceptor implementations that can modify requests and responses.
@@ -62,6 +63,7 @@ type ClientConfig struct {
 	APIKey                   string        `validate:"required_without_all=User Password"`
 	User                     string        `validate:"excluded_with=APIKey,required_with=Password"`
 	Password                 string        `validate:"excluded_with=APIKey,required_with=User"`
+	RememberMe               bool          `validate:"excluded_with=APIKey"`
 	Timeout                  time.Duration // How long to wait for replies, default: forever.
 	VerifySSL                bool
 	Interceptors             []ClientInterceptor
@@ -85,6 +87,7 @@ type Credentials interface {
 	GetUser() string
 	// GetPass returns the password for authentication; returns an empty string if not applicable.
 	GetPass() string
+	IsRememberMe() bool
 }
 
 // APIKeyCredentials holds API key authentication details.
@@ -92,21 +95,24 @@ type APIKeyCredentials struct {
 	APIKey string
 }
 
-func (a APIKeyCredentials) IsAPIKey() bool    { return true }
-func (a APIKeyCredentials) GetAPIKey() string { return a.APIKey }
-func (a APIKeyCredentials) GetUser() string   { return "" }
-func (a APIKeyCredentials) GetPass() string   { return "" }
+func (a APIKeyCredentials) IsAPIKey() bool     { return true }
+func (a APIKeyCredentials) GetAPIKey() string  { return a.APIKey }
+func (a APIKeyCredentials) GetUser() string    { return "" }
+func (a APIKeyCredentials) GetPass() string    { return "" }
+func (a APIKeyCredentials) IsRememberMe() bool { return false }
 
 // UserPassCredentials holds user/password authentication.
 type UserPassCredentials struct {
 	User     string
 	Password string
+	Remember bool
 }
 
-func (u UserPassCredentials) IsAPIKey() bool    { return false }
-func (u UserPassCredentials) GetAPIKey() string { return "" }
-func (u UserPassCredentials) GetUser() string   { return u.User }
-func (u UserPassCredentials) GetPass() string   { return u.Password }
+func (u UserPassCredentials) IsAPIKey() bool     { return false }
+func (u UserPassCredentials) GetAPIKey() string  { return "" }
+func (u UserPassCredentials) GetUser() string    { return u.User }
+func (u UserPassCredentials) GetPass() string    { return u.Password }
+func (u UserPassCredentials) IsRememberMe() bool { return u.Remember }
 
 // client represents a UniFi client.
 type client struct {
@@ -219,7 +225,7 @@ func newClientFromConfig(config *ClientConfig, v *validator) (*client, error) {
 		interceptors = append(interceptors, &APIKeyAuthInterceptor{apiKey: config.APIKey})
 	} else {
 		log.Debug("Using user/pass authentication")
-		credentials = UserPassCredentials{User: config.User, Password: config.Password}
+		credentials = UserPassCredentials{User: config.User, Password: config.Password, Remember: config.RememberMe}
 		interceptors = append(interceptors, &CSRFInterceptor{})
 	}
 	if len(config.UserAgent) == 0 {
@@ -322,9 +328,11 @@ func (c *client) Login() error {
 	err := c.Post(ctx, c.apiPaths.LoginPath, &struct {
 		Username string `json:"username"`
 		Password string `json:"password"`
+		Remember bool   `json:"remember"`
 	}{
 		Username: c.credentials.GetUser(),
 		Password: c.credentials.GetPass(),
+		Remember: c.credentials.IsRememberMe(),
 	}, nil)
 	if err != nil {
 		return err

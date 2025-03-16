@@ -65,6 +65,20 @@ if err != nil {
 }
 ```
 
+You can also configure `Remember Me` option, which will prolong the session validity. Might be required for long-running applications, that require authentication only once.
+
+```go
+c, err := unifi.NewClient(&unifi.ClientConfig{
+    BaseURL: "https://unifi.localdomain",
+    Username: "your-username",
+    Password: "your-password",
+    RememberMe: true,
+})
+if err != nil {
+    log.Fatalf("Failed to create client: %v", err)
+}
+```
+
 ### Bare Client Initialization
 
 You can also use bare client, which creates a `unifi.Client` without initialization like logging in and getting system information. This can be useful in specific scenarios, when doing such initialization might be an uneeded overhead. To create it you can use the `NewBareClient` function provided in the SDK (see `unifi/client.go`).

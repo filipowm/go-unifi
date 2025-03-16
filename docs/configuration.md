@@ -29,6 +29,7 @@ c, err := unifi.NewClient(&unifi.ClientConfig{
     BaseURL: "https://unifi.localdomain",
     Username: "your-username",
     Password: "your-password",
+    RememberMe: true, // Optional: prolong the session validity. Might be needed for long-running applications.
 })
 if err != nil {
     log.Fatalf("Error creating client: %v", err)
