@@ -101,9 +101,9 @@ func (dst *FirewallZonePolicyDestination) UnmarshalJSON(b []byte) error {
 }
 
 type FirewallZonePolicySchedule struct {
-	Date           int      `json:"date,omitempty"`                                                                             // ^$|^(20[0-9]{2})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$
-	DateEnd        int      `json:"date_end,omitempty"`                                                                         // ^$|^(20[0-9]{2})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$
-	DateStart      int      `json:"date_start,omitempty"`                                                                       // ^$|^(20[0-9]{2})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$
+	Date           string   `json:"date,omitempty"`                                                                             // ^$|^(20[0-9]{2})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$
+	DateEnd        string   `json:"date_end,omitempty"`                                                                         // ^$|^(20[0-9]{2})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$
+	DateStart      string   `json:"date_start,omitempty"`                                                                       // ^$|^(20[0-9]{2})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$
 	Mode           string   `json:"mode,omitempty" validate:"omitempty,oneof=ALWAYS EVERY_DAY EVERY_WEEK ONE_TIME_ONLY CUSTOM"` // ALWAYS|EVERY_DAY|EVERY_WEEK|ONE_TIME_ONLY|CUSTOM
 	RepeatOnDays   []string `json:"repeat_on_days,omitempty" validate:"omitempty,oneof=mon tue wed thu fri sat sun"`            // mon|tue|wed|thu|fri|sat|sun
 	TimeAllDay     bool     `json:"time_all_day"`
@@ -127,9 +127,9 @@ func (dst *FirewallZonePolicySchedule) UnmarshalJSON(b []byte) error {
 	if err != nil {
 		return fmt.Errorf("unable to unmarshal alias: %w", err)
 	}
-	dst.Date = int(aux.Date)
-	dst.DateEnd = int(aux.DateEnd)
-	dst.DateStart = int(aux.DateStart)
+	dst.Date = string(aux.Date)
+	dst.DateEnd = string(aux.DateEnd)
+	dst.DateStart = string(aux.DateStart)
 
 	return nil
 }

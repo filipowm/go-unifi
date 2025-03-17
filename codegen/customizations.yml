@@ -466,6 +466,12 @@ customizations:
           omitEmpty: true
         PortGroupID:
           omitEmpty: true
+        Date:
+          fieldType: "string"
+        DateStart:
+          fieldType: "string"
+        DateEnd:
+          fieldType: "string"
     Network:
       fields:
         InternetAccessEnabled:
