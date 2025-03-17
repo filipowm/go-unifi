@@ -482,9 +482,17 @@ customizations:
           omitEmpty: true
     SettingGuestAccess:
       fields:
+        AllowedSubnet:
+          jsonPath: "allowed_subnet"
+        RestrictedSubnet:
+          jsonPath: "restricted_subnet"
+        GoogleDomain:
+          omitEmpty: false
         Expire:
           fieldType: "int"
           customUnmarshalType: "emptyStringInt"
+        RestrictedDNSServers:
+          omitEmpty: false
     SettingIps:
       fields:
         Honeypot:

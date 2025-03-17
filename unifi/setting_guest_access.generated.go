@@ -29,7 +29,7 @@ type SettingGuestAccess struct {
 
 	Key string `json:"key"`
 
-	AllowedSubnet                          string   `json:"allowed_subnet_,omitempty"`
+	AllowedSubnet                          string   `json:"allowed_subnet,omitempty"`
 	Auth                                   string   `json:"auth,omitempty" validate:"omitempty,oneof=none hotspot facebook_wifi custom"` // none|hotspot|facebook_wifi|custom
 	AuthUrl                                string   `json:"auth_url,omitempty"`
 	AuthorizeUseSandbox                    bool     `json:"authorize_use_sandbox"`
@@ -46,7 +46,7 @@ type SettingGuestAccess struct {
 	FacebookWifiGwName                     string   `json:"facebook_wifi_gw_name,omitempty"`
 	Gateway                                string   `json:"gateway,omitempty" validate:"omitempty,oneof=paypal stripe authorize quickpay merchantwarrior ippay"` // paypal|stripe|authorize|quickpay|merchantwarrior|ippay
 	GoogleClientID                         string   `json:"google_client_id"`
-	GoogleDomain                           string   `json:"google_domain,omitempty"`
+	GoogleDomain                           string   `json:"google_domain"`
 	GoogleEnabled                          bool     `json:"google_enabled"`
 	GoogleScopeEmail                       bool     `json:"google_scope_email"`
 	IPpayUseSandbox                        bool     `json:"ippay_use_sandbox"`
@@ -99,8 +99,8 @@ type SettingGuestAccess struct {
 	RedirectToHttps                        bool     `json:"redirect_to_https"`
 	RedirectUrl                            string   `json:"redirect_url,omitempty"`
 	RestrictedDNSEnabled                   bool     `json:"restricted_dns_enabled"`
-	RestrictedDNSServers                   []string `json:"restricted_dns_servers,omitempty" validate:"omitempty,ipv4"` // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
-	RestrictedSubnet                       string   `json:"restricted_subnet_,omitempty"`
+	RestrictedDNSServers                   []string `json:"restricted_dns_servers" validate:"omitempty,ipv4"` // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
+	RestrictedSubnet                       string   `json:"restricted_subnet,omitempty"`
 	TemplateEngine                         string   `json:"template_engine,omitempty" validate:"omitempty,oneof=jsp angular"` // jsp|angular
 	VoucherCustomized                      bool     `json:"voucher_customized"`
 	VoucherEnabled                         bool     `json:"voucher_enabled"`
