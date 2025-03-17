@@ -114,10 +114,6 @@ type FirewallZonePolicySchedule struct {
 func (dst *FirewallZonePolicySchedule) UnmarshalJSON(b []byte) error {
 	type Alias FirewallZonePolicySchedule
 	aux := &struct {
-		Date      emptyStringInt `json:"date"`
-		DateEnd   emptyStringInt `json:"date_end"`
-		DateStart emptyStringInt `json:"date_start"`
-
 		*Alias
 	}{
 		Alias: (*Alias)(dst),
@@ -127,9 +123,6 @@ func (dst *FirewallZonePolicySchedule) UnmarshalJSON(b []byte) error {
 	if err != nil {
 		return fmt.Errorf("unable to unmarshal alias: %w", err)
 	}
-	dst.Date = string(aux.Date)
-	dst.DateEnd = string(aux.DateEnd)
-	dst.DateStart = string(aux.DateStart)
 
 	return nil
 }
