@@ -47,6 +47,7 @@ type FieldInfoOverride struct {
 	OmitEmpty           *bool   `yaml:"omitEmpty"`
 	CustomUnmarshalType *string `yaml:"customUnmarshalType"`
 	CustomUnmarshalFunc *string `yaml:"customUnmarshalFunc"`
+	JsonPath            *string `yaml:"jsonPath"`
 }
 
 func compositeCustomizationsProcessor(customizationsProcessor FieldProcessor) FieldProcessor {
@@ -102,6 +103,9 @@ func (r *ResourceCustomization) toFieldProcessor() FieldProcessor {
 			}
 			if fc.Overrides.FieldName != nil {
 				f.FieldName = *fc.Overrides.FieldName
+			}
+			if fc.Overrides.JsonPath != nil {
+				f.JSONName = *fc.Overrides.JsonPath
 			}
 		}
 		return nil
