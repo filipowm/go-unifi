@@ -68,7 +68,6 @@ type FirewallZonePolicyDestination struct {
 	AppIDs             []string `json:"app_ids,omitempty"`
 	IPGroupID          string   `json:"ip_group_id,omitempty"`
 	IPs                []string `json:"ips,omitempty" validate:"omitempty,ipv4"` // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
-	MatchMAC           bool     `json:"match_mac"`
 	MatchOppositeIPs   bool     `json:"match_opposite_ips"`
 	MatchOppositePorts bool     `json:"match_opposite_ports"`
 	MatchingTarget     string   `json:"matching_target,omitempty" validate:"omitempty,oneof=ANY APP APP_CATEGORY IP REGION WEB"` // ANY|APP|APP_CATEGORY|IP|REGION|WEB
