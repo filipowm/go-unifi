@@ -7,7 +7,18 @@ func (c *client) ListFirewallZone(ctx context.Context, site string) ([]FirewallZ
 }
 
 func (c *client) GetFirewallZone(ctx context.Context, site, id string) (*FirewallZone, error) {
-	return c.getFirewallZone(ctx, site, id)
+	// client-side filtering is needed, because of lack of endpoint
+	zones, err := c.listFirewallZone(ctx, site)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, zone := range zones {
+		if zone.ID == id {
+			return &zone, nil
+		}
+	}
+	return nil, ErrNotFound
 }
 
 func (c *client) DeleteFirewallZone(ctx context.Context, site, id string) error {
