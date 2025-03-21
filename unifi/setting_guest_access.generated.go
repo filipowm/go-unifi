@@ -58,7 +58,7 @@ type SettingGuestAccess struct {
 	PortalCustomizedAuthenticationText     string   `json:"portal_customized_authentication_text,omitempty"`
 	PortalCustomizedBgColor                string   `json:"portal_customized_bg_color"` // ^#[a-zA-Z0-9]{6}$|^#[a-zA-Z0-9]{3}$|^$
 	PortalCustomizedBgImageEnabled         bool     `json:"portal_customized_bg_image_enabled"`
-	PortalCustomizedBgImageFilename        string   `json:"portal_customized_bg_image_filename,omitempty"`
+	PortalCustomizedBgImageFilename        string   `json:"portal_customized_bg_image_filename"`
 	PortalCustomizedBgImageTile            bool     `json:"portal_customized_bg_image_tile"`
 	PortalCustomizedBgType                 string   `json:"portal_customized_bg_type,omitempty" validate:"omitempty,oneof=color image gallery"` // color|image|gallery
 	PortalCustomizedBoxColor               string   `json:"portal_customized_box_color"`                                                        // ^#[a-zA-Z0-9]{6}$|^#[a-zA-Z0-9]{3}$|^$
@@ -72,7 +72,7 @@ type SettingGuestAccess struct {
 	PortalCustomizedLanguages              []string `json:"portal_customized_languages,omitempty"` // ^[a-z]{2}([_-][a-zA-Z]{2,4})*$
 	PortalCustomizedLinkColor              string   `json:"portal_customized_link_color"`          // ^#[a-zA-Z0-9]{6}$|^#[a-zA-Z0-9]{3}$|^$
 	PortalCustomizedLogoEnabled            bool     `json:"portal_customized_logo_enabled"`
-	PortalCustomizedLogoFilename           string   `json:"portal_customized_logo_filename,omitempty"`
+	PortalCustomizedLogoFilename           string   `json:"portal_customized_logo_filename"`
 	PortalCustomizedLogoPosition           string   `json:"portal_customized_logo_position,omitempty" validate:"omitempty,oneof=left center right"` // left|center|right
 	PortalCustomizedLogoSize               int      `json:"portal_customized_logo_size,omitempty"`                                                  // 6[4-9]|[7-9][0-9]|1[0-8][0-9]|19[0-2]
 	PortalCustomizedSuccessText            string   `json:"portal_customized_success_text,omitempty"`

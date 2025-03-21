@@ -493,6 +493,10 @@ customizations:
       fields:
         AllowedSubnet:
           jsonPath: "allowed_subnet"
+        PortalCustomizedBgImageFilename:
+          omitEmpty: false
+        PortalCustomizedLogoFilename:
+          omitEmpty: false
         RestrictedSubnet:
           jsonPath: "restricted_subnet"
         GoogleDomain:
