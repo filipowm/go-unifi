@@ -1,5 +1,6 @@
 {
     "action": "ALLOW|BLOCK|REJECT",
+    "create_allow_respond": "true|false",
     "connection_state_type": "ALL|RESPOND_ONLY|CUSTOM",
     "connection_states": ["ESTABLISHED|NEW|RELATED|INVALID"],
     "enabled": "true|false",

@@ -28,6 +28,7 @@ type FirewallZonePolicy struct {
 	Action                string                        `json:"action,omitempty" validate:"omitempty,oneof=ALLOW BLOCK REJECT"`                         // ALLOW|BLOCK|REJECT
 	ConnectionStateType   string                        `json:"connection_state_type,omitempty" validate:"omitempty,oneof=ALL RESPOND_ONLY CUSTOM"`     // ALL|RESPOND_ONLY|CUSTOM
 	ConnectionStates      []string                      `json:"connection_states,omitempty" validate:"omitempty,oneof=ESTABLISHED NEW RELATED INVALID"` // ESTABLISHED|NEW|RELATED|INVALID
+	CreateAllowRespond    bool                          `json:"create_allow_respond"`
 	Description           string                        `json:"description,omitempty"`
 	Destination           FirewallZonePolicyDestination `json:"destination,omitempty"`
 	Enabled               bool                          `json:"enabled"`
