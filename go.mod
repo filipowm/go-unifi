@@ -1,12 +1,13 @@
 module github.com/filipowm/go-unifi
 
 go 1.23.5
+toolchain go1.24.1
 
 require (
 	github.com/gabriel-vasile/mimetype v1.4.8
 	github.com/go-playground/locales v0.14.1
 	github.com/go-playground/universal-translator v0.18.1
-	github.com/go-playground/validator/v10 v10.25.0
+	github.com/go-playground/validator/v10 v10.26.0
 	github.com/golangci/golangci-lint v1.64.8
 	github.com/goreleaser/goreleaser v1.26.2
 	github.com/hashicorp/go-version v1.7.0
