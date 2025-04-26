@@ -41,6 +41,7 @@ type Device struct {
 	Dot1XPortctrlEnabled        bool                      `json:"dot1x_portctrl_enabled,omitempty"`
 	EtherLighting               DeviceEtherLighting       `json:"ether_lighting,omitempty"`
 	EthernetOverrides           []DeviceEthernetOverrides `json:"ethernet_overrides,omitempty"`
+	FanModeOverride             string                    `json:"fan_mode_override,omitempty" validate:"omitempty,oneof=default quiet"` // default|quiet
 	FlowctrlEnabled             bool                      `json:"flowctrl_enabled,omitempty"`
 	GatewayVrrpMode             string                    `json:"gateway_vrrp_mode,omitempty" validate:"omitempty,oneof=primary secondary"` // primary|secondary
 	GatewayVrrpPriority         int                       `json:"gateway_vrrp_priority,omitempty"`                                          // [1-9][0-9]|[1-9][0-9][0-9]
@@ -208,8 +209,9 @@ func (dst *DeviceEtherLighting) UnmarshalJSON(b []byte) error {
 }
 
 type DeviceEthernetOverrides struct {
+	Disabled     bool   `json:"disabled,omitempty"`
 	Ifname       string `json:"ifname,omitempty"`       // eth[0-9]{1,2}
-	NetworkGroup string `json:"networkgroup,omitempty"` // LAN[2-8]?|WAN[2]?
+	NetworkGroup string `json:"networkgroup,omitempty"` // LAN[2-8]?|WAN[2-8]?
 }
 
 func (dst *DeviceEthernetOverrides) UnmarshalJSON(b []byte) error {
@@ -487,6 +489,7 @@ type DeviceRadioTable struct {
 	BackupChannel              string                   `json:"backup_channel,omitempty"` // [0-9]|[1][0-4]|4.5|5|16|17|21|25|29|33|34|36|37|38|40|41|42|44|45|46|48|49|52|53|56|57|60|61|64|65|69|73|77|81|85|89|93|97|100|101|104|105|108|109|112|113|117|116|120|121|124|125|128|129|132|133|136|137|140|141|144|145|149|153|157|161|165|169|173|177|181|183|184|185|187|188|189|192|193|196|197|201|205|209|213|217|221|225|229|233|auto
 	Channel                    string                   `json:"channel,omitempty"`        // [0-9]|[1][0-4]|4.5|5|16|17|21|25|29|33|34|36|37|38|40|41|42|44|45|46|48|49|52|53|56|57|60|61|64|65|69|73|77|81|85|89|93|97|100|101|104|105|108|109|112|113|117|116|120|121|124|125|128|129|132|133|136|137|140|141|144|145|149|153|157|161|165|169|173|177|181|183|184|185|187|188|189|192|193|196|197|201|205|209|213|217|221|225|229|233|auto
 	ChannelOptimizationEnabled bool                     `json:"channel_optimization_enabled,omitempty"`
+	Dfs                        bool                     `json:"dfs,omitempty"`
 	HardNoiseFloorEnabled      bool                     `json:"hard_noise_floor_enabled,omitempty"`
 	Ht                         int                      `json:"ht,omitempty" validate:"omitempty,oneof=20 40 80 160 240 320 1080 2160 4320"` // 20|40|80|160|240|320|1080|2160|4320
 	LoadbalanceEnabled         bool                     `json:"loadbalance_enabled,omitempty"`
@@ -498,8 +501,8 @@ type DeviceRadioTable struct {
 	RadioIDentifiers           []DeviceRadioIDentifiers `json:"radio_identifiers,omitempty"`
 	SensLevel                  int                      `json:"sens_level,omitempty"` // ^-([5-8][0-9]|90)$
 	SensLevelEnabled           bool                     `json:"sens_level_enabled,omitempty"`
-	TxPower                    string                   `json:"tx_power,omitempty"`                                                             // [\d]+|auto
-	TxPowerMode                string                   `json:"tx_power_mode,omitempty" validate:"omitempty,oneof=auto medium high low custom"` // auto|medium|high|low|custom
+	TxPower                    string                   `json:"tx_power,omitempty"`                                                                      // [\d]+|auto
+	TxPowerMode                string                   `json:"tx_power_mode,omitempty" validate:"omitempty,oneof=auto medium high low custom disabled"` // auto|medium|high|low|custom|disabled
 	VwireEnabled               bool                     `json:"vwire_enabled,omitempty"`
 }
 

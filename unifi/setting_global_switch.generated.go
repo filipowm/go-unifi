@@ -29,16 +29,18 @@ type SettingGlobalSwitch struct {
 
 	Key string `json:"key"`
 
-	AclDeviceIsolation     []string                            `json:"acl_device_isolation,omitempty"`
-	AclL3Isolation         []SettingGlobalSwitchAclL3Isolation `json:"acl_l3_isolation,omitempty"`
-	DHCPSnoop              bool                                `json:"dhcp_snoop"`
-	Dot1XFallbackNetworkID string                              `json:"dot1x_fallback_networkconf_id"` // [\d\w]+|
-	Dot1XPortctrlEnabled   bool                                `json:"dot1x_portctrl_enabled"`
-	FlowctrlEnabled        bool                                `json:"flowctrl_enabled"`
-	JumboframeEnabled      bool                                `json:"jumboframe_enabled"`
-	RADIUSProfileID        string                              `json:"radiusprofile_id"`
-	StpVersion             string                              `json:"stp_version,omitempty" validate:"omitempty,oneof=stp rstp disabled"` // stp|rstp|disabled
-	SwitchExclusions       []string                            `json:"switch_exclusions,omitempty" validate:"omitempty,mac"`               // ^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$
+	AclDeviceIsolation             []string                            `json:"acl_device_isolation,omitempty"`
+	AclL3Isolation                 []SettingGlobalSwitchAclL3Isolation `json:"acl_l3_isolation,omitempty"`
+	DHCPSnoop                      bool                                `json:"dhcp_snoop"`
+	Dot1XFallbackNetworkID         string                              `json:"dot1x_fallback_networkconf_id"` // [\d\w]+|
+	Dot1XPortctrlEnabled           bool                                `json:"dot1x_portctrl_enabled"`
+	FloodKnownProtocols            bool                                `json:"flood_known_protocols"`
+	FlowctrlEnabled                bool                                `json:"flowctrl_enabled"`
+	ForwardUnknownMcastRouterPorts bool                                `json:"forward_unknown_mcast_router_ports"`
+	JumboframeEnabled              bool                                `json:"jumboframe_enabled"`
+	RADIUSProfileID                string                              `json:"radiusprofile_id"`
+	StpVersion                     string                              `json:"stp_version,omitempty" validate:"omitempty,oneof=stp rstp disabled"` // stp|rstp|disabled
+	SwitchExclusions               []string                            `json:"switch_exclusions,omitempty" validate:"omitempty,mac"`               // ^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$
 }
 
 func (dst *SettingGlobalSwitch) UnmarshalJSON(b []byte) error {
