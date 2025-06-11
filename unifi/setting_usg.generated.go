@@ -83,7 +83,7 @@ type SettingUsg struct {
 	UpnpEnabled                    bool                      `json:"upnp_enabled"`
 	UpnpNATPmpEnabled              bool                      `json:"upnp_nat_pmp_enabled"`
 	UpnpSecureMode                 bool                      `json:"upnp_secure_mode"`
-	UpnpWANInterface               string                    `json:"upnp_wan_interface,omitempty" validate:"omitempty,oneof=WAN WAN2"` // WAN|WAN2
+	UpnpWANInterface               string                    `json:"upnp_wan_interface,omitempty"` // WAN[2-8]?
 }
 
 func (dst *SettingUsg) UnmarshalJSON(b []byte) error {
