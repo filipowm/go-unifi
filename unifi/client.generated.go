@@ -722,6 +722,14 @@ type Client interface {
 	// UpdateSettingMagicSiteToSiteVpn updates a resource
 	UpdateSettingMagicSiteToSiteVpn(ctx context.Context, site string, s *SettingMagicSiteToSiteVpn) (*SettingMagicSiteToSiteVpn, error)
 
+	// ==== client methods for SettingMdns resource ====
+
+	// GetSettingMdns retrieves the settings for a resource
+	GetSettingMdns(ctx context.Context, site string) (*SettingMdns, error)
+
+	// UpdateSettingMdns updates a resource
+	UpdateSettingMdns(ctx context.Context, site string, s *SettingMdns) (*SettingMdns, error)
+
 	// ==== client methods for SettingMgmt resource ====
 
 	// GetSettingMgmt retrieves the settings for a resource
@@ -777,6 +785,14 @@ type Client interface {
 
 	// UpdateSettingRadius updates a resource
 	UpdateSettingRadius(ctx context.Context, site string, s *SettingRadius) (*SettingRadius, error)
+
+	// ==== client methods for SettingRoamingAssistant resource ====
+
+	// GetSettingRoamingAssistant retrieves the settings for a resource
+	GetSettingRoamingAssistant(ctx context.Context, site string) (*SettingRoamingAssistant, error)
+
+	// UpdateSettingRoamingAssistant updates a resource
+	UpdateSettingRoamingAssistant(ctx context.Context, site string, s *SettingRoamingAssistant) (*SettingRoamingAssistant, error)
 
 	// ==== client methods for SettingRsyslogd resource ====
 
@@ -873,6 +889,14 @@ type Client interface {
 
 	// UpdateSettingTeleport updates a resource
 	UpdateSettingTeleport(ctx context.Context, site string, s *SettingTeleport) (*SettingTeleport, error)
+
+	// ==== client methods for SettingTrafficFlow resource ====
+
+	// GetSettingTrafficFlow retrieves the settings for a resource
+	GetSettingTrafficFlow(ctx context.Context, site string) (*SettingTrafficFlow, error)
+
+	// UpdateSettingTrafficFlow updates a resource
+	UpdateSettingTrafficFlow(ctx context.Context, site string, s *SettingTrafficFlow) (*SettingTrafficFlow, error)
 
 	// ==== client methods for SettingUsg resource ====
 
