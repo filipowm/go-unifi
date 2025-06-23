@@ -19,7 +19,7 @@ require (
 	github.com/ulikunitz/xz v0.5.12
 	github.com/xor-gate/ar v0.0.0-20170530204233-5c72ae81e2b7
 	golang.org/x/net v0.41.0
-	golang.org/x/tools v0.33.0
+	golang.org/x/tools v0.34.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
