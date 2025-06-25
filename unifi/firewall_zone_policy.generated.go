@@ -65,8 +65,8 @@ func (dst *FirewallZonePolicy) UnmarshalJSON(b []byte) error {
 }
 
 type FirewallZonePolicyDestination struct {
-	AppCategoryIDs     []string `json:"app_category_ids,omitempty"`
-	AppIDs             []string `json:"app_ids,omitempty"`
+	AppCategoryIDs     []int    `json:"app_category_ids,omitempty"`
+	AppIDs             []int    `json:"app_ids,omitempty"`
 	IPGroupID          string   `json:"ip_group_id,omitempty"`
 	IPs                []string `json:"ips,omitempty" validate:"omitempty,ipv4"` // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
 	MatchOppositeIPs   bool     `json:"match_opposite_ips"`
@@ -84,6 +84,9 @@ type FirewallZonePolicyDestination struct {
 func (dst *FirewallZonePolicyDestination) UnmarshalJSON(b []byte) error {
 	type Alias FirewallZonePolicyDestination
 	aux := &struct {
+		AppCategoryIDs []emptyStringInt `json:"app_category_ids"`
+		AppIDs         []emptyStringInt `json:"app_ids"`
+
 		*Alias
 	}{
 		Alias: (*Alias)(dst),
@@ -92,6 +95,14 @@ func (dst *FirewallZonePolicyDestination) UnmarshalJSON(b []byte) error {
 	err := json.Unmarshal(b, &aux)
 	if err != nil {
 		return fmt.Errorf("unable to unmarshal alias: %w", err)
+	}
+	dst.AppCategoryIDs = make([]int, len(aux.AppCategoryIDs))
+	for i, v := range aux.AppCategoryIDs {
+		dst.AppCategoryIDs[i] = int(v)
+	}
+	dst.AppIDs = make([]int, len(aux.AppIDs))
+	for i, v := range aux.AppIDs {
+		dst.AppIDs[i] = int(v)
 	}
 
 	return nil
