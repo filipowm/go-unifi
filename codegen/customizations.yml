@@ -477,6 +477,8 @@ customizations:
           customUnmarshalType: ""
     Network:
       fields:
+        FirewallZoneID:
+          omitEmpty: true
         InternetAccessEnabled:
           ifFieldType: "bool"
           customUnmarshalType: "*bool"
@@ -485,6 +487,10 @@ customizations:
           ifFieldType: "bool"
           customUnmarshalType: "*bool"
           customUnmarshalFunc: "emptyBoolToTrue"
+        IPSecEspLifetime:
+          fieldType: "int"
+        IPSecIkeLifetime:
+          fieldType: "int"
         WANUsername:
           omitEmpty: true
         XWANPassword:
