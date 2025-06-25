@@ -8,8 +8,8 @@
     "name": "",
     "description": "",
     "destination": {
-        "app_category_ids": [""],
-        "app_ids": [""],
+        "app_category_ids": ["[0-9]*"],
+        "app_ids": ["[0-9]*"],
         "ip_group_id": "",
         "ips": ["^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$"],
         "match_opposite_ips": "true|false",
