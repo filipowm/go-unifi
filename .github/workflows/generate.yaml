@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: "actions/checkout@v4"
 
-      - uses: "actions/setup-go@v5"
+      - uses: "actions/setup-go@v6"
 
       - name: "Generate new client structures"
         run: 'go generate unifi/codegen.go'

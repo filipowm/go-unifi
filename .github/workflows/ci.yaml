@@ -17,7 +17,7 @@ jobs:
     runs-on: 'ubuntu-latest'
     steps:
       - uses: 'actions/checkout@v4'
-      - uses: 'actions/setup-go@v5'
+      - uses: 'actions/setup-go@v6'
       - run: 'go build ./...'
 
   test:
@@ -26,7 +26,7 @@ jobs:
     runs-on: 'ubuntu-latest'
     steps:
       - uses: 'actions/checkout@v4'
-      - uses: 'actions/setup-go@v5'
+      - uses: 'actions/setup-go@v6'
       - name: "Run tests"
         run: "go test -cover -coverprofile=coverage.out -covermode atomic ./..."
 
@@ -57,7 +57,7 @@ jobs:
     runs-on: 'ubuntu-latest'
     steps:
       - uses: 'actions/checkout@v4'
-      - uses: 'actions/setup-go@v5'
+      - uses: 'actions/setup-go@v6'
 
       - run: 'go generate unifi/device.go'
       - run: 'git diff --compact-summary --exit-code'
@@ -74,7 +74,7 @@ jobs:
     runs-on: 'ubuntu-latest'
     steps:
       - uses: 'actions/checkout@v4'
-      - uses: 'actions/setup-go@v5'
+      - uses: 'actions/setup-go@v6'
       - uses: 'golangci/golangci-lint-action@v6'
 
   test-codegen:
@@ -82,5 +82,5 @@ jobs:
     runs-on: "ubuntu-latest"
     steps:
       - uses: "actions/checkout@v4"
-      - uses: "actions/setup-go@v5"
+      - uses: "actions/setup-go@v6"
       - run: "go generate unifi/codegen.go"
