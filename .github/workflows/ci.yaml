@@ -31,7 +31,7 @@ jobs:
         run: "go test -cover -coverprofile=coverage.out -covermode atomic ./..."
 
       - name: "Archive code coverage results"
-        uses: "actions/upload-artifact@v4"
+        uses: "actions/upload-artifact@v5"
         with:
           name: "code-coverage"
           path: "coverage.out"
