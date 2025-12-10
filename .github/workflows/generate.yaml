@@ -28,7 +28,7 @@ jobs:
           trim: "true"
 
       # TODO: Automatically merge the PR if tests pass.
-      - uses: "peter-evans/create-pull-request@v7"
+      - uses: "peter-evans/create-pull-request@v8"
         with:
           delete-branch: true
           title: "feat: update to the controller version ${{ steps.unifi_version.outputs.content }}"
