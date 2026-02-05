@@ -308,6 +308,7 @@ func (dst *DeviceOutletOverrides) UnmarshalJSON(b []byte) error {
 
 type DevicePortOverrides struct {
 	AggregateMembers             []int            `json:"aggregate_members,omitempty"` // [1-9]|[1-4][0-9]|5[0-6]
+	AggregateNumPorts            int              `json:"aggregate_num_ports,omitempty"`
 	Autoneg                      bool             `json:"autoneg,omitempty"`
 	Dot1XCtrl                    string           `json:"dot1x_ctrl,omitempty" validate:"omitempty,oneof=auto force_authorized force_unauthorized mac_based multi_host"` // auto|force_authorized|force_unauthorized|mac_based|multi_host
 	Dot1XIDleTimeout             int              `json:"dot1x_idle_timeout,omitempty"`                                                                                  // [0-9]|[1-9][0-9]{1,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5]
