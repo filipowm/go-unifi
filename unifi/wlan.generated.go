@@ -34,7 +34,7 @@ type WLAN struct {
 	BssTransition               bool                       `json:"bss_transition"`
 	CountryBeacon               bool                       `json:"country_beacon"`
 	DPIEnabled                  bool                       `json:"dpi_enabled"`
-	DPIgroupID                  string                     `json:"dpigroup_id" validate:"omitempty,w_regex"`                      // [\d\w]+|^$
+	DPIgroupID                  string                     `json:"dpigroup_id,omitempty" validate:"omitempty,w_regex"`                      // [\d\w]+|^$
 	DTIM6E                      int                        `json:"dtim_6e,omitempty"`                                             // ^([1-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
 	DTIMMode                    string                     `json:"dtim_mode,omitempty" validate:"omitempty,oneof=default custom"` // default|custom
 	DTIMNa                      int                        `json:"dtim_na,omitempty"`                                             // ^([1-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
@@ -83,7 +83,7 @@ type WLAN struct {
 	RADIUSMACAuthEnabled        bool                       `json:"radius_mac_auth_enabled"`
 	RADIUSMACaclEmptyPassword   bool                       `json:"radius_macacl_empty_password"`
 	RADIUSMACaclFormat          string                     `json:"radius_macacl_format,omitempty" validate:"omitempty,oneof=none_lower hyphen_lower colon_lower none_upper hyphen_upper colon_upper"` // none_lower|hyphen_lower|colon_lower|none_upper|hyphen_upper|colon_upper
-	RADIUSProfileID             string                     `json:"radiusprofile_id"`
+	RADIUSProfileID             string                     `json:"radiusprofile_id,omitempty"`
 	RoamClusterID               int                        `json:"roam_cluster_id,omitempty"` // [0-9]|[1-2][0-9]|[3][0-1]|^$
 	RrmEnabled                  bool                       `json:"rrm_enabled"`
 	SaeAntiClogging             int                        `json:"sae_anti_clogging,omitempty"`
