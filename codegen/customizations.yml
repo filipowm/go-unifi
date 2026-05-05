@@ -565,3 +565,14 @@ customizations:
           omitEmpty: true
         SrcMACAddress:
           omitEmpty: true
+    FirewallGroup:
+      fields:
+        # GroupMembers is a slice that defaults to empty when no members are
+        # configured. With omitempty (the default behavior for slices), an
+        # empty slice gets entirely omitted from the JSON payload, and UniFi
+        # creates the resource without the field. The Network app's Settings
+        # page then chokes on `undefined.length` when iterating members.
+        # Force the field to always be sent — empty slice serializes to `[]`
+        # which the UI handles correctly.
+        GroupMembers:
+          omitEmpty: false
