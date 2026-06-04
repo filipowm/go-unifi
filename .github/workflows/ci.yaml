@@ -16,8 +16,8 @@ jobs:
     name: "Build"
     runs-on: 'ubuntu-latest'
     steps:
-      - uses: 'actions/checkout@v4'
-      - uses: 'actions/setup-go@v5'
+      - uses: 'actions/checkout@v6'
+      - uses: 'actions/setup-go@v6'
       - run: 'go build ./...'
 
   test:
@@ -25,13 +25,13 @@ jobs:
     needs: 'build'
     runs-on: 'ubuntu-latest'
     steps:
-      - uses: 'actions/checkout@v4'
-      - uses: 'actions/setup-go@v5'
+      - uses: 'actions/checkout@v6'
+      - uses: 'actions/setup-go@v6'
       - name: "Run tests"
         run: "go test -cover -coverprofile=coverage.out -covermode atomic ./..."
 
       - name: "Archive code coverage results"
-        uses: "actions/upload-artifact@v4"
+        uses: "actions/upload-artifact@v5"
         with:
           name: "code-coverage"
           path: "coverage.out"
@@ -56,8 +56,8 @@ jobs:
     needs: 'build'
     runs-on: 'ubuntu-latest'
     steps:
-      - uses: 'actions/checkout@v4'
-      - uses: 'actions/setup-go@v5'
+      - uses: 'actions/checkout@v6'
+      - uses: 'actions/setup-go@v6'
 
       - run: 'go generate unifi/device.go'
       - run: 'git diff --compact-summary --exit-code'
@@ -66,21 +66,21 @@ jobs:
     name: "YAML Lint"
     runs-on: 'ubuntu-latest'
     steps:
-      - uses: 'actions/checkout@v4'
+      - uses: 'actions/checkout@v6'
       - uses: 'ibiqlik/action-yamllint@v3'
 
   lint:
     name: "Lint"
     runs-on: 'ubuntu-latest'
     steps:
-      - uses: 'actions/checkout@v4'
-      - uses: 'actions/setup-go@v5'
+      - uses: 'actions/checkout@v6'
+      - uses: 'actions/setup-go@v6'
       - uses: 'golangci/golangci-lint-action@v6'
 
   test-codegen:
     name: "Test Codegen run"
     runs-on: "ubuntu-latest"
     steps:
-      - uses: "actions/checkout@v4"
-      - uses: "actions/setup-go@v5"
+      - uses: "actions/checkout@v6"
+      - uses: "actions/setup-go@v6"
       - run: "go generate unifi/codegen.go"
