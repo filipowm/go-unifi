@@ -28,6 +28,34 @@ func TestSetupLogging(t *testing.T) {
 	a.Equal(logrus.TraceLevel, log.Level)
 }
 
+func TestResolveDir(t *testing.T) {
+	t.Parallel()
+
+	cases := map[string]struct {
+		base     string
+		dir      string
+		expected string
+	}{
+		"absolute path returned as-is": {
+			base:     "/home/user",
+			dir:      "/absolute/dir",
+			expected: "/absolute/dir",
+		},
+		"relative path joined with base": {
+			base:     "/home/user",
+			dir:      "relative/dir",
+			expected: "/home/user/relative/dir",
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			assert.Equal(t, tc.expected, resolveDir(tc.base, tc.dir))
+		})
+	}
+}
+
 // integration tests for the CLI
 // these test require Internet access
 

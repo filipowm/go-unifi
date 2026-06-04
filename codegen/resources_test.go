@@ -63,6 +63,130 @@ func TestFieldInfoFromValidation(t *testing.T) {
 	}
 }
 
+func TestFieldInfoFromValidationDetails(t *testing.T) {
+	t.Parallel()
+
+	// These cases lock in the tricky numeric/float/int/IP-octet/bool branches
+	// of fieldInfoFromValidation that a refactor could silently break.
+	cases := map[string]struct {
+		fieldName     string
+		validation    any
+		isArray       bool
+		expectedType  string
+		expectedField string // FieldName after cleanName/ToCamel
+		expectComment string
+		expectOmit    bool
+		expectUnmarsh string
+		expectIsArray bool
+	}{
+		"int field uses emptyStringInt unmarshal": {
+			fieldName:     "max_value",
+			validation:    "^[0-9]*$",
+			expectedType:  "int",
+			expectedField: "MaxValue",
+			expectComment: "", // normalized "09" blanks the comment
+			expectOmit:    true,
+			expectUnmarsh: "emptyStringInt",
+		},
+		"int field keeps non-09 comment": {
+			fieldName:     "octet",
+			validation:    "^([1-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$",
+			expectedType:  "int",
+			expectedField: "Octet",
+			expectComment: "^([1-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$",
+			expectOmit:    true,
+			expectUnmarsh: "emptyStringInt",
+		},
+		"float64 field blanks 09.09 comment": {
+			fieldName:     "ratio",
+			validation:    "[-+]?[0-9]*\\.?[0-9]+",
+			expectedType:  "float64",
+			expectedField: "Ratio",
+			expectComment: "",
+			expectOmit:    true,
+			expectUnmarsh: "",
+		},
+		"IP-octet pattern falls through to string with original comment": {
+			fieldName:     "gateway_ip",
+			validation:    "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$",
+			expectedType:  "string",
+			expectedField: "GatewayIP",
+			expectComment: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$",
+			expectOmit:    false, // contains "^$" -> omitempty false
+			expectUnmarsh: "",
+		},
+		"bool from false|true": {
+			fieldName:     "enabled",
+			validation:    "false|true",
+			expectedType:  "bool",
+			expectedField: "Enabled",
+			expectComment: "",
+			expectOmit:    false,
+			expectUnmarsh: "",
+		},
+		"bool from true|false": {
+			fieldName:     "active",
+			validation:    "true|false",
+			expectedType:  "bool",
+			expectedField: "Active",
+			expectComment: "",
+			expectOmit:    false,
+			expectUnmarsh: "",
+		},
+		"plain string field omits empty when no ^$ and not ID suffix": {
+			fieldName:     "note",
+			validation:    ".{0,32}",
+			expectedType:  "string",
+			expectedField: "Note",
+			expectComment: ".{0,32}",
+			expectOmit:    true,
+			expectUnmarsh: "",
+		},
+		"string field with ID suffix does not omit empty": {
+			fieldName:     "site_id",
+			validation:    "",
+			expectedType:  "string",
+			expectedField: "SiteID",
+			expectComment: "",
+			expectOmit:    false,
+			expectUnmarsh: "",
+		},
+		"single-element array sets IsArray and OmitEmpty": {
+			fieldName:     "tags",
+			validation:    []any{".{0,32}"},
+			expectedType:  "string",
+			expectedField: "Tags",
+			expectComment: ".{0,32}",
+			expectOmit:    true,
+			expectIsArray: true,
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			a := assert.New(t)
+
+			resource := &Resource{
+				StructName:     "TestType",
+				Types:          make(map[string]*FieldInfo),
+				FieldProcessor: func(_ string, _ *FieldInfo) error { return nil },
+			}
+
+			fieldInfo, err := resource.fieldInfoFromValidation(tc.fieldName, tc.validation, tc.isArray)
+			require.NoError(t, err)
+			require.NotNil(t, fieldInfo)
+
+			a.Equal(tc.expectedType, fieldInfo.FieldType, "FieldType")
+			a.Equal(tc.expectedField, fieldInfo.FieldName, "FieldName")
+			a.Equal(tc.expectComment, fieldInfo.FieldValidationComment, "FieldValidationComment")
+			a.Equal(tc.expectOmit, fieldInfo.OmitEmpty, "OmitEmpty")
+			a.Equal(tc.expectUnmarsh, fieldInfo.CustomUnmarshalType, "CustomUnmarshalType")
+			a.Equal(tc.expectIsArray, fieldInfo.IsArray, "IsArray")
+		})
+	}
+}
+
 func TestResourceTypes(t *testing.T) {
 	t.Parallel()
 

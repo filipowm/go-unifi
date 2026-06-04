@@ -197,3 +197,34 @@ customizations:
 	require.NoError(t, err)
 	assert.Empty(t, fi.CustomUnmarshalType, "Customization should not apply if field type mismatches")
 }
+
+func TestMatchesExcludePattern(t *testing.T) {
+	t.Parallel()
+	cases := map[string]struct {
+		pattern  string
+		name     string
+		expected bool
+	}{
+		"contains match":    {pattern: "*Setting*", name: "FooSettingBar", expected: true},
+		"contains no match": {pattern: "*Setting*", name: "FooBar", expected: false},
+		"prefix match":      {pattern: "Device*", name: "DeviceState", expected: true},
+		"prefix no match":   {pattern: "Device*", name: "FirewallRule", expected: false},
+		"suffix match":      {pattern: "*Group", name: "APGroup", expected: true},
+		"suffix no match":   {pattern: "*Group", name: "APProfile", expected: false},
+		"exact match":       {pattern: "Network", name: "Network", expected: true},
+		"exact no match":    {pattern: "Network", name: "Networks", expected: false},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			assert.Equal(t, tc.expected, matchesExcludePattern(tc.pattern, tc.name))
+		})
+	}
+
+	// Edge case: a bare "*" (or "**") has no inner content and matches everything.
+	t.Run("star only matches all", func(t *testing.T) {
+		t.Parallel()
+		assert.True(t, matchesExcludePattern("*", "Anything"))
+		assert.True(t, matchesExcludePattern("**", "Anything"))
+	})
+}

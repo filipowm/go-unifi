@@ -127,6 +127,55 @@ func TestSanitizeExtractedPath_Valid(t *testing.T) {
 	a.Equal(absExpected, result, "Sanitized path mismatch")
 }
 
+// Test splitSettingsFile returns nil (no-op) when Setting.json is absent.
+func TestSplitSettingsFile_NoSettingFile(t *testing.T) {
+	t.Parallel()
+	r := require.New(t)
+
+	err := splitSettingsFile(t.TempDir())
+	r.NoError(err, "Expected no error when Setting.json does not exist")
+}
+
+// Test splitSettingsFile writes one Setting<Camel>.json file per top-level key.
+func TestSplitSettingsFile_SplitsPerSetting(t *testing.T) {
+	t.Parallel()
+	r := require.New(t)
+	a := assert.New(t)
+	tempDir := t.TempDir()
+
+	err := os.WriteFile(
+		filepath.Join(tempDir, "Setting.json"),
+		[]byte(`{"foo_bar": {"x": 1}, "baz": {"y": "z"}}`),
+		0o600,
+	)
+	r.NoError(err, "Failed to write Setting.json")
+
+	err = splitSettingsFile(tempDir)
+	r.NoError(err)
+
+	fooData, err := os.ReadFile(filepath.Join(tempDir, "SettingFooBar.json"))
+	r.NoError(err, "Expected SettingFooBar.json to exist")
+	a.JSONEq(`{"x": 1}`, string(fooData), "SettingFooBar.json content mismatch")
+
+	bazData, err := os.ReadFile(filepath.Join(tempDir, "SettingBaz.json"))
+	r.NoError(err, "Expected SettingBaz.json to exist")
+	a.JSONEq(`{"y": "z"}`, string(bazData), "SettingBaz.json content mismatch")
+}
+
+// Test splitSettingsFile surfaces an unmarshal error on malformed Setting.json.
+func TestSplitSettingsFile_InvalidJSON(t *testing.T) {
+	t.Parallel()
+	r := require.New(t)
+	tempDir := t.TempDir()
+
+	err := os.WriteFile(filepath.Join(tempDir, "Setting.json"), []byte("not json"), 0o600)
+	r.NoError(err, "Failed to write Setting.json")
+
+	err = splitSettingsFile(tempDir)
+	r.Error(err)
+	r.ErrorContains(err, "unable to unmarshal settings")
+}
+
 // Test extractJSON with invalid Setting.json content, expecting an unmarshal error.
 func TestExtractJSON_InvalidSettings(t *testing.T) {
 	t.Parallel()
