@@ -1,11 +1,25 @@
 ---
 version: 2
 updates:
+  # Bumps the commit-SHA-pinned actions in .github/workflows so the pins do not
+  # go stale. Grouped into a single PR with a conventional-commit prefix.
   - package-ecosystem: 'github-actions'
     directory: '/'
     schedule:
-      interval: 'daily'
+      interval: 'weekly'
+    commit-message:
+      prefix: 'chore'
+    groups:
+      github-actions:
+        patterns:
+          - '*'
   - package-ecosystem: 'gomod'
     directory: '/'
     schedule:
-      interval: 'daily'
+      interval: 'weekly'
+    commit-message:
+      prefix: 'chore'
+    groups:
+      go-modules:
+        patterns:
+          - '*'

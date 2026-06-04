@@ -1,0 +1,29 @@
+---
+# octocov configuration. See https://github.com/k1LoW/octocov
+# Coverage is reported on PRs via the secure workflow_run pattern: the
+# `Continuous Integration` workflow (pull_request) computes coverage with a
+# read-only token, and the `Coverage Comment` workflow (workflow_run) posts the
+# comment with a write token. This is why commenting is gated to workflow_run -
+# it keeps fork PRs from failing on a read-only token while still getting a comment.
+coverage:
+  paths:
+    - 'coverage.out'
+comment:
+  # Only comment from the trusted workflow_run workflow (expr-lang/expr).
+  if: 'github.event_name == "workflow_run"'
+  deletePrevious: true
+  hideFooterLink: true
+summary:
+  # Job summary needs no write permission, so it is safe on fork PRs too.
+  if: true
+  hideFooterLink: true
+report:
+  # Store the baseline report on the default branch for diffing.
+  if: 'is_default_branch'
+  datastores:
+    - 'artifact://${GITHUB_REPOSITORY}'
+diff:
+  datastores:
+    - 'artifact://${GITHUB_REPOSITORY}'
+testExecutionTime:
+  if: 'is_pull_request'

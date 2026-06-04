@@ -16,48 +16,54 @@ jobs:
     name: "Build"
     runs-on: 'ubuntu-latest'
     steps:
-      - uses: 'actions/checkout@v6'
-      - uses: 'actions/setup-go@v6'
+      - uses: 'actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10'  # v6.0.3
+      - uses: 'actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c'  # v6.4.0
       - run: 'go build ./...'
 
   test:
     name: "Test"
     needs: 'build'
     runs-on: 'ubuntu-latest'
+    permissions:
+      contents: "read"
+      # octocov stores/deletes the baseline coverage report as a GitHub Actions
+      # Artifact on the default branch; that requires actions:write.
+      actions: "write"
     steps:
-      - uses: 'actions/checkout@v6'
-      - uses: 'actions/setup-go@v6'
+      - uses: 'actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10'  # v6.0.3
+      - uses: 'actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c'  # v6.4.0
       - name: "Run tests"
-        run: "go test -cover -coverprofile=coverage.out -covermode atomic ./..."
-
+        run: |
+          go test -coverprofile=coverage-all.out -covermode atomic ./...
+          grep -v '\.generated\.go:' coverage-all.out > coverage.out
+          go tool cover -func=coverage.out
+      - name: "Collect coverage metrics"
+        # Stores the baseline report on the default branch and writes the job
+        # summary. The PR comment is intentionally NOT posted here - it is posted
+        # by the Coverage Comment workflow so that fork PRs (read-only token) do
+        # not fail. See .octocov.yml.
+        uses: 'k1LoW/octocov-action@b3b6ee60482a667950f87553abf1df63217235d9'  # v1.5.1
+      - name: "Save PR number for the coverage comment workflow"
+        if: "${{ github.event_name == 'pull_request' }}"
+        run: 'echo "${{ github.event.number }}" > pr-number.txt'
+      - name: "Archive PR number"
+        if: "${{ github.event_name == 'pull_request' }}"
+        uses: 'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a'  # v7.0.1
+        with:
+          name: "pr-number"
+          path: "pr-number.txt"
       - name: "Archive code coverage results"
-        uses: "actions/upload-artifact@v5"
+        uses: 'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a'  # v7.0.1
         with:
           name: "code-coverage"
           path: "coverage.out"
-
-  coverage-report:
-    name: "Coverage Reporting"
-    needs: 'test'
-    runs-on: 'ubuntu-latest'
-    permissions:
-      contents: "write"
-      actions: "read"
-      pull-requests: "write"
-    steps:
-      - uses: "fgrosse/go-coverage-report@v1.2.0"
-        name: "PR Coverage Report"
-        if: "${{ github.event_name == 'pull_request' }}"
-        with:
-          coverage-artifact-name: "code-coverage"
-          coverage-file-name: "coverage.out"
 
   stringer:
     needs: 'build'
     runs-on: 'ubuntu-latest'
     steps:
-      - uses: 'actions/checkout@v6'
-      - uses: 'actions/setup-go@v6'
+      - uses: 'actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10'  # v6.0.3
+      - uses: 'actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c'  # v6.4.0
 
       - run: 'go generate unifi/device.go'
       - run: 'git diff --compact-summary --exit-code'
@@ -66,21 +72,21 @@ jobs:
     name: "YAML Lint"
     runs-on: 'ubuntu-latest'
     steps:
-      - uses: 'actions/checkout@v6'
-      - uses: 'ibiqlik/action-yamllint@v3'
+      - uses: 'actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10'  # v6.0.3
+      - uses: 'ibiqlik/action-yamllint@2576378a8e339169678f9939646ee3ee325e845c'  # v3.1.1
 
   lint:
     name: "Lint"
     runs-on: 'ubuntu-latest'
     steps:
-      - uses: 'actions/checkout@v6'
-      - uses: 'actions/setup-go@v6'
-      - uses: 'golangci/golangci-lint-action@v6'
+      - uses: 'actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10'  # v6.0.3
+      - uses: 'actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c'  # v6.4.0
+      - uses: 'golangci/golangci-lint-action@82606bf257cbaff209d206a39f5134f0cfbfd2ee'  # v9.2.1
 
   test-codegen:
     name: "Test Codegen run"
     runs-on: "ubuntu-latest"
     steps:
-      - uses: "actions/checkout@v6"
-      - uses: "actions/setup-go@v6"
+      - uses: 'actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10'  # v6.0.3
+      - uses: 'actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c'  # v6.4.0
       - run: "go generate unifi/codegen.go"
