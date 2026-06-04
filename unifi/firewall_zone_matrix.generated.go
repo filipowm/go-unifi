@@ -74,7 +74,6 @@ func (c *client) listFirewallZoneMatrix(ctx context.Context, site string) ([]Fir
 	var respBody []FirewallZoneMatrix
 
 	err := c.Get(ctx, fmt.Sprintf("%s/site/%s/firewall/zone-matrix", c.apiPaths.ApiV2Path, site), nil, &respBody)
-
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +85,6 @@ func (c *client) getFirewallZoneMatrix(ctx context.Context, site, id string) (*F
 	var respBody FirewallZoneMatrix
 
 	err := c.Get(ctx, fmt.Sprintf("%s/site/%s/firewall/zone-matrix/%s", c.apiPaths.ApiV2Path, site, id), nil, &respBody)
-
 	if err != nil {
 		return nil, err
 	}

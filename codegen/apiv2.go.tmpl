@@ -68,7 +68,6 @@ func (c *client) list{{ .StructName }}(ctx context.Context, site string) ([]{{ .
 	var respBody []{{ .StructName }}
 
 	err := c.Get(ctx, fmt.Sprintf("%s/site/%s/{{ .ResourcePath }}", c.apiPaths.ApiV2Path, site), nil, &respBody)
-
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +79,6 @@ func (c *client) get{{ .StructName }}(ctx context.Context, site, id string) (*{{
 	var respBody {{ .StructName }}
 
 	err := c.Get(ctx, fmt.Sprintf("%s/site/%s/{{ .ResourcePath }}/%s", c.apiPaths.ApiV2Path, site, id), nil, &respBody)
-
     if err != nil {
         return nil, err
     }

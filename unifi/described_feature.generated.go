@@ -49,7 +49,6 @@ func (c *client) listDescribedFeature(ctx context.Context, site string) ([]Descr
 	var respBody []DescribedFeature
 
 	err := c.Get(ctx, fmt.Sprintf("%s/site/%s/described-features?includeSystemFeatures=true", c.apiPaths.ApiV2Path, site), nil, &respBody)
-
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +60,6 @@ func (c *client) getDescribedFeature(ctx context.Context, site, id string) (*Des
 	var respBody DescribedFeature
 
 	err := c.Get(ctx, fmt.Sprintf("%s/site/%s/described-features?includeSystemFeatures=true/%s", c.apiPaths.ApiV2Path, site, id), nil, &respBody)
-
 	if err != nil {
 		return nil, err
 	}
