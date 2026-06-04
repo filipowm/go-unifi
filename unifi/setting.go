@@ -12,92 +12,60 @@ type Setting struct {
 	Key    string `json:"key"`
 }
 
-//nolint:gocyclo
-func (s *Setting) newFields() (any, error) {
-	switch s.Key {
-	case SettingAutoSpeedtestKey:
-		return &SettingAutoSpeedtest{}, nil
-	case SettingBaresipKey:
-		return &SettingBaresip{}, nil
-	case SettingBroadcastKey:
-		return &SettingBroadcast{}, nil
-	case SettingConnectivityKey:
-		return &SettingConnectivity{}, nil
-	case SettingCountryKey:
-		return &SettingCountry{}, nil
-	case SettingDashboardKey:
-		return &SettingDashboard{}, nil
-	case SettingDohKey:
-		return &SettingDoh{}, nil
-	case SettingDpiKey:
-		return &SettingDpi{}, nil
-	case SettingElementAdoptKey:
-		return &SettingElementAdopt{}, nil
-	case SettingEtherLightingKey:
-		return &SettingEtherLighting{}, nil
-	case SettingEvaluationScoreKey:
-		return &SettingEvaluationScore{}, nil
-	case SettingGlobalApKey:
-		return &SettingGlobalAp{}, nil
-	case SettingGlobalNatKey:
-		return &SettingGlobalNat{}, nil
-	case SettingGlobalSwitchKey:
-		return &SettingGlobalSwitch{}, nil
-	case SettingGuestAccessKey:
-		return &SettingGuestAccess{}, nil
-	case SettingIpsKey:
-		return &SettingIps{}, nil
-	case SettingLcmKey:
-		return &SettingLcm{}, nil
-	case SettingLocaleKey:
-		return &SettingLocale{}, nil
-	case SettingMagicSiteToSiteVpnKey:
-		return &SettingMagicSiteToSiteVpn{}, nil
-	case SettingMgmtKey:
-		return &SettingMgmt{}, nil
-	case SettingNetflowKey:
-		return &SettingNetflow{}, nil
-	case SettingNetworkOptimizationKey:
-		return &SettingNetworkOptimization{}, nil
-	case SettingNtpKey:
-		return &SettingNtp{}, nil
-	case SettingPortaKey:
-		return &SettingPorta{}, nil
-	case SettingRadioAiKey:
-		return &SettingRadioAi{}, nil
-	case SettingRadiusKey:
-		return &SettingRadius{}, nil
-	case SettingRsyslogdKey:
-		return &SettingRsyslogd{}, nil
-	case SettingSnmpKey:
-		return &SettingSnmp{}, nil
-	case SettingSslInspectionKey:
-		return &SettingSslInspection{}, nil
-	case SettingSuperCloudaccessKey:
-		return &SettingSuperCloudaccess{}, nil
-	case SettingSuperEventsKey:
-		return &SettingSuperEvents{}, nil
-	case SettingSuperFwupdateKey:
-		return &SettingSuperFwupdate{}, nil
-	case SettingSuperIdentityKey:
-		return &SettingSuperIdentity{}, nil
-	case SettingSuperMailKey:
-		return &SettingSuperMail{}, nil
-	case SettingSuperMgmtKey:
-		return &SettingSuperMgmt{}, nil
-	case SettingSuperSdnKey:
-		return &SettingSuperSdn{}, nil
-	case SettingSuperSmtpKey:
-		return &SettingSuperSmtp{}, nil
-	case SettingTeleportKey:
-		return &SettingTeleport{}, nil
-	case SettingUsgKey:
-		return &SettingUsg{}, nil
-	case SettingUswKey:
-		return &SettingUsw{}, nil
-	}
+// settingFactories maps a setting key to a constructor for its concrete fields type.
+//
+// Each entry MUST be a closure returning a fresh pointer: the returned value is
+// passed to json.Unmarshal, so sharing a single instance across calls would alias
+// decoded state between callers.
+var settingFactories = map[string]func() any{
+	SettingAutoSpeedtestKey:       func() any { return &SettingAutoSpeedtest{} },
+	SettingBaresipKey:             func() any { return &SettingBaresip{} },
+	SettingBroadcastKey:           func() any { return &SettingBroadcast{} },
+	SettingConnectivityKey:        func() any { return &SettingConnectivity{} },
+	SettingCountryKey:             func() any { return &SettingCountry{} },
+	SettingDashboardKey:           func() any { return &SettingDashboard{} },
+	SettingDohKey:                 func() any { return &SettingDoh{} },
+	SettingDpiKey:                 func() any { return &SettingDpi{} },
+	SettingElementAdoptKey:        func() any { return &SettingElementAdopt{} },
+	SettingEtherLightingKey:       func() any { return &SettingEtherLighting{} },
+	SettingEvaluationScoreKey:     func() any { return &SettingEvaluationScore{} },
+	SettingGlobalApKey:            func() any { return &SettingGlobalAp{} },
+	SettingGlobalNatKey:           func() any { return &SettingGlobalNat{} },
+	SettingGlobalSwitchKey:        func() any { return &SettingGlobalSwitch{} },
+	SettingGuestAccessKey:         func() any { return &SettingGuestAccess{} },
+	SettingIpsKey:                 func() any { return &SettingIps{} },
+	SettingLcmKey:                 func() any { return &SettingLcm{} },
+	SettingLocaleKey:              func() any { return &SettingLocale{} },
+	SettingMagicSiteToSiteVpnKey:  func() any { return &SettingMagicSiteToSiteVpn{} },
+	SettingMgmtKey:                func() any { return &SettingMgmt{} },
+	SettingNetflowKey:             func() any { return &SettingNetflow{} },
+	SettingNetworkOptimizationKey: func() any { return &SettingNetworkOptimization{} },
+	SettingNtpKey:                 func() any { return &SettingNtp{} },
+	SettingPortaKey:               func() any { return &SettingPorta{} },
+	SettingRadioAiKey:             func() any { return &SettingRadioAi{} },
+	SettingRadiusKey:              func() any { return &SettingRadius{} },
+	SettingRsyslogdKey:            func() any { return &SettingRsyslogd{} },
+	SettingSnmpKey:                func() any { return &SettingSnmp{} },
+	SettingSslInspectionKey:       func() any { return &SettingSslInspection{} },
+	SettingSuperCloudaccessKey:    func() any { return &SettingSuperCloudaccess{} },
+	SettingSuperEventsKey:         func() any { return &SettingSuperEvents{} },
+	SettingSuperFwupdateKey:       func() any { return &SettingSuperFwupdate{} },
+	SettingSuperIdentityKey:       func() any { return &SettingSuperIdentity{} },
+	SettingSuperMailKey:           func() any { return &SettingSuperMail{} },
+	SettingSuperMgmtKey:           func() any { return &SettingSuperMgmt{} },
+	SettingSuperSdnKey:            func() any { return &SettingSuperSdn{} },
+	SettingSuperSmtpKey:           func() any { return &SettingSuperSmtp{} },
+	SettingTeleportKey:            func() any { return &SettingTeleport{} },
+	SettingUsgKey:                 func() any { return &SettingUsg{} },
+	SettingUswKey:                 func() any { return &SettingUsw{} },
+}
 
-	return nil, fmt.Errorf("unexpected key %q", s.Key)
+func (s *Setting) newFields() (any, error) {
+	factory, ok := settingFactories[s.Key]
+	if !ok {
+		return nil, fmt.Errorf("unexpected key %q", s.Key)
+	}
+	return factory(), nil
 }
 
 func (c *client) SetSetting(ctx context.Context, site, key string, reqBody any) (any, error) {

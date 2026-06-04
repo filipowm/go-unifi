@@ -173,18 +173,20 @@ func (c *client) Version() string {
 	return c.sysInfo.Version
 }
 
-func newClientFromConfig(config *ClientConfig, v *validator) (*client, error) {
-	var log Logger
+// resolveLogger returns the configured logger or a default info-level logger.
+func resolveLogger(config *ClientConfig) Logger {
 	if config.Logger != nil {
-		log = config.Logger
-	} else {
-		log = NewDefaultLogger(InfoLevel)
+		return config.Logger
 	}
-	log.Info("Initializing new UniFi client")
+	return NewDefaultLogger(InfoLevel)
+}
+
+// buildHTTPClient constructs the *http.Client from config: it resolves the
+// round-tripper (custom provider or a default transport with optional
+// InsecureSkipVerify and transport customizer), applies the timeout, and adds a
+// cookiejar when no API key is used.
+func buildHTTPClient(config *ClientConfig, log Logger) (*http.Client, error) {
 	var rt http.RoundTripper
-	var err error
-	config.URL = strings.TrimRight(config.URL, "/")
-	log.Debugf("Connecting to UniFi controller at %s", config.URL)
 	if config.HttpRoundTripperProvider != nil {
 		log.Debug("Using custom HTTP round tripper provider")
 		rt = config.HttpRoundTripperProvider()
@@ -197,6 +199,7 @@ func newClientFromConfig(config *ClientConfig, v *validator) (*client, error) {
 		}
 		if config.HttpTransportCustomizer != nil {
 			log.Debug("Customizing HTTP transport")
+			var err error
 			if transport, err = config.HttpTransportCustomizer(transport); err != nil {
 				return nil, fmt.Errorf("failed customizing HTTP transport: %w", err)
 			}
@@ -214,22 +217,27 @@ func newClientFromConfig(config *ClientConfig, v *validator) (*client, error) {
 		}
 		httpClient.Jar = jar
 	}
-	baseURL, err := parseBaseURL(config.URL)
-	if err != nil {
-		return nil, fmt.Errorf("failed parsing base URL: %w", err)
-	}
-	var interceptors []ClientInterceptor
-	var credentials Credentials
+	return httpClient, nil
+}
 
+// resolveCredentials selects API-key or user/pass credentials based on config and
+// returns them together with the matching authentication interceptor.
+func resolveCredentials(config *ClientConfig, log Logger) (Credentials, []ClientInterceptor) {
 	if config.APIKey != "" {
 		log.Debug("Using API key authentication")
-		credentials = APIKeyCredentials{APIKey: config.APIKey}
-		interceptors = append(interceptors, &APIKeyAuthInterceptor{apiKey: config.APIKey})
-	} else {
-		log.Debug("Using user/pass authentication")
-		credentials = UserPassCredentials{User: config.User, Password: config.Password, Remember: config.RememberMe}
-		interceptors = append(interceptors, &CSRFInterceptor{})
+		return APIKeyCredentials{APIKey: config.APIKey}, []ClientInterceptor{&APIKeyAuthInterceptor{apiKey: config.APIKey}}
 	}
+	log.Debug("Using user/pass authentication")
+	return UserPassCredentials{User: config.User, Password: config.Password, Remember: config.RememberMe}, []ClientInterceptor{&CSRFInterceptor{}}
+}
+
+// buildInterceptors assembles the final interceptor chain: the provided auth
+// interceptors, the default headers interceptor (with resolved User-Agent), and
+// any user-supplied config.Interceptors. Note: this mutates config.UserAgent to
+// the default when none is provided, preserving prior behavior. User-supplied
+// interceptors are deduplicated using the same semantics as (*client).AddInterceptor.
+func buildInterceptors(config *ClientConfig, log Logger, auth []ClientInterceptor) []ClientInterceptor {
+	interceptors := auth
 	if len(config.UserAgent) == 0 {
 		config.UserAgent = defaultUserAgent
 	} else {
@@ -240,16 +248,43 @@ func newClientFromConfig(config *ClientConfig, v *validator) (*client, error) {
 		AcceptHeader:      "application/json",
 		ContentTypeHeader: "application/json; charset=utf-8",
 	}})
-	var errorHandler ResponseErrorHandler
+	for _, interceptor := range config.Interceptors {
+		if !slices.Contains(interceptors, interceptor) {
+			interceptors = append(interceptors, interceptor)
+		}
+	}
+	return interceptors
+}
+
+// resolveErrorHandler returns the configured response error handler or the default one.
+func resolveErrorHandler(config *ClientConfig, log Logger) ResponseErrorHandler {
 	if config.ErrorHandler != nil {
 		log.Debug("Using custom response error handler")
-		errorHandler = config.ErrorHandler
-	} else {
-		log.Debug("Using default response error handler")
-		errorHandler = &DefaultResponseErrorHandler{}
+		return config.ErrorHandler
 	}
+	log.Debug("Using default response error handler")
+	return &DefaultResponseErrorHandler{}
+}
+
+func newClientFromConfig(config *ClientConfig, v *validator) (*client, error) {
+	log := resolveLogger(config)
+	log.Info("Initializing new UniFi client")
+	config.URL = strings.TrimRight(config.URL, "/")
+	log.Debugf("Connecting to UniFi controller at %s", config.URL)
+
+	httpClient, err := buildHTTPClient(config, log)
+	if err != nil {
+		return nil, err
+	}
+	baseURL, err := parseBaseURL(config.URL)
+	if err != nil {
+		return nil, fmt.Errorf("failed parsing base URL: %w", err)
+	}
+	credentials, auth := resolveCredentials(config, log)
+	interceptors := buildInterceptors(config, log, auth)
+	errorHandler := resolveErrorHandler(config, log)
 	log.Tracef("Validation mode: %d", config.ValidationMode)
-	u := &client{
+	return &client{
 		baseURL:        baseURL,
 		timeout:        config.Timeout,
 		credentials:    credentials,
@@ -261,11 +296,7 @@ func newClientFromConfig(config *ClientConfig, v *validator) (*client, error) {
 		lock:           sync.Mutex{},
 		validator:      v,
 		Logger:         log,
-	}
-	for _, interceptor := range config.Interceptors {
-		u.AddInterceptor(&interceptor)
-	}
-	return u, nil
+	}, nil
 }
 
 // NewClient creates and initializes a new UniFi client based on the provided ClientConfig.

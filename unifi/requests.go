@@ -66,6 +66,53 @@ func (c *client) newRequestContext() (context.Context, context.CancelFunc) {
 	return ctx, func() {}
 }
 
+// applyRequestInterceptors runs the request interceptors against the given request,
+// returning the first error encountered.
+func (c *client) applyRequestInterceptors(req *http.Request) error {
+	c.Trace("Executing request interceptors")
+	for _, interceptor := range c.interceptors {
+		if err := interceptor.InterceptRequest(req); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// overrideHeaders sets the provided headers, replacing any already set (e.g. by interceptors).
+func overrideHeaders(req *http.Request, headers http.Header) {
+	for key, values := range headers {
+		req.Header.Del(key) // no-op if absent; replaces interceptor-set values
+		for _, value := range values {
+			req.Header.Add(key, value)
+		}
+	}
+}
+
+// handleResponse runs the response interceptors, checks for errors, and decodes the response
+// body into respBody if one is expected. Returns an error if any step fails.
+func (c *client) handleResponse(resp *http.Response, respBody any, method, apiPath string) error {
+	c.Trace("Executing response interceptors")
+	for _, interceptor := range c.interceptors {
+		if err := interceptor.InterceptResponse(resp); err != nil {
+			return err
+		}
+	}
+	c.Trace("Checking for errors in response")
+	if err := c.errorHandler.HandleError(resp); err != nil {
+		return err
+	}
+	// If no response body is expected, return
+	if respBody == nil || resp.ContentLength == 0 {
+		c.Trace("No response body to decode")
+		return nil
+	}
+	c.Trace("Decoding response body")
+	if err := json.NewDecoder(resp.Body).Decode(respBody); err != nil {
+		return fmt.Errorf("unable to decode body: %s %s %w", method, apiPath, err)
+	}
+	return nil
+}
+
 // executeRequest executes an HTTP request with the given context, method, URL, body, and headers.
 // It applies interceptors, handles errors, and decodes the response body if provided.
 // Returns an error if the request or response handling fails.
@@ -87,23 +134,12 @@ func (c *client) executeRequest(ctx context.Context, method, apiPath string, bod
 		defer c.lock.Unlock()
 	}
 
-	c.Trace("Executing request interceptors")
-	for _, interceptor := range c.interceptors {
-		if err := interceptor.InterceptRequest(req); err != nil {
-			return err
-		}
+	if err := c.applyRequestInterceptors(req); err != nil {
+		return err
 	}
 
 	// Set headers if provided overriding any coming from interceptors
-	for key, values := range headers {
-		// delete headers if already exist to be able to override them
-		if req.Header.Get(key) != "" {
-			req.Header.Del(key)
-		}
-		for _, value := range values {
-			req.Header.Add(key, value)
-		}
-	}
+	overrideHeaders(req, headers)
 
 	resp, err := c.http.Do(req)
 	if err != nil {
@@ -111,30 +147,7 @@ func (c *client) executeRequest(ctx context.Context, method, apiPath string, bod
 	}
 	defer resp.Body.Close()
 
-	c.Trace("Executing response interceptors")
-	for _, interceptor := range c.interceptors {
-		if err := interceptor.InterceptResponse(resp); err != nil {
-			return err
-		}
-	}
-
-	c.Trace("Checking for errors in response")
-	if err := c.errorHandler.HandleError(resp); err != nil {
-		return err
-	}
-
-	// If no response body is expected, return
-	if respBody == nil || resp.ContentLength == 0 {
-		c.Trace("No response body to decode")
-		return nil
-	}
-
-	c.Trace("Decoding response body")
-	err = json.NewDecoder(resp.Body).Decode(respBody)
-	if err != nil {
-		return fmt.Errorf("unable to decode body: %s %s %w", method, apiPath, err)
-	}
-	return nil
+	return c.handleResponse(resp, respBody, method, apiPath)
 }
 
 // UploadFile uploads a file to the UniFi controller.
