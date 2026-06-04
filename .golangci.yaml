@@ -2,38 +2,38 @@
 version: "2"
 
 linters:
-  default: all
+  default: 'all'
   disable:
     # Opinionated / intentionally disabled
-    - depguard
-    - ireturn
-    - mnd
-    - nlreturn
-    - tagliatelle
+    - 'depguard'
+    - 'ireturn'
+    - 'mnd'
+    - 'nlreturn'
+    - 'tagliatelle'
     # Whitespace/cuddle linter. v1 'wsl' was disabled; v2 ships it as two
     # separate linters (wsl + wsl_v5), both enabled by `default: all`.
-    - wsl
-    - wsl_v5
+    - 'wsl'
+    - 'wsl_v5'
     # Deprecated: superseded by gomodguard_v2 (which stays enabled via default: all).
-    - gomodguard
+    - 'gomodguard'
 
     # Temporary — re-enable as the codebase is cleaned up
-    - dupl
-    - err113
-    - exhaustruct
-    - forbidigo
-    - funlen
-    - gochecknoglobals
-    - goconst
-    - gocritic
-    - godox
-    - lll
-    - maintidx
-    - noinlineerr
-    - paralleltest
-    - revive
-    - varnamelen
-    - wrapcheck
+    - 'dupl'
+    - 'err113'
+    - 'exhaustruct'
+    - 'forbidigo'
+    - 'funlen'
+    - 'gochecknoglobals'
+    - 'goconst'
+    - 'gocritic'
+    - 'godox'
+    - 'lll'
+    - 'maintidx'
+    - 'noinlineerr'
+    - 'paralleltest'
+    - 'revive'
+    - 'varnamelen'
+    - 'wrapcheck'
 
   settings:
     tagalign:
@@ -47,36 +47,36 @@ linters:
     # Lint generated code too — the generator is responsible for emitting
     # lint-clean output (see codegen/). Only a few categories are inherent to
     # the generated code and are excluded below.
-    generated: disable
+    generated: 'disable'
     presets:
-      - comments
-      - common-false-positives
-      - legacy
-      - std-error-handling
+      - 'comments'
+      - 'common-false-positives'
+      - 'legacy'
+      - 'std-error-handling'
     rules:
       # Generated code: issues inherent to the UniFi API / generator design and
       # not fixable without breaking the API mapping.
       - path: '\.generated\.go'
         linters:
-          - misspell        # field names mirror UniFi's JSON keys (e.g. IGMPSupression, dynamicdns)
-          - modernize
-          - interfacebloat  # the aggregate Client interface exposes many methods by design
-          - unused          # generated helpers/types not referenced within this module
+          - 'misspell'        # field names mirror UniFi's JSON keys (e.g. IGMPSupression, dynamicdns)
+          - 'modernize'
+          - 'interfacebloat'  # the aggregate Client interface exposes many methods by design
+          - 'unused'          # generated helpers/types not referenced within this module
       - path: 'client.generated.go'
         linters:
-          - gofumpt         # strict linting not needed
+          - 'gofumpt'         # strict linting not needed
     paths:
-      - third_party$
-      - builtin$
-      - examples$
+      - 'third_party$'
+      - 'builtin$'
+      - 'examples$'
 
 formatters:
   enable:
-    - gofumpt
-    - goimports
+    - 'gofumpt'
+    - 'goimports'
   exclusions:
-    generated: disable
+    generated: 'disable'
     paths:
-      - third_party$
-      - builtin$
-      - examples$
+      - 'third_party$'
+      - 'builtin$'
+      - 'examples$'
