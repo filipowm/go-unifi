@@ -15,13 +15,13 @@ type Client interface {
 	BaseURL() string
 
 	// Delete sends a DELETE request to the controller.
-	Delete(ctx context.Context, apiPath string, reqBody interface{}, respBody interface{}) error
+	Delete(ctx context.Context, apiPath string, reqBody any, respBody any) error
 
 	// Do sends a request to the controller.
-	Do(ctx context.Context, method string, apiPath string, reqBody interface{}, respBody interface{}) error
+	Do(ctx context.Context, method string, apiPath string, reqBody any, respBody any) error
 
 	// Get sends a GET request to the controller.
-	Get(ctx context.Context, apiPath string, reqBody interface{}, respBody interface{}) error
+	Get(ctx context.Context, apiPath string, reqBody any, respBody any) error
 
 	// Login logs in to the controller. Useful only for user/password authentication.
 	Login() error
@@ -30,10 +30,10 @@ type Client interface {
 	Logout() error
 
 	// Post sends a POST request to the controller.
-	Post(ctx context.Context, apiPath string, reqBody interface{}, respBody interface{}) error
+	Post(ctx context.Context, apiPath string, reqBody any, respBody any) error
 
 	// Put sends a PUT request to the controller.
-	Put(ctx context.Context, apiPath string, reqBody interface{}, respBody interface{}) error
+	Put(ctx context.Context, apiPath string, reqBody any, respBody any) error
 
 	// Version returns the version of the UniFi Controller API.
 	Version() string
@@ -570,7 +570,7 @@ type Client interface {
 
 	// ==== end of client methods for ScheduleTask resource ====
 
-	GetSetting(ctx context.Context, site string, key string) (*Setting, interface{}, error)
+	GetSetting(ctx context.Context, site string, key string) (*Setting, any, error)
 
 	// ==== client methods for SettingAutoSpeedtest resource ====
 

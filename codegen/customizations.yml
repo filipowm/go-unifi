@@ -34,9 +34,9 @@ customizations:
           - name: "apiPath"
             type: "string"
           - name: "reqBody"
-            type: "interface{}"
+            type: "any"
           - name: "respBody"
-            type: "interface{}"
+            type: "any"
         returns:
           - "error"
       - name: "Get"
@@ -47,9 +47,9 @@ customizations:
           - name: "apiPath"
             type: "string"
           - name: "reqBody"
-            type: "interface{}"
+            type: "any"
           - name: "respBody"
-            type: "interface{}"
+            type: "any"
         returns:
           - "error"
       - name: "Post"
@@ -60,9 +60,9 @@ customizations:
           - name: "apiPath"
             type: "string"
           - name: "reqBody"
-            type: "interface{}"
+            type: "any"
           - name: "respBody"
-            type: "interface{}"
+            type: "any"
         returns:
           - "error"
       - name: "Put"
@@ -73,9 +73,9 @@ customizations:
           - name: "apiPath"
             type: "string"
           - name: "reqBody"
-            type: "interface{}"
+            type: "any"
           - name: "respBody"
-            type: "interface{}"
+            type: "any"
         returns:
           - "error"
       - name: "Delete"
@@ -86,9 +86,9 @@ customizations:
           - name: "apiPath"
             type: "string"
           - name: "reqBody"
-            type: "interface{}"
+            type: "any"
           - name: "respBody"
-            type: "interface{}"
+            type: "any"
         returns:
           - "error"
 
@@ -165,7 +165,7 @@ customizations:
             type: "string"
         returns:
           - "*Setting"
-          - "interface{}"
+          - "any"
           - "error"
       - name: "ListSites"
         resourceName: "Site"

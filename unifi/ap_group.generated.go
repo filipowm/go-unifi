@@ -49,6 +49,7 @@ func (c *client) listAPGroup(ctx context.Context, site string) ([]APGroup, error
 	var respBody []APGroup
 
 	err := c.Get(ctx, fmt.Sprintf("%s/site/%s/apgroups", c.apiPaths.ApiV2Path, site), nil, &respBody)
+
 	if err != nil {
 		return nil, err
 	}

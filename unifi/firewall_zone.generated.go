@@ -49,6 +49,7 @@ func (c *client) listFirewallZone(ctx context.Context, site string) ([]FirewallZ
 	var respBody []FirewallZone
 
 	err := c.Get(ctx, fmt.Sprintf("%s/site/%s/firewall/zone", c.apiPaths.ApiV2Path, site), nil, &respBody)
+
 	if err != nil {
 		return nil, err
 	}

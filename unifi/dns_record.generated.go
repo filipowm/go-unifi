@@ -64,6 +64,7 @@ func (c *client) listDNSRecord(ctx context.Context, site string) ([]DNSRecord, e
 	var respBody []DNSRecord
 
 	err := c.Get(ctx, fmt.Sprintf("%s/site/%s/static-dns", c.apiPaths.ApiV2Path, site), nil, &respBody)
+
 	if err != nil {
 		return nil, err
 	}

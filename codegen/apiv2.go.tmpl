@@ -68,6 +68,7 @@ func (c *client) list{{ .StructName }}(ctx context.Context, site string) ([]{{ .
 	var respBody []{{ .StructName }}
 
 	err := c.Get(ctx, fmt.Sprintf("%s/site/%s/{{ .ResourcePath }}", c.apiPaths.ApiV2Path, site), nil, &respBody)
+
 	if err != nil {
 		return nil, err
 	}

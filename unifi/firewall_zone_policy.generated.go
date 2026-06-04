@@ -174,6 +174,7 @@ func (c *client) listFirewallZonePolicy(ctx context.Context, site string) ([]Fir
 	var respBody []FirewallZonePolicy
 
 	err := c.Get(ctx, fmt.Sprintf("%s/site/%s/firewall-policies", c.apiPaths.ApiV2Path, site), nil, &respBody)
+
 	if err != nil {
 		return nil, err
 	}
