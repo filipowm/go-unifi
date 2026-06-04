@@ -27,8 +27,9 @@ const _DeviceState_name = "UnknownConnectedPendingFirmwareMismatchUpgradingProvi
 var _DeviceState_index = [...]uint8{0, 7, 16, 23, 39, 48, 60, 75, 83, 91, 102, 113, 121}
 
 func (i DeviceState) String() string {
-	if i < 0 || i >= DeviceState(len(_DeviceState_index)-1) {
+	idx := int(i) - 0
+	if i < 0 || idx >= len(_DeviceState_index)-1 {
 		return "DeviceState(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _DeviceState_name[_DeviceState_index[i]:_DeviceState_index[i+1]]
+	return _DeviceState_name[_DeviceState_index[idx]:_DeviceState_index[idx+1]]
 }
