@@ -1,9 +1,32 @@
 # Cache
 /fields/v*.*.*/
 /codegen/v*.*.*/
-
+  
 # goreleaser
 /dist/
-
+  
 .idea
 *.iml
+.vscode/
+
+.DS_Store
+  
+# Claude Code
+.claude/worktrees
+.claude/settings.local.json
+
+# Go build/test artifacts
+*.test
+*.exe
+*.out
+*.prof
+go.work
+go.work.sum
+/vendor/
+/coverage/
+coverage.out
+coverage.tmp
+
+# Local env / secrets
+.env
+.env.local
