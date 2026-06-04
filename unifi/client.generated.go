@@ -299,6 +299,8 @@ type Client interface {
 	// ListFirewallZonePolicy lists the resources
 	ListFirewallZonePolicy(ctx context.Context, site string) ([]FirewallZonePolicy, error)
 
+	ReorderFirewallPolicies(ctx context.Context, site string, d *FirewallPolicyOrderUpdate) ([]FirewallZonePolicy, error)
+
 	// UpdateFirewallZonePolicy updates a resource
 	UpdateFirewallZonePolicy(ctx context.Context, site string, f *FirewallZonePolicy) (*FirewallZonePolicy, error)
 
