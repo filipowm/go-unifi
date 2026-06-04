@@ -557,6 +557,32 @@ customizations:
       fields:
         ScheduleWithDuration:
           omitEmpty: false
+        DPIgroupID:
+          omitEmpty: true
+        RADIUSProfileID:
+          omitEmpty: true
+    PortProfile:
+      fields:
+        NATiveNetworkID:
+          omitEmpty: true
+        VoiceNetworkID:
+          omitEmpty: true
+    FirewallRule:
+      fields:
+        DstNetworkID:
+          omitEmpty: true
+        SrcNetworkID:
+          omitEmpty: true
+        ICMPTypename:
+          omitEmpty: true
+        ICMPv6Typename:
+          omitEmpty: true
+        IPSec:
+          omitEmpty: true
+        ProtocolV6:
+          omitEmpty: true
+        SrcMACAddress:
+          omitEmpty: true
     FirewallGroup:
       fields:
         # GroupMembers is a slice that defaults to empty when no members are

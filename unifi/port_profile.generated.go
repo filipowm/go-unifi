@@ -38,7 +38,7 @@ type PortProfile struct {
 	LldpmedEnabled               bool                  `json:"lldpmed_enabled"`
 	LldpmedNotifyEnabled         bool                  `json:"lldpmed_notify_enabled"`
 	MulticastRouterNetworkIDs    []string              `json:"multicast_router_networkconf_ids,omitempty"`
-	NATiveNetworkID              string                `json:"native_networkconf_id"`
+	NATiveNetworkID              string                `json:"native_networkconf_id,omitempty"`
 	Name                         string                `json:"name,omitempty"`
 	OpMode                       string                `json:"op_mode,omitempty"`                                      // switch
 	PoeMode                      string                `json:"poe_mode,omitempty" validate:"omitempty,oneof=auto off"` // auto|off
@@ -64,7 +64,7 @@ type PortProfile struct {
 	StormctrlUcastRate           int                   `json:"stormctrl_ucast_rate,omitempty"`  // [0-9]|[1-9][0-9]{1,6}|1[0-3][0-9]{6}|14[0-7][0-9]{5}|148[0-7][0-9]{4}|14880000
 	StpPortMode                  bool                  `json:"stp_port_mode"`
 	TaggedVLANMgmt               string                `json:"tagged_vlan_mgmt,omitempty" validate:"omitempty,oneof=auto block_all custom"` // auto|block_all|custom
-	VoiceNetworkID               string                `json:"voice_networkconf_id"`
+	VoiceNetworkID               string                `json:"voice_networkconf_id,omitempty"`
 }
 
 func (dst *PortProfile) UnmarshalJSON(b []byte) error {
