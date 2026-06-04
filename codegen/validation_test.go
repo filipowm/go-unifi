@@ -38,15 +38,19 @@ func TestCreateValidations(t *testing.T) {
 
 	var testValidator validator = "test"
 	testCases := []struct {
+		isArray				bool
 		params              [][]string
 		expectedValidations string
 	}{
-		{[][]string{{"1", "2", "3"}}, "test=1 2 3"},
-		{[][]string{{"1", "2", "3"}, {"4", "5", "6"}}, "test=1 2 3,test=4 5 6"},
-		{[][]string{{}}, "test"},
-		{[][]string{{}, {}}, "test,test"},
-		{[][]string{{}, {"1"}, {}}, "test,test=1,test"},
-		{[][]string{}, ""},
+		{false, [][]string{{"1", "2", "3"}}, "test=1 2 3"},
+		{false, [][]string{{"1", "2", "3"}, {"4", "5", "6"}}, "test=1 2 3,test=4 5 6"},
+		{false, [][]string{{}}, "test"},
+		{false, [][]string{{}, {}}, "test,test"},
+		{false, [][]string{{}, {"1"}, {}}, "test,test=1,test"},
+		{false, [][]string{}, ""},
+		{true, [][]string{{"1", "2", "3"}}, "dive,test=1 2 3"},
+		{true, [][]string{{}, {"1"}, {}}, "dive,test,test=1,test"},
+		{true, [][]string{}, ""},
 	}
 
 	for _, c := range testCases {
@@ -63,7 +67,7 @@ func TestCreateValidations(t *testing.T) {
 			for _, params := range c.params {
 				validations = append(validations, validation{testValidator, params})
 			}
-			result := createValidations(validations...)
+			result := createValidations(c.isArray, validations...)
 			a.Equal(expectedValidationTag, result)
 		})
 	}
@@ -73,20 +77,25 @@ func TestDefineValidation(t *testing.T) {
 	t.Parallel()
 
 	testCases := []struct {
+		isArray bool
 		validationComment, expected string
 	}{
-		{"a|b", "oneof=a b"},
-		{"1|2", "oneof=1 2"},
-		{".{1,2}", "gte=1,lte=2"},
-		{".{1}", "len=1"},
-		{".{1}", "len=1"},
-		{"[\\d\\w]+", "w_regex"},
-		{"[\\d\\w]*", "w_regex"},
-		{"[\\w]+", "w_regex"},
-		{"[\\w]*", "w_regex"},
-		{"a", ""},
-		{".{1}|.{5,6}", ""},
-		{"a|.{5,6}", ""},
+		{false, "a|b", "oneof=a b"},
+		{false, "1|2", "oneof=1 2"},
+		{false, ".{1,2}", "gte=1,lte=2"},
+		{false, ".{1}", "len=1"},
+		{false, ".{1}", "len=1"},
+		{false, "[\\d\\w]+", "w_regex"},
+		{false, "[\\d\\w]*", "w_regex"},
+		{false, "[\\w]+", "w_regex"},
+		{false, "[\\w]*", "w_regex"},
+		{false, "a", ""},
+		{false, ".{1}|.{5,6}", ""},
+		{false, "a|.{5,6}", ""},
+		{true, "a|b", "dive,oneof=a b"},
+		{true, "1|2", "dive,oneof=1 2"},
+		{true, ".{1,2}", "dive,gte=1,lte=2"},
+		{true, "a", ""},
 	}
 
 	for _, c := range testCases {
@@ -99,7 +108,7 @@ func TestDefineValidation(t *testing.T) {
 		t.Run(c.expected, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
-			result := defineFieldValidation(c.validationComment)
+			result := defineFieldValidation(c.validationComment, c.isArray)
 			a.Equal(fullExpected, result)
 		})
 	}

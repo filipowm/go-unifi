@@ -181,7 +181,7 @@ func (r *Resource) Name() string {
 func (r *Resource) processFields(fields map[string]interface{}) {
 	t := r.Types[r.StructName]
 	for name, validation := range fields {
-		fieldInfo, err := r.fieldInfoFromValidation(name, validation)
+		fieldInfo, err := r.fieldInfoFromValidation(name, validation, false)
 		if err != nil {
 			continue
 		}
@@ -190,7 +190,7 @@ func (r *Resource) processFields(fields map[string]interface{}) {
 	}
 }
 
-func (r *Resource) fieldInfoFromValidation(name string, validation interface{}) (*FieldInfo, error) {
+func (r *Resource) fieldInfoFromValidation(name string, validation interface{}, isArray bool) (*FieldInfo, error) {
 	fieldName := strcase.ToCamel(name)
 	fieldName = cleanName(fieldName, fieldReps)
 
@@ -208,7 +208,7 @@ func (r *Resource) fieldInfoFromValidation(name string, validation interface{}) 
 			return empty, fmt.Errorf("unknown validation %#v", validation)
 		}
 
-		fieldInfo, err := r.fieldInfoFromValidation(name, validation[0])
+		fieldInfo, err := r.fieldInfoFromValidation(name, validation[0], true)
 		if err != nil {
 			return empty, err
 		}
@@ -226,7 +226,7 @@ func (r *Resource) fieldInfoFromValidation(name string, validation interface{}) 
 		result.Fields = make(map[string]*FieldInfo)
 
 		for name, fv := range validation {
-			child, err := r.fieldInfoFromValidation(name, fv)
+			child, err := r.fieldInfoFromValidation(name, fv, false)
 			if err != nil {
 				return empty, err
 			}
@@ -264,7 +264,7 @@ func (r *Resource) fieldInfoFromValidation(name string, validation interface{}) 
 					return fieldInfo, r.FieldProcessor(fieldName, fieldInfo)
 				}
 
-				fieldValidation := defineFieldValidation(fieldValidationComment)
+				fieldValidation := defineFieldValidation(fieldValidationComment, isArray)
 				omitEmpty = true
 				fieldInfo = NewFieldInfo(fieldName, name, "int", fieldValidation, fieldValidationComment, omitEmpty, false, "")
 				fieldInfo.CustomUnmarshalType = "emptyStringInt"
@@ -275,7 +275,7 @@ func (r *Resource) fieldInfoFromValidation(name string, validation interface{}) 
 			log.Tracef("normalize %q to %q", validation, normalized)
 		}
 
-		fieldValidation := defineFieldValidation(fieldValidationComment)
+		fieldValidation := defineFieldValidation(fieldValidationComment, isArray)
 		omitEmpty = omitEmpty || (!strings.Contains(validation, "^$") && !strings.HasSuffix(fieldName, "ID"))
 		fieldInfo = NewFieldInfo(fieldName, name, "string", fieldValidation, fieldValidationComment, omitEmpty, false, "")
 		return fieldInfo, r.FieldProcessor(fieldName, fieldInfo)
@@ -396,13 +396,13 @@ func customizeBaseType(resource *Resource) {
 			baseType.Fields["MdnsEnabled"] = NewFieldInfo("MdnsEnabled", "mdns_enabled", "bool", "", "", false, false, "")
 		}
 	case resource.StructName == "Device":
-		baseType.Fields[" MAC"] = NewFieldInfo("MAC", "mac", "string", createValidations(validation{v: mac}), "", true, false, "")
+		baseType.Fields[" MAC"] = NewFieldInfo("MAC", "mac", "string", createValidations(false, validation{v: mac}), "", true, false, "")
 		baseType.Fields["Adopted"] = NewFieldInfo("Adopted", "adopted", "bool", "", "", false, false, "")
 		baseType.Fields["Model"] = NewFieldInfo("Model", "model", "string", "", "", true, false, "")
 		baseType.Fields["State"] = NewFieldInfo("State", "state", "DeviceState", "", "", false, false, "")
 		baseType.Fields["Type"] = NewFieldInfo("Type", "type", "string", "", "", true, false, "")
 	case resource.StructName == "User":
-		baseType.Fields[" IP"] = NewFieldInfo("IP", "ip", "string", createValidations(validation{v: ip}), "non-generated field", true, false, "")
+		baseType.Fields[" IP"] = NewFieldInfo("IP", "ip", "string", createValidations(false, validation{v: ip}), "non-generated field", true, false, "")
 		baseType.Fields[" DevIdOverride"] = NewFieldInfo("DevIdOverride", "dev_id_override", "int", "", "non-generated field", true, false, "")
 	case resource.StructName == "WLAN":
 		// this field removed in v6, retaining for backwards compatibility

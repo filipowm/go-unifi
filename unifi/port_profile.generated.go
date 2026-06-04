@@ -44,11 +44,11 @@ type PortProfile struct {
 	PoeMode                      string                `json:"poe_mode,omitempty" validate:"omitempty,oneof=auto off"` // auto|off
 	PortKeepaliveEnabled         bool                  `json:"port_keepalive_enabled"`
 	PortSecurityEnabled          bool                  `json:"port_security_enabled"`
-	PortSecurityMACAddress       []string              `json:"port_security_mac_address,omitempty" validate:"omitempty,mac"` // ^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$
-	PriorityQueue1Level          int                   `json:"priority_queue1_level,omitempty"`                              // [0-9]|[1-9][0-9]|100
-	PriorityQueue2Level          int                   `json:"priority_queue2_level,omitempty"`                              // [0-9]|[1-9][0-9]|100
-	PriorityQueue3Level          int                   `json:"priority_queue3_level,omitempty"`                              // [0-9]|[1-9][0-9]|100
-	PriorityQueue4Level          int                   `json:"priority_queue4_level,omitempty"`                              // [0-9]|[1-9][0-9]|100
+	PortSecurityMACAddress       []string              `json:"port_security_mac_address,omitempty" validate:"omitempty,dive,mac"` // ^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$
+	PriorityQueue1Level          int                   `json:"priority_queue1_level,omitempty"`                                   // [0-9]|[1-9][0-9]|100
+	PriorityQueue2Level          int                   `json:"priority_queue2_level,omitempty"`                                   // [0-9]|[1-9][0-9]|100
+	PriorityQueue3Level          int                   `json:"priority_queue3_level,omitempty"`                                   // [0-9]|[1-9][0-9]|100
+	PriorityQueue4Level          int                   `json:"priority_queue4_level,omitempty"`                                   // [0-9]|[1-9][0-9]|100
 	QOSProfile                   PortProfileQOSProfile `json:"qos_profile,omitempty"`
 	SettingPreference            string                `json:"setting_preference,omitempty" validate:"omitempty,oneof=auto manual"`                                   // auto|manual
 	Speed                        int                   `json:"speed,omitempty" validate:"omitempty,oneof=10 100 1000 2500 5000 10000 20000 25000 40000 50000 100000"` // 10|100|1000|2500|5000|10000|20000|25000|40000|50000|100000

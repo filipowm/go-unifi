@@ -25,9 +25,9 @@ type FirewallZonePolicy struct {
 	NoDelete bool   `json:"attr_no_delete,omitempty"`
 	NoEdit   bool   `json:"attr_no_edit,omitempty"`
 
-	Action                string                        `json:"action,omitempty" validate:"omitempty,oneof=ALLOW BLOCK REJECT"`                         // ALLOW|BLOCK|REJECT
-	ConnectionStateType   string                        `json:"connection_state_type,omitempty" validate:"omitempty,oneof=ALL RESPOND_ONLY CUSTOM"`     // ALL|RESPOND_ONLY|CUSTOM
-	ConnectionStates      []string                      `json:"connection_states,omitempty" validate:"omitempty,oneof=ESTABLISHED NEW RELATED INVALID"` // ESTABLISHED|NEW|RELATED|INVALID
+	Action                string                        `json:"action,omitempty" validate:"omitempty,oneof=ALLOW BLOCK REJECT"`                              // ALLOW|BLOCK|REJECT
+	ConnectionStateType   string                        `json:"connection_state_type,omitempty" validate:"omitempty,oneof=ALL RESPOND_ONLY CUSTOM"`          // ALL|RESPOND_ONLY|CUSTOM
+	ConnectionStates      []string                      `json:"connection_states,omitempty" validate:"omitempty,dive,oneof=ESTABLISHED NEW RELATED INVALID"` // ESTABLISHED|NEW|RELATED|INVALID
 	CreateAllowRespond    bool                          `json:"create_allow_respond"`
 	Description           string                        `json:"description,omitempty"`
 	Destination           FirewallZonePolicyDestination `json:"destination,omitempty"`
@@ -68,7 +68,7 @@ type FirewallZonePolicyDestination struct {
 	AppCategoryIDs     []string `json:"app_category_ids,omitempty"`
 	AppIDs             []string `json:"app_ids,omitempty"`
 	IPGroupID          string   `json:"ip_group_id,omitempty"`
-	IPs                []string `json:"ips,omitempty" validate:"omitempty,ipv4"` // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
+	IPs                []string `json:"ips,omitempty" validate:"omitempty,dive,ipv4"` // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
 	MatchOppositeIPs   bool     `json:"match_opposite_ips"`
 	MatchOppositePorts bool     `json:"match_opposite_ports"`
 	MatchingTarget     string   `json:"matching_target,omitempty" validate:"omitempty,oneof=ANY APP APP_CATEGORY IP REGION WEB"` // ANY|APP|APP_CATEGORY|IP|REGION|WEB
@@ -102,7 +102,7 @@ type FirewallZonePolicySchedule struct {
 	DateEnd        string   `json:"date_end,omitempty"`                                                                         // ^$|^(20[0-9]{2})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$
 	DateStart      string   `json:"date_start,omitempty"`                                                                       // ^$|^(20[0-9]{2})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$
 	Mode           string   `json:"mode,omitempty" validate:"omitempty,oneof=ALWAYS EVERY_DAY EVERY_WEEK ONE_TIME_ONLY CUSTOM"` // ALWAYS|EVERY_DAY|EVERY_WEEK|ONE_TIME_ONLY|CUSTOM
-	RepeatOnDays   []string `json:"repeat_on_days,omitempty" validate:"omitempty,oneof=mon tue wed thu fri sat sun"`            // mon|tue|wed|thu|fri|sat|sun
+	RepeatOnDays   []string `json:"repeat_on_days,omitempty" validate:"omitempty,dive,oneof=mon tue wed thu fri sat sun"`       // mon|tue|wed|thu|fri|sat|sun
 	TimeAllDay     bool     `json:"time_all_day"`
 	TimeRangeEnd   string   `json:"time_range_end,omitempty"`   // ^[0-9][0-9]:[0-9][0-9]$
 	TimeRangeStart string   `json:"time_range_start,omitempty"` // ^[0-9][0-9]:[0-9][0-9]$
@@ -125,11 +125,11 @@ func (dst *FirewallZonePolicySchedule) UnmarshalJSON(b []byte) error {
 }
 
 type FirewallZonePolicySource struct {
-	ClientMACs            []string `json:"client_macs,omitempty" validate:"omitempty,mac"` // ^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$
+	ClientMACs            []string `json:"client_macs,omitempty" validate:"omitempty,dive,mac"` // ^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$
 	IPGroupID             string   `json:"ip_group_id,omitempty"`
-	IPs                   []string `json:"ips,omitempty" validate:"omitempty,ipv4"` // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
-	MAC                   string   `json:"mac,omitempty" validate:"omitempty,mac"`  // ^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$
-	MACs                  []string `json:"macs,omitempty" validate:"omitempty,mac"` // ^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$
+	IPs                   []string `json:"ips,omitempty" validate:"omitempty,dive,ipv4"` // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
+	MAC                   string   `json:"mac,omitempty" validate:"omitempty,mac"`       // ^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$
+	MACs                  []string `json:"macs,omitempty" validate:"omitempty,dive,mac"` // ^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$
 	MatchMAC              bool     `json:"match_mac"`
 	MatchOppositeIPs      bool     `json:"match_opposite_ips"`
 	MatchOppositeNetworks bool     `json:"match_opposite_networks"`

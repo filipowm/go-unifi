@@ -28,7 +28,7 @@ type FirewallRule struct {
 	Action                string   `json:"action,omitempty" validate:"omitempty,oneof=drop reject accept"` // drop|reject|accept
 	DstAddress            string   `json:"dst_address,omitempty"`
 	DstAddressIPV6        string   `json:"dst_address_ipv6,omitempty"`
-	DstFirewallGroupIDs   []string `json:"dst_firewallgroup_ids,omitempty" validate:"omitempty,w_regex"`           // [\d\w]+
+	DstFirewallGroupIDs   []string `json:"dst_firewallgroup_ids,omitempty" validate:"omitempty,dive,w_regex"`      // [\d\w]+
 	DstNetworkID          string   `json:"dst_networkconf_id" validate:"omitempty,w_regex"`                        // [\d\w]+|^$
 	DstNetworkType        string   `json:"dst_networkconf_type,omitempty" validate:"omitempty,oneof=ADDRv4 NETv4"` // ADDRv4|NETv4
 	DstPort               string   `json:"dst_port,omitempty"`
@@ -46,7 +46,7 @@ type FirewallRule struct {
 	SettingPreference     string   `json:"setting_preference,omitempty" validate:"omitempty,oneof=auto manual"`                                                                                                                                                              // auto|manual
 	SrcAddress            string   `json:"src_address,omitempty"`
 	SrcAddressIPV6        string   `json:"src_address_ipv6,omitempty"`
-	SrcFirewallGroupIDs   []string `json:"src_firewallgroup_ids,omitempty" validate:"omitempty,w_regex"`           // [\d\w]+
+	SrcFirewallGroupIDs   []string `json:"src_firewallgroup_ids,omitempty" validate:"omitempty,dive,w_regex"`      // [\d\w]+
 	SrcMACAddress         string   `json:"src_mac_address" validate:"omitempty,mac"`                               // ^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$|^$
 	SrcNetworkID          string   `json:"src_networkconf_id" validate:"omitempty,w_regex"`                        // [\d\w]+|^$
 	SrcNetworkType        string   `json:"src_networkconf_type,omitempty" validate:"omitempty,oneof=ADDRv4 NETv4"` // ADDRv4|NETv4

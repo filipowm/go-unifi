@@ -33,16 +33,16 @@ type SettingRadioAi struct {
 	AutoChannelPresetsType      string                              `json:"auto_channel_presets_type,omitempty" validate:"omitempty,oneof=maximum_speed conservative custom"` // maximum_speed|conservative|custom
 	Channels6E                  []int                               `json:"channels_6e,omitempty"`                                                                            // [1-9]|[1-2][0-9]|3[3-9]|[4-5][0-9]|6[0-1]|6[5-9]|[7-8][0-9]|9[0-3]|9[7-9]|1[0-1][0-9]|12[0-5]|129|1[3-4][0-9]|15[0-7]|16[1-9]|1[7-8][0-9]|19[3-9]|2[0-1][0-9]|22[0-1]|22[5-9]|233
 	ChannelsBlacklist           []SettingRadioAiChannelsBlacklist   `json:"channels_blacklist,omitempty"`
-	ChannelsNa                  []int                               `json:"channels_na,omitempty" validate:"omitempty,oneof=34 36 38 40 42 44 46 48 52 56 60 64 100 104 108 112 116 120 124 128 132 136 140 144 149 153 157 161 165 169"` // 34|36|38|40|42|44|46|48|52|56|60|64|100|104|108|112|116|120|124|128|132|136|140|144|149|153|157|161|165|169
-	ChannelsNg                  []int                               `json:"channels_ng,omitempty" validate:"omitempty,oneof=1 2 3 4 5 6 7 8 9 10 11 12 13 14"`                                                                            // 1|2|3|4|5|6|7|8|9|10|11|12|13|14
+	ChannelsNa                  []int                               `json:"channels_na,omitempty" validate:"omitempty,dive,oneof=34 36 38 40 42 44 46 48 52 56 60 64 100 104 108 112 116 120 124 128 132 136 140 144 149 153 157 161 165 169"` // 34|36|38|40|42|44|46|48|52|56|60|64|100|104|108|112|116|120|124|128|132|136|140|144|149|153|157|161|165|169
+	ChannelsNg                  []int                               `json:"channels_ng,omitempty" validate:"omitempty,dive,oneof=1 2 3 4 5 6 7 8 9 10 11 12 13 14"`                                                                            // 1|2|3|4|5|6|7|8|9|10|11|12|13|14
 	CronExpr                    string                              `json:"cron_expr,omitempty"`
 	Default                     bool                                `json:"default"`
 	Enabled                     bool                                `json:"enabled"`
-	ExcludeDevices              []string                            `json:"exclude_devices,omitempty"`                                     // ([0-9a-z]{2}:){5}[0-9a-z]{2}
-	HtModesNa                   []int                               `json:"ht_modes_na,omitempty" validate:"omitempty,oneof=20 40 80 160"` // ^(20|40|80|160)$
-	HtModesNg                   []int                               `json:"ht_modes_ng,omitempty" validate:"omitempty,oneof=20 40"`        // ^(20|40)$
-	Optimize                    []string                            `json:"optimize,omitempty" validate:"omitempty,oneof=channel power"`   // channel|power
-	Radios                      []string                            `json:"radios,omitempty" validate:"omitempty,oneof=na ng"`             // na|ng
+	ExcludeDevices              []string                            `json:"exclude_devices,omitempty"`                                          // ([0-9a-z]{2}:){5}[0-9a-z]{2}
+	HtModesNa                   []int                               `json:"ht_modes_na,omitempty" validate:"omitempty,dive,oneof=20 40 80 160"` // ^(20|40|80|160)$
+	HtModesNg                   []int                               `json:"ht_modes_ng,omitempty" validate:"omitempty,dive,oneof=20 40"`        // ^(20|40)$
+	Optimize                    []string                            `json:"optimize,omitempty" validate:"omitempty,dive,oneof=channel power"`   // channel|power
+	Radios                      []string                            `json:"radios,omitempty" validate:"omitempty,dive,oneof=na ng"`             // na|ng
 	RadiosConfiguration         []SettingRadioAiRadiosConfiguration `json:"radios_configuration,omitempty"`
 	SettingPreference           string                              `json:"setting_preference,omitempty" validate:"omitempty,oneof=auto manual"` // auto|manual
 	UseXy                       bool                                `json:"useXY"`

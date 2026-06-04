@@ -30,7 +30,7 @@ type Hotspot2Conf struct {
 	CellularNetworkList     []Hotspot2ConfCellularNetworkList   `json:"cellular_network_list,omitempty"`
 	DeauthReqTimeout        int                                 `json:"deauth_req_timeout,omitempty"` // [1-9][0-9]|[1-9][0-9][0-9]|[1-2][0-9][0-9][0-9]|3[0-5][0-9][0-9]|3600
 	DisableDgaf             bool                                `json:"disable_dgaf"`
-	DomainNameList          []string                            `json:"domain_name_list,omitempty" validate:"omitempty,gte=1,lte=128"` // .{1,128}
+	DomainNameList          []string                            `json:"domain_name_list,omitempty" validate:"omitempty,dive,gte=1,lte=128"` // .{1,128}
 	FriendlyName            []Hotspot2ConfFriendlyName          `json:"friendly_name,omitempty"`
 	GasAdvanced             bool                                `json:"gas_advanced"`
 	GasComebackDelay        int                                 `json:"gas_comeback_delay,omitempty"`

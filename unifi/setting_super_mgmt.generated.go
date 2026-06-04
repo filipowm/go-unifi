@@ -38,7 +38,7 @@ type SettingSuperMgmt struct {
 	AutobackupGcsCertificatePath             string   `json:"autobackup_gcs_certificate_path,omitempty"`
 	AutobackupLocalPath                      string   `json:"autobackup_local_path,omitempty"`
 	AutobackupMaxFiles                       int      `json:"autobackup_max_files,omitempty"`
-	AutobackupPostActions                    []string `json:"autobackup_post_actions,omitempty" validate:"omitempty,oneof=copy_local copy_gcs copy_cloud"` // copy_local|copy_gcs|copy_cloud
+	AutobackupPostActions                    []string `json:"autobackup_post_actions,omitempty" validate:"omitempty,dive,oneof=copy_local copy_gcs copy_cloud"` // copy_local|copy_gcs|copy_cloud
 	AutobackupTimezone                       string   `json:"autobackup_timezone,omitempty"`
 	BackupToCloudEnabled                     bool     `json:"backup_to_cloud_enabled"`
 	ContactInfoCity                          string   `json:"contact_info_city,omitempty"`

@@ -99,7 +99,7 @@ type SettingGuestAccess struct {
 	RedirectToHttps                        bool     `json:"redirect_to_https"`
 	RedirectUrl                            string   `json:"redirect_url,omitempty"`
 	RestrictedDNSEnabled                   bool     `json:"restricted_dns_enabled"`
-	RestrictedDNSServers                   []string `json:"restricted_dns_servers" validate:"omitempty,ipv4"` // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
+	RestrictedDNSServers                   []string `json:"restricted_dns_servers" validate:"omitempty,dive,ipv4"` // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
 	RestrictedSubnet                       string   `json:"restricted_subnet,omitempty"`
 	TemplateEngine                         string   `json:"template_engine,omitempty" validate:"omitempty,oneof=jsp angular"` // jsp|angular
 	VoucherCustomized                      bool     `json:"voucher_customized"`

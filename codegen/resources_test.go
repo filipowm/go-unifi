@@ -44,7 +44,7 @@ func TestFieldInfoFromValidation(t *testing.T) {
 				FieldProcessor: func(name string, f *FieldInfo) error { return nil },
 			}
 
-			fieldInfo, err := resource.fieldInfoFromValidation("fieldName", c.validation)
+			fieldInfo, err := resource.fieldInfoFromValidation("fieldName", c.validation, false)
 			// actualType, actualComment, actualOmitEmpty, err := fieldInfoFromValidation(c.validation)
 			if err != nil {
 				t.Fatal(err)
@@ -295,7 +295,7 @@ func TestFieldInfoFromValidationErrors(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 			resource := NewResource("Test", "test")
-			fieldInfo, err := resource.fieldInfoFromValidation(tc.fieldName, tc.validation)
+			fieldInfo, err := resource.fieldInfoFromValidation(tc.fieldName, tc.validation, false)
 			if tc.errorContains != "" {
 				require.ErrorContains(t, err, tc.errorContains)
 				a.NotNil(fieldInfo)

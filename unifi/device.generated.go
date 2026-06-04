@@ -237,7 +237,7 @@ func (dst *DeviceEtherLighting) UnmarshalJSON(b []byte) error {
 type DeviceEthernetOverrides struct {
 	Disabled     bool   `json:"disabled,omitempty"`
 	Ifname       string `json:"ifname,omitempty"`       // eth[0-9]{1,2}
-	NetworkGroup string `json:"networkgroup,omitempty"` // LAN[2-8]?|WAN[2-8]?
+	NetworkGroup string `json:"networkgroup,omitempty"` // LAN[2-8]?|WAN[2-9]?
 }
 
 func (dst *DeviceEthernetOverrides) UnmarshalJSON(b []byte) error {
@@ -331,11 +331,11 @@ type DevicePortOverrides struct {
 	PortKeepaliveEnabled         bool             `json:"port_keepalive_enabled,omitempty"`
 	PortProfileID                string           `json:"portconf_id,omitempty" validate:"omitempty,w_regex"` // [\d\w]+
 	PortSecurityEnabled          bool             `json:"port_security_enabled,omitempty"`
-	PortSecurityMACAddress       []string         `json:"port_security_mac_address,omitempty" validate:"omitempty,mac"` // ^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$
-	PriorityQueue1Level          int              `json:"priority_queue1_level,omitempty"`                              // [0-9]|[1-9][0-9]|100
-	PriorityQueue2Level          int              `json:"priority_queue2_level,omitempty"`                              // [0-9]|[1-9][0-9]|100
-	PriorityQueue3Level          int              `json:"priority_queue3_level,omitempty"`                              // [0-9]|[1-9][0-9]|100
-	PriorityQueue4Level          int              `json:"priority_queue4_level,omitempty"`                              // [0-9]|[1-9][0-9]|100
+	PortSecurityMACAddress       []string         `json:"port_security_mac_address,omitempty" validate:"omitempty,dive,mac"` // ^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$
+	PriorityQueue1Level          int              `json:"priority_queue1_level,omitempty"`                                   // [0-9]|[1-9][0-9]|100
+	PriorityQueue2Level          int              `json:"priority_queue2_level,omitempty"`                                   // [0-9]|[1-9][0-9]|100
+	PriorityQueue3Level          int              `json:"priority_queue3_level,omitempty"`                                   // [0-9]|[1-9][0-9]|100
+	PriorityQueue4Level          int              `json:"priority_queue4_level,omitempty"`                                   // [0-9]|[1-9][0-9]|100
 	QOSProfile                   DeviceQOSProfile `json:"qos_profile,omitempty"`
 	SettingPreference            string           `json:"setting_preference,omitempty" validate:"omitempty,oneof=auto manual"`                                   // auto|manual
 	Speed                        int              `json:"speed,omitempty" validate:"omitempty,oneof=10 100 1000 2500 5000 10000 20000 25000 40000 50000 100000"` // 10|100|1000|2500|5000|10000|20000|25000|40000|50000|100000
@@ -646,17 +646,22 @@ func (dst *DeviceRpsPortTable) UnmarshalJSON(b []byte) error {
 }
 
 type DeviceSim struct {
-	CardPresent bool             `json:"card_present,omitempty"`
-	CurrentApn  DeviceCurrentApn `json:"current_apn,omitempty"`
-	Iccid       int              `json:"iccid,omitempty"`
-	Slot        int              `json:"slot,omitempty" validate:"omitempty,oneof=1 2"` // 1|2
+	CardPresent        bool             `json:"card_present,omitempty"`
+	CurrentApn         DeviceCurrentApn `json:"current_apn,omitempty"`
+	DataHardLimitBytes int              `json:"data_hard_limit_bytes,omitempty"`
+	DataLimitEnabled   bool             `json:"data_limit_enabled,omitempty"`
+	DataSoftLimitBytes int              `json:"data_soft_limit_bytes,omitempty"`
+	Iccid              int              `json:"iccid,omitempty"`
+	Slot               int              `json:"slot,omitempty" validate:"omitempty,oneof=1 2"` // 1|2
 }
 
 func (dst *DeviceSim) UnmarshalJSON(b []byte) error {
 	type Alias DeviceSim
 	aux := &struct {
-		Iccid emptyStringInt `json:"iccid"`
-		Slot  emptyStringInt `json:"slot"`
+		DataHardLimitBytes emptyStringInt `json:"data_hard_limit_bytes"`
+		DataSoftLimitBytes emptyStringInt `json:"data_soft_limit_bytes"`
+		Iccid              emptyStringInt `json:"iccid"`
+		Slot               emptyStringInt `json:"slot"`
 
 		*Alias
 	}{
@@ -667,6 +672,8 @@ func (dst *DeviceSim) UnmarshalJSON(b []byte) error {
 	if err != nil {
 		return fmt.Errorf("unable to unmarshal alias: %w", err)
 	}
+	dst.DataHardLimitBytes = int(aux.DataHardLimitBytes)
+	dst.DataSoftLimitBytes = int(aux.DataSoftLimitBytes)
 	dst.Iccid = int(aux.Iccid)
 	dst.Slot = int(aux.Slot)
 

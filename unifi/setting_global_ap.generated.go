@@ -29,7 +29,7 @@ type SettingGlobalAp struct {
 
 	Key string `json:"key"`
 
-	ApExclusions    []string `json:"ap_exclusions,omitempty" validate:"omitempty,mac"`                                  // ^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$
+	ApExclusions    []string `json:"ap_exclusions,omitempty" validate:"omitempty,dive,mac"`                             // ^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$
 	NaChannelSize   int      `json:"na_channel_size,omitempty" validate:"omitempty,oneof=20 40 80 160"`                 // 20|40|80|160
 	NaTxPower       int      `json:"na_tx_power,omitempty"`                                                             // [0-9]|[1-4][0-9]
 	NaTxPowerMode   string   `json:"na_tx_power_mode,omitempty" validate:"omitempty,oneof=auto medium high low custom"` // auto|medium|high|low|custom
