@@ -65,8 +65,8 @@ func (dst *FirewallZonePolicy) UnmarshalJSON(b []byte) error {
 }
 
 type FirewallZonePolicyDestination struct {
-	AppCategoryIDs     []int    `json:"app_category_ids,omitempty"`
-	AppIDs             []int    `json:"app_ids,omitempty"`
+	AppCategoryIDs     []int    `json:"app_category_ids,omitempty"` // ^[0-9][0-9]?$|^
+	AppIDs             []int    `json:"app_ids,omitempty"`          // ^[0-9][0-9]?$|^
 	IPGroupID          string   `json:"ip_group_id,omitempty"`
 	IPs                []string `json:"ips,omitempty" validate:"omitempty,dive,ipv4"` // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
 	MatchOppositeIPs   bool     `json:"match_opposite_ips"`
