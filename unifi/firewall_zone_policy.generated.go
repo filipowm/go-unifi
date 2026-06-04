@@ -65,20 +65,22 @@ func (dst *FirewallZonePolicy) UnmarshalJSON(b []byte) error {
 }
 
 type FirewallZonePolicyDestination struct {
-	AppCategoryIDs     []int    `json:"app_category_ids,omitempty"` // ^[0-9][0-9]?$|^
-	AppIDs             []int    `json:"app_ids,omitempty"`          // ^[0-9][0-9]?$|^
-	IPGroupID          string   `json:"ip_group_id,omitempty"`
-	IPs                []string `json:"ips,omitempty" validate:"omitempty,dive,ipv4"` // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
-	MatchOppositeIPs   bool     `json:"match_opposite_ips"`
-	MatchOppositePorts bool     `json:"match_opposite_ports"`
-	MatchingTarget     string   `json:"matching_target,omitempty" validate:"omitempty,oneof=ANY APP APP_CATEGORY IP REGION WEB"` // ANY|APP|APP_CATEGORY|IP|REGION|WEB
-	MatchingTargetType string   `json:"matching_target_type,omitempty" validate:"omitempty,oneof=ANY OBJECT SPECIFIC"`           // ANY|OBJECT|SPECIFIC
-	Port               string   `json:"port,omitempty"`                                                                          // ^[0-9]+(?:-[0-9]+)?(?:,[0-9]+(?:-[0-9]+)?)*$
-	PortGroupID        string   `json:"port_group_id,omitempty"`
-	PortMatchingType   string   `json:"port_matching_type,omitempty" validate:"omitempty,oneof=ANY SPECIFIC OBJECT"` // ANY|SPECIFIC|OBJECT
-	Regions            []string `json:"regions,omitempty"`
-	WebDomains         []string `json:"web_domains,omitempty"`
-	ZoneID             string   `json:"zone_id"`
+	AppCategoryIDs        []int    `json:"app_category_ids,omitempty"` // ^[0-9][0-9]?$|^
+	AppIDs                []int    `json:"app_ids,omitempty"`          // ^[0-9][0-9]?$|^
+	IPGroupID             string   `json:"ip_group_id,omitempty"`
+	IPs                   []string `json:"ips,omitempty" validate:"omitempty,dive,ipv4"` // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
+	MatchOppositeIPs      bool     `json:"match_opposite_ips"`
+	MatchOppositeNetworks bool     `json:"match_opposite_networks"`
+	MatchOppositePorts    bool     `json:"match_opposite_ports"`
+	MatchingTarget        string   `json:"matching_target,omitempty" validate:"omitempty,oneof=ANY APP APP_CATEGORY IP NETWORK REGION WEB"` // ANY|APP|APP_CATEGORY|IP|NETWORK|REGION|WEB
+	MatchingTargetType    string   `json:"matching_target_type,omitempty" validate:"omitempty,oneof=ANY OBJECT SPECIFIC"`                   // ANY|OBJECT|SPECIFIC
+	NetworkIDs            []string `json:"network_ids,omitempty"`
+	Port                  string   `json:"port,omitempty"` // ^[0-9]+(?:-[0-9]+)?(?:,[0-9]+(?:-[0-9]+)?)*$
+	PortGroupID           string   `json:"port_group_id,omitempty"`
+	PortMatchingType      string   `json:"port_matching_type,omitempty" validate:"omitempty,oneof=ANY SPECIFIC OBJECT"` // ANY|SPECIFIC|OBJECT
+	Regions               []string `json:"regions,omitempty"`
+	WebDomains            []string `json:"web_domains,omitempty"`
+	ZoneID                string   `json:"zone_id"`
 }
 
 func (dst *FirewallZonePolicyDestination) UnmarshalJSON(b []byte) error {
