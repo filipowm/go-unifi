@@ -126,7 +126,7 @@ func TestInvalidVersion(t *testing.T) {
 	err := testGenerate(t, &options{version: "invalid-version"})
 
 	r.Error(err)
-	r.ErrorContains(err, "Malformed")
+	r.Regexp("(?i)malformed", err.Error())
 	r.ErrorContains(err, "invalid-version")
 }
 
