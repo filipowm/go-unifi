@@ -157,35 +157,44 @@ var (
 	ipv6RegexGroupsCount = strings.Count(ipv6Regex, "|")
 )
 
-//nolint:nestif
+func buildOneOfValidation(rawValidation string, isArray bool) string {
+	trimmed := strings.TrimPrefix(strings.TrimSuffix(rawValidation, ")$"), "^(")
+	return createValidations(isArray, validation{v: oneOf, params: strings.Split(trimmed, "|")})
+}
+
+func buildLengthValidation(rawValidation string, isArray bool) string {
+	sub := rawValidation[2 : len(rawValidation)-1]
+	bounds := strings.Split(sub, ",")
+	if len(bounds) == 1 {
+		return createValidations(isArray, validation{v: length, params: []string{bounds[0]}})
+	}
+	return createValidations(isArray,
+		validation{v: gte, params: []string{bounds[0]}},
+		validation{v: lte, params: []string{bounds[1]}})
+}
+
 func defineFieldValidation(rawValidation string, isArray bool) string {
 	if rawValidation == "" {
 		return ""
 	}
 	rawValidation = trimWrappers(rawValidation)
 	vc := validationComment(rawValidation)
-	if vc.IsOneOf() {
-		trimmed := strings.TrimPrefix(strings.TrimSuffix(rawValidation, ")$"), "^(")
-		// I think the changes should be done here
-		return createValidations(isArray, validation{v: oneOf, params: strings.Split(trimmed, "|")})
-	} else if vc.HasDefinedLength() {
-		sub := rawValidation[2 : len(rawValidation)-1]
-		bounds := strings.Split(sub, ",")
-		if len(bounds) == 1 {
-			return createValidations(isArray, validation{v: length, params: []string{bounds[0]}})
-		}
-		return createValidations(isArray, validation{v: gte, params: []string{bounds[0]}}, validation{v: lte, params: []string{bounds[1]}})
-	} else if vc.IsWRegex() {
+	switch {
+	case vc.IsOneOf():
+		return buildOneOfValidation(rawValidation, isArray)
+	case vc.HasDefinedLength():
+		return buildLengthValidation(rawValidation, isArray)
+	case vc.IsWRegex():
 		return createValidations(isArray, validation{v: w_regex})
-	} else if vc.IsMAC() {
+	case vc.IsMAC():
 		return createValidations(isArray, validation{v: mac})
-	} else if vc.IsIPv4() {
+	case vc.IsIPv4():
 		return createValidations(isArray, validation{v: ipv4})
-	} else if vc.IsIPv6() {
+	case vc.IsIPv6():
 		return createValidations(isArray, validation{v: ipv6})
-	} else if vc.IsIP() {
+	case vc.IsIP():
 		return createValidations(isArray, validation{v: ip})
-	} else if vc.IsNumericNonZeroBased() {
+	case vc.IsNumericNonZeroBased():
 		return createValidations(isArray, validation{v: numeric_nonzero})
 	}
 	return ""

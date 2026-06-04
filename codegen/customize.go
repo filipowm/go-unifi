@@ -168,23 +168,39 @@ func NewCodeCustomizer(customizationsPath string) (*CodeCustomizer, error) {
 }
 
 func (r *CodeCustomizer) IsExcludedFromClient(resourceName string) bool {
-	if r.Customizations.Client == nil || r.Customizations.Client.ExcludeResources == nil {
+	if r.Customizations.Client == nil {
 		return false
 	}
-	for _, excludedResource := range r.Customizations.Client.ExcludeResources {
-		prefixedAll := strings.HasPrefix(excludedResource, "*")
-		suffixedAll := strings.HasSuffix(excludedResource, "*")
-		if prefixedAll && suffixedAll && strings.Contains(resourceName, excludedResource[1:len(excludedResource)-1]) {
-			return true
-		} else if prefixedAll && strings.HasSuffix(resourceName, excludedResource[1:]) {
-			return true
-		} else if suffixedAll && strings.HasPrefix(resourceName, excludedResource[:len(excludedResource)-1]) {
-			return true
-		} else if resourceName == excludedResource {
+	for _, pattern := range r.Customizations.Client.ExcludeResources {
+		if matchesExcludePattern(pattern, resourceName) {
 			return true
 		}
 	}
 	return false
+}
+
+// matchesExcludePattern reports whether name matches a glob-style pattern,
+// where a leading and/or trailing "*" acts as a wildcard:
+//
+//	"*x*" -> contains, "x*" -> prefix, "*x" -> suffix, "x" -> exact.
+//
+// A bare "*" (or "**") has no inner content and matches everything.
+func matchesExcludePattern(pattern, name string) bool {
+	prefixWildcard := strings.HasPrefix(pattern, "*")
+	suffixWildcard := strings.HasSuffix(pattern, "*")
+	switch {
+	case prefixWildcard && suffixWildcard:
+		if len(pattern) <= 2 {
+			return true
+		}
+		return strings.Contains(name, pattern[1:len(pattern)-1])
+	case prefixWildcard:
+		return strings.HasSuffix(name, pattern[1:])
+	case suffixWildcard:
+		return strings.HasPrefix(name, pattern[:len(pattern)-1])
+	default:
+		return name == pattern
+	}
 }
 
 func (r *CodeCustomizer) ApplyToResource(resource *Resource) {

@@ -71,30 +71,41 @@ func downloadJar(downloadUrl url.URL, outputDir string) (string, error) {
 	}
 	defer debResp.Body.Close()
 
-	var uncompressedReader io.Reader
-	arReader := ar.NewReader(debResp.Body)
+	uncompressedReader, err := openDebDataTar(debResp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	return extractAceJar(uncompressedReader, outputDir)
+}
+
+// openDebDataTar iterates the entries of a .deb (ar archive) and returns a reader
+// over the decompressed contents of the data.tar.xz member.
+func openDebDataTar(body io.Reader) (io.Reader, error) {
+	arReader := ar.NewReader(body)
 	for {
 		header, err := arReader.Next()
 		if errors.Is(err, io.EOF) || header == nil {
 			break
 		}
 		if err != nil {
-			return "", fmt.Errorf("in ar next: %w", err)
+			return nil, fmt.Errorf("in ar next: %w", err)
 		}
 		if header.Name == "data.tar.xz" {
-			uncompressedReader, err = xz.NewReader(arReader)
+			uncompressedReader, err := xz.NewReader(arReader)
 			if err != nil {
-				return "", fmt.Errorf("in xz reader: %w", err)
+				return nil, fmt.Errorf("in xz reader: %w", err)
 			}
-			break
+			return uncompressedReader, nil
 		}
 	}
-	if uncompressedReader == nil {
-		return "", errors.New("unable to find .deb data file")
-	}
+	return nil, errors.New("unable to find .deb data file")
+}
 
-	tarReader := tar.NewReader(uncompressedReader)
-	var aceJar *os.File
+// extractAceJar walks the tar stream looking for ace.jar, writes it under outputDir
+// and returns the path to the created file.
+func extractAceJar(r io.Reader, outputDir string) (string, error) {
+	tarReader := tar.NewReader(r)
 	log.Debugln("extracting ace.jar from downloaded controller package")
 	for {
 		header, err := tarReader.Next()
@@ -107,21 +118,20 @@ func downloadJar(downloadUrl url.URL, outputDir string) (string, error) {
 		if header.Typeflag != tar.TypeReg || header.Name != "./usr/lib/unifi/lib/ace.jar" {
 			continue
 		}
-		aceJar, err = os.Create(filepath.Join(outputDir, "ace.jar"))
+
+		aceJar, err := os.Create(filepath.Join(outputDir, "ace.jar"))
 		if err != nil {
 			return "", fmt.Errorf("unable to create temp file: %w", err)
 		}
-		_, err = copyWithLimit(aceJar, tarReader, maxAceJarSize)
-		if err != nil {
+		defer aceJar.Close()
+
+		if _, err = copyWithLimit(aceJar, tarReader, maxAceJarSize); err != nil {
 			return "", fmt.Errorf("unable to write ace.jar temp file: %w", err)
 		}
+		log.Debugf("ace.jar extracted to: %s", aceJar.Name())
+		return aceJar.Name(), nil
 	}
-	if aceJar == nil {
-		return "", errors.New("unable to find ace.jar")
-	}
-	defer aceJar.Close()
-	log.Debugf("ace.jar extracted to: %s", aceJar.Name())
-	return aceJar.Name(), nil
+	return "", errors.New("unable to find ace.jar")
 }
 
 func extractJSON(jarFile, fieldsDir string) error {
@@ -136,34 +146,44 @@ func extractJSON(jarFile, fieldsDir string) error {
 		if !strings.HasPrefix(f.Name, "api/fields/") || path.Ext(f.Name) != ".json" {
 			continue
 		}
-
-		err = func() error {
-			log.Tracef("extracting %s", f.Name)
-			src, err := f.Open()
-			if err != nil {
-				return err
-			}
-			dstPath, err := sanitizeExtractedPath(f.Name, fieldsDir)
-			if err != nil {
-				return err
-			}
-			dst, err := os.Create(dstPath)
-			if err != nil {
-				return err
-			}
-			defer dst.Close()
-			_, err = copyWithLimit(dst, src, maxJSONSize)
-			log.Debugf("extracted %s", f.Name)
-			if err != nil {
-				return err
-			}
-			return nil
-		}()
-		if err != nil {
+		if err = extractZipEntry(f, fieldsDir); err != nil {
 			return fmt.Errorf("unable to write JSON file: %w", err)
 		}
 	}
 
+	return splitSettingsFile(fieldsDir)
+}
+
+// extractZipEntry copies a single zip entry into fieldsDir, sanitizing its path.
+func extractZipEntry(f *zip.File, fieldsDir string) error {
+	log.Tracef("extracting %s", f.Name)
+	src, err := f.Open()
+	if err != nil {
+		return err
+	}
+	defer src.Close()
+
+	dstPath, err := sanitizeExtractedPath(f.Name, fieldsDir)
+	if err != nil {
+		return err
+	}
+	dst, err := os.Create(dstPath)
+	if err != nil {
+		return err
+	}
+	defer dst.Close()
+
+	_, err = copyWithLimit(dst, src, maxJSONSize)
+	log.Debugf("extracted %s", f.Name)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// splitSettingsFile reads the extracted Setting.json (if present) and writes one
+// Setting<Camel>.json file per top-level setting key.
+func splitSettingsFile(fieldsDir string) error {
 	settingsData, err := os.ReadFile(filepath.Join(fieldsDir, "Setting.json"))
 	if errors.Is(err, os.ErrNotExist) {
 		return nil

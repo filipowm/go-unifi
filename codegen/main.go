@@ -89,12 +89,7 @@ func generate(opts options) error {
 	if err != nil {
 		return fmt.Errorf("unable to determine working directory: %w", err)
 	}
-	var structuresDir string
-	if path.IsAbs(opts.versionBaseDir) {
-		structuresDir = opts.versionBaseDir
-	} else {
-		structuresDir = filepath.Join(wd, opts.versionBaseDir)
-	}
+	structuresDir := resolveDir(wd, opts.versionBaseDir)
 	structuresDir = filepath.Join(structuresDir, fmt.Sprintf("v%s", unifiVersion.Version))
 	log.Infoln("Downloading UniFi Controller API structures definitions...")
 	err = DownloadAndExtract(*unifiVersion.DownloadUrl, structuresDir)
@@ -110,12 +105,7 @@ func generate(opts options) error {
 
 	log.Infoln("Generating resources code...")
 
-	var outDir string
-	if path.IsAbs(opts.outputDir) {
-		outDir = opts.outputDir
-	} else {
-		outDir = filepath.Join(wd, opts.outputDir)
-	}
+	outDir := resolveDir(wd, opts.outputDir)
 	customizer, err := NewCodeCustomizer(opts.customizationsPath)
 	if err != nil {
 		return fmt.Errorf("unable to create code customizer: %w", err)
@@ -136,4 +126,12 @@ func generate(opts options) error {
 
 	log.Infof("Generated resources in %s", outDir)
 	return nil
+}
+
+// resolveDir returns dir as-is if absolute, otherwise joined with base.
+func resolveDir(base, dir string) string {
+	if path.IsAbs(dir) {
+		return dir
+	}
+	return filepath.Join(base, dir)
 }

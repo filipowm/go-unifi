@@ -207,94 +207,116 @@ func (r *Resource) fieldInfoFromValidation(name string, validation any, isArray 
 	fieldName := strcase.ToCamel(name)
 	fieldName = cleanName(fieldName, fieldReps)
 
-	empty := &FieldInfo{}
-	var fieldInfo *FieldInfo
-
 	switch validation := validation.(type) {
 	case []any:
-		if len(validation) == 0 {
-			fieldInfo = NewFieldInfo(fieldName, name, "string", "", "", false, true, "")
-			err := r.FieldProcessor(fieldName, fieldInfo)
-			return fieldInfo, err
-		}
-		if len(validation) > 1 {
-			return empty, fmt.Errorf("unknown validation %#v", validation)
-		}
+		return r.fieldInfoFromArray(fieldName, name, validation)
+	case map[string]any:
+		return r.fieldInfoFromMap(fieldName, name, validation)
+	case string:
+		return r.fieldInfoFromString(fieldName, name, validation, isArray)
+	}
 
-		fieldInfo, err := r.fieldInfoFromValidation(name, validation[0], true)
+	return &FieldInfo{}, fmt.Errorf("unable to determine type from validation %q", validation)
+}
+
+func (r *Resource) fieldInfoFromArray(fieldName, name string, validation []any) (*FieldInfo, error) {
+	empty := &FieldInfo{}
+
+	if len(validation) == 0 {
+		fieldInfo := NewFieldInfo(fieldName, name, "string", "", "", false, true, "")
+		err := r.FieldProcessor(fieldName, fieldInfo)
+		return fieldInfo, err
+	}
+	if len(validation) > 1 {
+		return empty, fmt.Errorf("unknown validation %#v", validation)
+	}
+
+	fieldInfo, err := r.fieldInfoFromValidation(name, validation[0], true)
+	if err != nil {
+		return empty, err
+	}
+
+	fieldInfo.OmitEmpty = true
+	fieldInfo.IsArray = true
+
+	err = r.FieldProcessor(fieldName, fieldInfo)
+	return fieldInfo, err
+}
+
+func (r *Resource) fieldInfoFromMap(fieldName, name string, validation map[string]any) (*FieldInfo, error) {
+	empty := &FieldInfo{}
+
+	typeName := r.StructName + fieldName
+
+	result := NewFieldInfo(fieldName, name, typeName, "", "", true, false, "")
+	result.Fields = make(map[string]*FieldInfo)
+
+	for name, fv := range validation {
+		child, err := r.fieldInfoFromValidation(name, fv, false)
 		if err != nil {
 			return empty, err
 		}
 
-		fieldInfo.OmitEmpty = true
-		fieldInfo.IsArray = true
+		result.Fields[child.FieldName] = child
+	}
 
-		err = r.FieldProcessor(fieldName, fieldInfo)
-		return fieldInfo, err
+	err := r.FieldProcessor(fieldName, result)
+	r.Types[typeName] = result
+	return result, err
+}
 
-	case map[string]any:
-		typeName := r.StructName + fieldName
+func (r *Resource) fieldInfoFromString(fieldName, name, validation string, isArray bool) (*FieldInfo, error) {
+	fieldValidationComment := validation
+	normalized := normalizeValidation(validation)
 
-		result := NewFieldInfo(fieldName, name, typeName, "", "", true, false, "")
-		result.Fields = make(map[string]*FieldInfo)
-
-		for name, fv := range validation {
-			child, err := r.fieldInfoFromValidation(name, fv, false)
-			if err != nil {
-				return empty, err
-			}
-
-			result.Fields[child.FieldName] = child
-		}
-
-		err := r.FieldProcessor(fieldName, result)
-		r.Types[typeName] = result
-		return result, err
-
-	case string:
-		fieldValidationComment := validation
-		normalized := normalizeValidation(validation)
-
-		omitEmpty := false
-
-		switch normalized {
-		case "falsetrue", "truefalse":
-			fieldInfo = NewFieldInfo(fieldName, name, "bool", "", "", omitEmpty, false, "")
-			return fieldInfo, r.FieldProcessor(fieldName, fieldInfo)
-		default:
-			if _, err := strconv.ParseFloat(normalized, 64); err == nil {
-				if normalized == "09" || normalized == "09.09" {
-					fieldValidationComment = ""
-				}
-
-				if strings.Contains(normalized, ".") {
-					if strings.Contains(validation, "\\.){3}") {
-						break
-					}
-
-					omitEmpty = true
-					fieldInfo = NewFieldInfo(fieldName, name, "float64", "", fieldValidationComment, omitEmpty, false, "")
-					return fieldInfo, r.FieldProcessor(fieldName, fieldInfo)
-				}
-
-				fieldValidation := defineFieldValidation(fieldValidationComment, isArray)
-				omitEmpty = true
-				fieldInfo = NewFieldInfo(fieldName, name, "int", fieldValidation, fieldValidationComment, omitEmpty, false, "")
-				fieldInfo.CustomUnmarshalType = "emptyStringInt"
-				return fieldInfo, r.FieldProcessor(fieldName, fieldInfo)
-			}
-		}
-		if validation != "" && normalized != "" {
-			log.Tracef("normalize %q to %q", validation, normalized)
-		}
-
-		fieldValidation := defineFieldValidation(fieldValidationComment, isArray)
-		omitEmpty = omitEmpty || (!strings.Contains(validation, "^$") && !strings.HasSuffix(fieldName, "ID"))
-		fieldInfo = NewFieldInfo(fieldName, name, "string", fieldValidation, fieldValidationComment, omitEmpty, false, "")
+	if normalized == "falsetrue" || normalized == "truefalse" {
+		fieldInfo := NewFieldInfo(fieldName, name, "bool", "", "", false, false, "")
 		return fieldInfo, r.FieldProcessor(fieldName, fieldInfo)
 	}
 
-	return empty, fmt.Errorf("unable to determine type from validation %q", validation)
+	if fieldInfo, handled, err := r.numericFieldInfo(fieldName, name, validation, normalized, isArray); handled {
+		return fieldInfo, err
+	}
+
+	if validation != "" && normalized != "" {
+		log.Tracef("normalize %q to %q", validation, normalized)
+	}
+
+	fieldValidation := defineFieldValidation(fieldValidationComment, isArray)
+	omitEmpty := !strings.Contains(validation, "^$") && !strings.HasSuffix(fieldName, "ID")
+	fieldInfo := NewFieldInfo(fieldName, name, "string", fieldValidation, fieldValidationComment, omitEmpty, false, "")
+	return fieldInfo, r.FieldProcessor(fieldName, fieldInfo)
+}
+
+// numericFieldInfo handles validations that normalize to a numeric form (int or
+// float64). The returned bool reports whether the numeric branch handled the
+// field; when it is false the caller must fall through to string handling. This
+// preserves the original `break` semantics for the IP-octet pattern (`\.){3}`),
+// which builds a string field from the original validation comment.
+func (r *Resource) numericFieldInfo(fieldName, name, validation, normalized string, isArray bool) (*FieldInfo, bool, error) {
+	if _, err := strconv.ParseFloat(normalized, 64); err != nil {
+		// Not numeric: caller falls through to string handling.
+		return nil, false, nil //nolint:nilerr // err only signals "not a number", nothing to propagate
+	}
+
+	fieldValidationComment := validation
+	if normalized == "09" || normalized == "09.09" {
+		fieldValidationComment = ""
+	}
+
+	if strings.Contains(normalized, ".") {
+		if strings.Contains(validation, "\\.){3}") {
+			return nil, false, nil
+		}
+
+		fieldInfo := NewFieldInfo(fieldName, name, "float64", "", fieldValidationComment, true, false, "")
+		return fieldInfo, true, r.FieldProcessor(fieldName, fieldInfo)
+	}
+
+	fieldValidation := defineFieldValidation(fieldValidationComment, isArray)
+	fieldInfo := NewFieldInfo(fieldName, name, "int", fieldValidation, fieldValidationComment, true, false, "")
+	fieldInfo.CustomUnmarshalType = "emptyStringInt"
+	return fieldInfo, true, r.FieldProcessor(fieldName, fieldInfo)
 }
 
 func (r *Resource) processJSON(b []byte) error {
