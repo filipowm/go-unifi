@@ -44,14 +44,14 @@ type SettingGlobalAp struct {
 func (dst *SettingGlobalAp) UnmarshalJSON(b []byte) error {
 	type Alias SettingGlobalAp
 	aux := &struct {
+		*Alias
+
 		NaChannelSize   emptyStringInt `json:"na_channel_size"`
 		NaTxPower       emptyStringInt `json:"na_tx_power"`
 		NgChannelSize   emptyStringInt `json:"ng_channel_size"`
 		NgTxPower       emptyStringInt `json:"ng_tx_power"`
 		SixEChannelSize emptyStringInt `json:"6e_channel_size"`
 		SixETxPower     emptyStringInt `json:"6e_tx_power"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -79,7 +79,11 @@ func (c *client) GetSettingGlobalAp(ctx context.Context, site string) (*SettingG
 	if s.Key != SettingGlobalApKey {
 		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingGlobalApKey, s.Key)
 	}
-	return f.(*SettingGlobalAp), nil
+	resource, ok := f.(*SettingGlobalAp)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingGlobalAp, received: %T", f)
+	}
+	return resource, nil
 }
 
 // UpdateSettingGlobalAp Experimental! This function is not yet stable and may change in the future.
@@ -89,5 +93,9 @@ func (c *client) UpdateSettingGlobalAp(ctx context.Context, site string, s *Sett
 	if err != nil {
 		return nil, err
 	}
-	return result.(*SettingGlobalAp), nil
+	updatedResource, ok := result.(*SettingGlobalAp)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingGlobalAp, received: %T", result)
+	}
+	return updatedResource, nil
 }

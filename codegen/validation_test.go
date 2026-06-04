@@ -38,7 +38,7 @@ func TestCreateValidations(t *testing.T) {
 
 	var testValidator validator = "test"
 	testCases := []struct {
-		isArray				bool
+		isArray             bool
 		params              [][]string
 		expectedValidations string
 	}{
@@ -77,7 +77,7 @@ func TestDefineValidation(t *testing.T) {
 	t.Parallel()
 
 	testCases := []struct {
-		isArray bool
+		isArray                     bool
 		validationComment, expected string
 	}{
 		{false, "a|b", "oneof=a b"},
@@ -290,12 +290,12 @@ func generateTestCasesForFixedRegex(regex string) []struct {
 		{base.mutate("", "|^$)"), true},
 
 		// FIXME how to handle these cases? current implementation is dumb and quick, and might fail..
-		//{base.mutate("^test", ""), false},
-		//{base.mutate("^test", "test$"), false},
-		//{base.mutate("", "test$"), false},
-		//{base.mutate("test", "test"), false},
-		//{base.mutate("", "test"), false},
-		//{base.mutate("test", ""), false},
+		// {base.mutate("^test", ""), false},
+		// {base.mutate("^test", "test$"), false},
+		// {base.mutate("", "test$"), false},
+		// {base.mutate("test", "test"), false},
+		// {base.mutate("", "test"), false},
+		// {base.mutate("test", ""), false},
 		{base.mutate("^test$|", "|^test$"), false},
 		{base.mutate("^test|", "|^test$"), false},
 		{base.mutate("test$|", "|^test$"), false},

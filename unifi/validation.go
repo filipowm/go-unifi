@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"strings"
 	"sync"
 
 	"github.com/go-playground/locales/en"
@@ -21,9 +22,11 @@ type ValidationError struct {
 // Error returns the error message with combined all validation error messages.
 func (v *ValidationError) Error() string {
 	err := "validation failed: \n"
+	var errSb24 strings.Builder
 	for field, message := range v.Messages {
-		err += fmt.Sprintf("%s: %s\n", field, message)
+		fmt.Fprintf(&errSb24, "%s: %s\n", field, message)
 	}
+	err += errSb24.String()
 	return err
 }
 
@@ -31,9 +34,9 @@ func (v *ValidationError) Error() string {
 // with RegisterStructValidation.
 type Validator interface {
 	// Validate validates the given struct and returns an error if the struct is not valid.
-	Validate(i interface{}) error
+	Validate(i any) error
 	// RegisterStructValidation registers a structure-level validation function for a given struct type.
-	RegisterStructValidation(fn vd.StructLevelFunc, i interface{})
+	RegisterStructValidation(fn vd.StructLevelFunc, i any)
 	// RegisterTranslation registers a custom translation for a given tag.
 	RegisterTranslation(tag string, registerFn vd.RegisterTranslationsFunc, translationFn vd.TranslationFunc) (err error)
 	// RegisterCustomValidator registers a custom validator function with own tag and error message.
@@ -45,7 +48,7 @@ type validator struct {
 	trans    ut.Translator
 }
 
-func (v *validator) Validate(i interface{}) error {
+func (v *validator) Validate(i any) error {
 	if err := v.validate.Struct(i); err != nil {
 		var errs vd.ValidationErrors
 		errors.As(err, &errs)
@@ -56,7 +59,7 @@ func (v *validator) Validate(i interface{}) error {
 	return nil
 }
 
-func (v *validator) RegisterStructValidation(f vd.StructLevelFunc, s interface{}) {
+func (v *validator) RegisterStructValidation(f vd.StructLevelFunc, s any) {
 	v.validate.RegisterStructValidation(f, s)
 }
 
@@ -129,6 +132,7 @@ func NewCustomRegexValidator(tag string, regex string) CustomValidator {
 
 type CustomRegexValidator struct {
 	*CustomValidator
+
 	regex func() *regexp.Regexp
 }
 

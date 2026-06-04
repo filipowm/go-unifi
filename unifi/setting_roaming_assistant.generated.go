@@ -36,9 +36,9 @@ type SettingRoamingAssistant struct {
 func (dst *SettingRoamingAssistant) UnmarshalJSON(b []byte) error {
 	type Alias SettingRoamingAssistant
 	aux := &struct {
-		Rssi emptyStringInt `json:"rssi"`
-
 		*Alias
+
+		Rssi emptyStringInt `json:"rssi"`
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -61,7 +61,11 @@ func (c *client) GetSettingRoamingAssistant(ctx context.Context, site string) (*
 	if s.Key != SettingRoamingAssistantKey {
 		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingRoamingAssistantKey, s.Key)
 	}
-	return f.(*SettingRoamingAssistant), nil
+	resource, ok := f.(*SettingRoamingAssistant)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingRoamingAssistant, received: %T", f)
+	}
+	return resource, nil
 }
 
 // UpdateSettingRoamingAssistant Experimental! This function is not yet stable and may change in the future.
@@ -71,5 +75,9 @@ func (c *client) UpdateSettingRoamingAssistant(ctx context.Context, site string,
 	if err != nil {
 		return nil, err
 	}
-	return result.(*SettingRoamingAssistant), nil
+	updatedResource, ok := result.(*SettingRoamingAssistant)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingRoamingAssistant, received: %T", result)
+	}
+	return updatedResource, nil
 }

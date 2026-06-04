@@ -47,9 +47,9 @@ type RADIUSProfile struct {
 func (dst *RADIUSProfile) UnmarshalJSON(b []byte) error {
 	type Alias RADIUSProfile
 	aux := &struct {
-		InterimUpdateInterval emptyStringInt `json:"interim_update_interval"`
-
 		*Alias
+
+		InterimUpdateInterval emptyStringInt `json:"interim_update_interval"`
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -72,9 +72,9 @@ type RADIUSProfileAcctServers struct {
 func (dst *RADIUSProfileAcctServers) UnmarshalJSON(b []byte) error {
 	type Alias RADIUSProfileAcctServers
 	aux := &struct {
-		Port emptyStringInt `json:"port"`
-
 		*Alias
+
+		Port emptyStringInt `json:"port"`
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -97,9 +97,9 @@ type RADIUSProfileAuthServers struct {
 func (dst *RADIUSProfileAuthServers) UnmarshalJSON(b []byte) error {
 	type Alias RADIUSProfileAuthServers
 	aux := &struct {
-		Port emptyStringInt `json:"port"`
-
 		*Alias
+
+		Port emptyStringInt `json:"port"`
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -190,9 +190,9 @@ func (c *client) createRADIUSProfile(ctx context.Context, site string, d *RADIUS
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	newResource := respBody.Data[0]
 
-	return &new, nil
+	return &newResource, nil
 }
 
 func (c *client) updateRADIUSProfile(ctx context.Context, site string, d *RADIUSProfile) (*RADIUSProfile, error) {
@@ -210,7 +210,7 @@ func (c *client) updateRADIUSProfile(ctx context.Context, site string, d *RADIUS
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	updatedResource := respBody.Data[0]
 
-	return &new, nil
+	return &updatedResource, nil
 }

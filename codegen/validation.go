@@ -42,11 +42,11 @@ func createValidations(isArray bool, validations ...validation) string {
 	if len(validations) == 0 {
 		return ""
 	}
-	var validatorOffset int = 1 // always add one for omitempty
-	if (isArray) {
+	validatorOffset := 1 // always add one for omitempty
+	if isArray {
 		validatorOffset++ // add one for dive if it's an array
 	}
-	validators := make([]string, len(validations) + validatorOffset)
+	validators := make([]string, len(validations)+validatorOffset)
 	validators[0] = createValidator(omitempty)
 	if isArray {
 		validators[1] = createValidator(dive)
@@ -157,6 +157,7 @@ var (
 	ipv6RegexGroupsCount = strings.Count(ipv6Regex, "|")
 )
 
+//nolint:nestif
 func defineFieldValidation(rawValidation string, isArray bool) string {
 	if rawValidation == "" {
 		return ""

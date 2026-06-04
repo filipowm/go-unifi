@@ -78,18 +78,18 @@ type ServerError struct {
 
 func (s *ServerError) Error() string {
 	var b strings.Builder
-	b.WriteString(fmt.Sprintf("Server error (%d) for %s %s: %s", s.StatusCode, s.RequestMethod, s.RequestURL, s.Message))
+	fmt.Fprintf(&b, "Server error (%d) for %s %s: %s", s.StatusCode, s.RequestMethod, s.RequestURL, s.Message)
 	for _, detail := range s.Details {
 		b.WriteString("\n")
 		if detail.Message != "" {
 			b.WriteString(detail.Message + ": ")
 		}
 		if detail.ValidationError.Field != "" && detail.ValidationError.Pattern != "" {
-			b.WriteString(fmt.Sprintf("field '%s' should match '%s'", detail.ValidationError.Field, detail.ValidationError.Pattern))
+			fmt.Fprintf(&b, "field '%s' should match '%s'", detail.ValidationError.Field, detail.ValidationError.Pattern)
 		} else if detail.ValidationError.Field != "" {
-			b.WriteString(fmt.Sprintf("field '%s' is invalid", detail.ValidationError.Field))
+			fmt.Fprintf(&b, "field '%s' is invalid", detail.ValidationError.Field)
 		} else if detail.ValidationError.Pattern != "" {
-			b.WriteString(fmt.Sprintf("field should match '%s'", detail.ValidationError.Pattern))
+			fmt.Fprintf(&b, "field should match '%s'", detail.ValidationError.Pattern)
 		}
 	}
 	return b.String()
@@ -139,7 +139,7 @@ func (d *DefaultResponseErrorHandler) HandleError(resp *http.Response) error {
 		RequestMethod: resp.Request.Method,
 		RequestURL:    resp.Request.URL.String(),
 	}
-	if errBody.apiV2ResponseError.Code != "" || errBody.apiV2ResponseError.Message != "" {
+	if errBody.Code != "" || errBody.Message != "" {
 		parseApiV2Error(errBody.apiV2ResponseError, &serverError)
 	} else {
 		parseApiV1Error(errBody.apiV1ResponseError, &serverError)

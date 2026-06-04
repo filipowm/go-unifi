@@ -42,11 +42,11 @@ type SettingRadius struct {
 func (dst *SettingRadius) UnmarshalJSON(b []byte) error {
 	type Alias SettingRadius
 	aux := &struct {
+		*Alias
+
 		AcctPort              emptyStringInt `json:"acct_port"`
 		AuthPort              emptyStringInt `json:"auth_port"`
 		InterimUpdateInterval emptyStringInt `json:"interim_update_interval"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -71,7 +71,11 @@ func (c *client) GetSettingRadius(ctx context.Context, site string) (*SettingRad
 	if s.Key != SettingRadiusKey {
 		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingRadiusKey, s.Key)
 	}
-	return f.(*SettingRadius), nil
+	resource, ok := f.(*SettingRadius)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingRadius, received: %T", f)
+	}
+	return resource, nil
 }
 
 // UpdateSettingRadius Experimental! This function is not yet stable and may change in the future.
@@ -81,5 +85,9 @@ func (c *client) UpdateSettingRadius(ctx context.Context, site string, s *Settin
 	if err != nil {
 		return nil, err
 	}
-	return result.(*SettingRadius), nil
+	updatedResource, ok := result.(*SettingRadius)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingRadius, received: %T", result)
+	}
+	return updatedResource, nil
 }

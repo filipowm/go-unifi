@@ -63,7 +63,11 @@ func (c *client) GetSettingSuperCloudaccess(ctx context.Context, site string) (*
 	if s.Key != SettingSuperCloudaccessKey {
 		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingSuperCloudaccessKey, s.Key)
 	}
-	return f.(*SettingSuperCloudaccess), nil
+	resource, ok := f.(*SettingSuperCloudaccess)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingSuperCloudaccess, received: %T", f)
+	}
+	return resource, nil
 }
 
 // UpdateSettingSuperCloudaccess Experimental! This function is not yet stable and may change in the future.
@@ -73,5 +77,9 @@ func (c *client) UpdateSettingSuperCloudaccess(ctx context.Context, site string,
 	if err != nil {
 		return nil, err
 	}
-	return result.(*SettingSuperCloudaccess), nil
+	updatedResource, ok := result.(*SettingSuperCloudaccess)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingSuperCloudaccess, received: %T", result)
+	}
+	return updatedResource, nil
 }

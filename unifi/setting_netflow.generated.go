@@ -45,14 +45,14 @@ type SettingNetflow struct {
 func (dst *SettingNetflow) UnmarshalJSON(b []byte) error {
 	type Alias SettingNetflow
 	aux := &struct {
+		*Alias
+
 		EngineID        emptyStringInt `json:"engine_id"`
 		ExportFrequency emptyStringInt `json:"export_frequency"`
 		Port            emptyStringInt `json:"port"`
 		RefreshRate     emptyStringInt `json:"refresh_rate"`
 		SamplingRate    emptyStringInt `json:"sampling_rate"`
 		Version         emptyStringInt `json:"version"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -80,7 +80,11 @@ func (c *client) GetSettingNetflow(ctx context.Context, site string) (*SettingNe
 	if s.Key != SettingNetflowKey {
 		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingNetflowKey, s.Key)
 	}
-	return f.(*SettingNetflow), nil
+	resource, ok := f.(*SettingNetflow)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingNetflow, received: %T", f)
+	}
+	return resource, nil
 }
 
 // UpdateSettingNetflow Experimental! This function is not yet stable and may change in the future.
@@ -90,5 +94,9 @@ func (c *client) UpdateSettingNetflow(ctx context.Context, site string, s *Setti
 	if err != nil {
 		return nil, err
 	}
-	return result.(*SettingNetflow), nil
+	updatedResource, ok := result.(*SettingNetflow)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingNetflow, received: %T", result)
+	}
+	return updatedResource, nil
 }

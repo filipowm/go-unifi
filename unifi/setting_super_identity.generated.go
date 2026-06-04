@@ -58,7 +58,11 @@ func (c *client) GetSettingSuperIdentity(ctx context.Context, site string) (*Set
 	if s.Key != SettingSuperIdentityKey {
 		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingSuperIdentityKey, s.Key)
 	}
-	return f.(*SettingSuperIdentity), nil
+	resource, ok := f.(*SettingSuperIdentity)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingSuperIdentity, received: %T", f)
+	}
+	return resource, nil
 }
 
 // UpdateSettingSuperIdentity Experimental! This function is not yet stable and may change in the future.
@@ -68,5 +72,9 @@ func (c *client) UpdateSettingSuperIdentity(ctx context.Context, site string, s 
 	if err != nil {
 		return nil, err
 	}
-	return result.(*SettingSuperIdentity), nil
+	updatedResource, ok := result.(*SettingSuperIdentity)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingSuperIdentity, received: %T", result)
+	}
+	return updatedResource, nil
 }

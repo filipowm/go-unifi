@@ -54,9 +54,9 @@ type SettingMgmt struct {
 func (dst *SettingMgmt) UnmarshalJSON(b []byte) error {
 	type Alias SettingMgmt
 	aux := &struct {
-		AutoUpgradeHour emptyStringInt `json:"auto_upgrade_hour"`
-
 		*Alias
+
+		AutoUpgradeHour emptyStringInt `json:"auto_upgrade_hour"`
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -104,7 +104,11 @@ func (c *client) GetSettingMgmt(ctx context.Context, site string) (*SettingMgmt,
 	if s.Key != SettingMgmtKey {
 		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingMgmtKey, s.Key)
 	}
-	return f.(*SettingMgmt), nil
+	resource, ok := f.(*SettingMgmt)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingMgmt, received: %T", f)
+	}
+	return resource, nil
 }
 
 // UpdateSettingMgmt Experimental! This function is not yet stable and may change in the future.
@@ -114,5 +118,9 @@ func (c *client) UpdateSettingMgmt(ctx context.Context, site string, s *SettingM
 	if err != nil {
 		return nil, err
 	}
-	return result.(*SettingMgmt), nil
+	updatedResource, ok := result.(*SettingMgmt)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingMgmt, received: %T", result)
+	}
+	return updatedResource, nil
 }

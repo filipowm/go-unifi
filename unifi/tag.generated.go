@@ -101,9 +101,9 @@ func (c *client) createTag(ctx context.Context, site string, d *Tag) (*Tag, erro
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	newResource := respBody.Data[0]
 
-	return &new, nil
+	return &newResource, nil
 }
 
 func (c *client) updateTag(ctx context.Context, site string, d *Tag) (*Tag, error) {
@@ -121,7 +121,7 @@ func (c *client) updateTag(ctx context.Context, site string, d *Tag) (*Tag, erro
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	updatedResource := respBody.Data[0]
 
-	return &new, nil
+	return &updatedResource, nil
 }

@@ -40,11 +40,11 @@ type Account struct {
 func (dst *Account) UnmarshalJSON(b []byte) error {
 	type Alias Account
 	aux := &struct {
+		*Alias
+
 		TunnelMediumType emptyStringInt `json:"tunnel_medium_type"`
 		TunnelType       emptyStringInt `json:"tunnel_type"`
 		VLAN             emptyStringInt `json:"vlan"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -116,9 +116,9 @@ func (c *client) createAccount(ctx context.Context, site string, d *Account) (*A
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	newResource := respBody.Data[0]
 
-	return &new, nil
+	return &newResource, nil
 }
 
 func (c *client) updateAccount(ctx context.Context, site string, d *Account) (*Account, error) {
@@ -136,7 +136,7 @@ func (c *client) updateAccount(ctx context.Context, site string, d *Account) (*A
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	updatedResource := respBody.Data[0]
 
-	return &new, nil
+	return &updatedResource, nil
 }

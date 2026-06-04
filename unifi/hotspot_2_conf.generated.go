@@ -80,6 +80,8 @@ type Hotspot2Conf struct {
 func (dst *Hotspot2Conf) UnmarshalJSON(b []byte) error {
 	type Alias Hotspot2Conf
 	aux := &struct {
+		*Alias
+
 		AnqpDomainID         emptyStringInt `json:"anqp_domain_id"`
 		DeauthReqTimeout     emptyStringInt `json:"deauth_req_timeout"`
 		GasComebackDelay     emptyStringInt `json:"gas_comeback_delay"`
@@ -96,8 +98,6 @@ func (dst *Hotspot2Conf) UnmarshalJSON(b []byte) error {
 		TCTimestamp          emptyStringInt `json:"t_c_timestamp"`
 		VenueGroup           emptyStringInt `json:"venue_group"`
 		VenueType            emptyStringInt `json:"venue_type"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -135,9 +135,9 @@ type Hotspot2ConfCapab struct {
 func (dst *Hotspot2ConfCapab) UnmarshalJSON(b []byte) error {
 	type Alias Hotspot2ConfCapab
 	aux := &struct {
-		Port emptyStringInt `json:"port"`
-
 		*Alias
+
+		Port emptyStringInt `json:"port"`
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -160,10 +160,10 @@ type Hotspot2ConfCellularNetworkList struct {
 func (dst *Hotspot2ConfCellularNetworkList) UnmarshalJSON(b []byte) error {
 	type Alias Hotspot2ConfCellularNetworkList
 	aux := &struct {
+		*Alias
+
 		Mcc emptyStringInt `json:"mcc"`
 		Mnc emptyStringInt `json:"mnc"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -254,11 +254,11 @@ type Hotspot2ConfIcons struct {
 func (dst *Hotspot2ConfIcons) UnmarshalJSON(b []byte) error {
 	type Alias Hotspot2ConfIcons
 	aux := &struct {
+		*Alias
+
 		Height emptyStringInt `json:"height"`
 		Size   emptyStringInt `json:"size"`
 		Width  emptyStringInt `json:"width"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -286,10 +286,10 @@ type Hotspot2ConfNaiRealmList struct {
 func (dst *Hotspot2ConfNaiRealmList) UnmarshalJSON(b []byte) error {
 	type Alias Hotspot2ConfNaiRealmList
 	aux := &struct {
+		*Alias
+
 		EapMethod emptyStringInt `json:"eap_method"`
 		Encoding  emptyStringInt `json:"encoding"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -340,10 +340,10 @@ type Hotspot2ConfQOSMapDcsp struct {
 func (dst *Hotspot2ConfQOSMapDcsp) UnmarshalJSON(b []byte) error {
 	type Alias Hotspot2ConfQOSMapDcsp
 	aux := &struct {
+		*Alias
+
 		High emptyStringInt `json:"high"`
 		Low  emptyStringInt `json:"low"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -366,10 +366,10 @@ type Hotspot2ConfQOSMapExceptions struct {
 func (dst *Hotspot2ConfQOSMapExceptions) UnmarshalJSON(b []byte) error {
 	type Alias Hotspot2ConfQOSMapExceptions
 	aux := &struct {
+		*Alias
+
 		Dcsp emptyStringInt `json:"dcsp"`
 		Up   emptyStringInt `json:"up"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -483,9 +483,9 @@ func (c *client) createHotspot2Conf(ctx context.Context, site string, d *Hotspot
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	newResource := respBody.Data[0]
 
-	return &new, nil
+	return &newResource, nil
 }
 
 func (c *client) updateHotspot2Conf(ctx context.Context, site string, d *Hotspot2Conf) (*Hotspot2Conf, error) {
@@ -503,7 +503,7 @@ func (c *client) updateHotspot2Conf(ctx context.Context, site string, d *Hotspot
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	updatedResource := respBody.Data[0]
 
-	return &new, nil
+	return &updatedResource, nil
 }

@@ -57,7 +57,11 @@ func (c *client) GetSettingSslInspection(ctx context.Context, site string) (*Set
 	if s.Key != SettingSslInspectionKey {
 		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingSslInspectionKey, s.Key)
 	}
-	return f.(*SettingSslInspection), nil
+	resource, ok := f.(*SettingSslInspection)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingSslInspection, received: %T", f)
+	}
+	return resource, nil
 }
 
 // UpdateSettingSslInspection Experimental! This function is not yet stable and may change in the future.
@@ -67,5 +71,9 @@ func (c *client) UpdateSettingSslInspection(ctx context.Context, site string, s 
 	if err != nil {
 		return nil, err
 	}
-	return result.(*SettingSslInspection), nil
+	updatedResource, ok := result.(*SettingSslInspection)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingSslInspection, received: %T", result)
+	}
+	return updatedResource, nil
 }

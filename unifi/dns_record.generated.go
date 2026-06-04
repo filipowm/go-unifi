@@ -38,12 +38,12 @@ type DNSRecord struct {
 func (dst *DNSRecord) UnmarshalJSON(b []byte) error {
 	type Alias DNSRecord
 	aux := &struct {
+		*Alias
+
 		Port     emptyStringInt `json:"port"`
 		Priority emptyStringInt `json:"priority"`
 		Ttl      emptyStringInt `json:"ttl"`
 		Weight   emptyStringInt `json:"weight"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}

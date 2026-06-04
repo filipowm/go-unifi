@@ -20,6 +20,11 @@ import (
 	"github.com/xor-gate/ar"
 )
 
+const (
+	maxAceJarSize = 128 << 20 // 128 MiB — ace.jar is ~tens of MB; generous headroom
+	maxJSONSize   = 5 << 20   // 5 MiB — individual API field JSONs are tiny
+)
+
 func DownloadAndExtract(downloadUrl url.URL, outputDir string) error {
 	// Check if output directory exists, if not create and perform extraction
 
@@ -106,7 +111,7 @@ func downloadJar(downloadUrl url.URL, outputDir string) (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("unable to create temp file: %w", err)
 		}
-		_, err = io.Copy(aceJar, tarReader)
+		_, err = copyWithLimit(aceJar, tarReader, maxAceJarSize)
 		if err != nil {
 			return "", fmt.Errorf("unable to write ace.jar temp file: %w", err)
 		}
@@ -147,7 +152,7 @@ func extractJSON(jarFile, fieldsDir string) error {
 				return err
 			}
 			defer dst.Close()
-			_, err = io.Copy(dst, src)
+			_, err = copyWithLimit(dst, src, maxJSONSize)
 			log.Debugf("extracted %s", f.Name)
 			if err != nil {
 				return err
@@ -167,7 +172,7 @@ func extractJSON(jarFile, fieldsDir string) error {
 		return fmt.Errorf("unable to open settings file: %w", err)
 	}
 
-	var settings map[string]interface{}
+	var settings map[string]any
 	err = json.Unmarshal(settingsData, &settings)
 	if err != nil {
 		return fmt.Errorf("unable to unmarshal settings: %w", err)
@@ -184,7 +189,7 @@ func extractJSON(jarFile, fieldsDir string) error {
 			return fmt.Errorf("unable to marshal setting %q: %w", settingKey, err)
 		}
 
-		err = os.WriteFile(filepath.Join(fieldsDir, fileName), data, 0o755)
+		err = os.WriteFile(filepath.Join(fieldsDir, fileName), data, 0o644) //nolint:gosec
 		if err != nil {
 			return fmt.Errorf("unable to write new settings file: %w", err)
 		}

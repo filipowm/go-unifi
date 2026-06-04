@@ -10,11 +10,11 @@ type Logger interface {
 	Info(format string)
 	Error(format string)
 	Warn(format string)
-	Tracef(format string, args ...interface{})
-	Debugf(format string, args ...interface{})
-	Infof(format string, args ...interface{})
-	Errorf(format string, args ...interface{})
-	Warnf(format string, args ...interface{})
+	Tracef(format string, args ...any)
+	Debugf(format string, args ...any)
+	Infof(format string, args ...any)
+	Errorf(format string, args ...any)
+	Warnf(format string, args ...any)
 }
 
 type LoggingLevel int
@@ -59,16 +59,16 @@ func NewDefaultLogger(level LoggingLevel) Logger {
 
 type noopLogger struct{}
 
-func (l *noopLogger) Trace(msg string)                          {}
-func (l *noopLogger) Debug(msg string)                          {}
-func (l *noopLogger) Info(msg string)                           {}
-func (l *noopLogger) Error(msg string)                          {}
-func (l *noopLogger) Warn(msg string)                           {}
-func (l *noopLogger) Tracef(format string, args ...interface{}) {}
-func (l *noopLogger) Debugf(format string, args ...interface{}) {}
-func (l *noopLogger) Infof(format string, args ...interface{})  {}
-func (l *noopLogger) Errorf(format string, args ...interface{}) {}
-func (l *noopLogger) Warnf(format string, args ...interface{})  {}
+func (l *noopLogger) Trace(msg string)                  {}
+func (l *noopLogger) Debug(msg string)                  {}
+func (l *noopLogger) Info(msg string)                   {}
+func (l *noopLogger) Error(msg string)                  {}
+func (l *noopLogger) Warn(msg string)                   {}
+func (l *noopLogger) Tracef(format string, args ...any) {}
+func (l *noopLogger) Debugf(format string, args ...any) {}
+func (l *noopLogger) Infof(format string, args ...any)  {}
+func (l *noopLogger) Errorf(format string, args ...any) {}
+func (l *noopLogger) Warnf(format string, args ...any)  {}
 
 type defaultLogger struct {
 	*logrus.Logger
@@ -94,22 +94,22 @@ func (l *defaultLogger) Warn(msg string) {
 	l.Logger.Warn(msg)
 }
 
-func (l *defaultLogger) Tracef(format string, args ...interface{}) {
+func (l *defaultLogger) Tracef(format string, args ...any) {
 	l.Logger.Tracef(format, args...)
 }
 
-func (l *defaultLogger) Debugf(format string, args ...interface{}) {
+func (l *defaultLogger) Debugf(format string, args ...any) {
 	l.Logger.Debugf(format, args...)
 }
 
-func (l *defaultLogger) Infof(format string, args ...interface{}) {
+func (l *defaultLogger) Infof(format string, args ...any) {
 	l.Logger.Infof(format, args...)
 }
 
-func (l *defaultLogger) Errorf(format string, args ...interface{}) {
+func (l *defaultLogger) Errorf(format string, args ...any) {
 	l.Logger.Errorf(format, args...)
 }
 
-func (l *defaultLogger) Warnf(format string, args ...interface{}) {
+func (l *defaultLogger) Warnf(format string, args ...any) {
 	l.Logger.Warnf(format, args...)
 }

@@ -60,7 +60,11 @@ func (c *client) GetSettingBaresip(ctx context.Context, site string) (*SettingBa
 	if s.Key != SettingBaresipKey {
 		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingBaresipKey, s.Key)
 	}
-	return f.(*SettingBaresip), nil
+	resource, ok := f.(*SettingBaresip)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingBaresip, received: %T", f)
+	}
+	return resource, nil
 }
 
 // UpdateSettingBaresip Experimental! This function is not yet stable and may change in the future.
@@ -70,5 +74,9 @@ func (c *client) UpdateSettingBaresip(ctx context.Context, site string, s *Setti
 	if err != nil {
 		return nil, err
 	}
-	return result.(*SettingBaresip), nil
+	updatedResource, ok := result.(*SettingBaresip)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingBaresip, received: %T", result)
+	}
+	return updatedResource, nil
 }

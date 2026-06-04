@@ -54,9 +54,9 @@ type FirewallZoneMatrixData struct {
 func (dst *FirewallZoneMatrixData) UnmarshalJSON(b []byte) error {
 	type Alias FirewallZoneMatrixData
 	aux := &struct {
-		PolicyCount emptyStringInt `json:"policy_count"`
-
 		*Alias
+
+		PolicyCount emptyStringInt `json:"policy_count"`
 	}{
 		Alias: (*Alias)(dst),
 	}

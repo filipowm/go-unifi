@@ -58,7 +58,11 @@ func (c *client) GetSettingTeleport(ctx context.Context, site string) (*SettingT
 	if s.Key != SettingTeleportKey {
 		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingTeleportKey, s.Key)
 	}
-	return f.(*SettingTeleport), nil
+	resource, ok := f.(*SettingTeleport)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingTeleport, received: %T", f)
+	}
+	return resource, nil
 }
 
 // UpdateSettingTeleport Experimental! This function is not yet stable and may change in the future.
@@ -68,5 +72,9 @@ func (c *client) UpdateSettingTeleport(ctx context.Context, site string, s *Sett
 	if err != nil {
 		return nil, err
 	}
-	return result.(*SettingTeleport), nil
+	updatedResource, ok := result.(*SettingTeleport)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingTeleport, received: %T", result)
+	}
+	return updatedResource, nil
 }

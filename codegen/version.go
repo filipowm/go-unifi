@@ -104,13 +104,13 @@ func (p *defaultUnifiVersionProvider) ByVersionMarker(versionMarker string) (*Un
 }
 
 func writeVersionFile(version *version.Version, outDir string) error {
-	versionGo := []byte(fmt.Sprintf(`
+	versionGo := fmt.Appendf(nil, `
 // Generated code. DO NOT EDIT.
 
 package unifi
 
 const UnifiVersion = %q
-`, version.Core()))
+`, version.Core())
 
 	versionGo, err := format.Source(versionGo)
 	if err != nil {
@@ -123,5 +123,5 @@ const UnifiVersion = %q
 
 func writeVersionRepoMarkerFile(version *version.Version, outDir string) error {
 	versionRepoMarker := []byte(version.Core().String())
-	return os.WriteFile(filepath.Join(outDir, ".unifi-version"), versionRepoMarker, 0o644)
+	return os.WriteFile(filepath.Join(outDir, ".unifi-version"), versionRepoMarker, 0o644) //nolint:gosec
 }

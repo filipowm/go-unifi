@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 	"testing"
@@ -17,7 +18,7 @@ func TestFieldInfoFromValidation(t *testing.T) {
 		expectedType      string
 		expectedComment   string
 		expectedOmitEmpty bool
-		validation        interface{}
+		validation        any
 	}{
 		{"string", "", true, ""},
 		{"string", "default|custom", true, "default|custom"},
@@ -132,9 +133,7 @@ func TestResourceTypes(t *testing.T) {
 		},
 	}
 
-	for k, v := range expectedFields {
-		expectedStruct["Struct"].Fields[k] = v
-	}
+	maps.Copy(expectedStruct["Struct"].Fields, expectedFields)
 
 	expectation := &Resource{
 		StructName:   "Struct",
@@ -259,7 +258,7 @@ func TestFieldInfoFromValidationErrors(t *testing.T) {
 	tests := []struct {
 		name          string
 		fieldName     string
-		validation    interface{}
+		validation    any
 		errorContains string
 	}{
 		{
@@ -271,19 +270,19 @@ func TestFieldInfoFromValidationErrors(t *testing.T) {
 		{
 			"empty array",
 			"field",
-			[]interface{}{},
+			[]any{},
 			"",
 		},
 		{
 			"array with multiple items",
 			"field",
-			[]interface{}{"item1", "item2"},
+			[]any{"item1", "item2"},
 			"unknown validation",
 		},
 		{
 			"invalid nested validation",
 			"field",
-			map[string]interface{}{
+			map[string]any{
 				"nested": 123,
 			},
 			"unable to determine type from validation",
@@ -299,7 +298,7 @@ func TestFieldInfoFromValidationErrors(t *testing.T) {
 			if tc.errorContains != "" {
 				require.ErrorContains(t, err, tc.errorContains)
 				a.NotNil(fieldInfo)
-				a.EqualValues(&FieldInfo{}, fieldInfo)
+				a.Equal(&FieldInfo{}, fieldInfo)
 			} else {
 				require.NoError(t, err)
 				a.NotNil(fieldInfo)
@@ -320,13 +319,13 @@ func TestBuildResourcesFromDownloadedFields(t *testing.T) {
 		"value": "^[0-9]*$",
 		"enabled": "true|false"
 	}`
-	err := os.WriteFile(filepath.Join(tmpDir, "Test.json"), []byte(validJSON), 0o644)
+	err := os.WriteFile(filepath.Join(tmpDir, "Test.json"), []byte(validJSON), 0o644) //nolint:gosec
 	require.NoError(t, err)
 
-	err = os.WriteFile(filepath.Join(tmpDir, "Invalid.json"), []byte("invalid json"), 0o644)
+	err = os.WriteFile(filepath.Join(tmpDir, "Invalid.json"), []byte("invalid json"), 0o644) //nolint:gosec
 	require.NoError(t, err)
 
-	err = os.WriteFile(filepath.Join(tmpDir, "Setting.json"), []byte(validJSON), 0o644)
+	err = os.WriteFile(filepath.Join(tmpDir, "Setting.json"), []byte(validJSON), 0o644) //nolint:gosec
 	require.NoError(t, err)
 
 	// Test cases

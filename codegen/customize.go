@@ -70,22 +70,27 @@ func (r *ResourceCustomization) ApplyTo(resource *Resource) {
 		customizationsProcessor := r.toFieldProcessor()
 		if currentProcessor != nil {
 			// create composite processor with existing processor, first running pre-defined customizations, then user-defined
-			resource.FieldProcessor = func(name string, f *FieldInfo) error {
-				err := compositeCustomizationsProcessor(customizationsProcessor)(name, f)
-				if err != nil {
-					return err
-				}
-				return currentProcessor(name, f)
-			}
-			if r.ResourcePath != "" {
-				resource.ResourcePath = r.ResourcePath
-			}
+			r.applyCurrentProcessor(resource, customizationsProcessor, currentProcessor)
 		} else {
 			resource.FieldProcessor = compositeCustomizationsProcessor(customizationsProcessor)
 		}
 	}
 }
 
+func (r *ResourceCustomization) applyCurrentProcessor(resource *Resource, customizationsProcessor FieldProcessor, currentProcessor FieldProcessor) {
+	resource.FieldProcessor = func(name string, f *FieldInfo) error {
+		err := compositeCustomizationsProcessor(customizationsProcessor)(name, f)
+		if err != nil {
+			return err
+		}
+		return currentProcessor(name, f)
+	}
+	if r.ResourcePath != "" {
+		resource.ResourcePath = r.ResourcePath
+	}
+}
+
+//nolint:nestif,cyclop
 func (r *ResourceCustomization) toFieldProcessor() FieldProcessor {
 	return func(name string, f *FieldInfo) error {
 		if fc, ok := r.Fields[name]; ok && fc.Overrides != nil && (fc.IfFieldType == "" || fc.IfFieldType == f.FieldType) {

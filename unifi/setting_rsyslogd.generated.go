@@ -45,10 +45,10 @@ type SettingRsyslogd struct {
 func (dst *SettingRsyslogd) UnmarshalJSON(b []byte) error {
 	type Alias SettingRsyslogd
 	aux := &struct {
+		*Alias
+
 		NetconsolePort emptyStringInt `json:"netconsole_port"`
 		Port           emptyStringInt `json:"port"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -72,7 +72,11 @@ func (c *client) GetSettingRsyslogd(ctx context.Context, site string) (*SettingR
 	if s.Key != SettingRsyslogdKey {
 		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingRsyslogdKey, s.Key)
 	}
-	return f.(*SettingRsyslogd), nil
+	resource, ok := f.(*SettingRsyslogd)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingRsyslogd, received: %T", f)
+	}
+	return resource, nil
 }
 
 // UpdateSettingRsyslogd Experimental! This function is not yet stable and may change in the future.
@@ -82,5 +86,9 @@ func (c *client) UpdateSettingRsyslogd(ctx context.Context, site string, s *Sett
 	if err != nil {
 		return nil, err
 	}
-	return result.(*SettingRsyslogd), nil
+	updatedResource, ok := result.(*SettingRsyslogd)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingRsyslogd, received: %T", result)
+	}
+	return updatedResource, nil
 }

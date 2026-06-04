@@ -59,14 +59,14 @@ type HotspotPackage struct {
 func (dst *HotspotPackage) UnmarshalJSON(b []byte) error {
 	type Alias HotspotPackage
 	aux := &struct {
+		*Alias
+
 		Hours                emptyStringInt `json:"hours"`
 		Index                emptyStringInt `json:"index"`
 		LimitDown            emptyStringInt `json:"limit_down"`
 		LimitQuota           emptyStringInt `json:"limit_quota"`
 		LimitUp              emptyStringInt `json:"limit_up"`
 		TrialDurationMinutes emptyStringInt `json:"trial_duration_minutes"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -141,9 +141,9 @@ func (c *client) createHotspotPackage(ctx context.Context, site string, d *Hotsp
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	newResource := respBody.Data[0]
 
-	return &new, nil
+	return &newResource, nil
 }
 
 func (c *client) updateHotspotPackage(ctx context.Context, site string, d *HotspotPackage) (*HotspotPackage, error) {
@@ -161,7 +161,7 @@ func (c *client) updateHotspotPackage(ctx context.Context, site string, d *Hotsp
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	updatedResource := respBody.Data[0]
 
-	return &new, nil
+	return &updatedResource, nil
 }

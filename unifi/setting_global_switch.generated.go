@@ -89,7 +89,11 @@ func (c *client) GetSettingGlobalSwitch(ctx context.Context, site string) (*Sett
 	if s.Key != SettingGlobalSwitchKey {
 		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingGlobalSwitchKey, s.Key)
 	}
-	return f.(*SettingGlobalSwitch), nil
+	resource, ok := f.(*SettingGlobalSwitch)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingGlobalSwitch, received: %T", f)
+	}
+	return resource, nil
 }
 
 // UpdateSettingGlobalSwitch Experimental! This function is not yet stable and may change in the future.
@@ -99,5 +103,9 @@ func (c *client) UpdateSettingGlobalSwitch(ctx context.Context, site string, s *
 	if err != nil {
 		return nil, err
 	}
-	return result.(*SettingGlobalSwitch), nil
+	updatedResource, ok := result.(*SettingGlobalSwitch)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingGlobalSwitch, received: %T", result)
+	}
+	return updatedResource, nil
 }

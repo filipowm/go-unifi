@@ -57,7 +57,11 @@ func (c *client) GetSettingMagicSiteToSiteVpn(ctx context.Context, site string) 
 	if s.Key != SettingMagicSiteToSiteVpnKey {
 		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingMagicSiteToSiteVpnKey, s.Key)
 	}
-	return f.(*SettingMagicSiteToSiteVpn), nil
+	resource, ok := f.(*SettingMagicSiteToSiteVpn)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingMagicSiteToSiteVpn, received: %T", f)
+	}
+	return resource, nil
 }
 
 // UpdateSettingMagicSiteToSiteVpn Experimental! This function is not yet stable and may change in the future.
@@ -67,5 +71,9 @@ func (c *client) UpdateSettingMagicSiteToSiteVpn(ctx context.Context, site strin
 	if err != nil {
 		return nil, err
 	}
-	return result.(*SettingMagicSiteToSiteVpn), nil
+	updatedResource, ok := result.(*SettingMagicSiteToSiteVpn)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingMagicSiteToSiteVpn, received: %T", result)
+	}
+	return updatedResource, nil
 }

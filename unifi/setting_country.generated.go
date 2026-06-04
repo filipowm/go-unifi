@@ -35,9 +35,9 @@ type SettingCountry struct {
 func (dst *SettingCountry) UnmarshalJSON(b []byte) error {
 	type Alias SettingCountry
 	aux := &struct {
-		Code emptyStringInt `json:"code"`
-
 		*Alias
+
+		Code emptyStringInt `json:"code"`
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -60,7 +60,11 @@ func (c *client) GetSettingCountry(ctx context.Context, site string) (*SettingCo
 	if s.Key != SettingCountryKey {
 		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingCountryKey, s.Key)
 	}
-	return f.(*SettingCountry), nil
+	resource, ok := f.(*SettingCountry)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingCountry, received: %T", f)
+	}
+	return resource, nil
 }
 
 // UpdateSettingCountry Experimental! This function is not yet stable and may change in the future.
@@ -70,5 +74,9 @@ func (c *client) UpdateSettingCountry(ctx context.Context, site string, s *Setti
 	if err != nil {
 		return nil, err
 	}
-	return result.(*SettingCountry), nil
+	updatedResource, ok := result.(*SettingCountry)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingCountry, received: %T", result)
+	}
+	return updatedResource, nil
 }

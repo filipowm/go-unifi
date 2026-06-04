@@ -57,7 +57,11 @@ func (c *client) GetSettingNetworkOptimization(ctx context.Context, site string)
 	if s.Key != SettingNetworkOptimizationKey {
 		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingNetworkOptimizationKey, s.Key)
 	}
-	return f.(*SettingNetworkOptimization), nil
+	resource, ok := f.(*SettingNetworkOptimization)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingNetworkOptimization, received: %T", f)
+	}
+	return resource, nil
 }
 
 // UpdateSettingNetworkOptimization Experimental! This function is not yet stable and may change in the future.
@@ -67,5 +71,9 @@ func (c *client) UpdateSettingNetworkOptimization(ctx context.Context, site stri
 	if err != nil {
 		return nil, err
 	}
-	return result.(*SettingNetworkOptimization), nil
+	updatedResource, ok := result.(*SettingNetworkOptimization)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingNetworkOptimization, received: %T", result)
+	}
+	return updatedResource, nil
 }

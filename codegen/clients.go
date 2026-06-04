@@ -64,9 +64,9 @@ func (c *CustomClientFunction) Signature() string {
 		return ""
 	}
 	var b strings.Builder
-	//if c.comment != "" {
-	//	b.WriteString(fmt.Sprintf("// %s %s\n", c.Name, c.Comment))
-	//}
+	// if c.comment != "" {
+	//	 b.WriteString(fmt.Sprintf("// %s %s\n", c.Name, c.Comment))
+	// }
 	b.WriteString(c.Name())
 	b.WriteString("(")
 
@@ -92,15 +92,37 @@ func (c *CustomClientFunction) Comment() string {
 	return c.FunctionComment
 }
 
+// newClientInfo creates ClientInfo from the provided resources.
+func newClientInfo(imports []string, functions []ClientFunction) *ClientInfo {
+	return &ClientInfo{imports, functions}
+}
+
 // ClientInfo represents the client information used for code generation.
 type ClientInfo struct {
 	Imports   []string
 	Functions []ClientFunction
 }
 
+// Name returns the name of the client.
+func (c *ClientInfo) Name() string {
+	return "Client"
+}
+
+//go:embed client.go.tmpl
+var clientGoTemplate string
+
+// GenerateCode generates the code for the client using a template.
+func (c *ClientInfo) GenerateCode() (string, error) {
+	return generateCodeFromTemplate("client.go.tmpl", clientGoTemplate, c)
+}
+
 type ClientInfoBuilder struct {
 	imports   []string
 	functions []ClientFunction
+}
+
+func NewClientInfoBuilder() *ClientInfoBuilder {
+	return &ClientInfoBuilder{}
 }
 
 func (c *ClientInfoBuilder) AddFunction(f ClientFunction) *ClientInfoBuilder { //nolint: unparam
@@ -113,33 +135,6 @@ func (c *ClientInfoBuilder) AddFunctions(f []CustomClientFunction) *ClientInfoBu
 		c.functions = append(c.functions, &v)
 	}
 	return c
-}
-
-func (c *ClientInfoBuilder) addResourceFunction(actionName, resourceName, comment string, additionalParams []FunctionParam, additionalReturns []string) {
-	fName := fmt.Sprintf("%s%s", actionName, resourceName)
-	params := []FunctionParam{
-		{"ctx", "context.Context"},
-		{"site", "string"},
-	}
-	params = append(params, additionalParams...)
-	returns := additionalReturns
-	returns = append(returns, "error")
-	f := CustomClientFunction{
-		FunctionName:     fName,
-		Resource:         resourceName,
-		Parameters:       params,
-		ReturnParameters: returns,
-		FunctionComment:  fmt.Sprintf("%s %s", fName, comment),
-	}
-	c.AddFunction(&f)
-}
-
-func singlePointerReturn(name string) []string {
-	return []string{"*" + name}
-}
-
-func singlePointerParam(name string) []FunctionParam {
-	return []FunctionParam{{strings.ToLower(name[0:1]), "*" + name}}
 }
 
 func (c *ClientInfoBuilder) AddResource(r *Resource) *ClientInfoBuilder {
@@ -180,24 +175,28 @@ func (c *ClientInfoBuilder) Build() *ClientInfo {
 	return newClientInfo(c.imports, c.functions)
 }
 
-func NewClientInfoBuilder() *ClientInfoBuilder {
-	return &ClientInfoBuilder{}
+func (c *ClientInfoBuilder) addResourceFunction(actionName, resourceName, comment string, additionalParams []FunctionParam, additionalReturns []string) {
+	fName := fmt.Sprintf("%s%s", actionName, resourceName)
+
+	params := make([]FunctionParam, 0, 2+len(additionalParams))
+	params = append(params, FunctionParam{"ctx", "context.Context"}, FunctionParam{"site", "string"})
+	params = append(params, additionalParams...)
+	returns := additionalReturns
+	returns = append(returns, "error")
+	f := CustomClientFunction{
+		FunctionName:     fName,
+		Resource:         resourceName,
+		Parameters:       params,
+		ReturnParameters: returns,
+		FunctionComment:  fmt.Sprintf("%s %s", fName, comment),
+	}
+	c.AddFunction(&f)
 }
 
-// newClientInfo creates ClientInfo from the provided resources.
-func newClientInfo(imports []string, functions []ClientFunction) *ClientInfo {
-	return &ClientInfo{imports, functions}
+func singlePointerReturn(name string) []string {
+	return []string{"*" + name}
 }
 
-//go:embed client.go.tmpl
-var clientGoTemplate string
-
-// GenerateCode generates the code for the client using a template.
-func (c *ClientInfo) GenerateCode() (string, error) {
-	return generateCodeFromTemplate("client.go.tmpl", clientGoTemplate, c)
-}
-
-// Name returns the name of the client.
-func (c *ClientInfo) Name() string {
-	return "Client"
+func singlePointerParam(name string) []FunctionParam {
+	return []FunctionParam{{strings.ToLower(name[0:1]), "*" + name}}
 }

@@ -60,9 +60,9 @@ type FirewallRule struct {
 func (dst *FirewallRule) UnmarshalJSON(b []byte) error {
 	type Alias FirewallRule
 	aux := &struct {
-		RuleIndex emptyStringInt `json:"rule_index"`
-
 		*Alias
+
+		RuleIndex emptyStringInt `json:"rule_index"`
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -132,9 +132,9 @@ func (c *client) createFirewallRule(ctx context.Context, site string, d *Firewal
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	newResource := respBody.Data[0]
 
-	return &new, nil
+	return &newResource, nil
 }
 
 func (c *client) updateFirewallRule(ctx context.Context, site string, d *FirewallRule) (*FirewallRule, error) {
@@ -152,7 +152,7 @@ func (c *client) updateFirewallRule(ctx context.Context, site string, d *Firewal
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	updatedResource := respBody.Data[0]
 
-	return &new, nil
+	return &updatedResource, nil
 }

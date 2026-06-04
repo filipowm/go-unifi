@@ -124,6 +124,8 @@ type WLAN struct {
 func (dst *WLAN) UnmarshalJSON(b []byte) error {
 	type Alias WLAN
 	aux := &struct {
+		*Alias
+
 		DTIM6E                emptyStringInt   `json:"dtim_6e"`
 		DTIMNa                emptyStringInt   `json:"dtim_na"`
 		DTIMNg                emptyStringInt   `json:"dtim_ng"`
@@ -136,8 +138,6 @@ func (dst *WLAN) UnmarshalJSON(b []byte) error {
 		SaeSync               emptyStringInt   `json:"sae_sync"`
 		VLAN                  emptyStringInt   `json:"vlan"`
 		WEPIDX                emptyStringInt   `json:"wep_idx"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -174,9 +174,9 @@ type WLANCapab struct {
 func (dst *WLANCapab) UnmarshalJSON(b []byte) error {
 	type Alias WLANCapab
 	aux := &struct {
-		Port emptyStringInt `json:"port"`
-
 		*Alias
+
+		Port emptyStringInt `json:"port"`
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -200,11 +200,11 @@ type WLANCellularNetworkList struct {
 func (dst *WLANCellularNetworkList) UnmarshalJSON(b []byte) error {
 	type Alias WLANCellularNetworkList
 	aux := &struct {
+		*Alias
+
 		CountryCode emptyStringInt `json:"country_code"`
 		Mcc         emptyStringInt `json:"mcc"`
 		Mnc         emptyStringInt `json:"mnc"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -294,6 +294,8 @@ type WLANHotspot2 struct {
 func (dst *WLANHotspot2) UnmarshalJSON(b []byte) error {
 	type Alias WLANHotspot2
 	aux := &struct {
+		*Alias
+
 		IPaddrTypeAvailV4    emptyStringInt `json:"ipaddr_type_avail_v4"`
 		IPaddrTypeAvailV6    emptyStringInt `json:"ipaddr_type_avail_v6"`
 		MetricsDownlinkLoad  emptyStringInt `json:"metrics_downlink_load"`
@@ -304,8 +306,6 @@ func (dst *WLANHotspot2) UnmarshalJSON(b []byte) error {
 		NetworkType          emptyStringInt `json:"network_type"`
 		VenueGroup           emptyStringInt `json:"venue_group"`
 		VenueType            emptyStringInt `json:"venue_type"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -367,12 +367,12 @@ type WLANNaiRealmList struct {
 func (dst *WLANNaiRealmList) UnmarshalJSON(b []byte) error {
 	type Alias WLANNaiRealmList
 	aux := &struct {
+		*Alias
+
 		AuthIDs   []emptyStringInt `json:"auth_ids"`
 		AuthVals  []emptyStringInt `json:"auth_vals"`
 		EapMethod emptyStringInt   `json:"eap_method"`
 		Encoding  emptyStringInt   `json:"encoding"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -467,9 +467,9 @@ type WLANSaePsk struct {
 func (dst *WLANSaePsk) UnmarshalJSON(b []byte) error {
 	type Alias WLANSaePsk
 	aux := &struct {
-		VLAN emptyStringInt `json:"vlan"`
-
 		*Alias
+
+		VLAN emptyStringInt `json:"vlan"`
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -494,11 +494,11 @@ type WLANScheduleWithDuration struct {
 func (dst *WLANScheduleWithDuration) UnmarshalJSON(b []byte) error {
 	type Alias WLANScheduleWithDuration
 	aux := &struct {
+		*Alias
+
 		DurationMinutes emptyStringInt `json:"duration_minutes"`
 		StartHour       emptyStringInt `json:"start_hour"`
 		StartMinute     emptyStringInt `json:"start_minute"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -592,9 +592,9 @@ func (c *client) createWLAN(ctx context.Context, site string, d *WLAN) (*WLAN, e
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	newResource := respBody.Data[0]
 
-	return &new, nil
+	return &newResource, nil
 }
 
 func (c *client) updateWLAN(ctx context.Context, site string, d *WLAN) (*WLAN, error) {
@@ -612,7 +612,7 @@ func (c *client) updateWLAN(ctx context.Context, site string, d *WLAN) (*WLAN, e
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	updatedResource := respBody.Data[0]
 
-	return &new, nil
+	return &updatedResource, nil
 }

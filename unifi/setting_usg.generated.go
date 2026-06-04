@@ -89,6 +89,8 @@ type SettingUsg struct {
 func (dst *SettingUsg) UnmarshalJSON(b []byte) error {
 	type Alias SettingUsg
 	aux := &struct {
+		*Alias
+
 		ArpCacheBaseReachable emptyStringInt `json:"arp_cache_base_reachable"`
 		DHCPRelayHopCount     emptyStringInt `json:"dhcp_relay_hop_count"`
 		DHCPRelayMaxSize      emptyStringInt `json:"dhcp_relay_max_size"`
@@ -106,8 +108,6 @@ func (dst *SettingUsg) UnmarshalJSON(b []byte) error {
 		TCPTimeWaitTimeout    emptyStringInt `json:"tcp_time_wait_timeout"`
 		UDPOtherTimeout       emptyStringInt `json:"udp_other_timeout"`
 		UDPStreamTimeout      emptyStringInt `json:"udp_stream_timeout"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -169,7 +169,11 @@ func (c *client) GetSettingUsg(ctx context.Context, site string) (*SettingUsg, e
 	if s.Key != SettingUsgKey {
 		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingUsgKey, s.Key)
 	}
-	return f.(*SettingUsg), nil
+	resource, ok := f.(*SettingUsg)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingUsg, received: %T", f)
+	}
+	return resource, nil
 }
 
 // UpdateSettingUsg Experimental! This function is not yet stable and may change in the future.
@@ -179,5 +183,9 @@ func (c *client) UpdateSettingUsg(ctx context.Context, site string, s *SettingUs
 	if err != nil {
 		return nil, err
 	}
-	return result.(*SettingUsg), nil
+	updatedResource, ok := result.(*SettingUsg)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingUsg, received: %T", result)
+	}
+	return updatedResource, nil
 }

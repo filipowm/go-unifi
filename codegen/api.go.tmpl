@@ -48,10 +48,10 @@ type {{ $k }} struct {
 func (dst *{{ $k }}) UnmarshalJSON(b []byte) error {
 	type Alias {{ $k }}
 	aux := &struct {
-			{{- range $fk, $fv := $v.Fields }}{{ if not $fv }}
-			{{- else }}{{- template "field-customUnmarshalType" $fv }}{{ end }}{{- end }}
-
 		*Alias
+
+			{{ range $fk, $fv := $v.Fields }}{{ if not $fv }}
+			{{- else }}{{- template "field-customUnmarshalType" $fv }}{{ end }}{{- end }}
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -94,7 +94,11 @@ func (c *client) Get{{ .StructName }}(ctx context.Context, site string) (*{{ .St
     if s.Key != {{ .StructName }}Key {
     	return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", {{ .StructName }}Key, s.Key)
     }
-    return f.(*{{ .StructName }}), nil
+    resource, ok := f.(*{{ .StructName }})
+    if !ok {
+    	return nil, fmt.Errorf("unexpected type for setting value. expected: *{{ .StructName }}, received: %T", f)
+    }
+    return resource, nil
 }
 {{- else }}
 func (c *client) get{{ .StructName }}(ctx context.Context, site, id string) (*{{ .StructName }}, error) {
@@ -141,9 +145,9 @@ func (c *client) create{{ .StructName }}(ctx context.Context, site string, d *{{
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	newResource := respBody.Data[0]
 
-	return &new, nil
+	return &newResource, nil
 }
 {{- end }}
 
@@ -155,7 +159,11 @@ func (c *client) Update{{ .StructName }}(ctx context.Context, site string, s *{{
     if err != nil {
     	return nil, err
     }
-    return result.(*{{ .StructName }}), nil
+    updatedResource, ok := result.(*{{ .StructName }})
+    if !ok {
+        return nil, fmt.Errorf("unexpected type for setting value. expected: *{{ .StructName }}, received: %T", result)
+    }
+    return updatedResource, nil
 }
 
 {{- else }}
@@ -175,8 +183,8 @@ func (c *client) update{{ .StructName }}(ctx context.Context, site string, d *{{
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	updatedResource := respBody.Data[0]
 
-	return &new, nil
+	return &updatedResource, nil
 }
 {{- end }}

@@ -117,6 +117,8 @@ type Device struct {
 func (dst *Device) UnmarshalJSON(b []byte) error {
 	type Alias Device
 	aux := &struct {
+		*Alias
+
 		GatewayVrrpPriority        emptyStringInt   `json:"gateway_vrrp_priority"`
 		LcmBrightness              emptyStringInt   `json:"lcm_brightness"`
 		LcmIDleTimeout             emptyStringInt   `json:"lcm_idle_timeout"`
@@ -130,8 +132,6 @@ func (dst *Device) UnmarshalJSON(b []byte) error {
 		PowerSourceCtrlBudget      emptyStringInt   `json:"power_source_ctrl_budget"`
 		StpPriority                numberOrString   `json:"stp_priority"`
 		Volume                     emptyStringInt   `json:"volume"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -218,9 +218,9 @@ type DeviceEtherLighting struct {
 func (dst *DeviceEtherLighting) UnmarshalJSON(b []byte) error {
 	type Alias DeviceEtherLighting
 	aux := &struct {
-		Brightness emptyStringInt `json:"brightness"`
-
 		*Alias
+
+		Brightness emptyStringInt `json:"brightness"`
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -264,9 +264,9 @@ type DeviceMbb struct {
 func (dst *DeviceMbb) UnmarshalJSON(b []byte) error {
 	type Alias DeviceMbb
 	aux := &struct {
-		PrimarySlot emptyStringInt `json:"primary_slot"`
-
 		*Alias
+
+		PrimarySlot emptyStringInt `json:"primary_slot"`
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -290,9 +290,9 @@ type DeviceOutletOverrides struct {
 func (dst *DeviceOutletOverrides) UnmarshalJSON(b []byte) error {
 	type Alias DeviceOutletOverrides
 	aux := &struct {
-		Index emptyStringInt `json:"index"`
-
 		*Alias
+
+		Index emptyStringInt `json:"index"`
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -357,6 +357,8 @@ type DevicePortOverrides struct {
 func (dst *DevicePortOverrides) UnmarshalJSON(b []byte) error {
 	type Alias DevicePortOverrides
 	aux := &struct {
+		*Alias
+
 		AggregateMembers           []emptyStringInt `json:"aggregate_members"`
 		Dot1XIDleTimeout           emptyStringInt   `json:"dot1x_idle_timeout"`
 		EgressRateLimitKbps        emptyStringInt   `json:"egress_rate_limit_kbps"`
@@ -373,8 +375,6 @@ func (dst *DevicePortOverrides) UnmarshalJSON(b []byte) error {
 		StormctrlMcastRate         emptyStringInt   `json:"stormctrl_mcast_rate"`
 		StormctrlUcastLevel        emptyStringInt   `json:"stormctrl_ucast_level"`
 		StormctrlUcastRate         emptyStringInt   `json:"stormctrl_ucast_rate"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -416,12 +416,12 @@ type DeviceQOSMarking struct {
 func (dst *DeviceQOSMarking) UnmarshalJSON(b []byte) error {
 	type Alias DeviceQOSMarking
 	aux := &struct {
+		*Alias
+
 		CosCode          emptyStringInt `json:"cos_code"`
 		DscpCode         emptyStringInt `json:"dscp_code"`
 		IPPrecedenceCode emptyStringInt `json:"ip_precedence_code"`
 		Queue            emptyStringInt `json:"queue"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -450,13 +450,13 @@ type DeviceQOSMatching struct {
 func (dst *DeviceQOSMatching) UnmarshalJSON(b []byte) error {
 	type Alias DeviceQOSMatching
 	aux := &struct {
+		*Alias
+
 		CosCode          emptyStringInt `json:"cos_code"`
 		DscpCode         emptyStringInt `json:"dscp_code"`
 		DstPort          emptyStringInt `json:"dst_port"`
 		IPPrecedenceCode emptyStringInt `json:"ip_precedence_code"`
 		SrcPort          emptyStringInt `json:"src_port"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -565,6 +565,8 @@ type DeviceRadioTable struct {
 func (dst *DeviceRadioTable) UnmarshalJSON(b []byte) error {
 	type Alias DeviceRadioTable
 	aux := &struct {
+		*Alias
+
 		AntennaGain         emptyStringInt `json:"antenna_gain"`
 		AntennaID           emptyStringInt `json:"antenna_id"`
 		AssistedRoamingRssi emptyStringInt `json:"assisted_roaming_rssi"`
@@ -575,8 +577,6 @@ func (dst *DeviceRadioTable) UnmarshalJSON(b []byte) error {
 		MinRssi             emptyStringInt `json:"min_rssi"`
 		SensLevel           emptyStringInt `json:"sens_level"`
 		TxPower             numberOrString `json:"tx_power"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -629,9 +629,9 @@ type DeviceRpsPortTable struct {
 func (dst *DeviceRpsPortTable) UnmarshalJSON(b []byte) error {
 	type Alias DeviceRpsPortTable
 	aux := &struct {
-		PortIDX emptyStringInt `json:"port_idx"`
-
 		*Alias
+
+		PortIDX emptyStringInt `json:"port_idx"`
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -658,12 +658,12 @@ type DeviceSim struct {
 func (dst *DeviceSim) UnmarshalJSON(b []byte) error {
 	type Alias DeviceSim
 	aux := &struct {
+		*Alias
+
 		DataHardLimitBytes emptyStringInt `json:"data_hard_limit_bytes"`
 		DataSoftLimitBytes emptyStringInt `json:"data_soft_limit_bytes"`
 		Iccid              emptyStringInt `json:"iccid"`
 		Slot               emptyStringInt `json:"slot"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -736,9 +736,9 @@ func (c *client) createDevice(ctx context.Context, site string, d *Device) (*Dev
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	newResource := respBody.Data[0]
 
-	return &new, nil
+	return &newResource, nil
 }
 
 func (c *client) updateDevice(ctx context.Context, site string, d *Device) (*Device, error) {
@@ -756,7 +756,7 @@ func (c *client) updateDevice(ctx context.Context, site string, d *Device) (*Dev
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	updatedResource := respBody.Data[0]
 
-	return &new, nil
+	return &updatedResource, nil
 }

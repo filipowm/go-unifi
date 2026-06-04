@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"os"
 	"os/exec"
 	"testing"
@@ -30,10 +31,11 @@ func TestSetupLogging(t *testing.T) {
 // integration tests for the CLI
 // these test require Internet access
 
-func execCli(args ...string) (string, error) {
-	in := []string{"run", "."}
+func execCli(ctx context.Context, args ...string) (string, error) {
+	in := make([]string, 0, 2+len(args))
+	in = append(in, "run", ".")
 	in = append(in, args...)
-	cmd := exec.Command("go", in...)
+	cmd := exec.CommandContext(ctx, "go", in...)
 	output, err := cmd.CombinedOutput()
 	return string(output), err
 }
@@ -41,7 +43,7 @@ func execCli(args ...string) (string, error) {
 func TestHelpFlag(t *testing.T) {
 	t.Parallel()
 
-	out, err := execCli("-h")
+	out, err := execCli(t.Context(), "-h")
 
 	require.Error(t, err)
 	assert.Contains(t, out, "Usage: codegen [OPTIONS] version")
@@ -50,7 +52,7 @@ func TestHelpFlag(t *testing.T) {
 func TestInvalidFlag(t *testing.T) {
 	t.Parallel()
 
-	out, err := execCli("-invalid")
+	out, err := execCli(t.Context(), "-invalid")
 
 	require.Error(t, err)
 	assert.Contains(t, out, "flag provided but not defined: -invalid")
@@ -59,7 +61,7 @@ func TestInvalidFlag(t *testing.T) {
 func TestDefaultVersion(t *testing.T) {
 	t.Parallel()
 
-	out, err := execCli("-version-base-dir", t.TempDir(), "-output-dir", t.TempDir())
+	out, err := execCli(t.Context(), "-version-base-dir", t.TempDir(), "-output-dir", t.TempDir())
 
 	require.NoError(t, err)
 	assert.Contains(t, out, "UniFi Controller version")

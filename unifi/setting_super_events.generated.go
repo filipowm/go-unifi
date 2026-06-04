@@ -57,7 +57,11 @@ func (c *client) GetSettingSuperEvents(ctx context.Context, site string) (*Setti
 	if s.Key != SettingSuperEventsKey {
 		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingSuperEventsKey, s.Key)
 	}
-	return f.(*SettingSuperEvents), nil
+	resource, ok := f.(*SettingSuperEvents)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingSuperEvents, received: %T", f)
+	}
+	return resource, nil
 }
 
 // UpdateSettingSuperEvents Experimental! This function is not yet stable and may change in the future.
@@ -67,5 +71,9 @@ func (c *client) UpdateSettingSuperEvents(ctx context.Context, site string, s *S
 	if err != nil {
 		return nil, err
 	}
-	return result.(*SettingSuperEvents), nil
+	updatedResource, ok := result.(*SettingSuperEvents)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingSuperEvents, received: %T", result)
+	}
+	return updatedResource, nil
 }

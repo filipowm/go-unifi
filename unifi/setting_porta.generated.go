@@ -57,7 +57,11 @@ func (c *client) GetSettingPorta(ctx context.Context, site string) (*SettingPort
 	if s.Key != SettingPortaKey {
 		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingPortaKey, s.Key)
 	}
-	return f.(*SettingPorta), nil
+	resource, ok := f.(*SettingPorta)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingPorta, received: %T", f)
+	}
+	return resource, nil
 }
 
 // UpdateSettingPorta Experimental! This function is not yet stable and may change in the future.
@@ -67,5 +71,9 @@ func (c *client) UpdateSettingPorta(ctx context.Context, site string, s *Setting
 	if err != nil {
 		return nil, err
 	}
-	return result.(*SettingPorta), nil
+	updatedResource, ok := result.(*SettingPorta)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingPorta, received: %T", result)
+	}
+	return updatedResource, nil
 }

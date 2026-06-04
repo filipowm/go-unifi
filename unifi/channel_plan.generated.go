@@ -63,10 +63,10 @@ type ChannelPlanApBlacklistedChannels struct {
 func (dst *ChannelPlanApBlacklistedChannels) UnmarshalJSON(b []byte) error {
 	type Alias ChannelPlanApBlacklistedChannels
 	aux := &struct {
+		*Alias
+
 		Channel   emptyStringInt `json:"channel"`
 		Timestamp emptyStringInt `json:"timestamp"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -90,9 +90,9 @@ type ChannelPlanCoupling struct {
 func (dst *ChannelPlanCoupling) UnmarshalJSON(b []byte) error {
 	type Alias ChannelPlanCoupling
 	aux := &struct {
-		Rssi emptyStringInt `json:"rssi"`
-
 		*Alias
+
+		Rssi emptyStringInt `json:"rssi"`
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -119,12 +119,12 @@ type ChannelPlanRadioTable struct {
 func (dst *ChannelPlanRadioTable) UnmarshalJSON(b []byte) error {
 	type Alias ChannelPlanRadioTable
 	aux := &struct {
+		*Alias
+
 		BackupChannel numberOrString `json:"backup_channel"`
 		Channel       numberOrString `json:"channel"`
 		TxPower       numberOrString `json:"tx_power"`
 		Width         emptyStringInt `json:"width"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -170,10 +170,10 @@ type ChannelPlanSiteBlacklistedChannels struct {
 func (dst *ChannelPlanSiteBlacklistedChannels) UnmarshalJSON(b []byte) error {
 	type Alias ChannelPlanSiteBlacklistedChannels
 	aux := &struct {
+		*Alias
+
 		Channel   emptyStringInt `json:"channel"`
 		Timestamp emptyStringInt `json:"timestamp"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -244,9 +244,9 @@ func (c *client) createChannelPlan(ctx context.Context, site string, d *ChannelP
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	newResource := respBody.Data[0]
 
-	return &new, nil
+	return &newResource, nil
 }
 
 func (c *client) updateChannelPlan(ctx context.Context, site string, d *ChannelPlan) (*ChannelPlan, error) {
@@ -264,7 +264,7 @@ func (c *client) updateChannelPlan(ctx context.Context, site string, d *ChannelP
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	updatedResource := respBody.Data[0]
 
-	return &new, nil
+	return &updatedResource, nil
 }

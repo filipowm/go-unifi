@@ -2,6 +2,7 @@ package unifi //nolint: testpackage
 
 import (
 	"bytes"
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -172,7 +173,7 @@ func TestHandleError(t *testing.T) {
 			recorder.Body = bytes.NewBufferString(tt.responseBody)
 
 			// Create a new HTTP request
-			req := httptest.NewRequest(http.MethodGet, "http://example.com", nil)
+			req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "http://example.com", nil)
 			recorder.Result().Request = req
 
 			// Call the HandleError function

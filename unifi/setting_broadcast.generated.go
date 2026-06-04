@@ -62,7 +62,11 @@ func (c *client) GetSettingBroadcast(ctx context.Context, site string) (*Setting
 	if s.Key != SettingBroadcastKey {
 		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingBroadcastKey, s.Key)
 	}
-	return f.(*SettingBroadcast), nil
+	resource, ok := f.(*SettingBroadcast)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingBroadcast, received: %T", f)
+	}
+	return resource, nil
 }
 
 // UpdateSettingBroadcast Experimental! This function is not yet stable and may change in the future.
@@ -72,5 +76,9 @@ func (c *client) UpdateSettingBroadcast(ctx context.Context, site string, s *Set
 	if err != nil {
 		return nil, err
 	}
-	return result.(*SettingBroadcast), nil
+	updatedResource, ok := result.(*SettingBroadcast)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingBroadcast, received: %T", result)
+	}
+	return updatedResource, nil
 }

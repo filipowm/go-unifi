@@ -43,10 +43,10 @@ type Map struct {
 func (dst *Map) UnmarshalJSON(b []byte) error {
 	type Alias Map
 	aux := &struct {
+		*Alias
+
 		Tilt emptyStringInt `json:"tilt"`
 		Zoom emptyStringInt `json:"zoom"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -117,9 +117,9 @@ func (c *client) createMap(ctx context.Context, site string, d *Map) (*Map, erro
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	newResource := respBody.Data[0]
 
-	return &new, nil
+	return &newResource, nil
 }
 
 func (c *client) updateMap(ctx context.Context, site string, d *Map) (*Map, error) {
@@ -137,7 +137,7 @@ func (c *client) updateMap(ctx context.Context, site string, d *Map) (*Map, erro
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	updatedResource := respBody.Data[0]
 
-	return &new, nil
+	return &updatedResource, nil
 }

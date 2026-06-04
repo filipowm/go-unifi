@@ -124,9 +124,9 @@ func (c *client) createScheduleTask(ctx context.Context, site string, d *Schedul
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	newResource := respBody.Data[0]
 
-	return &new, nil
+	return &newResource, nil
 }
 
 func (c *client) updateScheduleTask(ctx context.Context, site string, d *ScheduleTask) (*ScheduleTask, error) {
@@ -144,7 +144,7 @@ func (c *client) updateScheduleTask(ctx context.Context, site string, d *Schedul
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	updatedResource := respBody.Data[0]
 
-	return &new, nil
+	return &updatedResource, nil
 }

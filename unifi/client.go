@@ -117,6 +117,7 @@ func (u UserPassCredentials) IsRememberMe() bool { return u.Remember }
 // client represents a UniFi client.
 type client struct {
 	Logger
+
 	baseURL        *url.URL
 	sysInfo        *SysInfo
 	apiPaths       *APIPaths
@@ -189,6 +190,7 @@ func newClientFromConfig(config *ClientConfig, v *validator) (*client, error) {
 		rt = config.HttpRoundTripperProvider()
 	}
 	if rt == nil {
+		//nolint:gosec // InsecureSkipVerify is configurable via ClientConfig.VerifySSL
 		transport := &http.Transport{
 			Proxy:           http.ProxyFromEnvironment,
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: !config.VerifySSL},

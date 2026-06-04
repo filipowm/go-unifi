@@ -58,7 +58,11 @@ func (c *client) GetSettingAutoSpeedtest(ctx context.Context, site string) (*Set
 	if s.Key != SettingAutoSpeedtestKey {
 		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingAutoSpeedtestKey, s.Key)
 	}
-	return f.(*SettingAutoSpeedtest), nil
+	resource, ok := f.(*SettingAutoSpeedtest)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingAutoSpeedtest, received: %T", f)
+	}
+	return resource, nil
 }
 
 // UpdateSettingAutoSpeedtest Experimental! This function is not yet stable and may change in the future.
@@ -68,5 +72,9 @@ func (c *client) UpdateSettingAutoSpeedtest(ctx context.Context, site string, s 
 	if err != nil {
 		return nil, err
 	}
-	return result.(*SettingAutoSpeedtest), nil
+	updatedResource, ok := result.(*SettingAutoSpeedtest)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingAutoSpeedtest, received: %T", result)
+	}
+	return updatedResource, nil
 }

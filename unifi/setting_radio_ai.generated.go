@@ -51,13 +51,13 @@ type SettingRadioAi struct {
 func (dst *SettingRadioAi) UnmarshalJSON(b []byte) error {
 	type Alias SettingRadioAi
 	aux := &struct {
+		*Alias
+
 		Channels6E []emptyStringInt `json:"channels_6e"`
 		ChannelsNa []emptyStringInt `json:"channels_na"`
 		ChannelsNg []emptyStringInt `json:"channels_ng"`
 		HtModesNa  []emptyStringInt `json:"ht_modes_na"`
 		HtModesNg  []emptyStringInt `json:"ht_modes_ng"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -99,10 +99,10 @@ type SettingRadioAiChannelsBlacklist struct {
 func (dst *SettingRadioAiChannelsBlacklist) UnmarshalJSON(b []byte) error {
 	type Alias SettingRadioAiChannelsBlacklist
 	aux := &struct {
+		*Alias
+
 		Channel      emptyStringInt `json:"channel"`
 		ChannelWidth emptyStringInt `json:"channel_width"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -126,9 +126,9 @@ type SettingRadioAiRadiosConfiguration struct {
 func (dst *SettingRadioAiRadiosConfiguration) UnmarshalJSON(b []byte) error {
 	type Alias SettingRadioAiRadiosConfiguration
 	aux := &struct {
-		ChannelWidth emptyStringInt `json:"channel_width"`
-
 		*Alias
+
+		ChannelWidth emptyStringInt `json:"channel_width"`
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -151,7 +151,11 @@ func (c *client) GetSettingRadioAi(ctx context.Context, site string) (*SettingRa
 	if s.Key != SettingRadioAiKey {
 		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingRadioAiKey, s.Key)
 	}
-	return f.(*SettingRadioAi), nil
+	resource, ok := f.(*SettingRadioAi)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingRadioAi, received: %T", f)
+	}
+	return resource, nil
 }
 
 // UpdateSettingRadioAi Experimental! This function is not yet stable and may change in the future.
@@ -161,5 +165,9 @@ func (c *client) UpdateSettingRadioAi(ctx context.Context, site string, s *Setti
 	if err != nil {
 		return nil, err
 	}
-	return result.(*SettingRadioAi), nil
+	updatedResource, ok := result.(*SettingRadioAi)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingRadioAi, received: %T", result)
+	}
+	return updatedResource, nil
 }

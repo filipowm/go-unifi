@@ -19,7 +19,7 @@ import (
 )
 
 // marshalRequest marshals the request body to an io.Reader. Returns nil if reqBody is nil.
-func marshalRequest(reqBody interface{}) (io.Reader, error) {
+func marshalRequest(reqBody any) (io.Reader, error) {
 	if reqBody == nil {
 		return nil, nil //nolint: nilnil
 	}
@@ -43,7 +43,7 @@ func (c *client) buildRequestURL(apiPath string) (*url.URL, error) {
 }
 
 // validateRequestBody validates the request body if validation is enabled.
-func (c *client) validateRequestBody(reqBody interface{}) error {
+func (c *client) validateRequestBody(reqBody any) error {
 	if reqBody != nil && c.validationMode != DisableValidation {
 		c.Trace("Validating request body")
 		if err := c.validator.Validate(reqBody); err != nil {
@@ -69,7 +69,7 @@ func (c *client) newRequestContext() (context.Context, context.CancelFunc) {
 // executeRequest executes an HTTP request with the given context, method, URL, body, and headers.
 // It applies interceptors, handles errors, and decodes the response body if provided.
 // Returns an error if the request or response handling fails.
-func (c *client) executeRequest(ctx context.Context, method, apiPath string, body io.Reader, headers http.Header, respBody interface{}) error {
+func (c *client) executeRequest(ctx context.Context, method, apiPath string, body io.Reader, headers http.Header, respBody any) error {
 	url, err := c.buildRequestURL(apiPath)
 	if err != nil {
 		return fmt.Errorf("unable to create request URL: %w", err)
@@ -141,7 +141,7 @@ func (c *client) executeRequest(ctx context.Context, method, apiPath string, bod
 // It takes a context, API path, file path, field name, and additional form fields.
 // The file is uploaded as multipart/form-data.
 // It returns the response body and an error if the operation fails.
-func (c *client) UploadFile(ctx context.Context, apiPath, filePath, fieldName string, respBody interface{}) error {
+func (c *client) UploadFile(ctx context.Context, apiPath, filePath, fieldName string, respBody any) error {
 	c.Tracef("Uploading file: %s to %s", filePath, apiPath)
 
 	file, err := os.Open(filePath)
@@ -169,7 +169,7 @@ func createFormFile(w *multipart.Writer, mimeType, fieldname, filename string) (
 // UploadFileFromReader uploads a file to the UniFi controller from an io.Reader.
 // It takes a context, API path, reader, filename, field name, and additional form fields.
 // The file is uploaded as multipart/form-data.
-func (c *client) UploadFileFromReader(ctx context.Context, apiPath string, reader io.Reader, filename, fieldName string, respBody interface{}) error {
+func (c *client) UploadFileFromReader(ctx context.Context, apiPath string, reader io.Reader, filename, fieldName string, respBody any) error {
 	c.Tracef("Uploading file: %s to %s", filename, apiPath)
 
 	// Read the entire content into a buffer first to avoid deadlock. I tied using TeeReader and Pipe but ended up in deadlock.
@@ -216,7 +216,7 @@ func (c *client) UploadFileFromReader(ctx context.Context, apiPath string, reade
 // Do performs an HTTP request using the given method, apiPath, request body, and decodes the response into respBody.
 // It validates the request body, applies interceptors, and decodes the HTTP response into respBody if provided.
 // It returns an error if the request or response handling fails.
-func (c *client) Do(ctx context.Context, method, apiPath string, reqBody interface{}, respBody interface{}) error {
+func (c *client) Do(ctx context.Context, method, apiPath string, reqBody any, respBody any) error {
 	c.Tracef("Performing request: %s %s", method, apiPath)
 
 	if err := c.validateRequestBody(reqBody); err != nil {
@@ -239,27 +239,27 @@ func (c *client) Do(ctx context.Context, method, apiPath string, reqBody interfa
 // Get sends an HTTP GET request to the specified API path with the provided request body,
 // and decodes the HTTP response into respBody.
 // It is a convenience wrapper around Do.
-func (c *client) Get(ctx context.Context, apiPath string, reqBody interface{}, respBody interface{}) error {
+func (c *client) Get(ctx context.Context, apiPath string, reqBody any, respBody any) error {
 	return c.Do(ctx, http.MethodGet, apiPath, reqBody, respBody)
 }
 
 // Post sends an HTTP POST request to the specified API path with the provided request body,
 // and decodes the HTTP response into respBody.
 // It is a convenience wrapper around Do.
-func (c *client) Post(ctx context.Context, apiPath string, reqBody interface{}, respBody interface{}) error {
+func (c *client) Post(ctx context.Context, apiPath string, reqBody any, respBody any) error {
 	return c.Do(ctx, http.MethodPost, apiPath, reqBody, respBody)
 }
 
 // Put sends an HTTP PUT request to the specified API path with the provided request body,
 // and decodes the HTTP response into respBody.
 // It is a convenience wrapper around Do.
-func (c *client) Put(ctx context.Context, apiPath string, reqBody interface{}, respBody interface{}) error {
+func (c *client) Put(ctx context.Context, apiPath string, reqBody any, respBody any) error {
 	return c.Do(ctx, http.MethodPut, apiPath, reqBody, respBody)
 }
 
 // Delete sends an HTTP DELETE request to the specified API path with the provided request body,
 // and decodes the HTTP response into respBody.
 // It is a convenience wrapper around Do.
-func (c *client) Delete(ctx context.Context, apiPath string, reqBody interface{}, respBody interface{}) error {
+func (c *client) Delete(ctx context.Context, apiPath string, reqBody any, respBody any) error {
 	return c.Do(ctx, http.MethodDelete, apiPath, reqBody, respBody)
 }

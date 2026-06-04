@@ -12,7 +12,8 @@ type Setting struct {
 	Key    string `json:"key"`
 }
 
-func (s *Setting) newFields() (interface{}, error) {
+//nolint:gocyclo
+func (s *Setting) newFields() (any, error) {
 	switch s.Key {
 	case SettingAutoSpeedtestKey:
 		return &SettingAutoSpeedtest{}, nil
@@ -99,7 +100,7 @@ func (s *Setting) newFields() (interface{}, error) {
 	return nil, fmt.Errorf("unexpected key %q", s.Key)
 }
 
-func (c *client) SetSetting(ctx context.Context, site, key string, reqBody interface{}) (interface{}, error) {
+func (c *client) SetSetting(ctx context.Context, site, key string, reqBody any) (any, error) {
 	var respBody struct {
 		Meta Meta              `json:"meta"`
 		Data []json.RawMessage `json:"data"`
@@ -136,7 +137,7 @@ func (c *client) SetSetting(ctx context.Context, site, key string, reqBody inter
 	return fields, nil
 }
 
-func (c *client) GetSetting(ctx context.Context, site, key string) (*Setting, interface{}, error) {
+func (c *client) GetSetting(ctx context.Context, site, key string) (*Setting, any, error) {
 	var respBody struct {
 		Meta Meta              `json:"Meta"`
 		Data []json.RawMessage `json:"data"`

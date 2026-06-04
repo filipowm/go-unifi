@@ -48,9 +48,9 @@ type FirewallZonePolicy struct {
 func (dst *FirewallZonePolicy) UnmarshalJSON(b []byte) error {
 	type Alias FirewallZonePolicy
 	aux := &struct {
-		Index emptyStringInt `json:"index"`
-
 		*Alias
+
+		Index emptyStringInt `json:"index"`
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -84,10 +84,10 @@ type FirewallZonePolicyDestination struct {
 func (dst *FirewallZonePolicyDestination) UnmarshalJSON(b []byte) error {
 	type Alias FirewallZonePolicyDestination
 	aux := &struct {
+		*Alias
+
 		AppCategoryIDs []emptyStringInt `json:"app_category_ids"`
 		AppIDs         []emptyStringInt `json:"app_ids"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}

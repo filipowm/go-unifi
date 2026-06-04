@@ -50,9 +50,9 @@ type User struct {
 func (dst *User) UnmarshalJSON(b []byte) error {
 	type Alias User
 	aux := &struct {
-		LastSeen emptyStringInt `json:"last_seen"`
-
 		*Alias
+
+		LastSeen emptyStringInt `json:"last_seen"`
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -122,9 +122,9 @@ func (c *client) createUser(ctx context.Context, site string, d *User) (*User, e
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	newResource := respBody.Data[0]
 
-	return &new, nil
+	return &newResource, nil
 }
 
 func (c *client) updateUser(ctx context.Context, site string, d *User) (*User, error) {
@@ -142,7 +142,7 @@ func (c *client) updateUser(ctx context.Context, site string, d *User) (*User, e
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	updatedResource := respBody.Data[0]
 
-	return &new, nil
+	return &updatedResource, nil
 }

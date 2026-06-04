@@ -92,27 +92,6 @@ type Resource struct {
 	V2             bool
 }
 
-func (r *Resource) IsV2() bool {
-	return r.V2
-}
-
-func (r *Resource) BaseType() *FieldInfo {
-	return r.Types[r.StructName]
-}
-
-type FieldInfo struct {
-	FieldName              string
-	JSONName               string
-	FieldType              string
-	FieldValidation        string
-	FieldValidationComment string
-	OmitEmpty              bool
-	IsArray                bool
-	Fields                 map[string]*FieldInfo
-	CustomUnmarshalType    string
-	CustomUnmarshalFunc    string
-}
-
 func NewResource(structName string, resourcePath string) *Resource {
 	baseType := NewFieldInfo(structName, resourcePath, "struct", "", "", false, false, "")
 	resource := &Resource{
@@ -149,6 +128,27 @@ func NewResource(structName string, resourcePath string) *Resource {
 	return resource
 }
 
+func (r *Resource) IsV2() bool {
+	return r.V2
+}
+
+func (r *Resource) BaseType() *FieldInfo {
+	return r.Types[r.StructName]
+}
+
+type FieldInfo struct {
+	FieldName              string
+	JSONName               string
+	FieldType              string
+	FieldValidation        string
+	FieldValidationComment string
+	OmitEmpty              bool
+	IsArray                bool
+	Fields                 map[string]*FieldInfo
+	CustomUnmarshalType    string
+	CustomUnmarshalFunc    string
+}
+
 func NewFieldInfo(fieldName, jsonName, fieldType, fieldValidation, fieldValidationComment string, omitempty bool, isArray bool, customUnmarshalType string) *FieldInfo {
 	return &FieldInfo{
 		FieldName:              fieldName,
@@ -178,7 +178,20 @@ func (r *Resource) Name() string {
 	return r.StructName
 }
 
-func (r *Resource) processFields(fields map[string]interface{}) {
+//go:embed api.go.tmpl
+var apiGoTemplate string
+
+//go:embed apiv2.go.tmpl
+var apiGoV2Template string
+
+func (r *Resource) GenerateCode() (string, error) {
+	if r.IsV2() {
+		return generateCodeFromTemplate("apiv2.go.tmpl", apiGoV2Template, r)
+	}
+	return generateCodeFromTemplate("api.go.tmpl", apiGoTemplate, r)
+}
+
+func (r *Resource) processFields(fields map[string]any) {
 	t := r.Types[r.StructName]
 	for name, validation := range fields {
 		fieldInfo, err := r.fieldInfoFromValidation(name, validation, false)
@@ -190,7 +203,7 @@ func (r *Resource) processFields(fields map[string]interface{}) {
 	}
 }
 
-func (r *Resource) fieldInfoFromValidation(name string, validation interface{}, isArray bool) (*FieldInfo, error) {
+func (r *Resource) fieldInfoFromValidation(name string, validation any, isArray bool) (*FieldInfo, error) {
 	fieldName := strcase.ToCamel(name)
 	fieldName = cleanName(fieldName, fieldReps)
 
@@ -198,7 +211,7 @@ func (r *Resource) fieldInfoFromValidation(name string, validation interface{}, 
 	var fieldInfo *FieldInfo
 
 	switch validation := validation.(type) {
-	case []interface{}:
+	case []any:
 		if len(validation) == 0 {
 			fieldInfo = NewFieldInfo(fieldName, name, "string", "", "", false, true, "")
 			err := r.FieldProcessor(fieldName, fieldInfo)
@@ -219,7 +232,7 @@ func (r *Resource) fieldInfoFromValidation(name string, validation interface{}, 
 		err = r.FieldProcessor(fieldName, fieldInfo)
 		return fieldInfo, err
 
-	case map[string]interface{}:
+	case map[string]any:
 		typeName := r.StructName + fieldName
 
 		result := NewFieldInfo(fieldName, name, typeName, "", "", true, false, "")
@@ -244,8 +257,8 @@ func (r *Resource) fieldInfoFromValidation(name string, validation interface{}, 
 
 		omitEmpty := false
 
-		switch {
-		case normalized == "falsetrue" || normalized == "truefalse":
+		switch normalized {
+		case "falsetrue", "truefalse":
 			fieldInfo = NewFieldInfo(fieldName, name, "bool", "", "", omitEmpty, false, "")
 			return fieldInfo, r.FieldProcessor(fieldName, fieldInfo)
 		default:
@@ -285,7 +298,7 @@ func (r *Resource) fieldInfoFromValidation(name string, validation interface{}, 
 }
 
 func (r *Resource) processJSON(b []byte) error {
-	var fields map[string]interface{}
+	var fields map[string]any
 	err := json.Unmarshal(b, &fields)
 	if err != nil {
 		return err
@@ -294,19 +307,6 @@ func (r *Resource) processJSON(b []byte) error {
 	r.processFields(fields)
 
 	return nil
-}
-
-//go:embed api.go.tmpl
-var apiGoTemplate string
-
-//go:embed apiv2.go.tmpl
-var apiGoV2Template string
-
-func (r *Resource) GenerateCode() (string, error) {
-	if r.IsV2() {
-		return generateCodeFromTemplate("apiv2.go.tmpl", apiGoV2Template, r)
-	}
-	return generateCodeFromTemplate("api.go.tmpl", apiGoTemplate, r)
 }
 
 func normalizeValidation(re string) string {

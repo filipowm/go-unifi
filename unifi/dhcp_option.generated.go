@@ -35,9 +35,9 @@ type DHCPOption struct {
 func (dst *DHCPOption) UnmarshalJSON(b []byte) error {
 	type Alias DHCPOption
 	aux := &struct {
-		Width emptyStringInt `json:"width"`
-
 		*Alias
+
+		Width emptyStringInt `json:"width"`
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -107,9 +107,9 @@ func (c *client) createDHCPOption(ctx context.Context, site string, d *DHCPOptio
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	newResource := respBody.Data[0]
 
-	return &new, nil
+	return &newResource, nil
 }
 
 func (c *client) updateDHCPOption(ctx context.Context, site string, d *DHCPOption) (*DHCPOption, error) {
@@ -127,7 +127,7 @@ func (c *client) updateDHCPOption(ctx context.Context, site string, d *DHCPOptio
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	updatedResource := respBody.Data[0]
 
-	return &new, nil
+	return &updatedResource, nil
 }

@@ -105,9 +105,9 @@ func (c *client) createVirtualDevice(ctx context.Context, site string, d *Virtua
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	newResource := respBody.Data[0]
 
-	return &new, nil
+	return &newResource, nil
 }
 
 func (c *client) updateVirtualDevice(ctx context.Context, site string, d *VirtualDevice) (*VirtualDevice, error) {
@@ -125,7 +125,7 @@ func (c *client) updateVirtualDevice(ctx context.Context, site string, d *Virtua
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	updatedResource := respBody.Data[0]
 
-	return &new, nil
+	return &updatedResource, nil
 }

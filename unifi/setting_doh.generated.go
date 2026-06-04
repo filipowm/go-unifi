@@ -81,7 +81,11 @@ func (c *client) GetSettingDoh(ctx context.Context, site string) (*SettingDoh, e
 	if s.Key != SettingDohKey {
 		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingDohKey, s.Key)
 	}
-	return f.(*SettingDoh), nil
+	resource, ok := f.(*SettingDoh)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingDoh, received: %T", f)
+	}
+	return resource, nil
 }
 
 // UpdateSettingDoh Experimental! This function is not yet stable and may change in the future.
@@ -91,5 +95,9 @@ func (c *client) UpdateSettingDoh(ctx context.Context, site string, s *SettingDo
 	if err != nil {
 		return nil, err
 	}
-	return result.(*SettingDoh), nil
+	updatedResource, ok := result.(*SettingDoh)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingDoh, received: %T", result)
+	}
+	return updatedResource, nil
 }

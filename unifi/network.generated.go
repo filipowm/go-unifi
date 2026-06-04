@@ -267,6 +267,8 @@ type Network struct {
 func (dst *Network) UnmarshalJSON(b []byte) error {
 	type Alias Network
 	aux := &struct {
+		*Alias
+
 		DHCPDLeaseTime                 emptyStringInt `json:"dhcpd_leasetime"`
 		DHCPDTimeOffset                emptyStringInt `json:"dhcpd_time_offset"`
 		DHCPDV6LeaseTime               emptyStringInt `json:"dhcpdv6_leasetime"`
@@ -300,8 +302,6 @@ func (dst *Network) UnmarshalJSON(b []byte) error {
 		WANSmartqUpRate                emptyStringInt `json:"wan_smartq_up_rate"`
 		WANVLAN                        emptyStringInt `json:"wan_vlan"`
 		WireguardClientPeerPort        emptyStringInt `json:"wireguard_client_peer_port"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -399,9 +399,9 @@ type NetworkWANDHCPOptions struct {
 func (dst *NetworkWANDHCPOptions) UnmarshalJSON(b []byte) error {
 	type Alias NetworkWANDHCPOptions
 	aux := &struct {
-		OptionNumber emptyStringInt `json:"optionNumber"`
-
 		*Alias
+
+		OptionNumber emptyStringInt `json:"optionNumber"`
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -423,10 +423,10 @@ type NetworkWANProviderCapabilities struct {
 func (dst *NetworkWANProviderCapabilities) UnmarshalJSON(b []byte) error {
 	type Alias NetworkWANProviderCapabilities
 	aux := &struct {
+		*Alias
+
 		DownloadKilobitsPerSecond emptyStringInt `json:"download_kilobits_per_second"`
 		UploadKilobitsPerSecond   emptyStringInt `json:"upload_kilobits_per_second"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -497,9 +497,9 @@ func (c *client) createNetwork(ctx context.Context, site string, d *Network) (*N
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	newResource := respBody.Data[0]
 
-	return &new, nil
+	return &newResource, nil
 }
 
 func (c *client) updateNetwork(ctx context.Context, site string, d *Network) (*Network, error) {
@@ -517,7 +517,7 @@ func (c *client) updateNetwork(ctx context.Context, site string, d *Network) (*N
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	updatedResource := respBody.Data[0]
 
-	return &new, nil
+	return &updatedResource, nil
 }

@@ -44,10 +44,10 @@ type {{ $k }} struct {
 func (dst *{{ $k }}) UnmarshalJSON(b []byte) error {
 	type Alias {{ $k }}
 	aux := &struct {
-			{{- range $fk, $fv := $v.Fields }}{{ if not $fv }}
-			{{- else }}{{- template "field-customUnmarshalType" $fv }}{{ end }}{{- end }}
-
 		*Alias
+
+			{{ range $fk, $fv := $v.Fields }}{{ if not $fv }}
+			{{- else }}{{- template "field-customUnmarshalType" $fv }}{{ end }}{{- end }}
 	}{
 		Alias: (*Alias)(dst),
 	}

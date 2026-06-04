@@ -70,6 +70,8 @@ type PortProfile struct {
 func (dst *PortProfile) UnmarshalJSON(b []byte) error {
 	type Alias PortProfile
 	aux := &struct {
+		*Alias
+
 		Dot1XIDleTimeout           emptyStringInt `json:"dot1x_idle_timeout"`
 		EgressRateLimitKbps        emptyStringInt `json:"egress_rate_limit_kbps"`
 		PriorityQueue1Level        emptyStringInt `json:"priority_queue1_level"`
@@ -83,8 +85,6 @@ func (dst *PortProfile) UnmarshalJSON(b []byte) error {
 		StormctrlMcastRate         emptyStringInt `json:"stormctrl_mcast_rate"`
 		StormctrlUcastLevel        emptyStringInt `json:"stormctrl_ucast_level"`
 		StormctrlUcastRate         emptyStringInt `json:"stormctrl_ucast_rate"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -120,12 +120,12 @@ type PortProfileQOSMarking struct {
 func (dst *PortProfileQOSMarking) UnmarshalJSON(b []byte) error {
 	type Alias PortProfileQOSMarking
 	aux := &struct {
+		*Alias
+
 		CosCode          emptyStringInt `json:"cos_code"`
 		DscpCode         emptyStringInt `json:"dscp_code"`
 		IPPrecedenceCode emptyStringInt `json:"ip_precedence_code"`
 		Queue            emptyStringInt `json:"queue"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -154,13 +154,13 @@ type PortProfileQOSMatching struct {
 func (dst *PortProfileQOSMatching) UnmarshalJSON(b []byte) error {
 	type Alias PortProfileQOSMatching
 	aux := &struct {
+		*Alias
+
 		CosCode          emptyStringInt `json:"cos_code"`
 		DscpCode         emptyStringInt `json:"dscp_code"`
 		DstPort          emptyStringInt `json:"dst_port"`
 		IPPrecedenceCode emptyStringInt `json:"ip_precedence_code"`
 		SrcPort          emptyStringInt `json:"src_port"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -276,9 +276,9 @@ func (c *client) createPortProfile(ctx context.Context, site string, d *PortProf
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	newResource := respBody.Data[0]
 
-	return &new, nil
+	return &newResource, nil
 }
 
 func (c *client) updatePortProfile(ctx context.Context, site string, d *PortProfile) (*PortProfile, error) {
@@ -296,7 +296,7 @@ func (c *client) updatePortProfile(ctx context.Context, site string, d *PortProf
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	updatedResource := respBody.Data[0]
 
-	return &new, nil
+	return &updatedResource, nil
 }

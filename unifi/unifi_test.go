@@ -24,7 +24,7 @@ const (
 )
 
 // verifyInterceptorPresence checks each expected interceptor type for presence or absence in the client.
-func verifyInterceptorPresence(a *assert.Assertions, c *client, interceptors []interface{}, shouldExist bool) {
+func verifyInterceptorPresence(a *assert.Assertions, c *client, interceptors []any, shouldExist bool) {
 	expectedTypes := make([]reflect.Type, 0, len(interceptors))
 	for _, i := range interceptors {
 		expectedTypes = append(expectedTypes, reflect.TypeOf(i))
@@ -56,10 +56,10 @@ func TestNewBareClient(t *testing.T) {
 		VerifySSL: false,
 	})
 	require.Error(t, err)
-	a.EqualValues(localUrl, c.BaseURL())
+	a.Equal(localUrl, c.BaseURL())
 	a.Contains(err.Error(), "connection refused", "an invalid destination should produce a connection error.")
-	verifyInterceptorPresence(a, c, []interface{}{&CSRFInterceptor{}, &DefaultHeadersInterceptor{}}, true)
-	verifyInterceptorPresence(a, c, []interface{}{&APIKeyAuthInterceptor{}}, false)
+	verifyInterceptorPresence(a, c, []any{&CSRFInterceptor{}, &DefaultHeadersInterceptor{}}, true)
+	verifyInterceptorPresence(a, c, []any{&APIKeyAuthInterceptor{}}, false)
 }
 
 func TestNewClientWithApiKey(t *testing.T) {
@@ -74,10 +74,10 @@ func TestNewClientWithApiKey(t *testing.T) {
 
 	// then
 	require.Error(t, err)
-	a.EqualValues(localUrl, c.BaseURL())
+	a.Equal(localUrl, c.BaseURL())
 	a.Contains(err.Error(), "connection refused", "an invalid destination should produce a connection error.")
-	verifyInterceptorPresence(a, c, []interface{}{&APIKeyAuthInterceptor{}, &DefaultHeadersInterceptor{}}, true)
-	verifyInterceptorPresence(a, c, []interface{}{&CSRFInterceptor{}}, false)
+	verifyInterceptorPresence(a, c, []any{&APIKeyAuthInterceptor{}, &DefaultHeadersInterceptor{}}, true)
+	verifyInterceptorPresence(a, c, []any{&CSRFInterceptor{}}, false)
 }
 
 func TestCustomizeHttpClient(t *testing.T) {
@@ -105,6 +105,10 @@ type TestInterceptor struct {
 	request       *http.Request
 	response      *http.Response
 	failOnRequest bool
+}
+
+func NewTestInterceptor() *TestInterceptor {
+	return &TestInterceptor{}
 }
 
 func (i *TestInterceptor) IsRequestIntercepted() bool {
@@ -140,10 +144,6 @@ func (i *TestInterceptor) Method() string {
 	return i.request.Method
 }
 
-func NewTestInterceptor() *TestInterceptor {
-	return &TestInterceptor{}
-}
-
 func (i *TestInterceptor) AsList() []ClientInterceptor {
 	return []ClientInterceptor{i}
 }
@@ -161,7 +161,7 @@ func newTestClientWithInterceptor() (*client, *TestInterceptor) {
 
 // runClientGetRequest creates a new test client, performs a GET request,
 // asserts that an error occurred, and returns the client and its interceptor.
-func runClientGetRequest(t *testing.T, path string, data interface{}) (*client, *TestInterceptor) {
+func runClientGetRequest(t *testing.T, path string, data any) (*client, *TestInterceptor) {
 	t.Helper()
 	c, interceptor := newTestClientWithInterceptor()
 	err := c.Get(context.Background(), path, data, nil)
@@ -171,7 +171,7 @@ func runClientGetRequest(t *testing.T, path string, data interface{}) (*client, 
 
 // runClientRequest creates a new test client, performs a request with the given method,
 // asserts that an error occurred, and returns the client and its interceptor.
-func runClientRequest(t *testing.T, method, path string, body interface{}) (*client, *TestInterceptor) {
+func runClientRequest(t *testing.T, method, path string, body any) (*client, *TestInterceptor) {
 	t.Helper()
 	c, interceptor := newTestClientWithInterceptor()
 	err := c.Do(context.Background(), method, path, body, nil)
@@ -230,7 +230,7 @@ func TestProperRequestUrl(t *testing.T) {
 			t.Parallel()
 			// Use the helper to perform a GET request and capture the interceptor.
 			_, interceptor := runClientGetRequest(t, tc.path, nil)
-			a.EqualValues(tc.expected, interceptor.request.URL.String())
+			a.Equal(tc.expected, interceptor.request.URL.String())
 		})
 	}
 }
@@ -253,7 +253,7 @@ func TestRequestHeaders(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			assert.EqualValues(t, tc.expected, interceptor.RequestHeader(tc.header))
+			assert.Equal(t, tc.expected, interceptor.RequestHeader(tc.header))
 		})
 	}
 }
@@ -285,7 +285,7 @@ func TestRequestMethod(t *testing.T) {
 		t.Run(tc, func(t *testing.T) {
 			t.Parallel()
 			_, interceptor := runClientRequest(t, tc, "", nil)
-			a.EqualValues(tc, interceptor.Method())
+			a.Equal(tc, interceptor.Method())
 		})
 	}
 }
@@ -324,8 +324,8 @@ func TestUnifiIntegrationUserPassInjected(t *testing.T) {
 
 	// then
 	require.NoError(t, err, "user/pass login must not produce an error")
-	a.EqualValues(http.MethodPost, interceptor.Method())
-	a.EqualValues(http.StatusOK, interceptor.response.StatusCode)
+	a.Equal(http.MethodPost, interceptor.Method())
+	a.Equal(http.StatusOK, interceptor.response.StatusCode)
 }
 
 func TestResponseDataHandling(t *testing.T) {
@@ -348,7 +348,7 @@ func TestResponseDataHandling(t *testing.T) {
 
 	// then
 	require.NoError(t, err)
-	a.EqualValues("test", data.Data)
+	a.Equal("test", data.Data)
 }
 
 func TestCsrfHandling(t *testing.T) {
@@ -370,15 +370,15 @@ func TestCsrfHandling(t *testing.T) {
 
 	// then
 	require.Error(t, err)
-	a.EqualValues("", interceptor.RequestHeader(CsrfHeader))
-	a.EqualValues("csrf-token", interceptor.ResponseHeader(CsrfHeader))
+	a.Empty(interceptor.RequestHeader(CsrfHeader))
+	a.Equal("csrf-token", interceptor.ResponseHeader(CsrfHeader))
 
 	// when
 	err = c.Get(context.Background(), "", nil, nil)
 
 	// then
 	require.Error(t, err)
-	a.EqualValues("csrf-token", interceptor.RequestHeader(CsrfHeader))
+	a.Equal("csrf-token", interceptor.RequestHeader(CsrfHeader))
 }
 
 func TestOverrideUserAgent(t *testing.T) {
@@ -399,7 +399,7 @@ func TestOverrideUserAgent(t *testing.T) {
 
 	// then
 	require.Error(t, err)
-	a.EqualValues("test-agent", interceptor.RequestHeader(UserAgentHeader))
+	a.Equal("test-agent", interceptor.RequestHeader(UserAgentHeader))
 }
 
 func TestAuthConfigurationValidation(t *testing.T) {
@@ -655,7 +655,7 @@ func TestParseBaseUrl(t *testing.T) {
 	base, err := parseBaseURL("http://localhost")
 	require.NoError(t, err)
 	a.Equal("http", base.Scheme)
-	a.Equal("", base.Path)
+	a.Empty(base.Path)
 
 	// URL with trailing slash /api/
 	_, err = parseBaseURL("http://localhost/api/")
@@ -727,7 +727,7 @@ func TestDoInvalidJsonResponse(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	var result map[string]interface{}
+	var result map[string]any
 	err = c.Get(context.Background(), "any", nil, &result)
 	require.ErrorContains(t, err, "unable to decode body")
 }
@@ -768,7 +768,7 @@ func TestErrorHandlerCustom(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	var result map[string]interface{}
+	var result map[string]any
 	err = c.Get(context.Background(), "error", nil, &result)
 	require.Error(t, err)
 	assert.Equal(t, "custom error", err.Error())

@@ -61,7 +61,11 @@ func (c *client) GetSettingSnmp(ctx context.Context, site string) (*SettingSnmp,
 	if s.Key != SettingSnmpKey {
 		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingSnmpKey, s.Key)
 	}
-	return f.(*SettingSnmp), nil
+	resource, ok := f.(*SettingSnmp)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingSnmp, received: %T", f)
+	}
+	return resource, nil
 }
 
 // UpdateSettingSnmp Experimental! This function is not yet stable and may change in the future.
@@ -71,5 +75,9 @@ func (c *client) UpdateSettingSnmp(ctx context.Context, site string, s *SettingS
 	if err != nil {
 		return nil, err
 	}
-	return result.(*SettingSnmp), nil
+	updatedResource, ok := result.(*SettingSnmp)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingSnmp, received: %T", result)
+	}
+	return updatedResource, nil
 }
