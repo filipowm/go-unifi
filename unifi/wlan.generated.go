@@ -336,7 +336,7 @@ type WLANMdnsProxyCustom struct {
 	IsolationEnabled   bool                     `json:"isolation_enabled"`
 	NetworkIDs         []string                 `json:"networkconf_ids,omitempty"`
 	PredefinedServices []WLANPredefinedServices `json:"predefined_services,omitempty"`
-	ServicesMode       string                   `json:"services_mode,omitempty" validate:"omitempty,oneof=all specific"` // all|specific
+	ServicesMode       string                   `json:"services_mode,omitempty" validate:"omitempty,oneof=all specific none"` // all|specific|none
 }
 
 func (dst *WLANMdnsProxyCustom) UnmarshalJSON(b []byte) error {

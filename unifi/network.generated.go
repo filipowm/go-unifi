@@ -202,6 +202,8 @@ type Network struct {
 	VrrpVrid                                      int                             `json:"vrrp_vrid,omitempty"`                                                                                                                                                                                                              // [1-9]|[1-9][0-9]
 	WANDHCPCos                                    int                             `json:"wan_dhcp_cos,omitempty"`                                                                                                                                                                                                           // [0-7]|^$
 	WANDHCPOptions                                []NetworkWANDHCPOptions         `json:"wan_dhcp_options,omitempty"`
+	WANDHCPv6Cos                                  int                             `json:"wan_dhcpv6_cos,omitempty"` // [0-7]|^$
+	WANDHCPv6Options                              []NetworkWANDHCPv6Options       `json:"wan_dhcpv6_options,omitempty"`
 	WANDHCPv6PDSize                               int                             `json:"wan_dhcpv6_pd_size,omitempty"`                                        // ^(4[89]|5[0-9]|6[0-4])$|^$
 	WANDNS1                                       string                          `json:"wan_dns1" validate:"omitempty,ipv4"`                                  // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
 	WANDNS2                                       string                          `json:"wan_dns2" validate:"omitempty,ipv4"`                                  // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
@@ -231,11 +233,11 @@ type Network struct {
 	WANSla                                        string                          `json:"wan_sla,omitempty"`
 	WANSmartqDownRate                             int                             `json:"wan_smartq_down_rate,omitempty"` // [0-9]{1,6}|1000000
 	WANSmartqEnabled                              bool                            `json:"wan_smartq_enabled"`
-	WANSmartqUpRate                               int                             `json:"wan_smartq_up_rate,omitempty"`                                                    // [0-9]{1,6}|1000000
-	WANType                                       string                          `json:"wan_type,omitempty" validate:"omitempty,oneof=disabled dhcp static pppoe dslite"` // disabled|dhcp|static|pppoe|dslite
-	WANTypeV6                                     string                          `json:"wan_type_v6,omitempty" validate:"omitempty,oneof=disabled slaac dhcpv6 static"`   // disabled|slaac|dhcpv6|static
-	WANUsername                                   string                          `json:"wan_username,omitempty"`                                                          // [^"' ]+|^$
-	WANVLAN                                       int                             `json:"wan_vlan,omitempty"`                                                              // [0-9]|[1-9][0-9]{1,2}|[1-3][0-9]{3}|40[0-8][0-9]|409[0-4]|^$
+	WANSmartqUpRate                               int                             `json:"wan_smartq_up_rate,omitempty"`                                                                                        // [0-9]{1,6}|1000000
+	WANType                                       string                          `json:"wan_type,omitempty" validate:"omitempty,oneof=disabled dhcp static pppoe dslite map-e,hubspoke map-e,jpix map-e,ntt"` // disabled|dhcp|static|pppoe|dslite|map-e,hubspoke|map-e,jpix|map-e,ntt
+	WANTypeV6                                     string                          `json:"wan_type_v6,omitempty" validate:"omitempty,oneof=disabled slaac dhcpv6 static"`                                       // disabled|slaac|dhcpv6|static
+	WANUsername                                   string                          `json:"wan_username,omitempty"`                                                                                              // [^"' ]+|^$
+	WANVLAN                                       int                             `json:"wan_vlan,omitempty"`                                                                                                  // [0-9]|[1-9][0-9]{1,2}|[1-3][0-9]{3}|40[0-8][0-9]|409[0-4]|^$
 	WANVLANEnabled                                bool                            `json:"wan_vlan_enabled"`
 	WireguardClientConfigurationFile              string                          `json:"wireguard_client_configuration_file,omitempty"`
 	WireguardClientConfigurationFilename          string                          `json:"wireguard_client_configuration_filename,omitempty"`
@@ -293,6 +295,7 @@ func (dst *Network) UnmarshalJSON(b []byte) error {
 		VLAN                           emptyStringInt `json:"vlan"`
 		VrrpVrid                       emptyStringInt `json:"vrrp_vrid"`
 		WANDHCPCos                     emptyStringInt `json:"wan_dhcp_cos"`
+		WANDHCPv6Cos                   emptyStringInt `json:"wan_dhcpv6_cos"`
 		WANDHCPv6PDSize                emptyStringInt `json:"wan_dhcpv6_pd_size"`
 		WANEgressQOS                   emptyStringInt `json:"wan_egress_qos"`
 		WANFailoverPriority            emptyStringInt `json:"wan_failover_priority"`
@@ -334,6 +337,7 @@ func (dst *Network) UnmarshalJSON(b []byte) error {
 	dst.VLAN = int(aux.VLAN)
 	dst.VrrpVrid = int(aux.VrrpVrid)
 	dst.WANDHCPCos = int(aux.WANDHCPCos)
+	dst.WANDHCPv6Cos = int(aux.WANDHCPv6Cos)
 	dst.WANDHCPv6PDSize = int(aux.WANDHCPv6PDSize)
 	dst.WANEgressQOS = int(aux.WANEgressQOS)
 	dst.WANFailoverPriority = int(aux.WANFailoverPriority)
@@ -398,6 +402,30 @@ type NetworkWANDHCPOptions struct {
 
 func (dst *NetworkWANDHCPOptions) UnmarshalJSON(b []byte) error {
 	type Alias NetworkWANDHCPOptions
+	aux := &struct {
+		*Alias
+
+		OptionNumber emptyStringInt `json:"optionNumber"`
+	}{
+		Alias: (*Alias)(dst),
+	}
+
+	err := json.Unmarshal(b, &aux)
+	if err != nil {
+		return fmt.Errorf("unable to unmarshal alias: %w", err)
+	}
+	dst.OptionNumber = int(aux.OptionNumber)
+
+	return nil
+}
+
+type NetworkWANDHCPv6Options struct {
+	OptionNumber int    `json:"optionNumber,omitempty"` // (1|11|15|16|17)
+	Value        string `json:"value,omitempty"`
+}
+
+func (dst *NetworkWANDHCPv6Options) UnmarshalJSON(b []byte) error {
+	type Alias NetworkWANDHCPv6Options
 	aux := &struct {
 		*Alias
 

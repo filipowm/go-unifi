@@ -78,11 +78,12 @@ type Device struct {
 	LteSoftLimit                int                       `json:"lte_soft_limit,omitempty"`
 	LteUsername                 string                    `json:"lte_username,omitempty"`
 	MapID                       string                    `json:"map_id,omitempty"`
-	Mbb                         DeviceMbb                 `json:"mbb,omitempty"`
+	MbbOverrides                DeviceMbbOverrides        `json:"mbb_overrides,omitempty"`
 	MeshStaVapEnabled           bool                      `json:"mesh_sta_vap_enabled,omitempty"`
 	MgmtNetworkID               string                    `json:"mgmt_network_id,omitempty" validate:"omitempty,w_regex"` // [\d\w]+
 	Model                       string                    `json:"model,omitempty"`
-	Name                        string                    `json:"name,omitempty" validate:"omitempty,gte=0,lte=128"`                         // .{0,128}
+	Name                        string                    `json:"name,omitempty" validate:"omitempty,gte=0,lte=128"` // .{0,128}
+	NutServer                   DeviceNutServer           `json:"nut_server,omitempty"`
 	OutdoorModeOverride         string                    `json:"outdoor_mode_override,omitempty" validate:"omitempty,oneof=default on off"` // default|on|off
 	OutletEnabled               bool                      `json:"outlet_enabled,omitempty"`
 	OutletOverrides             []DeviceOutletOverrides   `json:"outlet_overrides,omitempty"`
@@ -187,6 +188,7 @@ func (dst *DeviceConfigNetwork) UnmarshalJSON(b []byte) error {
 type DeviceCurrentApn struct {
 	Apn      string `json:"apn,omitempty"`
 	AuthType string `json:"auth_type,omitempty" validate:"omitempty,oneof=PAP CHAP PAP-CHAP NONE"` // PAP|CHAP|PAP-CHAP|NONE
+	PDpType  string `json:"pdp_type,omitempty" validate:"omitempty,oneof=IPv4 IPv6 IPv4v6"`        // IPv4|IPv6|IPv4v6
 	Password string `json:"password,omitempty"`
 	Roaming  bool   `json:"roaming,omitempty"`
 	Username string `json:"username,omitempty"`
@@ -256,13 +258,13 @@ func (dst *DeviceEthernetOverrides) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-type DeviceMbb struct {
+type DeviceMbbOverrides struct {
 	PrimarySlot int         `json:"primary_slot,omitempty" validate:"omitempty,oneof=1 2"` // 1|2
 	Sim         []DeviceSim `json:"sim,omitempty"`
 }
 
-func (dst *DeviceMbb) UnmarshalJSON(b []byte) error {
-	type Alias DeviceMbb
+func (dst *DeviceMbbOverrides) UnmarshalJSON(b []byte) error {
+	type Alias DeviceMbbOverrides
 	aux := &struct {
 		*Alias
 
@@ -276,6 +278,34 @@ func (dst *DeviceMbb) UnmarshalJSON(b []byte) error {
 		return fmt.Errorf("unable to unmarshal alias: %w", err)
 	}
 	dst.PrimarySlot = int(aux.PrimarySlot)
+
+	return nil
+}
+
+type DeviceNutServer struct {
+	CredentialRequired bool   `json:"credential_required,omitempty"`
+	Enabled            bool   `json:"enabled,omitempty"`
+	ID                 string `json:"id,omitempty"`
+	Password           string `json:"password,omitempty"`
+	Port               int    `json:"port,omitempty"`
+	Username           string `json:"username,omitempty"`
+}
+
+func (dst *DeviceNutServer) UnmarshalJSON(b []byte) error {
+	type Alias DeviceNutServer
+	aux := &struct {
+		*Alias
+
+		Port emptyStringInt `json:"port"`
+	}{
+		Alias: (*Alias)(dst),
+	}
+
+	err := json.Unmarshal(b, &aux)
+	if err != nil {
+		return fmt.Errorf("unable to unmarshal alias: %w", err)
+	}
+	dst.Port = int(aux.Port)
 
 	return nil
 }
@@ -543,7 +573,7 @@ type DeviceRadioTable struct {
 	AssistedRoamingEnabled     bool                     `json:"assisted_roaming_enabled,omitempty"`
 	AssistedRoamingRssi        int                      `json:"assisted_roaming_rssi,omitempty"` // ^-([6-7][0-9]|80)$
 	BackupChannel              string                   `json:"backup_channel,omitempty"`        // [0-9]|[1][0-4]|4.5|5|16|17|21|25|29|33|34|36|37|38|40|41|42|44|45|46|48|49|52|53|56|57|60|61|64|65|69|73|77|81|85|89|93|97|100|101|104|105|108|109|112|113|117|116|120|121|124|125|128|129|132|133|136|137|140|141|144|145|149|153|157|161|165|169|173|177|181|183|184|185|187|188|189|192|193|196|197|201|205|209|213|217|221|225|229|233|auto
-	Channel                    string                   `json:"channel,omitempty"`               // [0-9]|[1][0-4]|4.5|5|16|17|21|25|29|33|34|36|37|38|40|41|42|44|45|46|48|49|52|53|56|57|60|61|64|65|69|73|77|81|85|89|93|97|100|101|104|105|108|109|112|113|117|116|120|121|124|125|128|129|132|133|136|137|140|141|144|145|149|153|157|161|165|169|173|177|181|183|184|185|187|188|189|192|193|196|197|201|205|209|213|217|221|225|229|233|auto
+	Channel                    string                   `json:"channel,omitempty"`               // [0-9]|[1][0-4]|1.5|2.5|3.5|4.5|5.5|6.5|5|16|17|21|25|29|33|34|36|37|38|40|41|42|44|45|46|48|49|52|53|56|57|60|61|64|65|69|73|77|81|85|89|93|97|100|101|104|105|108|109|112|113|117|116|120|121|124|125|128|129|132|133|136|137|140|141|144|145|149|153|157|161|165|169|173|177|181|183|184|185|187|188|189|192|193|196|197|201|205|209|213|217|221|225|229|233|auto
 	ChannelOptimizationEnabled bool                     `json:"channel_optimization_enabled,omitempty"`
 	Dfs                        bool                     `json:"dfs,omitempty"`
 	HardNoiseFloorEnabled      bool                     `json:"hard_noise_floor_enabled,omitempty"`
@@ -646,13 +676,16 @@ func (dst *DeviceRpsPortTable) UnmarshalJSON(b []byte) error {
 }
 
 type DeviceSim struct {
-	CardPresent        bool             `json:"card_present,omitempty"`
-	CurrentApn         DeviceCurrentApn `json:"current_apn,omitempty"`
-	DataHardLimitBytes int              `json:"data_hard_limit_bytes,omitempty"`
-	DataLimitEnabled   bool             `json:"data_limit_enabled,omitempty"`
-	DataSoftLimitBytes int              `json:"data_soft_limit_bytes,omitempty"`
-	Iccid              int              `json:"iccid,omitempty"`
-	Slot               int              `json:"slot,omitempty" validate:"omitempty,oneof=1 2"` // 1|2
+	CurrentApn               DeviceCurrentApn `json:"current_apn,omitempty"`
+	DataHardLimitBytes       int              `json:"data_hard_limit_bytes,omitempty"`
+	DataLimitEnabled         bool             `json:"data_limit_enabled,omitempty"`
+	DataSoftLimitBytes       int              `json:"data_soft_limit_bytes,omitempty"`
+	DataSoftLimitDisplayUnit string           `json:"data_soft_limit_display_unit,omitempty" validate:"omitempty,oneof=MB GB"` // MB|GB
+	DataWarningThreshold     int              `json:"data_warning_threshold,omitempty"`                                        // [0-9]|[1-9][0-9]|100
+	ResetDate                int              `json:"reset_date,omitempty"`                                                    // [0-9]|[1-2][0-9]|3[0-1]
+	ResetPolicy              string           `json:"reset_policy,omitempty" validate:"omitempty,oneof=day week month"`        // day|week|month
+	Slot                     int              `json:"slot,omitempty" validate:"omitempty,oneof=1 2"`                           // 1|2
+	UseCustomApn             bool             `json:"use_custom_apn,omitempty"`
 }
 
 func (dst *DeviceSim) UnmarshalJSON(b []byte) error {
@@ -660,10 +693,11 @@ func (dst *DeviceSim) UnmarshalJSON(b []byte) error {
 	aux := &struct {
 		*Alias
 
-		DataHardLimitBytes emptyStringInt `json:"data_hard_limit_bytes"`
-		DataSoftLimitBytes emptyStringInt `json:"data_soft_limit_bytes"`
-		Iccid              emptyStringInt `json:"iccid"`
-		Slot               emptyStringInt `json:"slot"`
+		DataHardLimitBytes   emptyStringInt `json:"data_hard_limit_bytes"`
+		DataSoftLimitBytes   emptyStringInt `json:"data_soft_limit_bytes"`
+		DataWarningThreshold emptyStringInt `json:"data_warning_threshold"`
+		ResetDate            emptyStringInt `json:"reset_date"`
+		Slot                 emptyStringInt `json:"slot"`
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -674,7 +708,8 @@ func (dst *DeviceSim) UnmarshalJSON(b []byte) error {
 	}
 	dst.DataHardLimitBytes = int(aux.DataHardLimitBytes)
 	dst.DataSoftLimitBytes = int(aux.DataSoftLimitBytes)
-	dst.Iccid = int(aux.Iccid)
+	dst.DataWarningThreshold = int(aux.DataWarningThreshold)
+	dst.ResetDate = int(aux.ResetDate)
 	dst.Slot = int(aux.Slot)
 
 	return nil

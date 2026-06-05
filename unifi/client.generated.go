@@ -114,6 +114,22 @@ type Client interface {
 
 	// ==== end of client methods for ChannelPlan resource ====
 
+	// ==== client methods for ContentFiltering resource ====
+
+	// CreateContentFiltering creates a resource
+	CreateContentFiltering(ctx context.Context, site string, c *ContentFiltering) (*ContentFiltering, error)
+
+	// DeleteContentFiltering deletes a resource
+	DeleteContentFiltering(ctx context.Context, site string, id string) error
+
+	// ListContentFiltering lists the resources
+	ListContentFiltering(ctx context.Context, site string) ([]ContentFiltering, error)
+
+	// UpdateContentFiltering updates a resource
+	UpdateContentFiltering(ctx context.Context, site string, c *ContentFiltering) (*ContentFiltering, error)
+
+	// ==== end of client methods for ContentFiltering resource ====
+
 	// ==== client methods for DHCPOption resource ====
 
 	// CreateDHCPOption creates a resource
@@ -580,6 +596,8 @@ type Client interface {
 	// UpdateSettingAutoSpeedtest updates a resource
 	UpdateSettingAutoSpeedtest(ctx context.Context, site string, s *SettingAutoSpeedtest) (*SettingAutoSpeedtest, error)
 
+	// ==== end of client methods for SettingAutoSpeedtest resource ====
+
 	// ==== client methods for SettingBaresip resource ====
 
 	// GetSettingBaresip retrieves the settings for a resource
@@ -587,6 +605,8 @@ type Client interface {
 
 	// UpdateSettingBaresip updates a resource
 	UpdateSettingBaresip(ctx context.Context, site string, s *SettingBaresip) (*SettingBaresip, error)
+
+	// ==== end of client methods for SettingBaresip resource ====
 
 	// ==== client methods for SettingBroadcast resource ====
 
@@ -596,6 +616,8 @@ type Client interface {
 	// UpdateSettingBroadcast updates a resource
 	UpdateSettingBroadcast(ctx context.Context, site string, s *SettingBroadcast) (*SettingBroadcast, error)
 
+	// ==== end of client methods for SettingBroadcast resource ====
+
 	// ==== client methods for SettingConnectivity resource ====
 
 	// GetSettingConnectivity retrieves the settings for a resource
@@ -603,6 +625,8 @@ type Client interface {
 
 	// UpdateSettingConnectivity updates a resource
 	UpdateSettingConnectivity(ctx context.Context, site string, s *SettingConnectivity) (*SettingConnectivity, error)
+
+	// ==== end of client methods for SettingConnectivity resource ====
 
 	// ==== client methods for SettingCountry resource ====
 
@@ -612,6 +636,8 @@ type Client interface {
 	// UpdateSettingCountry updates a resource
 	UpdateSettingCountry(ctx context.Context, site string, s *SettingCountry) (*SettingCountry, error)
 
+	// ==== end of client methods for SettingCountry resource ====
+
 	// ==== client methods for SettingDashboard resource ====
 
 	// GetSettingDashboard retrieves the settings for a resource
@@ -619,6 +645,8 @@ type Client interface {
 
 	// UpdateSettingDashboard updates a resource
 	UpdateSettingDashboard(ctx context.Context, site string, s *SettingDashboard) (*SettingDashboard, error)
+
+	// ==== end of client methods for SettingDashboard resource ====
 
 	// ==== client methods for SettingDoh resource ====
 
@@ -628,6 +656,8 @@ type Client interface {
 	// UpdateSettingDoh updates a resource
 	UpdateSettingDoh(ctx context.Context, site string, s *SettingDoh) (*SettingDoh, error)
 
+	// ==== end of client methods for SettingDoh resource ====
+
 	// ==== client methods for SettingDpi resource ====
 
 	// GetSettingDpi retrieves the settings for a resource
@@ -635,6 +665,8 @@ type Client interface {
 
 	// UpdateSettingDpi updates a resource
 	UpdateSettingDpi(ctx context.Context, site string, s *SettingDpi) (*SettingDpi, error)
+
+	// ==== end of client methods for SettingDpi resource ====
 
 	// ==== client methods for SettingElementAdopt resource ====
 
@@ -644,6 +676,8 @@ type Client interface {
 	// UpdateSettingElementAdopt updates a resource
 	UpdateSettingElementAdopt(ctx context.Context, site string, s *SettingElementAdopt) (*SettingElementAdopt, error)
 
+	// ==== end of client methods for SettingElementAdopt resource ====
+
 	// ==== client methods for SettingEtherLighting resource ====
 
 	// GetSettingEtherLighting retrieves the settings for a resource
@@ -651,6 +685,8 @@ type Client interface {
 
 	// UpdateSettingEtherLighting updates a resource
 	UpdateSettingEtherLighting(ctx context.Context, site string, s *SettingEtherLighting) (*SettingEtherLighting, error)
+
+	// ==== end of client methods for SettingEtherLighting resource ====
 
 	// ==== client methods for SettingEvaluationScore resource ====
 
@@ -660,6 +696,8 @@ type Client interface {
 	// UpdateSettingEvaluationScore updates a resource
 	UpdateSettingEvaluationScore(ctx context.Context, site string, s *SettingEvaluationScore) (*SettingEvaluationScore, error)
 
+	// ==== end of client methods for SettingEvaluationScore resource ====
+
 	// ==== client methods for SettingGlobalAp resource ====
 
 	// GetSettingGlobalAp retrieves the settings for a resource
@@ -667,6 +705,8 @@ type Client interface {
 
 	// UpdateSettingGlobalAp updates a resource
 	UpdateSettingGlobalAp(ctx context.Context, site string, s *SettingGlobalAp) (*SettingGlobalAp, error)
+
+	// ==== end of client methods for SettingGlobalAp resource ====
 
 	// ==== client methods for SettingGlobalNat resource ====
 
@@ -676,6 +716,8 @@ type Client interface {
 	// UpdateSettingGlobalNat updates a resource
 	UpdateSettingGlobalNat(ctx context.Context, site string, s *SettingGlobalNat) (*SettingGlobalNat, error)
 
+	// ==== end of client methods for SettingGlobalNat resource ====
+
 	// ==== client methods for SettingGlobalSwitch resource ====
 
 	// GetSettingGlobalSwitch retrieves the settings for a resource
@@ -683,6 +725,8 @@ type Client interface {
 
 	// UpdateSettingGlobalSwitch updates a resource
 	UpdateSettingGlobalSwitch(ctx context.Context, site string, s *SettingGlobalSwitch) (*SettingGlobalSwitch, error)
+
+	// ==== end of client methods for SettingGlobalSwitch resource ====
 
 	// ==== client methods for SettingGuestAccess resource ====
 
@@ -692,6 +736,8 @@ type Client interface {
 	// UpdateSettingGuestAccess updates a resource
 	UpdateSettingGuestAccess(ctx context.Context, site string, s *SettingGuestAccess) (*SettingGuestAccess, error)
 
+	// ==== end of client methods for SettingGuestAccess resource ====
+
 	// ==== client methods for SettingIps resource ====
 
 	// GetSettingIps retrieves the settings for a resource
@@ -699,6 +745,8 @@ type Client interface {
 
 	// UpdateSettingIps updates a resource
 	UpdateSettingIps(ctx context.Context, site string, s *SettingIps) (*SettingIps, error)
+
+	// ==== end of client methods for SettingIps resource ====
 
 	// ==== client methods for SettingLcm resource ====
 
@@ -708,6 +756,8 @@ type Client interface {
 	// UpdateSettingLcm updates a resource
 	UpdateSettingLcm(ctx context.Context, site string, s *SettingLcm) (*SettingLcm, error)
 
+	// ==== end of client methods for SettingLcm resource ====
+
 	// ==== client methods for SettingLocale resource ====
 
 	// GetSettingLocale retrieves the settings for a resource
@@ -715,6 +765,8 @@ type Client interface {
 
 	// UpdateSettingLocale updates a resource
 	UpdateSettingLocale(ctx context.Context, site string, s *SettingLocale) (*SettingLocale, error)
+
+	// ==== end of client methods for SettingLocale resource ====
 
 	// ==== client methods for SettingMagicSiteToSiteVpn resource ====
 
@@ -724,6 +776,8 @@ type Client interface {
 	// UpdateSettingMagicSiteToSiteVpn updates a resource
 	UpdateSettingMagicSiteToSiteVpn(ctx context.Context, site string, s *SettingMagicSiteToSiteVpn) (*SettingMagicSiteToSiteVpn, error)
 
+	// ==== end of client methods for SettingMagicSiteToSiteVpn resource ====
+
 	// ==== client methods for SettingMdns resource ====
 
 	// GetSettingMdns retrieves the settings for a resource
@@ -731,6 +785,8 @@ type Client interface {
 
 	// UpdateSettingMdns updates a resource
 	UpdateSettingMdns(ctx context.Context, site string, s *SettingMdns) (*SettingMdns, error)
+
+	// ==== end of client methods for SettingMdns resource ====
 
 	// ==== client methods for SettingMgmt resource ====
 
@@ -740,6 +796,8 @@ type Client interface {
 	// UpdateSettingMgmt updates a resource
 	UpdateSettingMgmt(ctx context.Context, site string, s *SettingMgmt) (*SettingMgmt, error)
 
+	// ==== end of client methods for SettingMgmt resource ====
+
 	// ==== client methods for SettingNetflow resource ====
 
 	// GetSettingNetflow retrieves the settings for a resource
@@ -747,6 +805,8 @@ type Client interface {
 
 	// UpdateSettingNetflow updates a resource
 	UpdateSettingNetflow(ctx context.Context, site string, s *SettingNetflow) (*SettingNetflow, error)
+
+	// ==== end of client methods for SettingNetflow resource ====
 
 	// ==== client methods for SettingNetworkOptimization resource ====
 
@@ -756,6 +816,8 @@ type Client interface {
 	// UpdateSettingNetworkOptimization updates a resource
 	UpdateSettingNetworkOptimization(ctx context.Context, site string, s *SettingNetworkOptimization) (*SettingNetworkOptimization, error)
 
+	// ==== end of client methods for SettingNetworkOptimization resource ====
+
 	// ==== client methods for SettingNtp resource ====
 
 	// GetSettingNtp retrieves the settings for a resource
@@ -763,6 +825,8 @@ type Client interface {
 
 	// UpdateSettingNtp updates a resource
 	UpdateSettingNtp(ctx context.Context, site string, s *SettingNtp) (*SettingNtp, error)
+
+	// ==== end of client methods for SettingNtp resource ====
 
 	// ==== client methods for SettingPorta resource ====
 
@@ -772,6 +836,8 @@ type Client interface {
 	// UpdateSettingPorta updates a resource
 	UpdateSettingPorta(ctx context.Context, site string, s *SettingPorta) (*SettingPorta, error)
 
+	// ==== end of client methods for SettingPorta resource ====
+
 	// ==== client methods for SettingRadioAi resource ====
 
 	// GetSettingRadioAi retrieves the settings for a resource
@@ -779,6 +845,8 @@ type Client interface {
 
 	// UpdateSettingRadioAi updates a resource
 	UpdateSettingRadioAi(ctx context.Context, site string, s *SettingRadioAi) (*SettingRadioAi, error)
+
+	// ==== end of client methods for SettingRadioAi resource ====
 
 	// ==== client methods for SettingRadius resource ====
 
@@ -788,6 +856,8 @@ type Client interface {
 	// UpdateSettingRadius updates a resource
 	UpdateSettingRadius(ctx context.Context, site string, s *SettingRadius) (*SettingRadius, error)
 
+	// ==== end of client methods for SettingRadius resource ====
+
 	// ==== client methods for SettingRoamingAssistant resource ====
 
 	// GetSettingRoamingAssistant retrieves the settings for a resource
@@ -795,6 +865,8 @@ type Client interface {
 
 	// UpdateSettingRoamingAssistant updates a resource
 	UpdateSettingRoamingAssistant(ctx context.Context, site string, s *SettingRoamingAssistant) (*SettingRoamingAssistant, error)
+
+	// ==== end of client methods for SettingRoamingAssistant resource ====
 
 	// ==== client methods for SettingRsyslogd resource ====
 
@@ -804,6 +876,8 @@ type Client interface {
 	// UpdateSettingRsyslogd updates a resource
 	UpdateSettingRsyslogd(ctx context.Context, site string, s *SettingRsyslogd) (*SettingRsyslogd, error)
 
+	// ==== end of client methods for SettingRsyslogd resource ====
+
 	// ==== client methods for SettingSnmp resource ====
 
 	// GetSettingSnmp retrieves the settings for a resource
@@ -811,6 +885,8 @@ type Client interface {
 
 	// UpdateSettingSnmp updates a resource
 	UpdateSettingSnmp(ctx context.Context, site string, s *SettingSnmp) (*SettingSnmp, error)
+
+	// ==== end of client methods for SettingSnmp resource ====
 
 	// ==== client methods for SettingSslInspection resource ====
 
@@ -820,6 +896,8 @@ type Client interface {
 	// UpdateSettingSslInspection updates a resource
 	UpdateSettingSslInspection(ctx context.Context, site string, s *SettingSslInspection) (*SettingSslInspection, error)
 
+	// ==== end of client methods for SettingSslInspection resource ====
+
 	// ==== client methods for SettingSuperCloudaccess resource ====
 
 	// GetSettingSuperCloudaccess retrieves the settings for a resource
@@ -827,6 +905,8 @@ type Client interface {
 
 	// UpdateSettingSuperCloudaccess updates a resource
 	UpdateSettingSuperCloudaccess(ctx context.Context, site string, s *SettingSuperCloudaccess) (*SettingSuperCloudaccess, error)
+
+	// ==== end of client methods for SettingSuperCloudaccess resource ====
 
 	// ==== client methods for SettingSuperEvents resource ====
 
@@ -836,6 +916,8 @@ type Client interface {
 	// UpdateSettingSuperEvents updates a resource
 	UpdateSettingSuperEvents(ctx context.Context, site string, s *SettingSuperEvents) (*SettingSuperEvents, error)
 
+	// ==== end of client methods for SettingSuperEvents resource ====
+
 	// ==== client methods for SettingSuperFwupdate resource ====
 
 	// GetSettingSuperFwupdate retrieves the settings for a resource
@@ -843,6 +925,8 @@ type Client interface {
 
 	// UpdateSettingSuperFwupdate updates a resource
 	UpdateSettingSuperFwupdate(ctx context.Context, site string, s *SettingSuperFwupdate) (*SettingSuperFwupdate, error)
+
+	// ==== end of client methods for SettingSuperFwupdate resource ====
 
 	// ==== client methods for SettingSuperIdentity resource ====
 
@@ -852,6 +936,8 @@ type Client interface {
 	// UpdateSettingSuperIdentity updates a resource
 	UpdateSettingSuperIdentity(ctx context.Context, site string, s *SettingSuperIdentity) (*SettingSuperIdentity, error)
 
+	// ==== end of client methods for SettingSuperIdentity resource ====
+
 	// ==== client methods for SettingSuperMail resource ====
 
 	// GetSettingSuperMail retrieves the settings for a resource
@@ -859,6 +945,8 @@ type Client interface {
 
 	// UpdateSettingSuperMail updates a resource
 	UpdateSettingSuperMail(ctx context.Context, site string, s *SettingSuperMail) (*SettingSuperMail, error)
+
+	// ==== end of client methods for SettingSuperMail resource ====
 
 	// ==== client methods for SettingSuperMgmt resource ====
 
@@ -868,6 +956,8 @@ type Client interface {
 	// UpdateSettingSuperMgmt updates a resource
 	UpdateSettingSuperMgmt(ctx context.Context, site string, s *SettingSuperMgmt) (*SettingSuperMgmt, error)
 
+	// ==== end of client methods for SettingSuperMgmt resource ====
+
 	// ==== client methods for SettingSuperSdn resource ====
 
 	// GetSettingSuperSdn retrieves the settings for a resource
@@ -875,6 +965,8 @@ type Client interface {
 
 	// UpdateSettingSuperSdn updates a resource
 	UpdateSettingSuperSdn(ctx context.Context, site string, s *SettingSuperSdn) (*SettingSuperSdn, error)
+
+	// ==== end of client methods for SettingSuperSdn resource ====
 
 	// ==== client methods for SettingSuperSmtp resource ====
 
@@ -884,6 +976,8 @@ type Client interface {
 	// UpdateSettingSuperSmtp updates a resource
 	UpdateSettingSuperSmtp(ctx context.Context, site string, s *SettingSuperSmtp) (*SettingSuperSmtp, error)
 
+	// ==== end of client methods for SettingSuperSmtp resource ====
+
 	// ==== client methods for SettingTeleport resource ====
 
 	// GetSettingTeleport retrieves the settings for a resource
@@ -891,6 +985,8 @@ type Client interface {
 
 	// UpdateSettingTeleport updates a resource
 	UpdateSettingTeleport(ctx context.Context, site string, s *SettingTeleport) (*SettingTeleport, error)
+
+	// ==== end of client methods for SettingTeleport resource ====
 
 	// ==== client methods for SettingTrafficFlow resource ====
 
@@ -900,6 +996,8 @@ type Client interface {
 	// UpdateSettingTrafficFlow updates a resource
 	UpdateSettingTrafficFlow(ctx context.Context, site string, s *SettingTrafficFlow) (*SettingTrafficFlow, error)
 
+	// ==== end of client methods for SettingTrafficFlow resource ====
+
 	// ==== client methods for SettingUsg resource ====
 
 	// GetSettingUsg retrieves the settings for a resource
@@ -908,6 +1006,8 @@ type Client interface {
 	// UpdateSettingUsg updates a resource
 	UpdateSettingUsg(ctx context.Context, site string, s *SettingUsg) (*SettingUsg, error)
 
+	// ==== end of client methods for SettingUsg resource ====
+
 	// ==== client methods for SettingUsw resource ====
 
 	// GetSettingUsw retrieves the settings for a resource
@@ -915,6 +1015,8 @@ type Client interface {
 
 	// UpdateSettingUsw updates a resource
 	UpdateSettingUsw(ctx context.Context, site string, s *SettingUsw) (*SettingUsw, error)
+
+	// ==== end of client methods for SettingUsw resource ====
 
 	CreateSite(ctx context.Context, description string) ([]Site, error)
 
