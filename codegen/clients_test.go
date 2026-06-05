@@ -67,6 +67,108 @@ func TestCustomClientFunctionSignature(t *testing.T) {
 	}
 }
 
+// clientFunctionNames returns the generated function names (skipping marker
+// comments, whose Name() is empty) from a built ClientInfo.
+func clientFunctionNames(ci *ClientInfo) []string {
+	var names []string
+	for _, f := range ci.Functions {
+		if n := f.Name(); n != "" {
+			names = append(names, n)
+		}
+	}
+	return names
+}
+
+// clientMarkerComments returns the section marker comments (Name() empty) from a
+// built ClientInfo.
+func clientMarkerComments(ci *ClientInfo) []string {
+	var comments []string
+	for _, f := range ci.Functions {
+		if f.Name() == "" {
+			comments = append(comments, f.Comment())
+		}
+	}
+	return comments
+}
+
+func TestAddResourceExcludeFunctions(t *testing.T) {
+	t.Parallel()
+	tests := map[string]struct {
+		structName   string
+		exclude      []string
+		wantFuncs    []string
+		wantMarkers  bool
+		wantExcluded []string
+	}{
+		"normal resource, no exclusions": {
+			structName:  "Network",
+			exclude:     nil,
+			wantFuncs:   []string{"GetNetwork", "ListNetwork", "CreateNetwork", "UpdateNetwork", "DeleteNetwork"},
+			wantMarkers: true,
+		},
+		"normal resource, exclude Update and Delete": {
+			structName:   "Network",
+			exclude:      []string{"Update", "Delete"},
+			wantFuncs:    []string{"GetNetwork", "ListNetwork", "CreateNetwork"},
+			wantExcluded: []string{"UpdateNetwork", "DeleteNetwork"},
+			wantMarkers:  true,
+		},
+		"settings resource, no exclusions, has header and footer": {
+			structName:  "SettingMgmt",
+			exclude:     nil,
+			wantFuncs:   []string{"GetSettingMgmt", "UpdateSettingMgmt"},
+			wantMarkers: true,
+		},
+		"settings resource, exclude Update": {
+			structName:   "SettingMgmt",
+			exclude:      []string{"Update"},
+			wantFuncs:    []string{"GetSettingMgmt"},
+			wantExcluded: []string{"UpdateSettingMgmt"},
+			wantMarkers:  true,
+		},
+		"exclude all actions emits nothing": {
+			structName:   "Network",
+			exclude:      []string{"Get", "List", "Create", "Update", "Delete"},
+			wantFuncs:    nil,
+			wantExcluded: []string{"GetNetwork", "ListNetwork", "CreateNetwork", "UpdateNetwork", "DeleteNetwork"},
+			wantMarkers:  false,
+		},
+		"exclusion is case-sensitive": {
+			structName:  "Network",
+			exclude:     []string{"update", "delete"},
+			wantFuncs:   []string{"GetNetwork", "ListNetwork", "CreateNetwork", "UpdateNetwork", "DeleteNetwork"},
+			wantMarkers: true,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			a := assert.New(t)
+
+			ci := NewClientInfoBuilder().
+				AddResource(&Resource{StructName: tt.structName}, tt.exclude).
+				Build()
+			names := clientFunctionNames(ci)
+
+			for _, want := range tt.wantFuncs {
+				a.Contains(names, want)
+			}
+			for _, notWant := range tt.wantExcluded {
+				a.NotContains(names, notWant)
+			}
+
+			markers := clientMarkerComments(ci)
+			if tt.wantMarkers {
+				a.Len(markers, 2, "expected both header and footer markers")
+			} else {
+				a.Empty(markers, "expected no marker comments when fully excluded")
+				a.Empty(names, "expected no functions when fully excluded")
+			}
+		})
+	}
+}
+
 func TestGenerateCode(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)

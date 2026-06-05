@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -196,6 +198,86 @@ customizations:
 	err = res.FieldProcessor("CustomField", fi)
 	require.NoError(t, err)
 	assert.Empty(t, fi.CustomUnmarshalType, "Customization should not apply if field type mismatches")
+}
+
+func TestExcludedClientFunctions(t *testing.T) {
+	t.Parallel()
+	yamlContent := `
+customizations:
+  resources:
+    Network:
+      excludeFunctions:
+        - Update
+        - Delete
+    SettingMgmt:
+      excludeFunctions:
+        - Update
+    EmptyExclude:
+      fields:
+        Foo:
+          omitEmpty: true
+`
+	tempFile := createTempCustomizationsYaml(t, yamlContent)
+	cc, err := NewCodeCustomizer(tempFile)
+	require.NoError(t, err)
+
+	cases := map[string]struct {
+		resource *Resource
+		want     []string
+	}{
+		"configured normal resource":         {resource: &Resource{StructName: "Network"}, want: []string{"Update", "Delete"}},
+		"configured settings resource":       {resource: &Resource{StructName: "SettingMgmt"}, want: []string{"Update"}},
+		"resource without excludeFunctions":  {resource: &Resource{StructName: "EmptyExclude"}, want: nil},
+		"resource without any customization": {resource: &Resource{StructName: "Unknown"}, want: nil},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			assert.Equal(t, tc.want, cc.ExcludedClientFunctions(tc.resource))
+		})
+	}
+}
+
+func TestExcludedClientFunctions_NilSafe(t *testing.T) {
+	t.Parallel()
+	// An empty customizer (no resources configured) must not panic.
+	cc := &CodeCustomizer{Customizations: Customizations{}}
+	assert.Nil(t, cc.ExcludedClientFunctions(&Resource{StructName: "Network"}))
+}
+
+func TestExcludedClientFunctions_UnknownActionWarns(t *testing.T) {
+	// Not parallel: inspects the package-level logger via a local hook.
+	yamlContent := `
+customizations:
+  resources:
+    Network:
+      excludeFunctions:
+        - Updte
+    SettingMgmt:
+      excludeFunctions:
+        - List
+`
+	tempFile := createTempCustomizationsYaml(t, yamlContent)
+	cc, err := NewCodeCustomizer(tempFile)
+	require.NoError(t, err)
+
+	hook := test.NewLocal(log)
+	defer hook.Reset()
+
+	// Unknown action is still returned (warn-and-ignore: AddResource simply never
+	// matches it, so no real method is dropped).
+	assert.Equal(t, []string{"Updte"}, cc.ExcludedClientFunctions(&Resource{StructName: "Network"}))
+	// "List" is invalid for a settings resource (only Get/Update exist).
+	assert.Equal(t, []string{"List"}, cc.ExcludedClientFunctions(&Resource{StructName: "SettingMgmt"}))
+
+	var msgs []string
+	for _, e := range hook.AllEntries() {
+		if e.Level == logrus.WarnLevel {
+			msgs = append(msgs, e.Message)
+		}
+	}
+	assert.Contains(t, msgs, `excludeFunctions: unknown action "Updte" for resource Network (ignored)`)
+	assert.Contains(t, msgs, `excludeFunctions: unknown action "List" for resource SettingMgmt (ignored)`)
 }
 
 func TestMatchesExcludePattern(t *testing.T) {

@@ -24,9 +24,10 @@ type Generate struct {
 }
 
 type ResourceCustomization struct {
-	ResourceName string                         `yaml:"-"`
-	Fields       map[string]*FieldCustomization `yaml:"fields"`
-	ResourcePath string                         `yaml:"resourcePath"`
+	ResourceName     string                         `yaml:"-"`
+	Fields           map[string]*FieldCustomization `yaml:"fields"`
+	ResourcePath     string                         `yaml:"resourcePath"`
+	ExcludeFunctions []string                       `yaml:"excludeFunctions"`
 }
 
 type ClientCustomization struct {
@@ -177,6 +178,26 @@ func (r *CodeCustomizer) IsExcludedFromClient(resourceName string) bool {
 		}
 	}
 	return false
+}
+
+// ExcludedClientFunctions returns the standard CRUD action names excluded from
+// client generation for res (nil if none configured). Unknown action names are
+// warned and ignored so a typo can't silently leave a method in place.
+func (r *CodeCustomizer) ExcludedClientFunctions(res *Resource) []string {
+	if r.Customizations.Resources == nil {
+		return nil
+	}
+	rc, ok := r.Customizations.Resources[res.Name()]
+	if !ok || rc == nil || len(rc.ExcludeFunctions) == 0 {
+		return nil
+	}
+	valid := standardActionNames(res)
+	for _, a := range rc.ExcludeFunctions {
+		if !valid[a] {
+			log.Warnf("excludeFunctions: unknown action %q for resource %s (ignored)", a, res.Name())
+		}
+	}
+	return rc.ExcludeFunctions
 }
 
 // matchesExcludePattern reports whether name matches a glob-style pattern,

@@ -137,18 +137,67 @@ func (c *ClientInfoBuilder) AddFunctions(f []CustomClientFunction) *ClientInfoBu
 	return c
 }
 
-func (c *ClientInfoBuilder) AddResource(r *Resource) *ClientInfoBuilder {
-	c.AddFunction(&Comment{comment: fmt.Sprintf("==== client methods for %s resource ====", r.Name()), resourceName: r.Name()})
+// resourceAction describes a single standard client CRUD action.
+type resourceAction struct {
+	name    string
+	comment string
+	params  []FunctionParam
+	returns []string
+}
+
+// standardActions returns the standard client CRUD actions for r, in generation
+// order. Settings expose only Get (singleton getter) + Update; other resources
+// expose the full Get/List/Create/Update/Delete set. This is the single source of
+// truth for the action catalog — both code generation (AddResource) and
+// customization validation (standardActionNames) derive from it.
+func standardActions(r *Resource) []resourceAction {
 	if r.IsSetting() {
-		c.addResourceFunction("Get", r.Name(), "retrieves the settings for a resource", nil, singlePointerReturn(r.Name()))
-		c.addResourceFunction("Update", r.Name(), "updates a resource", singlePointerParam(r.Name()), singlePointerReturn(r.Name()))
+		return []resourceAction{
+			{"Get", "retrieves the settings for a resource", nil, singlePointerReturn(r.Name())},
+			{"Update", "updates a resource", singlePointerParam(r.Name()), singlePointerReturn(r.Name())},
+		}
+	}
+	return []resourceAction{
+		{"Get", "retrieves a resource", []FunctionParam{{"id", "string"}}, singlePointerReturn(r.Name())},
+		{"List", "lists the resources", nil, []string{"[]" + r.Name()}},
+		{"Create", "creates a resource", singlePointerParam(r.Name()), singlePointerReturn(r.Name())},
+		{"Update", "updates a resource", singlePointerParam(r.Name()), singlePointerReturn(r.Name())},
+		{"Delete", "deletes a resource", []FunctionParam{{"id", "string"}}, nil},
+	}
+}
+
+// standardActionNames is the set of valid action names for r, derived from the
+// same table as standardActions so the catalog never drifts.
+func standardActionNames(r *Resource) map[string]bool {
+	actions := standardActions(r)
+	names := make(map[string]bool, len(actions))
+	for _, a := range actions {
+		names[a.name] = true
+	}
+	return names
+}
+
+// AddResource adds the standard client CRUD methods for r, omitting any whose
+// action name appears in excludeFunctions. When every action is excluded, nothing
+// is emitted (not even the section marker comments).
+func (c *ClientInfoBuilder) AddResource(r *Resource, excludeFunctions []string) *ClientInfoBuilder {
+	excluded := make(map[string]bool, len(excludeFunctions))
+	for _, a := range excludeFunctions {
+		excluded[a] = true
+	}
+	included := make([]resourceAction, 0, 5)
+	for _, a := range standardActions(r) {
+		if !excluded[a.name] {
+			included = append(included, a)
+		}
+	}
+	if len(included) == 0 {
 		return c
 	}
-	c.addResourceFunction("Get", r.Name(), "retrieves a resource", []FunctionParam{{"id", "string"}}, singlePointerReturn(r.Name()))
-	c.addResourceFunction("List", r.Name(), "lists the resources", nil, []string{"[]" + r.Name()})
-	c.addResourceFunction("Create", r.Name(), "creates a resource", singlePointerParam(r.Name()), singlePointerReturn(r.Name()))
-	c.addResourceFunction("Update", r.Name(), "updates a resource", singlePointerParam(r.Name()), singlePointerReturn(r.Name()))
-	c.addResourceFunction("Delete", r.Name(), "deletes a resource", []FunctionParam{{"id", "string"}}, nil)
+	c.AddFunction(&Comment{comment: fmt.Sprintf("==== client methods for %s resource ====", r.Name()), resourceName: r.Name()})
+	for _, a := range included {
+		c.addResourceFunction(a.name, r.Name(), a.comment, a.params, a.returns)
+	}
 	c.AddFunction(&Comment{comment: fmt.Sprintf("==== end of client methods for %s resource ====", r.Name()), resourceName: r.Name() + "_end"})
 	return c
 }

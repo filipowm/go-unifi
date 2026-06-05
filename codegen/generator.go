@@ -65,7 +65,7 @@ func generateCode(fieldsDir, outDir string, customizer CodeCustomizer) error {
 	customizer.ApplyToClient(cb)
 	for _, resource := range resources {
 		if !customizer.IsExcludedFromClient(resource.Name()) {
-			cb.AddResource(resource)
+			cb.AddResource(resource, customizer.ExcludedClientFunctions(resource))
 		}
 		customizer.ApplyToResource(resource)
 		generators = append(generators, resource)
