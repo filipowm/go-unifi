@@ -9,7 +9,7 @@ import (
 	"fmt"
 )
 
-// just to fix compile issues with the import
+// just to fix compile issues with the import.
 var (
 	_ context.Context
 	_ fmt.Formatter
@@ -38,12 +38,12 @@ type DNSRecord struct {
 func (dst *DNSRecord) UnmarshalJSON(b []byte) error {
 	type Alias DNSRecord
 	aux := &struct {
+		*Alias
+
 		Port     emptyStringInt `json:"port"`
 		Priority emptyStringInt `json:"priority"`
 		Ttl      emptyStringInt `json:"ttl"`
 		Weight   emptyStringInt `json:"weight"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -75,7 +75,6 @@ func (c *client) getDNSRecord(ctx context.Context, site, id string) (*DNSRecord,
 	var respBody DNSRecord
 
 	err := c.Get(ctx, fmt.Sprintf("%s/site/%s/static-dns/%s", c.apiPaths.ApiV2Path, site, id), nil, &respBody)
-
 	if err != nil {
 		return nil, err
 	}

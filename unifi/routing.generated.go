@@ -9,7 +9,7 @@ import (
 	"fmt"
 )
 
-// just to fix compile issues with the import
+// just to fix compile issues with the import.
 var (
 	_ context.Context
 	_ fmt.Formatter
@@ -40,9 +40,9 @@ type Routing struct {
 func (dst *Routing) UnmarshalJSON(b []byte) error {
 	type Alias Routing
 	aux := &struct {
-		StaticRouteDistance emptyStringInt `json:"static-route_distance"`
-
 		*Alias
+
+		StaticRouteDistance emptyStringInt `json:"static-route_distance"`
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -112,9 +112,9 @@ func (c *client) createRouting(ctx context.Context, site string, d *Routing) (*R
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	newResource := respBody.Data[0]
 
-	return &new, nil
+	return &newResource, nil
 }
 
 func (c *client) updateRouting(ctx context.Context, site string, d *Routing) (*Routing, error) {
@@ -132,7 +132,7 @@ func (c *client) updateRouting(ctx context.Context, site string, d *Routing) (*R
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	updatedResource := respBody.Data[0]
 
-	return &new, nil
+	return &updatedResource, nil
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 )
 
 // GetUserByMAC returns slightly different information than GetUser, as they
@@ -72,12 +73,10 @@ func (c *client) CreateUser(ctx context.Context, site string, d *User) (*User, e
 	return &user, nil
 }
 
-func (c *client) stamgr(ctx context.Context, site, cmd string, data map[string]interface{}) ([]User, error) {
-	reqBody := map[string]interface{}{}
+func (c *client) stamgr(ctx context.Context, site, cmd string, data map[string]any) ([]User, error) {
+	reqBody := map[string]any{}
 
-	for k, v := range data {
-		reqBody[k] = v
-	}
+	maps.Copy(reqBody, data)
 
 	reqBody["cmd"] = cmd
 
@@ -95,7 +94,7 @@ func (c *client) stamgr(ctx context.Context, site, cmd string, data map[string]i
 }
 
 func (c *client) BlockUserByMAC(ctx context.Context, site, mac string) error {
-	users, err := c.stamgr(ctx, site, "block-sta", map[string]interface{}{
+	users, err := c.stamgr(ctx, site, "block-sta", map[string]any{
 		"mac": mac,
 	})
 	if err != nil {
@@ -108,7 +107,7 @@ func (c *client) BlockUserByMAC(ctx context.Context, site, mac string) error {
 }
 
 func (c *client) UnblockUserByMAC(ctx context.Context, site, mac string) error {
-	users, err := c.stamgr(ctx, site, "unblock-sta", map[string]interface{}{
+	users, err := c.stamgr(ctx, site, "unblock-sta", map[string]any{
 		"mac": mac,
 	})
 	if err != nil {
@@ -121,7 +120,7 @@ func (c *client) UnblockUserByMAC(ctx context.Context, site, mac string) error {
 }
 
 func (c *client) DeleteUserByMAC(ctx context.Context, site, mac string) error {
-	users, err := c.stamgr(ctx, site, "forget-sta", map[string]interface{}{
+	users, err := c.stamgr(ctx, site, "forget-sta", map[string]any{
 		"macs": []string{mac},
 	})
 	if err != nil {
@@ -134,7 +133,7 @@ func (c *client) DeleteUserByMAC(ctx context.Context, site, mac string) error {
 }
 
 func (c *client) KickUserByMAC(ctx context.Context, site, mac string) error {
-	users, err := c.stamgr(ctx, site, "kick-sta", map[string]interface{}{
+	users, err := c.stamgr(ctx, site, "kick-sta", map[string]any{
 		"mac": mac,
 	})
 	if err != nil {
@@ -147,7 +146,7 @@ func (c *client) KickUserByMAC(ctx context.Context, site, mac string) error {
 }
 
 func (c *client) OverrideUserFingerprint(ctx context.Context, site, mac string, devIdOverride int) error {
-	reqBody := map[string]interface{}{
+	reqBody := map[string]any{
 		"mac":             mac,
 		"dev_id_override": devIdOverride,
 		"search_query":    "",

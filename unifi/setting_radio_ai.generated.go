@@ -9,7 +9,7 @@ import (
 	"fmt"
 )
 
-// just to fix compile issues with the import
+// just to fix compile issues with the import.
 var (
 	_ context.Context
 	_ fmt.Formatter
@@ -39,10 +39,11 @@ type SettingRadioAi struct {
 	Default                     bool                                `json:"default"`
 	Enabled                     bool                                `json:"enabled"`
 	ExcludeDevices              []string                            `json:"exclude_devices,omitempty"`                                          // ([0-9a-z]{2}:){5}[0-9a-z]{2}
+	HighPriorityDevices         []string                            `json:"high_priority_devices,omitempty"`                                    // ([0-9a-z]{2}:){5}[0-9a-z]{2}
 	HtModesNa                   []int                               `json:"ht_modes_na,omitempty" validate:"omitempty,dive,oneof=20 40 80 160"` // ^(20|40|80|160)$
 	HtModesNg                   []int                               `json:"ht_modes_ng,omitempty" validate:"omitempty,dive,oneof=20 40"`        // ^(20|40)$
 	Optimize                    []string                            `json:"optimize,omitempty" validate:"omitempty,dive,oneof=channel power"`   // channel|power
-	Radios                      []string                            `json:"radios,omitempty" validate:"omitempty,dive,oneof=na ng"`             // na|ng
+	Radios                      []string                            `json:"radios,omitempty" validate:"omitempty,dive,oneof=na ng 6e"`          // na|ng|6e
 	RadiosConfiguration         []SettingRadioAiRadiosConfiguration `json:"radios_configuration,omitempty"`
 	SettingPreference           string                              `json:"setting_preference,omitempty" validate:"omitempty,oneof=auto manual"` // auto|manual
 	UseXy                       bool                                `json:"useXY"`
@@ -51,13 +52,13 @@ type SettingRadioAi struct {
 func (dst *SettingRadioAi) UnmarshalJSON(b []byte) error {
 	type Alias SettingRadioAi
 	aux := &struct {
+		*Alias
+
 		Channels6E []emptyStringInt `json:"channels_6e"`
 		ChannelsNa []emptyStringInt `json:"channels_na"`
 		ChannelsNg []emptyStringInt `json:"channels_ng"`
 		HtModesNa  []emptyStringInt `json:"ht_modes_na"`
 		HtModesNg  []emptyStringInt `json:"ht_modes_ng"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -99,10 +100,10 @@ type SettingRadioAiChannelsBlacklist struct {
 func (dst *SettingRadioAiChannelsBlacklist) UnmarshalJSON(b []byte) error {
 	type Alias SettingRadioAiChannelsBlacklist
 	aux := &struct {
+		*Alias
+
 		Channel      emptyStringInt `json:"channel"`
 		ChannelWidth emptyStringInt `json:"channel_width"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -126,9 +127,9 @@ type SettingRadioAiRadiosConfiguration struct {
 func (dst *SettingRadioAiRadiosConfiguration) UnmarshalJSON(b []byte) error {
 	type Alias SettingRadioAiRadiosConfiguration
 	aux := &struct {
-		ChannelWidth emptyStringInt `json:"channel_width"`
-
 		*Alias
+
+		ChannelWidth emptyStringInt `json:"channel_width"`
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -151,7 +152,11 @@ func (c *client) GetSettingRadioAi(ctx context.Context, site string) (*SettingRa
 	if s.Key != SettingRadioAiKey {
 		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingRadioAiKey, s.Key)
 	}
-	return f.(*SettingRadioAi), nil
+	resource, ok := f.(*SettingRadioAi)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingRadioAi, received: %T", f)
+	}
+	return resource, nil
 }
 
 // UpdateSettingRadioAi Experimental! This function is not yet stable and may change in the future.
@@ -161,5 +166,9 @@ func (c *client) UpdateSettingRadioAi(ctx context.Context, site string, s *Setti
 	if err != nil {
 		return nil, err
 	}
-	return result.(*SettingRadioAi), nil
+	updatedResource, ok := result.(*SettingRadioAi)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingRadioAi, received: %T", result)
+	}
+	return updatedResource, nil
 }

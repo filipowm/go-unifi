@@ -24,9 +24,10 @@ type Generate struct {
 }
 
 type ResourceCustomization struct {
-	ResourceName string                         `yaml:"-"`
-	Fields       map[string]*FieldCustomization `yaml:"fields"`
-	ResourcePath string                         `yaml:"resourcePath"`
+	ResourceName     string                         `yaml:"-"`
+	Fields           map[string]*FieldCustomization `yaml:"fields"`
+	ResourcePath     string                         `yaml:"resourcePath"`
+	ExcludeFunctions []string                       `yaml:"excludeFunctions"`
 }
 
 type ClientCustomization struct {
@@ -70,22 +71,27 @@ func (r *ResourceCustomization) ApplyTo(resource *Resource) {
 		customizationsProcessor := r.toFieldProcessor()
 		if currentProcessor != nil {
 			// create composite processor with existing processor, first running pre-defined customizations, then user-defined
-			resource.FieldProcessor = func(name string, f *FieldInfo) error {
-				err := compositeCustomizationsProcessor(customizationsProcessor)(name, f)
-				if err != nil {
-					return err
-				}
-				return currentProcessor(name, f)
-			}
-			if r.ResourcePath != "" {
-				resource.ResourcePath = r.ResourcePath
-			}
+			r.applyCurrentProcessor(resource, customizationsProcessor, currentProcessor)
 		} else {
 			resource.FieldProcessor = compositeCustomizationsProcessor(customizationsProcessor)
 		}
 	}
 }
 
+func (r *ResourceCustomization) applyCurrentProcessor(resource *Resource, customizationsProcessor FieldProcessor, currentProcessor FieldProcessor) {
+	resource.FieldProcessor = func(name string, f *FieldInfo) error {
+		err := compositeCustomizationsProcessor(customizationsProcessor)(name, f)
+		if err != nil {
+			return err
+		}
+		return currentProcessor(name, f)
+	}
+	if r.ResourcePath != "" {
+		resource.ResourcePath = r.ResourcePath
+	}
+}
+
+//nolint:nestif,cyclop
 func (r *ResourceCustomization) toFieldProcessor() FieldProcessor {
 	return func(name string, f *FieldInfo) error {
 		if fc, ok := r.Fields[name]; ok && fc.Overrides != nil && (fc.IfFieldType == "" || fc.IfFieldType == f.FieldType) {
@@ -163,23 +169,59 @@ func NewCodeCustomizer(customizationsPath string) (*CodeCustomizer, error) {
 }
 
 func (r *CodeCustomizer) IsExcludedFromClient(resourceName string) bool {
-	if r.Customizations.Client == nil || r.Customizations.Client.ExcludeResources == nil {
+	if r.Customizations.Client == nil {
 		return false
 	}
-	for _, excludedResource := range r.Customizations.Client.ExcludeResources {
-		prefixedAll := strings.HasPrefix(excludedResource, "*")
-		suffixedAll := strings.HasSuffix(excludedResource, "*")
-		if prefixedAll && suffixedAll && strings.Contains(resourceName, excludedResource[1:len(excludedResource)-1]) {
-			return true
-		} else if prefixedAll && strings.HasSuffix(resourceName, excludedResource[1:]) {
-			return true
-		} else if suffixedAll && strings.HasPrefix(resourceName, excludedResource[:len(excludedResource)-1]) {
-			return true
-		} else if resourceName == excludedResource {
+	for _, pattern := range r.Customizations.Client.ExcludeResources {
+		if matchesExcludePattern(pattern, resourceName) {
 			return true
 		}
 	}
 	return false
+}
+
+// ExcludedClientFunctions returns the standard CRUD action names excluded from
+// client generation for res (nil if none configured). Unknown action names are
+// warned and ignored so a typo can't silently leave a method in place.
+func (r *CodeCustomizer) ExcludedClientFunctions(res *Resource) []string {
+	if r.Customizations.Resources == nil {
+		return nil
+	}
+	rc, ok := r.Customizations.Resources[res.Name()]
+	if !ok || rc == nil || len(rc.ExcludeFunctions) == 0 {
+		return nil
+	}
+	valid := standardActionNames(res)
+	for _, a := range rc.ExcludeFunctions {
+		if !valid[a] {
+			log.Warnf("excludeFunctions: unknown action %q for resource %s (ignored)", a, res.Name())
+		}
+	}
+	return rc.ExcludeFunctions
+}
+
+// matchesExcludePattern reports whether name matches a glob-style pattern,
+// where a leading and/or trailing "*" acts as a wildcard:
+//
+//	"*x*" -> contains, "x*" -> prefix, "*x" -> suffix, "x" -> exact.
+//
+// A bare "*" (or "**") has no inner content and matches everything.
+func matchesExcludePattern(pattern, name string) bool {
+	prefixWildcard := strings.HasPrefix(pattern, "*")
+	suffixWildcard := strings.HasSuffix(pattern, "*")
+	switch {
+	case prefixWildcard && suffixWildcard:
+		if len(pattern) <= 2 {
+			return true
+		}
+		return strings.Contains(name, pattern[1:len(pattern)-1])
+	case prefixWildcard:
+		return strings.HasSuffix(name, pattern[1:])
+	case suffixWildcard:
+		return strings.HasPrefix(name, pattern[:len(pattern)-1])
+	default:
+		return name == pattern
+	}
 }
 
 func (r *CodeCustomizer) ApplyToResource(resource *Resource) {

@@ -9,7 +9,7 @@ import (
 	"fmt"
 )
 
-// just to fix compile issues with the import
+// just to fix compile issues with the import.
 var (
 	_ context.Context
 	_ fmt.Formatter
@@ -100,7 +100,11 @@ func (c *client) GetSettingMdns(ctx context.Context, site string) (*SettingMdns,
 	if s.Key != SettingMdnsKey {
 		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingMdnsKey, s.Key)
 	}
-	return f.(*SettingMdns), nil
+	resource, ok := f.(*SettingMdns)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingMdns, received: %T", f)
+	}
+	return resource, nil
 }
 
 // UpdateSettingMdns Experimental! This function is not yet stable and may change in the future.
@@ -110,5 +114,9 @@ func (c *client) UpdateSettingMdns(ctx context.Context, site string, s *SettingM
 	if err != nil {
 		return nil, err
 	}
-	return result.(*SettingMdns), nil
+	updatedResource, ok := result.(*SettingMdns)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingMdns, received: %T", result)
+	}
+	return updatedResource, nil
 }

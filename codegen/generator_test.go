@@ -16,7 +16,7 @@ func TestGenerateCodeFromTemplate(t *testing.T) {
 		name          string
 		templateName  string
 		template      string
-		data          interface{}
+		data          any
 		expectedCode  string
 		expectedError bool
 		errorContains string

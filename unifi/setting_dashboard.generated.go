@@ -9,7 +9,7 @@ import (
 	"fmt"
 )
 
-// just to fix compile issues with the import
+// just to fix compile issues with the import.
 var (
 	_ context.Context
 	_ fmt.Formatter
@@ -79,7 +79,11 @@ func (c *client) GetSettingDashboard(ctx context.Context, site string) (*Setting
 	if s.Key != SettingDashboardKey {
 		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingDashboardKey, s.Key)
 	}
-	return f.(*SettingDashboard), nil
+	resource, ok := f.(*SettingDashboard)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingDashboard, received: %T", f)
+	}
+	return resource, nil
 }
 
 // UpdateSettingDashboard Experimental! This function is not yet stable and may change in the future.
@@ -89,5 +93,9 @@ func (c *client) UpdateSettingDashboard(ctx context.Context, site string, s *Set
 	if err != nil {
 		return nil, err
 	}
-	return result.(*SettingDashboard), nil
+	updatedResource, ok := result.(*SettingDashboard)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingDashboard, received: %T", result)
+	}
+	return updatedResource, nil
 }

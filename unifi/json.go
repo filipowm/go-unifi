@@ -79,12 +79,13 @@ type booleanishString bool
 
 func (e *booleanishString) UnmarshalJSON(b []byte) error {
 	s := string(b)
-	if s == `"enabled"` {
+	switch s {
+	case `"enabled"`:
 		*e = booleanishString(true)
 		return nil
-	} else if s == `"disabled"` {
+	case `"disabled"`:
 		*e = booleanishString(false)
 		return nil
 	}
-	return errors.New("Could not unmarshal JSON value.")
+	return errors.New("could not unmarshal JSON value")
 }

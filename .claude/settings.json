@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path // empty' | { read -r f; case \"$f\" in *.generated.go) echo '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"BLOCKED: *.generated.go is code-generated (DO NOT EDIT). Edit codegen/customizations.yml or a hand-written sibling .go file, then regenerate with: go generate unifi/codegen.go\"}}' ;; esac; }",
+            "statusMessage": "Checking for generated-file edits"
+          }
+        ]
+      }
+    ]
+  }
+}

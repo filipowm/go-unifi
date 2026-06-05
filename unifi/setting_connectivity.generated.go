@@ -9,7 +9,7 @@ import (
 	"fmt"
 )
 
-// just to fix compile issues with the import
+// just to fix compile issues with the import.
 var (
 	_ context.Context
 	_ fmt.Formatter
@@ -62,7 +62,11 @@ func (c *client) GetSettingConnectivity(ctx context.Context, site string) (*Sett
 	if s.Key != SettingConnectivityKey {
 		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingConnectivityKey, s.Key)
 	}
-	return f.(*SettingConnectivity), nil
+	resource, ok := f.(*SettingConnectivity)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingConnectivity, received: %T", f)
+	}
+	return resource, nil
 }
 
 // UpdateSettingConnectivity Experimental! This function is not yet stable and may change in the future.
@@ -72,5 +76,9 @@ func (c *client) UpdateSettingConnectivity(ctx context.Context, site string, s *
 	if err != nil {
 		return nil, err
 	}
-	return result.(*SettingConnectivity), nil
+	updatedResource, ok := result.(*SettingConnectivity)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingConnectivity, received: %T", result)
+	}
+	return updatedResource, nil
 }

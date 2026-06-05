@@ -9,7 +9,7 @@ import (
 	"fmt"
 )
 
-// just to fix compile issues with the import
+// just to fix compile issues with the import.
 var (
 	_ context.Context
 	_ fmt.Formatter
@@ -57,7 +57,11 @@ func (c *client) GetSettingLocale(ctx context.Context, site string) (*SettingLoc
 	if s.Key != SettingLocaleKey {
 		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingLocaleKey, s.Key)
 	}
-	return f.(*SettingLocale), nil
+	resource, ok := f.(*SettingLocale)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingLocale, received: %T", f)
+	}
+	return resource, nil
 }
 
 // UpdateSettingLocale Experimental! This function is not yet stable and may change in the future.
@@ -67,5 +71,9 @@ func (c *client) UpdateSettingLocale(ctx context.Context, site string, s *Settin
 	if err != nil {
 		return nil, err
 	}
-	return result.(*SettingLocale), nil
+	updatedResource, ok := result.(*SettingLocale)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingLocale, received: %T", result)
+	}
+	return updatedResource, nil
 }

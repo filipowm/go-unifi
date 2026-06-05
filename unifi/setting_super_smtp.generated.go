@@ -9,7 +9,7 @@ import (
 	"fmt"
 )
 
-// just to fix compile issues with the import
+// just to fix compile issues with the import.
 var (
 	_ context.Context
 	_ fmt.Formatter
@@ -43,9 +43,9 @@ type SettingSuperSmtp struct {
 func (dst *SettingSuperSmtp) UnmarshalJSON(b []byte) error {
 	type Alias SettingSuperSmtp
 	aux := &struct {
-		Port emptyStringInt `json:"port"`
-
 		*Alias
+
+		Port emptyStringInt `json:"port"`
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -68,7 +68,11 @@ func (c *client) GetSettingSuperSmtp(ctx context.Context, site string) (*Setting
 	if s.Key != SettingSuperSmtpKey {
 		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingSuperSmtpKey, s.Key)
 	}
-	return f.(*SettingSuperSmtp), nil
+	resource, ok := f.(*SettingSuperSmtp)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingSuperSmtp, received: %T", f)
+	}
+	return resource, nil
 }
 
 // UpdateSettingSuperSmtp Experimental! This function is not yet stable and may change in the future.
@@ -78,5 +82,9 @@ func (c *client) UpdateSettingSuperSmtp(ctx context.Context, site string, s *Set
 	if err != nil {
 		return nil, err
 	}
-	return result.(*SettingSuperSmtp), nil
+	updatedResource, ok := result.(*SettingSuperSmtp)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingSuperSmtp, received: %T", result)
+	}
+	return updatedResource, nil
 }

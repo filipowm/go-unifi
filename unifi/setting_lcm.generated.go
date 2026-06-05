@@ -9,7 +9,7 @@ import (
 	"fmt"
 )
 
-// just to fix compile issues with the import
+// just to fix compile issues with the import.
 var (
 	_ context.Context
 	_ fmt.Formatter
@@ -39,10 +39,10 @@ type SettingLcm struct {
 func (dst *SettingLcm) UnmarshalJSON(b []byte) error {
 	type Alias SettingLcm
 	aux := &struct {
+		*Alias
+
 		Brightness  emptyStringInt `json:"brightness"`
 		IDleTimeout emptyStringInt `json:"idle_timeout"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -66,7 +66,11 @@ func (c *client) GetSettingLcm(ctx context.Context, site string) (*SettingLcm, e
 	if s.Key != SettingLcmKey {
 		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingLcmKey, s.Key)
 	}
-	return f.(*SettingLcm), nil
+	resource, ok := f.(*SettingLcm)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingLcm, received: %T", f)
+	}
+	return resource, nil
 }
 
 // UpdateSettingLcm Experimental! This function is not yet stable and may change in the future.
@@ -76,5 +80,9 @@ func (c *client) UpdateSettingLcm(ctx context.Context, site string, s *SettingLc
 	if err != nil {
 		return nil, err
 	}
-	return result.(*SettingLcm), nil
+	updatedResource, ok := result.(*SettingLcm)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingLcm, received: %T", result)
+	}
+	return updatedResource, nil
 }

@@ -27,7 +27,7 @@ const (
 
 	defaultUserAgent = "go-unifi/0.0.1"
 
-	ApiKeyHeader      = "X-Api-Key"
+	ApiKeyHeader      = "X-Api-Key" //nolint:gosec
 	CsrfHeader        = "X-Csrf-Token"
 	UserAgentHeader   = "User-Agent"
 	AcceptHeader      = "Accept"

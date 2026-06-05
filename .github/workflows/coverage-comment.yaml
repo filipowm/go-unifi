@@ -1,0 +1,61 @@
+---
+# Posts the code coverage report as a pull request comment.
+#
+# This runs via the workflow_run trigger so it executes in the context of the
+# BASE repository (default branch) with a read-write token, even for pull
+# requests opened from forks - whose own token is read-only and therefore cannot
+# comment. Crucially, this workflow never checks out or runs the PR's code; it
+# only consumes the inert coverage artifact produced by the Continuous
+# Integration workflow. This is GitHub's recommended secure pattern for
+# commenting on fork PRs.
+name: "Coverage Comment"
+on:
+  workflow_run:
+    workflows:
+      - "Continuous Integration"
+    types:
+      - "completed"
+
+permissions:
+  contents: "read"
+  actions: "read"
+  pull-requests: "write"
+
+jobs:
+  comment:
+    name: "Post coverage comment"
+    runs-on: 'ubuntu-latest'
+    # Only for successful runs that originated from a pull request.
+    if: >-
+      ${{ github.event.workflow_run.event == 'pull_request' &&
+          github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      # Checks out the BASE repository (trusted) only to read .octocov.yml.
+      - uses: 'actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10'  # v6.0.3
+
+      - name: "Download coverage artifact"
+        uses: 'actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c'  # v8.0.1
+        with:
+          name: "code-coverage"
+          run-id: "${{ github.event.workflow_run.id }}"
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: "Download PR number artifact"
+        uses: 'actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c'  # v8.0.1
+        with:
+          name: "pr-number"
+          run-id: "${{ github.event.workflow_run.id }}"
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: "Read PR number"
+        id: "pr"
+        run: 'echo "number=$(cat pr-number.txt)" >> "$GITHUB_OUTPUT"'
+
+      - name: "Comment coverage report"
+        uses: 'k1LoW/octocov-action@b3b6ee60482a667950f87553abf1df63217235d9'  # v1.5.1
+        env:
+          # github.event.workflow_run.pull_requests is empty for fork PRs, so the
+          # PR number is carried across the boundary via the artifact and injected
+          # here. Any OCTOCOV_-prefixed var overrides the GitHub-provided one.
+          OCTOCOV_GITHUB_PULL_REQUEST_NUMBER: "${{ steps.pr.outputs.number }}"
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"

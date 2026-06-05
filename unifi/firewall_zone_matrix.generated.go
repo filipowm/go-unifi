@@ -9,7 +9,7 @@ import (
 	"fmt"
 )
 
-// just to fix compile issues with the import
+// just to fix compile issues with the import.
 var (
 	_ context.Context
 	_ fmt.Formatter
@@ -54,9 +54,9 @@ type FirewallZoneMatrixData struct {
 func (dst *FirewallZoneMatrixData) UnmarshalJSON(b []byte) error {
 	type Alias FirewallZoneMatrixData
 	aux := &struct {
-		PolicyCount emptyStringInt `json:"policy_count"`
-
 		*Alias
+
+		PolicyCount emptyStringInt `json:"policy_count"`
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -85,7 +85,6 @@ func (c *client) getFirewallZoneMatrix(ctx context.Context, site, id string) (*F
 	var respBody FirewallZoneMatrix
 
 	err := c.Get(ctx, fmt.Sprintf("%s/site/%s/firewall/zone-matrix/%s", c.apiPaths.ApiV2Path, site, id), nil, &respBody)
-
 	if err != nil {
 		return nil, err
 	}

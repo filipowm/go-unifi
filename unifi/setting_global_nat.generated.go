@@ -9,7 +9,7 @@ import (
 	"fmt"
 )
 
-// just to fix compile issues with the import
+// just to fix compile issues with the import.
 var (
 	_ context.Context
 	_ fmt.Formatter
@@ -58,7 +58,11 @@ func (c *client) GetSettingGlobalNat(ctx context.Context, site string) (*Setting
 	if s.Key != SettingGlobalNatKey {
 		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingGlobalNatKey, s.Key)
 	}
-	return f.(*SettingGlobalNat), nil
+	resource, ok := f.(*SettingGlobalNat)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingGlobalNat, received: %T", f)
+	}
+	return resource, nil
 }
 
 // UpdateSettingGlobalNat Experimental! This function is not yet stable and may change in the future.
@@ -68,5 +72,9 @@ func (c *client) UpdateSettingGlobalNat(ctx context.Context, site string, s *Set
 	if err != nil {
 		return nil, err
 	}
-	return result.(*SettingGlobalNat), nil
+	updatedResource, ok := result.(*SettingGlobalNat)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingGlobalNat, received: %T", result)
+	}
+	return updatedResource, nil
 }

@@ -9,7 +9,7 @@ import (
 	"fmt"
 )
 
-// just to fix compile issues with the import
+// just to fix compile issues with the import.
 var (
 	_ context.Context
 	_ fmt.Formatter
@@ -100,7 +100,11 @@ func (c *client) GetSettingEtherLighting(ctx context.Context, site string) (*Set
 	if s.Key != SettingEtherLightingKey {
 		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingEtherLightingKey, s.Key)
 	}
-	return f.(*SettingEtherLighting), nil
+	resource, ok := f.(*SettingEtherLighting)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingEtherLighting, received: %T", f)
+	}
+	return resource, nil
 }
 
 // UpdateSettingEtherLighting Experimental! This function is not yet stable and may change in the future.
@@ -110,5 +114,9 @@ func (c *client) UpdateSettingEtherLighting(ctx context.Context, site string, s 
 	if err != nil {
 		return nil, err
 	}
-	return result.(*SettingEtherLighting), nil
+	updatedResource, ok := result.(*SettingEtherLighting)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingEtherLighting, received: %T", result)
+	}
+	return updatedResource, nil
 }

@@ -1,5 +1,7 @@
 # UniFi Go SDK
+
 ![GitHub Release](https://img.shields.io/github/v/release/filipowm/go-unifi)
+![Supported UniFi Controller Version](https://img.shields.io/badge/dynamic/regex?url=https%3A%2F%2Fraw.githubusercontent.com%2Ffilipowm%2Fgo-unifi%2Frefs%2Fheads%2Fmain%2F.unifi-version&search=(.*)%3F&logo=ubiquiti&label=Supported%20UniFi%20Controller%20Version&color=yellow)
 [![Docs](https://img.shields.io/badge/docs-reference-blue)](https://github.com/filipowm/go-unifi/blob/main/docs/readme.md)
 [![GoDoc](https://godoc.org/github.com/filipowm/go-unifi?status.svg)](https://godoc.org/github.com/filipowm/go-unifi)
 ![GitHub branch check runs](https://img.shields.io/github/check-runs/filipowm/go-unifi/main)
@@ -21,27 +23,39 @@ Check out the detailed [documentation](docs/readme.md) for more information.
 
 ## Supported UniFi Controller Versions
 
-Any version after 5.12.35 is supported as of now. **Latest version: 9.0.114**.
-The SDK is updated daily to track the latest UniFi Controller versions. 
+Any version after 5.12.35 is supported as of now. **Latest version: 9.5.21**.
+The SDK is updated daily to track the latest UniFi Controller versions.
 If you encounter any issues with the latest UniFi Controller version, please open an issue.
+
+See the [compatibility matrix](docs/compatibility_matrix.md) for the mapping between `go-unifi` releases and supported UniFi Controller versions.
+It also includes a changelog of breaking compatibility changes for each release.
 
 ## Code Generation
 
 The data models and basic REST methods are generated from JSON specifications found in the UniFi Controller JAR files. Those JSON specs show all fields and the associated regex/validation information.
-This ensures accuracy and completeness of the API coverage. However, code generation is not perfect and some endpoints might be missing, or not covered perfectly by the generated code. We hope to rely on official API specifications as soon as they are available.
+This ensures accuracy and completeness of the API coverage. However, code generation is not perfect and some endpoints might be missing, or not covered perfectly by the generated code. We hope to rely
+on official API specifications as soon as they are available.
 
 To regenerate the code for the latest UniFi Controller version:
 
 ```bash
-go generate unifi/codegen.go
+make generate-resources
 ```
 
-**Note:** While the current code generation approach works, we're exploring better ways to extract API specifications. There is no official API specifications available, and the UniFi Controller JAR is obfuscated, making it
-challenging to directly use Java classes. Contributions and suggestions for improvements are welcome!
+To regenerate for a specific controller version, override `VERSION`:
+
+```bash
+make generate-resources VERSION=9.3.45
+```
+
+`make generate` regenerates everything (resource types + the `DeviceState` stringer) and accepts the same `VERSION` override.
+
+**Note:** While the current code generation approach works, we're exploring better ways to extract API specifications. There is no official API specifications available,
+and the UniFi Controller JAR is obfuscated, making it challenging to directly use Java classes. Contributions and suggestions for improvements are welcome!
 
 ## Migrating from `paultyng/go-unifi`
 
-If you already use `paultyng/go-unifi`, you can easily migrate to this SDK, because it is a fork and the SDK is fully compatible with the original one. 
+If you already use `paultyng/go-unifi`, you can easily migrate to this SDK, because it is a fork and the SDK is fully compatible with the original one.
 Check out the [migration guide](docs/migrating_from_upstream.md) for information on how to migrate from the upstream `paultyng/go-unifi` SDK.
 
 ## Usage
@@ -50,6 +64,7 @@ Unifi client support both username/password and API Key authentication. It is re
 as well as dedicated user restricted to local access only.
 
 ### Obtaining an API Key
+
 1. Open your Site in UniFi Site Manager
 2. Click on `Control Plane -> Admins & Users`.
 3. Select your Admin user.
@@ -63,8 +78,8 @@ as well as dedicated user restricted to local access only.
 
 ```go
 c, err := unifi.NewClient(&unifi.ClientConfig{
-    BaseURL: "https://unifi.localdomain",
-    APIKey: "your-api-key",
+BaseURL: "https://unifi.localdomain",
+APIKey: "your-api-key",
 })
 ```
 
@@ -72,9 +87,9 @@ Instead of API Key, you can also use username/password for authentication:
 
 ```go
 c, err := unifi.NewClient(&unifi.ClientConfig{
-    BaseURL: "https://unifi.localdomain",
-    Username: "your-username",
-    Password: "your-password",
+BaseURL: "https://unifi.localdomain",
+Username: "your-username",
+Password: "your-password",
 })
 ```
 
@@ -82,8 +97,8 @@ If you are using self-signed certificates on your UniFi Controller, you can disa
 
 ```go
 c, err := unifi.NewClient(&unifi.ClientConfig{
-    ...
-    VerifySSL: false,
+...
+VerifySSL: false,
 })
 ```
 
@@ -95,11 +110,11 @@ You can customize underlying HTTP client by using `HttpTransportCustomizer` inte
 
 ```go
 c, err := unifi.NewClient(&unifi.ClientConfig{
-    ...
-    HttpTransportCustomizer: func(transport *http.Transport) (*http.Transport, error) {
-        transport.MaxIdleConns = 10
-        return transport, nil
-    },
+...
+HttpTransportCustomizer: func (transport *http.Transport) (*http.Transport, error) {
+transport.MaxIdleConns = 10
+return transport, nil
+},
 })
 ```
 
@@ -115,28 +130,29 @@ For example, you can use interceptors to log requests and responses:
 type LoggingInterceptor struct{}
 
 func (l *LoggingInterceptor) InterceptRequest(req *http.Request) error {
-    log.Printf("Request: %s %s", req.Method, req.URL)
-    return nil
+log.Printf("Request: %s %s", req.Method, req.URL)
+return nil
 }
 
 func (l *LoggingInterceptor) InterceptResponse(resp *http.Response) error {
-    log.Printf("Response status: %d", resp.StatusCode)
-    return nil
+log.Printf("Response status: %d", resp.StatusCode)
+return nil
 }
 
 c, err := unifi.NewClient(&unifi.ClientConfig{
-    ...
-    Interceptors: []unifi.ClientInterceptor{&LoggingInterceptor{}},
+...
+Interceptors: []unifi.ClientInterceptor{&LoggingInterceptor{}},
 })
 ```
 
 ### Client-side validation
 
-The SDK provides basic validation for the API models. It is recommended to use it to ensure that the data you are sending 
-to the UniFi Controller is correct. The validation is based on the regex and validation rules provided in 
+The SDK provides basic validation for the API models. It is recommended to use it to ensure that the data you are sending
+to the UniFi Controller is correct. The validation is based on the regex and validation rules provided in
 the UniFi Controller API specs extracted from the JAR files.
 
 Client supports 3 modes of validation:
+
 - `unifi.SoftValidation` (_default_) - will log a warning if any of the fields are invalid before sending the request, but will not stop the request
 - `unifi.HardValidation` - will return an error if any of the fields are invalid before sending the request
 - `unifi.DisableValidation` - will disable validation completely
@@ -145,8 +161,8 @@ To change the validation mode, you can use the `ValidationMode` field in the cli
 
 ```go
 c, err := unifi.NewClient(&unifi.ClientConfig{
-    ...
-    ValidationMode: unifi.HardValidation,
+...
+ValidationMode: unifi.HardValidation,
 })
 ```
 
@@ -154,48 +170,50 @@ If you use hard validation, you can get access to `unifi.ValidationError` struct
 
 ```go
 n := &unifi.Network{
-	Name:     "my-network",
-	Purpose:  "invalid-purpose",
-	IPSubnet: "10.0.0.10/24",
+Name:     "my-network",
+Purpose:  "invalid-purpose",
+IPSubnet: "10.0.0.10/24",
 }
 _, err = c.CreateNetwork(ctx, "default", n)
 
 if err != nil {
-	validationError := &unifi.ValidationError{}
-	errors.As(err, &validationError)
-	fmt.Printf("Error: %v\n", validationError)
-    fmt.Printf("Root: %v\n", validationError.Root)
+validationError := &unifi.ValidationError{}
+errors.As(err, &validationError)
+fmt.Printf("Error: %v\n", validationError)
+fmt.Printf("Root: %v\n", validationError.Root)
 }
 ```
 
-`Root` error is `validator.ValidationErrors` struct from [go-playground/validator](https://pkg.go.dev/github.com/go-playground/validator/v10#ValidationErrors), 
+`Root` error is `validator.ValidationErrors` struct from [go-playground/validator](https://pkg.go.dev/github.com/go-playground/validator/v10#ValidationErrors),
 which contains detailed information about the validation errors.
 
 ### Examples
 
 List all available networks:
+
 ```go
 network, err := c.ListNetwork(ctx, "site-name")
 ```
 
 Create user assigned to network:
+
 ```go
 user, err := c.CreateUser(ctx, "site-name", &unifi.User{
-    Name:      "My Network User",
-    MAC:       "00:00:00:00:00:00", 
-    NetworkID: network[0].ID, 
-    IP:        "10.0.21.37",
+Name:      "My Network User",
+MAC:       "00:00:00:00:00:00",
+NetworkID: network[0].ID,
+IP:        "10.0.21.37",
 })
 ```
 
 ## Plans
 
 - [ ] Support Unifi Controller API V2
-  - [x] AP Groups
-  - [x] DNS Records
-  - [x] Zone-based firewalls
-  - [ ] Traffic management
-  - [ ] other...?
+    - [x] AP Groups
+    - [x] DNS Records
+    - [x] Zone-based firewalls
+    - [ ] Traffic management
+    - [ ] other...?
 - [x] Increase API coverage, or modify code generation to rely on the official UniFi Controller API specifications
 - [x] Improve error handling (currently only basic error handling is implemented and error details are not propagated)
 - [x] Improve client code for better usability
@@ -207,12 +225,29 @@ user, err := c.CreateUser(ctx, "site-name", &unifi.User{
 - [x] Add more documentation and examples
 - [ ] Bugfixing...
 
+## Development
+
+A `Makefile` provides common local tasks. Run `make help` for the full list. Most useful targets:
+
+| Target           | Description                                                                  |
+|------------------|------------------------------------------------------------------------------|
+| `make build`     | Compile all packages                                                         |
+| `make test`      | Run tests with coverage (generated files excluded from the report)           |
+| `make test-fast` | Run tests without coverage; supports `RUN=TestName`                          |
+| `make cover`     | Run tests and open the HTML coverage report                                  |
+| `make lint`      | Run `golangci-lint`                                                          |
+| `make fmt`       | Format code (gofumpt/goimports/gci via golangci-lint)                        |
+| `make check`     | Build, lint and test — the pre-push gate                                     |
+| `make generate`  | Regenerate resource types and the `DeviceState` stringer (accepts `VERSION`) |
+
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change. I will be happy to find additional maintainers!
+Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change. I will be happy to find additional
+maintainers!
 
 ## Acknowledgment
 
 This project is a fork of [paultyng/go-unifi](https://github.com/paultyng/go-unifi). Huge thanks to Paul Tyng together with the rest of maintainers for creating and maintaining the original SDK,
-which provided an excellent foundation for this fork, and is great piece of engineering work. The fork was created to introduce several improvements including keeping it up to date with the latest UniFi Controller versions, more dev-friendly client usage, enhanced error handling, additional API endpoints support,
+which provided an excellent foundation for this fork, and is great piece of engineering work. The fork was created to introduce several improvements including keeping it up to date with the latest
+UniFi Controller versions, more dev-friendly client usage, enhanced error handling, additional API endpoints support,
 improved documentation, better test coverage, and various bug fixes. It's goal is to provide a stable, up to date and reliable SDK for the UniFi Network Controller API.

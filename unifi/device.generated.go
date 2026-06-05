@@ -9,7 +9,7 @@ import (
 	"fmt"
 )
 
-// just to fix compile issues with the import
+// just to fix compile issues with the import.
 var (
 	_ context.Context
 	_ fmt.Formatter
@@ -118,6 +118,8 @@ type Device struct {
 func (dst *Device) UnmarshalJSON(b []byte) error {
 	type Alias Device
 	aux := &struct {
+		*Alias
+
 		GatewayVrrpPriority        emptyStringInt   `json:"gateway_vrrp_priority"`
 		LcmBrightness              emptyStringInt   `json:"lcm_brightness"`
 		LcmIDleTimeout             emptyStringInt   `json:"lcm_idle_timeout"`
@@ -131,8 +133,6 @@ func (dst *Device) UnmarshalJSON(b []byte) error {
 		PowerSourceCtrlBudget      emptyStringInt   `json:"power_source_ctrl_budget"`
 		StpPriority                numberOrString   `json:"stp_priority"`
 		Volume                     emptyStringInt   `json:"volume"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -220,9 +220,9 @@ type DeviceEtherLighting struct {
 func (dst *DeviceEtherLighting) UnmarshalJSON(b []byte) error {
 	type Alias DeviceEtherLighting
 	aux := &struct {
-		Brightness emptyStringInt `json:"brightness"`
-
 		*Alias
+
+		Brightness emptyStringInt `json:"brightness"`
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -266,9 +266,9 @@ type DeviceMbbOverrides struct {
 func (dst *DeviceMbbOverrides) UnmarshalJSON(b []byte) error {
 	type Alias DeviceMbbOverrides
 	aux := &struct {
-		PrimarySlot emptyStringInt `json:"primary_slot"`
-
 		*Alias
+
+		PrimarySlot emptyStringInt `json:"primary_slot"`
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -294,9 +294,9 @@ type DeviceNutServer struct {
 func (dst *DeviceNutServer) UnmarshalJSON(b []byte) error {
 	type Alias DeviceNutServer
 	aux := &struct {
-		Port emptyStringInt `json:"port"`
-
 		*Alias
+
+		Port emptyStringInt `json:"port"`
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -320,9 +320,9 @@ type DeviceOutletOverrides struct {
 func (dst *DeviceOutletOverrides) UnmarshalJSON(b []byte) error {
 	type Alias DeviceOutletOverrides
 	aux := &struct {
-		Index emptyStringInt `json:"index"`
-
 		*Alias
+
+		Index emptyStringInt `json:"index"`
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -387,6 +387,8 @@ type DevicePortOverrides struct {
 func (dst *DevicePortOverrides) UnmarshalJSON(b []byte) error {
 	type Alias DevicePortOverrides
 	aux := &struct {
+		*Alias
+
 		AggregateMembers           []emptyStringInt `json:"aggregate_members"`
 		Dot1XIDleTimeout           emptyStringInt   `json:"dot1x_idle_timeout"`
 		EgressRateLimitKbps        emptyStringInt   `json:"egress_rate_limit_kbps"`
@@ -403,8 +405,6 @@ func (dst *DevicePortOverrides) UnmarshalJSON(b []byte) error {
 		StormctrlMcastRate         emptyStringInt   `json:"stormctrl_mcast_rate"`
 		StormctrlUcastLevel        emptyStringInt   `json:"stormctrl_ucast_level"`
 		StormctrlUcastRate         emptyStringInt   `json:"stormctrl_ucast_rate"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -446,12 +446,12 @@ type DeviceQOSMarking struct {
 func (dst *DeviceQOSMarking) UnmarshalJSON(b []byte) error {
 	type Alias DeviceQOSMarking
 	aux := &struct {
+		*Alias
+
 		CosCode          emptyStringInt `json:"cos_code"`
 		DscpCode         emptyStringInt `json:"dscp_code"`
 		IPPrecedenceCode emptyStringInt `json:"ip_precedence_code"`
 		Queue            emptyStringInt `json:"queue"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -480,13 +480,13 @@ type DeviceQOSMatching struct {
 func (dst *DeviceQOSMatching) UnmarshalJSON(b []byte) error {
 	type Alias DeviceQOSMatching
 	aux := &struct {
+		*Alias
+
 		CosCode          emptyStringInt `json:"cos_code"`
 		DscpCode         emptyStringInt `json:"dscp_code"`
 		DstPort          emptyStringInt `json:"dst_port"`
 		IPPrecedenceCode emptyStringInt `json:"ip_precedence_code"`
 		SrcPort          emptyStringInt `json:"src_port"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -568,45 +568,42 @@ func (dst *DeviceRadioIDentifiers) UnmarshalJSON(b []byte) error {
 }
 
 type DeviceRadioTable struct {
-	AntennaGain                int                      `json:"antenna_gain,omitempty"` // ^-?([0-9]|[1-9][0-9])
-	AntennaID                  int                      `json:"antenna_id,omitempty"`   // -1|[0-9]
-	AssistedRoamingEnabled     bool                     `json:"assisted_roaming_enabled,omitempty"`
-	AssistedRoamingRssi        int                      `json:"assisted_roaming_rssi,omitempty"` // ^-([6-7][0-9]|80)$
-	BackupChannel              string                   `json:"backup_channel,omitempty"`        // [0-9]|[1][0-4]|4.5|5|16|17|21|25|29|33|34|36|37|38|40|41|42|44|45|46|48|49|52|53|56|57|60|61|64|65|69|73|77|81|85|89|93|97|100|101|104|105|108|109|112|113|117|116|120|121|124|125|128|129|132|133|136|137|140|141|144|145|149|153|157|161|165|169|173|177|181|183|184|185|187|188|189|192|193|196|197|201|205|209|213|217|221|225|229|233|auto
-	Channel                    string                   `json:"channel,omitempty"`               // [0-9]|[1][0-4]|1.5|2.5|3.5|4.5|5.5|6.5|5|16|17|21|25|29|33|34|36|37|38|40|41|42|44|45|46|48|49|52|53|56|57|60|61|64|65|69|73|77|81|85|89|93|97|100|101|104|105|108|109|112|113|117|116|120|121|124|125|128|129|132|133|136|137|140|141|144|145|149|153|157|161|165|169|173|177|181|183|184|185|187|188|189|192|193|196|197|201|205|209|213|217|221|225|229|233|auto
-	ChannelOptimizationEnabled bool                     `json:"channel_optimization_enabled,omitempty"`
-	Dfs                        bool                     `json:"dfs,omitempty"`
-	HardNoiseFloorEnabled      bool                     `json:"hard_noise_floor_enabled,omitempty"`
-	Ht                         int                      `json:"ht,omitempty" validate:"omitempty,oneof=20 40 80 160 240 320 1080 2160 4320"` // 20|40|80|160|240|320|1080|2160|4320
-	LoadbalanceEnabled         bool                     `json:"loadbalance_enabled,omitempty"`
-	Maxsta                     int                      `json:"maxsta,omitempty"`   // [1-9]|[1-9][0-9]|1[0-9]{2}|200|^$
-	MinRssi                    int                      `json:"min_rssi,omitempty"` // ^-(6[7-9]|[7-8][0-9]|90)$
-	MinRssiEnabled             bool                     `json:"min_rssi_enabled,omitempty"`
-	Name                       string                   `json:"name,omitempty"`
-	Radio                      string                   `json:"radio,omitempty" validate:"omitempty,oneof=ng na ad 6e"` // ng|na|ad|6e
-	RadioIDentifiers           []DeviceRadioIDentifiers `json:"radio_identifiers,omitempty"`
-	SensLevel                  int                      `json:"sens_level,omitempty"` // ^-([5-8][0-9]|90)$
-	SensLevelEnabled           bool                     `json:"sens_level_enabled,omitempty"`
-	TxPower                    string                   `json:"tx_power,omitempty"`                                                                      // [\d]+|auto
-	TxPowerMode                string                   `json:"tx_power_mode,omitempty" validate:"omitempty,oneof=auto medium high low custom disabled"` // auto|medium|high|low|custom|disabled
-	VwireEnabled               bool                     `json:"vwire_enabled,omitempty"`
+	AntennaGain            int                      `json:"antenna_gain,omitempty"` // ^-?([0-9]|[1-9][0-9])
+	AntennaID              int                      `json:"antenna_id,omitempty"`   // -1|[0-9]
+	AssistedRoamingEnabled bool                     `json:"assisted_roaming_enabled,omitempty"`
+	AssistedRoamingRssi    int                      `json:"assisted_roaming_rssi,omitempty"` // ^-([6-7][0-9]|80)$
+	Channel                string                   `json:"channel,omitempty"`               // [0-9]|[1][0-4]|1.5|2.5|3.5|4.5|5.5|6.5|5|16|17|21|25|29|33|34|36|37|38|40|41|42|44|45|46|48|49|52|53|56|57|60|61|64|65|69|73|77|81|85|89|93|97|100|101|104|105|108|109|112|113|117|116|120|121|124|125|128|129|132|133|136|137|140|141|144|145|149|153|157|161|165|169|173|177|181|183|184|185|187|188|189|192|193|196|197|201|205|209|213|217|221|225|229|233|auto
+	Dfs                    bool                     `json:"dfs,omitempty"`
+	HardNoiseFloorEnabled  bool                     `json:"hard_noise_floor_enabled,omitempty"`
+	Ht                     int                      `json:"ht,omitempty" validate:"omitempty,oneof=20 40 80 160 240 320 1080 2160 4320"` // 20|40|80|160|240|320|1080|2160|4320
+	LoadbalanceEnabled     bool                     `json:"loadbalance_enabled,omitempty"`
+	Maxsta                 int                      `json:"maxsta,omitempty"`   // [1-9]|[1-9][0-9]|1[0-9]{2}|200|^$
+	MinRssi                int                      `json:"min_rssi,omitempty"` // ^-(6[7-9]|[7-8][0-9]|90)$
+	MinRssiEnabled         bool                     `json:"min_rssi_enabled,omitempty"`
+	Name                   string                   `json:"name,omitempty"`
+	Radio                  string                   `json:"radio,omitempty" validate:"omitempty,oneof=ng na ad 6e"` // ng|na|ad|6e
+	RadioIDentifiers       []DeviceRadioIDentifiers `json:"radio_identifiers,omitempty"`
+	SensLevel              int                      `json:"sens_level,omitempty"` // ^-([5-8][0-9]|90)$
+	SensLevelEnabled       bool                     `json:"sens_level_enabled,omitempty"`
+	TxPower                string                   `json:"tx_power,omitempty"`                                                                      // [\d]+|auto
+	TxPowerMode            string                   `json:"tx_power_mode,omitempty" validate:"omitempty,oneof=auto medium high low custom disabled"` // auto|medium|high|low|custom|disabled
+	VwireEnabled           bool                     `json:"vwire_enabled,omitempty"`
 }
 
 func (dst *DeviceRadioTable) UnmarshalJSON(b []byte) error {
 	type Alias DeviceRadioTable
 	aux := &struct {
+		*Alias
+
 		AntennaGain         emptyStringInt `json:"antenna_gain"`
 		AntennaID           emptyStringInt `json:"antenna_id"`
 		AssistedRoamingRssi emptyStringInt `json:"assisted_roaming_rssi"`
-		BackupChannel       numberOrString `json:"backup_channel"`
 		Channel             numberOrString `json:"channel"`
 		Ht                  emptyStringInt `json:"ht"`
 		Maxsta              emptyStringInt `json:"maxsta"`
 		MinRssi             emptyStringInt `json:"min_rssi"`
 		SensLevel           emptyStringInt `json:"sens_level"`
 		TxPower             numberOrString `json:"tx_power"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -618,7 +615,6 @@ func (dst *DeviceRadioTable) UnmarshalJSON(b []byte) error {
 	dst.AntennaGain = int(aux.AntennaGain)
 	dst.AntennaID = int(aux.AntennaID)
 	dst.AssistedRoamingRssi = int(aux.AssistedRoamingRssi)
-	dst.BackupChannel = string(aux.BackupChannel)
 	dst.Channel = string(aux.Channel)
 	dst.Ht = int(aux.Ht)
 	dst.Maxsta = int(aux.Maxsta)
@@ -659,9 +655,9 @@ type DeviceRpsPortTable struct {
 func (dst *DeviceRpsPortTable) UnmarshalJSON(b []byte) error {
 	type Alias DeviceRpsPortTable
 	aux := &struct {
-		PortIDX emptyStringInt `json:"port_idx"`
-
 		*Alias
+
+		PortIDX emptyStringInt `json:"port_idx"`
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -691,13 +687,13 @@ type DeviceSim struct {
 func (dst *DeviceSim) UnmarshalJSON(b []byte) error {
 	type Alias DeviceSim
 	aux := &struct {
+		*Alias
+
 		DataHardLimitBytes   emptyStringInt `json:"data_hard_limit_bytes"`
 		DataSoftLimitBytes   emptyStringInt `json:"data_soft_limit_bytes"`
 		DataWarningThreshold emptyStringInt `json:"data_warning_threshold"`
 		ResetDate            emptyStringInt `json:"reset_date"`
 		Slot                 emptyStringInt `json:"slot"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -771,9 +767,9 @@ func (c *client) createDevice(ctx context.Context, site string, d *Device) (*Dev
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	newResource := respBody.Data[0]
 
-	return &new, nil
+	return &newResource, nil
 }
 
 func (c *client) updateDevice(ctx context.Context, site string, d *Device) (*Device, error) {
@@ -791,7 +787,7 @@ func (c *client) updateDevice(ctx context.Context, site string, d *Device) (*Dev
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	updatedResource := respBody.Data[0]
 
-	return &new, nil
+	return &updatedResource, nil
 }

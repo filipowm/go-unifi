@@ -9,7 +9,7 @@ import (
 	"fmt"
 )
 
-// just to fix compile issues with the import
+// just to fix compile issues with the import.
 var (
 	_ context.Context
 	_ fmt.Formatter
@@ -25,7 +25,7 @@ type FirewallGroup struct {
 	NoDelete bool   `json:"attr_no_delete,omitempty"`
 	NoEdit   bool   `json:"attr_no_edit,omitempty"`
 
-	GroupMembers []string `json:"group_members,omitempty"`
+	GroupMembers []string `json:"group_members"`
 	GroupType    string   `json:"group_type,omitempty" validate:"omitempty,oneof=address-group port-group ipv6-address-group"` // address-group|port-group|ipv6-address-group
 	Name         string   `json:"name,omitempty" validate:"omitempty,gte=1,lte=64"`                                            // .{1,64}
 }
@@ -102,9 +102,9 @@ func (c *client) createFirewallGroup(ctx context.Context, site string, d *Firewa
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	newResource := respBody.Data[0]
 
-	return &new, nil
+	return &newResource, nil
 }
 
 func (c *client) updateFirewallGroup(ctx context.Context, site string, d *FirewallGroup) (*FirewallGroup, error) {
@@ -122,7 +122,7 @@ func (c *client) updateFirewallGroup(ctx context.Context, site string, d *Firewa
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	updatedResource := respBody.Data[0]
 
-	return &new, nil
+	return &updatedResource, nil
 }

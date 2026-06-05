@@ -92,27 +92,6 @@ type Resource struct {
 	V2             bool
 }
 
-func (r *Resource) IsV2() bool {
-	return r.V2
-}
-
-func (r *Resource) BaseType() *FieldInfo {
-	return r.Types[r.StructName]
-}
-
-type FieldInfo struct {
-	FieldName              string
-	JSONName               string
-	FieldType              string
-	FieldValidation        string
-	FieldValidationComment string
-	OmitEmpty              bool
-	IsArray                bool
-	Fields                 map[string]*FieldInfo
-	CustomUnmarshalType    string
-	CustomUnmarshalFunc    string
-}
-
 func NewResource(structName string, resourcePath string) *Resource {
 	baseType := NewFieldInfo(structName, resourcePath, "struct", "", "", false, false, "")
 	resource := &Resource{
@@ -149,6 +128,27 @@ func NewResource(structName string, resourcePath string) *Resource {
 	return resource
 }
 
+func (r *Resource) IsV2() bool {
+	return r.V2
+}
+
+func (r *Resource) BaseType() *FieldInfo {
+	return r.Types[r.StructName]
+}
+
+type FieldInfo struct {
+	FieldName              string
+	JSONName               string
+	FieldType              string
+	FieldValidation        string
+	FieldValidationComment string
+	OmitEmpty              bool
+	IsArray                bool
+	Fields                 map[string]*FieldInfo
+	CustomUnmarshalType    string
+	CustomUnmarshalFunc    string
+}
+
 func NewFieldInfo(fieldName, jsonName, fieldType, fieldValidation, fieldValidationComment string, omitempty bool, isArray bool, customUnmarshalType string) *FieldInfo {
 	return &FieldInfo{
 		FieldName:              fieldName,
@@ -178,124 +178,6 @@ func (r *Resource) Name() string {
 	return r.StructName
 }
 
-func (r *Resource) processFields(fields map[string]interface{}) {
-	t := r.Types[r.StructName]
-	for name, validation := range fields {
-		fieldInfo, err := r.fieldInfoFromValidation(name, validation, false)
-		if err != nil {
-			continue
-		}
-
-		t.Fields[fieldInfo.FieldName] = fieldInfo
-	}
-}
-
-func (r *Resource) fieldInfoFromValidation(name string, validation interface{}, isArray bool) (*FieldInfo, error) {
-	fieldName := strcase.ToCamel(name)
-	fieldName = cleanName(fieldName, fieldReps)
-
-	empty := &FieldInfo{}
-	var fieldInfo *FieldInfo
-
-	switch validation := validation.(type) {
-	case []interface{}:
-		if len(validation) == 0 {
-			fieldInfo = NewFieldInfo(fieldName, name, "string", "", "", false, true, "")
-			err := r.FieldProcessor(fieldName, fieldInfo)
-			return fieldInfo, err
-		}
-		if len(validation) > 1 {
-			return empty, fmt.Errorf("unknown validation %#v", validation)
-		}
-
-		fieldInfo, err := r.fieldInfoFromValidation(name, validation[0], true)
-		if err != nil {
-			return empty, err
-		}
-
-		fieldInfo.OmitEmpty = true
-		fieldInfo.IsArray = true
-
-		err = r.FieldProcessor(fieldName, fieldInfo)
-		return fieldInfo, err
-
-	case map[string]interface{}:
-		typeName := r.StructName + fieldName
-
-		result := NewFieldInfo(fieldName, name, typeName, "", "", true, false, "")
-		result.Fields = make(map[string]*FieldInfo)
-
-		for name, fv := range validation {
-			child, err := r.fieldInfoFromValidation(name, fv, false)
-			if err != nil {
-				return empty, err
-			}
-
-			result.Fields[child.FieldName] = child
-		}
-
-		err := r.FieldProcessor(fieldName, result)
-		r.Types[typeName] = result
-		return result, err
-
-	case string:
-		fieldValidationComment := validation
-		normalized := normalizeValidation(validation)
-
-		omitEmpty := false
-
-		switch {
-		case normalized == "falsetrue" || normalized == "truefalse":
-			fieldInfo = NewFieldInfo(fieldName, name, "bool", "", "", omitEmpty, false, "")
-			return fieldInfo, r.FieldProcessor(fieldName, fieldInfo)
-		default:
-			if _, err := strconv.ParseFloat(normalized, 64); err == nil {
-				if normalized == "09" || normalized == "09.09" {
-					fieldValidationComment = ""
-				}
-
-				if strings.Contains(normalized, ".") {
-					if strings.Contains(validation, "\\.){3}") {
-						break
-					}
-
-					omitEmpty = true
-					fieldInfo = NewFieldInfo(fieldName, name, "float64", "", fieldValidationComment, omitEmpty, false, "")
-					return fieldInfo, r.FieldProcessor(fieldName, fieldInfo)
-				}
-
-				fieldValidation := defineFieldValidation(fieldValidationComment, isArray)
-				omitEmpty = true
-				fieldInfo = NewFieldInfo(fieldName, name, "int", fieldValidation, fieldValidationComment, omitEmpty, false, "")
-				fieldInfo.CustomUnmarshalType = "emptyStringInt"
-				return fieldInfo, r.FieldProcessor(fieldName, fieldInfo)
-			}
-		}
-		if validation != "" && normalized != "" {
-			log.Tracef("normalize %q to %q", validation, normalized)
-		}
-
-		fieldValidation := defineFieldValidation(fieldValidationComment, isArray)
-		omitEmpty = omitEmpty || (!strings.Contains(validation, "^$") && !strings.HasSuffix(fieldName, "ID"))
-		fieldInfo = NewFieldInfo(fieldName, name, "string", fieldValidation, fieldValidationComment, omitEmpty, false, "")
-		return fieldInfo, r.FieldProcessor(fieldName, fieldInfo)
-	}
-
-	return empty, fmt.Errorf("unable to determine type from validation %q", validation)
-}
-
-func (r *Resource) processJSON(b []byte) error {
-	var fields map[string]interface{}
-	err := json.Unmarshal(b, &fields)
-	if err != nil {
-		return err
-	}
-
-	r.processFields(fields)
-
-	return nil
-}
-
 //go:embed api.go.tmpl
 var apiGoTemplate string
 
@@ -307,6 +189,146 @@ func (r *Resource) GenerateCode() (string, error) {
 		return generateCodeFromTemplate("apiv2.go.tmpl", apiGoV2Template, r)
 	}
 	return generateCodeFromTemplate("api.go.tmpl", apiGoTemplate, r)
+}
+
+func (r *Resource) processFields(fields map[string]any) {
+	t := r.Types[r.StructName]
+	for name, validation := range fields {
+		fieldInfo, err := r.fieldInfoFromValidation(name, validation, false)
+		if err != nil {
+			continue
+		}
+
+		t.Fields[fieldInfo.FieldName] = fieldInfo
+	}
+}
+
+func (r *Resource) fieldInfoFromValidation(name string, validation any, isArray bool) (*FieldInfo, error) {
+	fieldName := strcase.ToCamel(name)
+	fieldName = cleanName(fieldName, fieldReps)
+
+	switch validation := validation.(type) {
+	case []any:
+		return r.fieldInfoFromArray(fieldName, name, validation)
+	case map[string]any:
+		return r.fieldInfoFromMap(fieldName, name, validation)
+	case string:
+		return r.fieldInfoFromString(fieldName, name, validation, isArray)
+	}
+
+	return &FieldInfo{}, fmt.Errorf("unable to determine type from validation %q", validation)
+}
+
+func (r *Resource) fieldInfoFromArray(fieldName, name string, validation []any) (*FieldInfo, error) {
+	empty := &FieldInfo{}
+
+	if len(validation) == 0 {
+		fieldInfo := NewFieldInfo(fieldName, name, "string", "", "", false, true, "")
+		err := r.FieldProcessor(fieldName, fieldInfo)
+		return fieldInfo, err
+	}
+	if len(validation) > 1 {
+		return empty, fmt.Errorf("unknown validation %#v", validation)
+	}
+
+	fieldInfo, err := r.fieldInfoFromValidation(name, validation[0], true)
+	if err != nil {
+		return empty, err
+	}
+
+	fieldInfo.OmitEmpty = true
+	fieldInfo.IsArray = true
+
+	err = r.FieldProcessor(fieldName, fieldInfo)
+	return fieldInfo, err
+}
+
+func (r *Resource) fieldInfoFromMap(fieldName, name string, validation map[string]any) (*FieldInfo, error) {
+	empty := &FieldInfo{}
+
+	typeName := r.StructName + fieldName
+
+	result := NewFieldInfo(fieldName, name, typeName, "", "", true, false, "")
+	result.Fields = make(map[string]*FieldInfo)
+
+	for name, fv := range validation {
+		child, err := r.fieldInfoFromValidation(name, fv, false)
+		if err != nil {
+			return empty, err
+		}
+
+		result.Fields[child.FieldName] = child
+	}
+
+	err := r.FieldProcessor(fieldName, result)
+	r.Types[typeName] = result
+	return result, err
+}
+
+func (r *Resource) fieldInfoFromString(fieldName, name, validation string, isArray bool) (*FieldInfo, error) {
+	fieldValidationComment := validation
+	normalized := normalizeValidation(validation)
+
+	if normalized == "falsetrue" || normalized == "truefalse" {
+		fieldInfo := NewFieldInfo(fieldName, name, "bool", "", "", false, false, "")
+		return fieldInfo, r.FieldProcessor(fieldName, fieldInfo)
+	}
+
+	if fieldInfo, handled, err := r.numericFieldInfo(fieldName, name, validation, normalized, isArray); handled {
+		return fieldInfo, err
+	}
+
+	if validation != "" && normalized != "" {
+		log.Tracef("normalize %q to %q", validation, normalized)
+	}
+
+	fieldValidation := defineFieldValidation(fieldValidationComment, isArray)
+	omitEmpty := !strings.Contains(validation, "^$") && !strings.HasSuffix(fieldName, "ID")
+	fieldInfo := NewFieldInfo(fieldName, name, "string", fieldValidation, fieldValidationComment, omitEmpty, false, "")
+	return fieldInfo, r.FieldProcessor(fieldName, fieldInfo)
+}
+
+// numericFieldInfo handles validations that normalize to a numeric form (int or
+// float64). The returned bool reports whether the numeric branch handled the
+// field; when it is false the caller must fall through to string handling. This
+// preserves the original `break` semantics for the IP-octet pattern (`\.){3}`),
+// which builds a string field from the original validation comment.
+func (r *Resource) numericFieldInfo(fieldName, name, validation, normalized string, isArray bool) (*FieldInfo, bool, error) {
+	if _, err := strconv.ParseFloat(normalized, 64); err != nil {
+		// Not numeric: caller falls through to string handling.
+		return nil, false, nil //nolint:nilerr // err only signals "not a number", nothing to propagate
+	}
+
+	fieldValidationComment := validation
+	if normalized == "09" || normalized == "09.09" {
+		fieldValidationComment = ""
+	}
+
+	if strings.Contains(normalized, ".") {
+		if strings.Contains(validation, "\\.){3}") {
+			return nil, false, nil
+		}
+
+		fieldInfo := NewFieldInfo(fieldName, name, "float64", "", fieldValidationComment, true, false, "")
+		return fieldInfo, true, r.FieldProcessor(fieldName, fieldInfo)
+	}
+
+	fieldValidation := defineFieldValidation(fieldValidationComment, isArray)
+	fieldInfo := NewFieldInfo(fieldName, name, "int", fieldValidation, fieldValidationComment, true, false, "")
+	fieldInfo.CustomUnmarshalType = "emptyStringInt"
+	return fieldInfo, true, r.FieldProcessor(fieldName, fieldInfo)
+}
+
+func (r *Resource) processJSON(b []byte) error {
+	var fields map[string]any
+	err := json.Unmarshal(b, &fields)
+	if err != nil {
+		return err
+	}
+
+	r.processFields(fields)
+
+	return nil
 }
 
 func normalizeValidation(re string) string {

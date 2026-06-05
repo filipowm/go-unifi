@@ -9,7 +9,7 @@ import (
 	"fmt"
 )
 
-// just to fix compile issues with the import
+// just to fix compile issues with the import.
 var (
 	_ context.Context
 	_ fmt.Formatter
@@ -57,7 +57,11 @@ func (c *client) GetSettingEvaluationScore(ctx context.Context, site string) (*S
 	if s.Key != SettingEvaluationScoreKey {
 		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingEvaluationScoreKey, s.Key)
 	}
-	return f.(*SettingEvaluationScore), nil
+	resource, ok := f.(*SettingEvaluationScore)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingEvaluationScore, received: %T", f)
+	}
+	return resource, nil
 }
 
 // UpdateSettingEvaluationScore Experimental! This function is not yet stable and may change in the future.
@@ -67,5 +71,9 @@ func (c *client) UpdateSettingEvaluationScore(ctx context.Context, site string, 
 	if err != nil {
 		return nil, err
 	}
-	return result.(*SettingEvaluationScore), nil
+	updatedResource, ok := result.(*SettingEvaluationScore)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingEvaluationScore, received: %T", result)
+	}
+	return updatedResource, nil
 }

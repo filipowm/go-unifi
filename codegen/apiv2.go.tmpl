@@ -28,7 +28,7 @@ import (
 	"fmt"
 )
 
-// just to fix compile issues with the import
+// just to fix compile issues with the import.
 var (
 	_ context.Context
 	_ fmt.Formatter
@@ -44,10 +44,10 @@ type {{ $k }} struct {
 func (dst *{{ $k }}) UnmarshalJSON(b []byte) error {
 	type Alias {{ $k }}
 	aux := &struct {
-			{{- range $fk, $fv := $v.Fields }}{{ if not $fv }}
-			{{- else }}{{- template "field-customUnmarshalType" $fv }}{{ end }}{{- end }}
-
 		*Alias
+
+			{{ range $fk, $fv := $v.Fields }}{{ if not $fv }}
+			{{- else }}{{- template "field-customUnmarshalType" $fv }}{{ end }}{{- end }}
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -79,7 +79,6 @@ func (c *client) get{{ .StructName }}(ctx context.Context, site, id string) (*{{
 	var respBody {{ .StructName }}
 
 	err := c.Get(ctx, fmt.Sprintf("%s/site/%s/{{ .ResourcePath }}/%s", c.apiPaths.ApiV2Path, site, id), nil, &respBody)
-
     if err != nil {
         return nil, err
     }

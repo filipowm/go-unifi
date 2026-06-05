@@ -9,7 +9,7 @@ import (
 	"fmt"
 )
 
-// just to fix compile issues with the import
+// just to fix compile issues with the import.
 var (
 	_ context.Context
 	_ fmt.Formatter
@@ -62,7 +62,11 @@ func (c *client) GetSettingSuperSdn(ctx context.Context, site string) (*SettingS
 	if s.Key != SettingSuperSdnKey {
 		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingSuperSdnKey, s.Key)
 	}
-	return f.(*SettingSuperSdn), nil
+	resource, ok := f.(*SettingSuperSdn)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingSuperSdn, received: %T", f)
+	}
+	return resource, nil
 }
 
 // UpdateSettingSuperSdn Experimental! This function is not yet stable and may change in the future.
@@ -72,5 +76,9 @@ func (c *client) UpdateSettingSuperSdn(ctx context.Context, site string, s *Sett
 	if err != nil {
 		return nil, err
 	}
-	return result.(*SettingSuperSdn), nil
+	updatedResource, ok := result.(*SettingSuperSdn)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingSuperSdn, received: %T", result)
+	}
+	return updatedResource, nil
 }

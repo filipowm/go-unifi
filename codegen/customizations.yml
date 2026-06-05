@@ -1,12 +1,8 @@
 ---
 customizations:
   client:
-    imports:
-      - "io"
-    excludeResources:
-      - "DescribedFeature"
-      - "Dpi*"
-      - "FirewallZoneMatrix"
+    imports: ["io"]
+    excludeResources: ["DescribedFeature", "Dpi*", "FirewallZoneMatrix"]
     functions:
       - name: "Login"
         comment: "Login logs in to the controller. Useful only for user/password authentication."
@@ -34,9 +30,9 @@ customizations:
           - name: "apiPath"
             type: "string"
           - name: "reqBody"
-            type: "interface{}"
+            type: "any"
           - name: "respBody"
-            type: "interface{}"
+            type: "any"
         returns:
           - "error"
       - name: "Get"
@@ -47,9 +43,9 @@ customizations:
           - name: "apiPath"
             type: "string"
           - name: "reqBody"
-            type: "interface{}"
+            type: "any"
           - name: "respBody"
-            type: "interface{}"
+            type: "any"
         returns:
           - "error"
       - name: "Post"
@@ -60,9 +56,9 @@ customizations:
           - name: "apiPath"
             type: "string"
           - name: "reqBody"
-            type: "interface{}"
+            type: "any"
           - name: "respBody"
-            type: "interface{}"
+            type: "any"
         returns:
           - "error"
       - name: "Put"
@@ -73,9 +69,9 @@ customizations:
           - name: "apiPath"
             type: "string"
           - name: "reqBody"
-            type: "interface{}"
+            type: "any"
           - name: "respBody"
-            type: "interface{}"
+            type: "any"
         returns:
           - "error"
       - name: "Delete"
@@ -86,9 +82,9 @@ customizations:
           - name: "apiPath"
             type: "string"
           - name: "reqBody"
-            type: "interface{}"
+            type: "any"
           - name: "respBody"
-            type: "interface{}"
+            type: "any"
         returns:
           - "error"
 
@@ -165,7 +161,7 @@ customizations:
             type: "string"
         returns:
           - "*Setting"
-          - "interface{}"
+          - "any"
           - "error"
       - name: "ListSites"
         resourceName: "Site"
@@ -445,6 +441,25 @@ customizations:
         TxPower:
           ifFieldType: "string"
           customUnmarshalType: "numberOrString"
+    ContentFiltering:
+      resourcePath: "content-filtering"
+      excludeFunctions: ["Get"]
+      fields:
+        AllowList:
+          omitEmpty: false
+        BlockList:
+          omitEmpty: false
+        Categories:
+          omitEmpty: false
+        Date:
+          fieldType: "string"
+          customUnmarshalType: ""
+        DateStart:
+          fieldType: "string"
+          customUnmarshalType: ""
+        DateEnd:
+          fieldType: "string"
+          customUnmarshalType: ""
     DNSRecord:
       resourcePath: "static-dns"
     DescribedFeature:
@@ -502,6 +517,8 @@ customizations:
           customUnmarshalType: ""
     Network:
       fields:
+        FirewallZoneID:
+          omitEmpty: true
         InternetAccessEnabled:
           ifFieldType: "bool"
           customUnmarshalType: "*bool"
@@ -510,6 +527,10 @@ customizations:
           ifFieldType: "bool"
           customUnmarshalType: "*bool"
           customUnmarshalFunc: "emptyBoolToTrue"
+        IPSecEspLifetime:
+          fieldType: "int"
+        IPSecIkeLifetime:
+          fieldType: "int"
         WANUsername:
           omitEmpty: true
         XWANPassword:
@@ -563,4 +584,41 @@ customizations:
     WLAN:
       fields:
         ScheduleWithDuration:
+          omitEmpty: false
+        DPIgroupID:
+          omitEmpty: true
+        RADIUSProfileID:
+          omitEmpty: true
+    PortProfile:
+      fields:
+        NATiveNetworkID:
+          omitEmpty: true
+        VoiceNetworkID:
+          omitEmpty: true
+    FirewallRule:
+      fields:
+        DstNetworkID:
+          omitEmpty: true
+        SrcNetworkID:
+          omitEmpty: true
+        ICMPTypename:
+          omitEmpty: true
+        ICMPv6Typename:
+          omitEmpty: true
+        IPSec:
+          omitEmpty: true
+        ProtocolV6:
+          omitEmpty: true
+        SrcMACAddress:
+          omitEmpty: true
+    FirewallGroup:
+      fields:
+        # GroupMembers is a slice that defaults to empty when no members are
+        # configured. With omitempty (the default behavior for slices), an
+        # empty slice gets entirely omitted from the JSON payload, and UniFi
+        # creates the resource without the field. The Network app's Settings
+        # page then chokes on `undefined.length` when iterating members.
+        # Force the field to always be sent — empty slice serializes to `[]`
+        # which the UI handles correctly.
+        GroupMembers:
           omitEmpty: false

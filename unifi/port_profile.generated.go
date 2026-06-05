@@ -9,7 +9,7 @@ import (
 	"fmt"
 )
 
-// just to fix compile issues with the import
+// just to fix compile issues with the import.
 var (
 	_ context.Context
 	_ fmt.Formatter
@@ -38,7 +38,7 @@ type PortProfile struct {
 	LldpmedEnabled               bool                  `json:"lldpmed_enabled"`
 	LldpmedNotifyEnabled         bool                  `json:"lldpmed_notify_enabled"`
 	MulticastRouterNetworkIDs    []string              `json:"multicast_router_networkconf_ids,omitempty"`
-	NATiveNetworkID              string                `json:"native_networkconf_id"`
+	NATiveNetworkID              string                `json:"native_networkconf_id,omitempty"`
 	Name                         string                `json:"name,omitempty"`
 	OpMode                       string                `json:"op_mode,omitempty"`                                      // switch
 	PoeMode                      string                `json:"poe_mode,omitempty" validate:"omitempty,oneof=auto off"` // auto|off
@@ -64,12 +64,14 @@ type PortProfile struct {
 	StormctrlUcastRate           int                   `json:"stormctrl_ucast_rate,omitempty"`  // [0-9]|[1-9][0-9]{1,6}|1[0-3][0-9]{6}|14[0-7][0-9]{5}|148[0-7][0-9]{4}|14880000
 	StpPortMode                  bool                  `json:"stp_port_mode"`
 	TaggedVLANMgmt               string                `json:"tagged_vlan_mgmt,omitempty" validate:"omitempty,oneof=auto block_all custom"` // auto|block_all|custom
-	VoiceNetworkID               string                `json:"voice_networkconf_id"`
+	VoiceNetworkID               string                `json:"voice_networkconf_id,omitempty"`
 }
 
 func (dst *PortProfile) UnmarshalJSON(b []byte) error {
 	type Alias PortProfile
 	aux := &struct {
+		*Alias
+
 		Dot1XIDleTimeout           emptyStringInt `json:"dot1x_idle_timeout"`
 		EgressRateLimitKbps        emptyStringInt `json:"egress_rate_limit_kbps"`
 		PriorityQueue1Level        emptyStringInt `json:"priority_queue1_level"`
@@ -83,8 +85,6 @@ func (dst *PortProfile) UnmarshalJSON(b []byte) error {
 		StormctrlMcastRate         emptyStringInt `json:"stormctrl_mcast_rate"`
 		StormctrlUcastLevel        emptyStringInt `json:"stormctrl_ucast_level"`
 		StormctrlUcastRate         emptyStringInt `json:"stormctrl_ucast_rate"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -120,12 +120,12 @@ type PortProfileQOSMarking struct {
 func (dst *PortProfileQOSMarking) UnmarshalJSON(b []byte) error {
 	type Alias PortProfileQOSMarking
 	aux := &struct {
+		*Alias
+
 		CosCode          emptyStringInt `json:"cos_code"`
 		DscpCode         emptyStringInt `json:"dscp_code"`
 		IPPrecedenceCode emptyStringInt `json:"ip_precedence_code"`
 		Queue            emptyStringInt `json:"queue"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -154,13 +154,13 @@ type PortProfileQOSMatching struct {
 func (dst *PortProfileQOSMatching) UnmarshalJSON(b []byte) error {
 	type Alias PortProfileQOSMatching
 	aux := &struct {
+		*Alias
+
 		CosCode          emptyStringInt `json:"cos_code"`
 		DscpCode         emptyStringInt `json:"dscp_code"`
 		DstPort          emptyStringInt `json:"dst_port"`
 		IPPrecedenceCode emptyStringInt `json:"ip_precedence_code"`
 		SrcPort          emptyStringInt `json:"src_port"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -276,9 +276,9 @@ func (c *client) createPortProfile(ctx context.Context, site string, d *PortProf
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	newResource := respBody.Data[0]
 
-	return &new, nil
+	return &newResource, nil
 }
 
 func (c *client) updatePortProfile(ctx context.Context, site string, d *PortProfile) (*PortProfile, error) {
@@ -296,7 +296,7 @@ func (c *client) updatePortProfile(ctx context.Context, site string, d *PortProf
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	updatedResource := respBody.Data[0]
 
-	return &new, nil
+	return &updatedResource, nil
 }

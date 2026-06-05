@@ -9,7 +9,7 @@ import (
 	"fmt"
 )
 
-// just to fix compile issues with the import
+// just to fix compile issues with the import.
 var (
 	_ context.Context
 	_ fmt.Formatter
@@ -78,6 +78,8 @@ type SettingSuperMgmt struct {
 func (dst *SettingSuperMgmt) UnmarshalJSON(b []byte) error {
 	type Alias SettingSuperMgmt
 	aux := &struct {
+		*Alias
+
 		AutobackupDays                           emptyStringInt `json:"autobackup_days"`
 		AutobackupMaxFiles                       emptyStringInt `json:"autobackup_max_files"`
 		DataRetentionTimeInHoursFor5MinutesScale emptyStringInt `json:"data_retention_time_in_hours_for_5minutes_scale"`
@@ -87,8 +89,6 @@ func (dst *SettingSuperMgmt) UnmarshalJSON(b []byte) error {
 		DataRetentionTimeInHoursForOthers        emptyStringInt `json:"data_retention_time_in_hours_for_others"`
 		MinimumUsableHdSpace                     emptyStringInt `json:"minimum_usable_hd_space"`
 		MinimumUsableSdSpace                     emptyStringInt `json:"minimum_usable_sd_space"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -119,7 +119,11 @@ func (c *client) GetSettingSuperMgmt(ctx context.Context, site string) (*Setting
 	if s.Key != SettingSuperMgmtKey {
 		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingSuperMgmtKey, s.Key)
 	}
-	return f.(*SettingSuperMgmt), nil
+	resource, ok := f.(*SettingSuperMgmt)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingSuperMgmt, received: %T", f)
+	}
+	return resource, nil
 }
 
 // UpdateSettingSuperMgmt Experimental! This function is not yet stable and may change in the future.
@@ -129,5 +133,9 @@ func (c *client) UpdateSettingSuperMgmt(ctx context.Context, site string, s *Set
 	if err != nil {
 		return nil, err
 	}
-	return result.(*SettingSuperMgmt), nil
+	updatedResource, ok := result.(*SettingSuperMgmt)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingSuperMgmt, received: %T", result)
+	}
+	return updatedResource, nil
 }

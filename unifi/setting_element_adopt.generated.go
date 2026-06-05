@@ -9,7 +9,7 @@ import (
 	"fmt"
 )
 
-// just to fix compile issues with the import
+// just to fix compile issues with the import.
 var (
 	_ context.Context
 	_ fmt.Formatter
@@ -59,7 +59,11 @@ func (c *client) GetSettingElementAdopt(ctx context.Context, site string) (*Sett
 	if s.Key != SettingElementAdoptKey {
 		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingElementAdoptKey, s.Key)
 	}
-	return f.(*SettingElementAdopt), nil
+	resource, ok := f.(*SettingElementAdopt)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingElementAdopt, received: %T", f)
+	}
+	return resource, nil
 }
 
 // UpdateSettingElementAdopt Experimental! This function is not yet stable and may change in the future.
@@ -69,5 +73,9 @@ func (c *client) UpdateSettingElementAdopt(ctx context.Context, site string, s *
 	if err != nil {
 		return nil, err
 	}
-	return result.(*SettingElementAdopt), nil
+	updatedResource, ok := result.(*SettingElementAdopt)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingElementAdopt, received: %T", result)
+	}
+	return updatedResource, nil
 }

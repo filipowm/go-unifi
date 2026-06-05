@@ -9,7 +9,7 @@ import (
 	"fmt"
 )
 
-// just to fix compile issues with the import
+// just to fix compile issues with the import.
 var (
 	_ context.Context
 	_ fmt.Formatter
@@ -75,7 +75,7 @@ type Network struct {
 	DomainName                                    string                          `json:"domain_name"`                              // (?=^.{3,253}$)(^((?!-)[a-zA-Z0-9-]{1,63}(?<!-)\.)+[a-zA-Z]{2,63}$)|^$|[a-zA-Z0-9-]{1,63}
 	Enabled                                       bool                            `json:"enabled"`
 	ExposedToSiteVPN                              bool                            `json:"exposed_to_site_vpn"`
-	FirewallZoneID                                string                          `json:"firewall_zone_id"`
+	FirewallZoneID                                string                          `json:"firewall_zone_id,omitempty"`
 	GatewayDevice                                 string                          `json:"gateway_device" validate:"omitempty,mac"`                          // (^$|^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$)
 	GatewayType                                   string                          `json:"gateway_type,omitempty" validate:"omitempty,oneof=default switch"` // default|switch
 	IGMPFastleave                                 bool                            `json:"igmp_fastleave"`
@@ -95,12 +95,12 @@ type Network struct {
 	IPSecEspDhGroup                               int                             `json:"ipsec_esp_dh_group,omitempty" validate:"omitempty,oneof=1 2 5 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32"` // 1|2|5|14|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32
 	IPSecEspEncryption                            string                          `json:"ipsec_esp_encryption,omitempty" validate:"omitempty,oneof=aes128 aes192 aes256 3des"`                                    // aes128|aes192|aes256|3des
 	IPSecEspHash                                  string                          `json:"ipsec_esp_hash,omitempty" validate:"omitempty,oneof=sha1 md5 sha256 sha384 sha512"`                                      // sha1|md5|sha256|sha384|sha512
-	IPSecEspLifetime                              string                          `json:"ipsec_esp_lifetime,omitempty"`                                                                                           // ^(?:3[0-9]|[4-9][0-9]|[1-9][0-9]{2,3}|[1-7][0-9]{4}|8[0-5][0-9]{3}|86[0-3][0-9]{2}|86400)$
+	IPSecEspLifetime                              int                             `json:"ipsec_esp_lifetime,omitempty"`                                                                                           // ^(?:3[0-9]|[4-9][0-9]|[1-9][0-9]{2,3}|[1-7][0-9]{4}|8[0-5][0-9]{3}|86[0-3][0-9]{2}|86400)$
 	IPSecHash                                     string                          `json:"ipsec_hash,omitempty" validate:"omitempty,oneof=sha1 md5 sha256 sha384 sha512"`                                          // sha1|md5|sha256|sha384|sha512
 	IPSecIkeDhGroup                               int                             `json:"ipsec_ike_dh_group,omitempty" validate:"omitempty,oneof=1 2 5 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32"` // 1|2|5|14|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32
 	IPSecIkeEncryption                            string                          `json:"ipsec_ike_encryption,omitempty" validate:"omitempty,oneof=aes128 aes192 aes256 3des"`                                    // aes128|aes192|aes256|3des
 	IPSecIkeHash                                  string                          `json:"ipsec_ike_hash,omitempty" validate:"omitempty,oneof=sha1 md5 sha256 sha384 sha512"`                                      // sha1|md5|sha256|sha384|sha512
-	IPSecIkeLifetime                              string                          `json:"ipsec_ike_lifetime,omitempty"`                                                                                           // ^(?:3[0-9]|[4-9][0-9]|[1-9][0-9]{2,3}|[1-7][0-9]{4}|8[0-5][0-9]{3}|86[0-3][0-9]{2}|86400)$
+	IPSecIkeLifetime                              int                             `json:"ipsec_ike_lifetime,omitempty"`                                                                                           // ^(?:3[0-9]|[4-9][0-9]|[1-9][0-9]{2,3}|[1-7][0-9]{4}|8[0-5][0-9]{3}|86[0-3][0-9]{2}|86400)$
 	IPSecInterface                                string                          `json:"ipsec_interface,omitempty"`                                                                                              // wan[2-9]?
 	IPSecKeyExchange                              string                          `json:"ipsec_key_exchange,omitempty" validate:"omitempty,oneof=ikev1 ikev2"`                                                    // ikev1|ikev2
 	IPSecLocalIDentifier                          string                          `json:"ipsec_local_identifier,omitempty"`
@@ -204,7 +204,8 @@ type Network struct {
 	WANDHCPOptions                                []NetworkWANDHCPOptions         `json:"wan_dhcp_options,omitempty"`
 	WANDHCPv6Cos                                  int                             `json:"wan_dhcpv6_cos,omitempty"` // [0-7]|^$
 	WANDHCPv6Options                              []NetworkWANDHCPv6Options       `json:"wan_dhcpv6_options,omitempty"`
-	WANDHCPv6PDSize                               int                             `json:"wan_dhcpv6_pd_size,omitempty"`                                        // ^(4[89]|5[0-9]|6[0-4])$|^$
+	WANDHCPv6PDSize                               int                             `json:"wan_dhcpv6_pd_size,omitempty"` // ^(4[89]|5[0-9]|6[0-4])$|^$
+	WANDHCPv6PDSizeAuto                           bool                            `json:"wan_dhcpv6_pd_size_auto"`
 	WANDNS1                                       string                          `json:"wan_dns1" validate:"omitempty,ipv4"`                                  // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
 	WANDNS2                                       string                          `json:"wan_dns2" validate:"omitempty,ipv4"`                                  // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
 	WANDNS3                                       string                          `json:"wan_dns3" validate:"omitempty,ipv4"`                                  // ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$
@@ -233,11 +234,11 @@ type Network struct {
 	WANSla                                        string                          `json:"wan_sla,omitempty"`
 	WANSmartqDownRate                             int                             `json:"wan_smartq_down_rate,omitempty"` // [0-9]{1,6}|1000000
 	WANSmartqEnabled                              bool                            `json:"wan_smartq_enabled"`
-	WANSmartqUpRate                               int                             `json:"wan_smartq_up_rate,omitempty"`                                                                                        // [0-9]{1,6}|1000000
-	WANType                                       string                          `json:"wan_type,omitempty" validate:"omitempty,oneof=disabled dhcp static pppoe dslite map-e,hubspoke map-e,jpix map-e,ntt"` // disabled|dhcp|static|pppoe|dslite|map-e,hubspoke|map-e,jpix|map-e,ntt
-	WANTypeV6                                     string                          `json:"wan_type_v6,omitempty" validate:"omitempty,oneof=disabled slaac dhcpv6 static"`                                       // disabled|slaac|dhcpv6|static
-	WANUsername                                   string                          `json:"wan_username,omitempty"`                                                                                              // [^"' ]+|^$
-	WANVLAN                                       int                             `json:"wan_vlan,omitempty"`                                                                                                  // [0-9]|[1-9][0-9]{1,2}|[1-3][0-9]{3}|40[0-8][0-9]|409[0-4]|^$
+	WANSmartqUpRate                               int                             `json:"wan_smartq_up_rate,omitempty"`                                                                                                          // [0-9]{1,6}|1000000
+	WANType                                       string                          `json:"wan_type,omitempty" validate:"omitempty,oneof=disabled dhcp static pppoe dslite map-e,hubspoke map-e,jpix map-e,ntt dslite-over-pppoe"` // disabled|dhcp|static|pppoe|dslite|map-e,hubspoke|map-e,jpix|map-e,ntt|dslite-over-pppoe
+	WANTypeV6                                     string                          `json:"wan_type_v6,omitempty" validate:"omitempty,oneof=disabled slaac dhcpv6 static"`                                                         // disabled|slaac|dhcpv6|static
+	WANUsername                                   string                          `json:"wan_username,omitempty"`                                                                                                                // [^"' ]+|^$
+	WANVLAN                                       int                             `json:"wan_vlan,omitempty"`                                                                                                                    // [0-9]|[1-9][0-9]{1,2}|[1-3][0-9]{3}|40[0-8][0-9]|409[0-4]|^$
 	WANVLANEnabled                                bool                            `json:"wan_vlan_enabled"`
 	WireguardClientConfigurationFile              string                          `json:"wireguard_client_configuration_file,omitempty"`
 	WireguardClientConfigurationFilename          string                          `json:"wireguard_client_configuration_filename,omitempty"`
@@ -269,6 +270,8 @@ type Network struct {
 func (dst *Network) UnmarshalJSON(b []byte) error {
 	type Alias Network
 	aux := &struct {
+		*Alias
+
 		DHCPDLeaseTime                 emptyStringInt `json:"dhcpd_leasetime"`
 		DHCPDTimeOffset                emptyStringInt `json:"dhcpd_time_offset"`
 		DHCPDV6LeaseTime               emptyStringInt `json:"dhcpdv6_leasetime"`
@@ -303,8 +306,6 @@ func (dst *Network) UnmarshalJSON(b []byte) error {
 		WANSmartqUpRate                emptyStringInt `json:"wan_smartq_up_rate"`
 		WANVLAN                        emptyStringInt `json:"wan_vlan"`
 		WireguardClientPeerPort        emptyStringInt `json:"wireguard_client_peer_port"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -403,9 +404,33 @@ type NetworkWANDHCPOptions struct {
 func (dst *NetworkWANDHCPOptions) UnmarshalJSON(b []byte) error {
 	type Alias NetworkWANDHCPOptions
 	aux := &struct {
-		OptionNumber emptyStringInt `json:"optionNumber"`
-
 		*Alias
+
+		OptionNumber emptyStringInt `json:"optionNumber"`
+	}{
+		Alias: (*Alias)(dst),
+	}
+
+	err := json.Unmarshal(b, &aux)
+	if err != nil {
+		return fmt.Errorf("unable to unmarshal alias: %w", err)
+	}
+	dst.OptionNumber = int(aux.OptionNumber)
+
+	return nil
+}
+
+type NetworkWANDHCPv6Options struct {
+	OptionNumber int    `json:"optionNumber,omitempty"` // (1|11|15|16|17)
+	Value        string `json:"value,omitempty"`
+}
+
+func (dst *NetworkWANDHCPv6Options) UnmarshalJSON(b []byte) error {
+	type Alias NetworkWANDHCPv6Options
+	aux := &struct {
+		*Alias
+
+		OptionNumber emptyStringInt `json:"optionNumber"`
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -451,10 +476,10 @@ type NetworkWANProviderCapabilities struct {
 func (dst *NetworkWANProviderCapabilities) UnmarshalJSON(b []byte) error {
 	type Alias NetworkWANProviderCapabilities
 	aux := &struct {
+		*Alias
+
 		DownloadKilobitsPerSecond emptyStringInt `json:"download_kilobits_per_second"`
 		UploadKilobitsPerSecond   emptyStringInt `json:"upload_kilobits_per_second"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -525,9 +550,9 @@ func (c *client) createNetwork(ctx context.Context, site string, d *Network) (*N
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	newResource := respBody.Data[0]
 
-	return &new, nil
+	return &newResource, nil
 }
 
 func (c *client) updateNetwork(ctx context.Context, site string, d *Network) (*Network, error) {
@@ -545,7 +570,7 @@ func (c *client) updateNetwork(ctx context.Context, site string, d *Network) (*N
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	updatedResource := respBody.Data[0]
 
-	return &new, nil
+	return &updatedResource, nil
 }

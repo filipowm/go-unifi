@@ -9,7 +9,7 @@ import (
 	"fmt"
 )
 
-// just to fix compile issues with the import
+// just to fix compile issues with the import.
 var (
 	_ context.Context
 	_ fmt.Formatter
@@ -58,7 +58,11 @@ func (c *client) GetSettingDpi(ctx context.Context, site string) (*SettingDpi, e
 	if s.Key != SettingDpiKey {
 		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingDpiKey, s.Key)
 	}
-	return f.(*SettingDpi), nil
+	resource, ok := f.(*SettingDpi)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingDpi, received: %T", f)
+	}
+	return resource, nil
 }
 
 // UpdateSettingDpi Experimental! This function is not yet stable and may change in the future.
@@ -68,5 +72,9 @@ func (c *client) UpdateSettingDpi(ctx context.Context, site string, s *SettingDp
 	if err != nil {
 		return nil, err
 	}
-	return result.(*SettingDpi), nil
+	updatedResource, ok := result.(*SettingDpi)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingDpi, received: %T", result)
+	}
+	return updatedResource, nil
 }

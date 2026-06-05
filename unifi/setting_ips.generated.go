@@ -9,7 +9,7 @@ import (
 	"fmt"
 )
 
-// just to fix compile issues with the import
+// just to fix compile issues with the import.
 var (
 	_ context.Context
 	_ fmt.Formatter
@@ -69,10 +69,10 @@ type SettingIpsAlerts struct {
 func (dst *SettingIpsAlerts) UnmarshalJSON(b []byte) error {
 	type Alias SettingIpsAlerts
 	aux := &struct {
+		*Alias
+
 		Gid emptyStringInt `json:"gid"`
 		ID  emptyStringInt `json:"id"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -183,7 +183,11 @@ func (c *client) GetSettingIps(ctx context.Context, site string) (*SettingIps, e
 	if s.Key != SettingIpsKey {
 		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingIpsKey, s.Key)
 	}
-	return f.(*SettingIps), nil
+	resource, ok := f.(*SettingIps)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingIps, received: %T", f)
+	}
+	return resource, nil
 }
 
 // UpdateSettingIps Experimental! This function is not yet stable and may change in the future.
@@ -193,5 +197,9 @@ func (c *client) UpdateSettingIps(ctx context.Context, site string, s *SettingIp
 	if err != nil {
 		return nil, err
 	}
-	return result.(*SettingIps), nil
+	updatedResource, ok := result.(*SettingIps)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingIps, received: %T", result)
+	}
+	return updatedResource, nil
 }

@@ -65,7 +65,7 @@ func generateCode(fieldsDir, outDir string, customizer CodeCustomizer) error {
 	customizer.ApplyToClient(cb)
 	for _, resource := range resources {
 		if !customizer.IsExcludedFromClient(resource.Name()) {
-			cb.AddResource(resource)
+			cb.AddResource(resource, customizer.ExcludedClientFunctions(resource))
 		}
 		customizer.ApplyToResource(resource)
 		generators = append(generators, resource)
@@ -94,7 +94,7 @@ func writeGeneratedFile(outDir string, name string, content string) (string, err
 	goFile := strcase.ToSnake(name) + ".generated.go"
 	goFilePath := filepath.Join(outDir, goFile)
 	_ = os.Remove(goFilePath)
-	if err := os.WriteFile(goFilePath, []byte(content), 0o644); err != nil {
+	if err := os.WriteFile(goFilePath, []byte(content), 0o644); err != nil { //nolint:gosec
 		return goFile, fmt.Errorf("failed to write file %s: %w", goFile, err)
 	}
 	return goFile, nil

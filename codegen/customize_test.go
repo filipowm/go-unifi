@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -75,7 +77,7 @@ func TestApplyToResource(t *testing.T) {
 	}
 	err = res.FieldProcessor("Channel", fiChannelMismatch)
 	require.NoError(t, err)
-	a.Equal("", fiChannelMismatch.CustomUnmarshalType, "Override should not apply when FieldType does not match")
+	a.Empty(fiChannelMismatch.CustomUnmarshalType, "Override should not apply when FieldType does not match")
 }
 
 func TestCompositeFieldProcessor(t *testing.T) {
@@ -90,7 +92,7 @@ func TestCompositeFieldProcessor(t *testing.T) {
 		StructName: "Account",
 		FieldProcessor: func(name string, f *FieldInfo) error {
 			// Original processing: append '_original' to FieldName
-			f.FieldName = f.FieldName + "_original"
+			f.FieldName += "_original"
 			return nil
 		},
 	}
@@ -125,7 +127,7 @@ func TestNoCustomizationForResource(t *testing.T) {
 func createTempCustomizationsYaml(t *testing.T, data string) string {
 	t.Helper()
 	tempFile := filepath.Join(t.TempDir(), "temp_customizations.yml")
-	err := os.WriteFile(tempFile, []byte(data), 0o644)
+	err := os.WriteFile(tempFile, []byte(data), 0o644) //nolint:gosec
 	require.NoError(t, err, "should create temp file")
 	return tempFile
 }
@@ -196,4 +198,115 @@ customizations:
 	err = res.FieldProcessor("CustomField", fi)
 	require.NoError(t, err)
 	assert.Empty(t, fi.CustomUnmarshalType, "Customization should not apply if field type mismatches")
+}
+
+func TestExcludedClientFunctions(t *testing.T) {
+	t.Parallel()
+	yamlContent := `
+customizations:
+  resources:
+    Network:
+      excludeFunctions:
+        - Update
+        - Delete
+    SettingMgmt:
+      excludeFunctions:
+        - Update
+    EmptyExclude:
+      fields:
+        Foo:
+          omitEmpty: true
+`
+	tempFile := createTempCustomizationsYaml(t, yamlContent)
+	cc, err := NewCodeCustomizer(tempFile)
+	require.NoError(t, err)
+
+	cases := map[string]struct {
+		resource *Resource
+		want     []string
+	}{
+		"configured normal resource":         {resource: &Resource{StructName: "Network"}, want: []string{"Update", "Delete"}},
+		"configured settings resource":       {resource: &Resource{StructName: "SettingMgmt"}, want: []string{"Update"}},
+		"resource without excludeFunctions":  {resource: &Resource{StructName: "EmptyExclude"}, want: nil},
+		"resource without any customization": {resource: &Resource{StructName: "Unknown"}, want: nil},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			assert.Equal(t, tc.want, cc.ExcludedClientFunctions(tc.resource))
+		})
+	}
+}
+
+func TestExcludedClientFunctions_NilSafe(t *testing.T) {
+	t.Parallel()
+	// An empty customizer (no resources configured) must not panic.
+	cc := &CodeCustomizer{Customizations: Customizations{}}
+	assert.Nil(t, cc.ExcludedClientFunctions(&Resource{StructName: "Network"}))
+}
+
+func TestExcludedClientFunctions_UnknownActionWarns(t *testing.T) {
+	// Not parallel: inspects the package-level logger via a local hook.
+	yamlContent := `
+customizations:
+  resources:
+    Network:
+      excludeFunctions:
+        - Updte
+    SettingMgmt:
+      excludeFunctions:
+        - List
+`
+	tempFile := createTempCustomizationsYaml(t, yamlContent)
+	cc, err := NewCodeCustomizer(tempFile)
+	require.NoError(t, err)
+
+	hook := test.NewLocal(log)
+	defer hook.Reset()
+
+	// Unknown action is still returned (warn-and-ignore: AddResource simply never
+	// matches it, so no real method is dropped).
+	assert.Equal(t, []string{"Updte"}, cc.ExcludedClientFunctions(&Resource{StructName: "Network"}))
+	// "List" is invalid for a settings resource (only Get/Update exist).
+	assert.Equal(t, []string{"List"}, cc.ExcludedClientFunctions(&Resource{StructName: "SettingMgmt"}))
+
+	var msgs []string
+	for _, e := range hook.AllEntries() {
+		if e.Level == logrus.WarnLevel {
+			msgs = append(msgs, e.Message)
+		}
+	}
+	assert.Contains(t, msgs, `excludeFunctions: unknown action "Updte" for resource Network (ignored)`)
+	assert.Contains(t, msgs, `excludeFunctions: unknown action "List" for resource SettingMgmt (ignored)`)
+}
+
+func TestMatchesExcludePattern(t *testing.T) {
+	t.Parallel()
+	cases := map[string]struct {
+		pattern  string
+		name     string
+		expected bool
+	}{
+		"contains match":    {pattern: "*Setting*", name: "FooSettingBar", expected: true},
+		"contains no match": {pattern: "*Setting*", name: "FooBar", expected: false},
+		"prefix match":      {pattern: "Device*", name: "DeviceState", expected: true},
+		"prefix no match":   {pattern: "Device*", name: "FirewallRule", expected: false},
+		"suffix match":      {pattern: "*Group", name: "APGroup", expected: true},
+		"suffix no match":   {pattern: "*Group", name: "APProfile", expected: false},
+		"exact match":       {pattern: "Network", name: "Network", expected: true},
+		"exact no match":    {pattern: "Network", name: "Networks", expected: false},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			assert.Equal(t, tc.expected, matchesExcludePattern(tc.pattern, tc.name))
+		})
+	}
+
+	// Edge case: a bare "*" (or "**") has no inner content and matches everything.
+	t.Run("star only matches all", func(t *testing.T) {
+		t.Parallel()
+		assert.True(t, matchesExcludePattern("*", "Anything"))
+		assert.True(t, matchesExcludePattern("**", "Anything"))
+	})
 }

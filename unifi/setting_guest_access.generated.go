@@ -9,7 +9,7 @@ import (
 	"fmt"
 )
 
-// just to fix compile issues with the import
+// just to fix compile issues with the import.
 var (
 	_ context.Context
 	_ fmt.Formatter
@@ -131,6 +131,8 @@ type SettingGuestAccess struct {
 func (dst *SettingGuestAccess) UnmarshalJSON(b []byte) error {
 	type Alias SettingGuestAccess
 	aux := &struct {
+		*Alias
+
 		Expire                     emptyStringInt `json:"expire"`
 		ExpireNumber               emptyStringInt `json:"expire_number"`
 		ExpireUnit                 emptyStringInt `json:"expire_unit"`
@@ -138,8 +140,6 @@ func (dst *SettingGuestAccess) UnmarshalJSON(b []byte) error {
 		PortalCustomizedBoxRADIUS  emptyStringInt `json:"portal_customized_box_radius"`
 		PortalCustomizedLogoSize   emptyStringInt `json:"portal_customized_logo_size"`
 		RADIUSDisconnectPort       emptyStringInt `json:"radius_disconnect_port"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -168,7 +168,11 @@ func (c *client) GetSettingGuestAccess(ctx context.Context, site string) (*Setti
 	if s.Key != SettingGuestAccessKey {
 		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingGuestAccessKey, s.Key)
 	}
-	return f.(*SettingGuestAccess), nil
+	resource, ok := f.(*SettingGuestAccess)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingGuestAccess, received: %T", f)
+	}
+	return resource, nil
 }
 
 // UpdateSettingGuestAccess Experimental! This function is not yet stable and may change in the future.
@@ -178,5 +182,9 @@ func (c *client) UpdateSettingGuestAccess(ctx context.Context, site string, s *S
 	if err != nil {
 		return nil, err
 	}
-	return result.(*SettingGuestAccess), nil
+	updatedResource, ok := result.(*SettingGuestAccess)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingGuestAccess, received: %T", result)
+	}
+	return updatedResource, nil
 }

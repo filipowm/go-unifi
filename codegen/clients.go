@@ -64,9 +64,9 @@ func (c *CustomClientFunction) Signature() string {
 		return ""
 	}
 	var b strings.Builder
-	//if c.comment != "" {
-	//	b.WriteString(fmt.Sprintf("// %s %s\n", c.Name, c.Comment))
-	//}
+	// if c.comment != "" {
+	//	 b.WriteString(fmt.Sprintf("// %s %s\n", c.Name, c.Comment))
+	// }
 	b.WriteString(c.Name())
 	b.WriteString("(")
 
@@ -92,15 +92,37 @@ func (c *CustomClientFunction) Comment() string {
 	return c.FunctionComment
 }
 
+// newClientInfo creates ClientInfo from the provided resources.
+func newClientInfo(imports []string, functions []ClientFunction) *ClientInfo {
+	return &ClientInfo{imports, functions}
+}
+
 // ClientInfo represents the client information used for code generation.
 type ClientInfo struct {
 	Imports   []string
 	Functions []ClientFunction
 }
 
+// Name returns the name of the client.
+func (c *ClientInfo) Name() string {
+	return "Client"
+}
+
+//go:embed client.go.tmpl
+var clientGoTemplate string
+
+// GenerateCode generates the code for the client using a template.
+func (c *ClientInfo) GenerateCode() (string, error) {
+	return generateCodeFromTemplate("client.go.tmpl", clientGoTemplate, c)
+}
+
 type ClientInfoBuilder struct {
 	imports   []string
 	functions []ClientFunction
+}
+
+func NewClientInfoBuilder() *ClientInfoBuilder {
+	return &ClientInfoBuilder{}
 }
 
 func (c *ClientInfoBuilder) AddFunction(f ClientFunction) *ClientInfoBuilder { //nolint: unparam
@@ -115,45 +137,67 @@ func (c *ClientInfoBuilder) AddFunctions(f []CustomClientFunction) *ClientInfoBu
 	return c
 }
 
-func (c *ClientInfoBuilder) addResourceFunction(actionName, resourceName, comment string, additionalParams []FunctionParam, additionalReturns []string) {
-	fName := fmt.Sprintf("%s%s", actionName, resourceName)
-	params := []FunctionParam{
-		{"ctx", "context.Context"},
-		{"site", "string"},
-	}
-	params = append(params, additionalParams...)
-	returns := additionalReturns
-	returns = append(returns, "error")
-	f := CustomClientFunction{
-		FunctionName:     fName,
-		Resource:         resourceName,
-		Parameters:       params,
-		ReturnParameters: returns,
-		FunctionComment:  fmt.Sprintf("%s %s", fName, comment),
-	}
-	c.AddFunction(&f)
+// resourceAction describes a single standard client CRUD action.
+type resourceAction struct {
+	name    string
+	comment string
+	params  []FunctionParam
+	returns []string
 }
 
-func singlePointerReturn(name string) []string {
-	return []string{"*" + name}
-}
-
-func singlePointerParam(name string) []FunctionParam {
-	return []FunctionParam{{strings.ToLower(name[0:1]), "*" + name}}
-}
-
-func (c *ClientInfoBuilder) AddResource(r *Resource) *ClientInfoBuilder {
-	c.AddFunction(&Comment{comment: fmt.Sprintf("==== client methods for %s resource ====", r.Name()), resourceName: r.Name()})
+// standardActions returns the standard client CRUD actions for r, in generation
+// order. Settings expose only Get (singleton getter) + Update; other resources
+// expose the full Get/List/Create/Update/Delete set. This is the single source of
+// truth for the action catalog — both code generation (AddResource) and
+// customization validation (standardActionNames) derive from it.
+func standardActions(r *Resource) []resourceAction {
 	if r.IsSetting() {
-		c.addResourceFunction("Get", r.Name(), "retrieves the settings for a resource", nil, singlePointerReturn(r.Name()))
-		c.addResourceFunction("Update", r.Name(), "updates a resource", singlePointerParam(r.Name()), singlePointerReturn(r.Name()))
+		return []resourceAction{
+			{"Get", "retrieves the settings for a resource", nil, singlePointerReturn(r.Name())},
+			{"Update", "updates a resource", singlePointerParam(r.Name()), singlePointerReturn(r.Name())},
+		}
+	}
+	return []resourceAction{
+		{"Get", "retrieves a resource", []FunctionParam{{"id", "string"}}, singlePointerReturn(r.Name())},
+		{"List", "lists the resources", nil, []string{"[]" + r.Name()}},
+		{"Create", "creates a resource", singlePointerParam(r.Name()), singlePointerReturn(r.Name())},
+		{"Update", "updates a resource", singlePointerParam(r.Name()), singlePointerReturn(r.Name())},
+		{"Delete", "deletes a resource", []FunctionParam{{"id", "string"}}, nil},
+	}
+}
+
+// standardActionNames is the set of valid action names for r, derived from the
+// same table as standardActions so the catalog never drifts.
+func standardActionNames(r *Resource) map[string]bool {
+	actions := standardActions(r)
+	names := make(map[string]bool, len(actions))
+	for _, a := range actions {
+		names[a.name] = true
+	}
+	return names
+}
+
+// AddResource adds the standard client CRUD methods for r, omitting any whose
+// action name appears in excludeFunctions. When every action is excluded, nothing
+// is emitted (not even the section marker comments).
+func (c *ClientInfoBuilder) AddResource(r *Resource, excludeFunctions []string) *ClientInfoBuilder {
+	excluded := make(map[string]bool, len(excludeFunctions))
+	for _, a := range excludeFunctions {
+		excluded[a] = true
+	}
+	included := make([]resourceAction, 0, 5)
+	for _, a := range standardActions(r) {
+		if !excluded[a.name] {
+			included = append(included, a)
+		}
+	}
+	if len(included) == 0 {
 		return c
 	}
-	c.addResourceFunction("Get", r.Name(), "retrieves a resource", []FunctionParam{{"id", "string"}}, singlePointerReturn(r.Name()))
-	c.addResourceFunction("List", r.Name(), "lists the resources", nil, []string{"[]" + r.Name()})
-	c.addResourceFunction("Create", r.Name(), "creates a resource", singlePointerParam(r.Name()), singlePointerReturn(r.Name()))
-	c.addResourceFunction("Update", r.Name(), "updates a resource", singlePointerParam(r.Name()), singlePointerReturn(r.Name()))
-	c.addResourceFunction("Delete", r.Name(), "deletes a resource", []FunctionParam{{"id", "string"}}, nil)
+	c.AddFunction(&Comment{comment: fmt.Sprintf("==== client methods for %s resource ====", r.Name()), resourceName: r.Name()})
+	for _, a := range included {
+		c.addResourceFunction(a.name, r.Name(), a.comment, a.params, a.returns)
+	}
 	c.AddFunction(&Comment{comment: fmt.Sprintf("==== end of client methods for %s resource ====", r.Name()), resourceName: r.Name() + "_end"})
 	return c
 }
@@ -180,24 +224,28 @@ func (c *ClientInfoBuilder) Build() *ClientInfo {
 	return newClientInfo(c.imports, c.functions)
 }
 
-func NewClientInfoBuilder() *ClientInfoBuilder {
-	return &ClientInfoBuilder{}
+func (c *ClientInfoBuilder) addResourceFunction(actionName, resourceName, comment string, additionalParams []FunctionParam, additionalReturns []string) {
+	fName := fmt.Sprintf("%s%s", actionName, resourceName)
+
+	params := make([]FunctionParam, 0, 2+len(additionalParams))
+	params = append(params, FunctionParam{"ctx", "context.Context"}, FunctionParam{"site", "string"})
+	params = append(params, additionalParams...)
+	returns := additionalReturns
+	returns = append(returns, "error")
+	f := CustomClientFunction{
+		FunctionName:     fName,
+		Resource:         resourceName,
+		Parameters:       params,
+		ReturnParameters: returns,
+		FunctionComment:  fmt.Sprintf("%s %s", fName, comment),
+	}
+	c.AddFunction(&f)
 }
 
-// newClientInfo creates ClientInfo from the provided resources.
-func newClientInfo(imports []string, functions []ClientFunction) *ClientInfo {
-	return &ClientInfo{imports, functions}
+func singlePointerReturn(name string) []string {
+	return []string{"*" + name}
 }
 
-//go:embed client.go.tmpl
-var clientGoTemplate string
-
-// GenerateCode generates the code for the client using a template.
-func (c *ClientInfo) GenerateCode() (string, error) {
-	return generateCodeFromTemplate("client.go.tmpl", clientGoTemplate, c)
-}
-
-// Name returns the name of the client.
-func (c *ClientInfo) Name() string {
-	return "Client"
+func singlePointerParam(name string) []FunctionParam {
+	return []FunctionParam{{strings.ToLower(name[0:1]), "*" + name}}
 }

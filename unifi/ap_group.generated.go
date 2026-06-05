@@ -9,7 +9,7 @@ import (
 	"fmt"
 )
 
-// just to fix compile issues with the import
+// just to fix compile issues with the import.
 var (
 	_ context.Context
 	_ fmt.Formatter
@@ -60,7 +60,6 @@ func (c *client) getAPGroup(ctx context.Context, site, id string) (*APGroup, err
 	var respBody APGroup
 
 	err := c.Get(ctx, fmt.Sprintf("%s/site/%s/apgroups/%s", c.apiPaths.ApiV2Path, site, id), nil, &respBody)
-
 	if err != nil {
 		return nil, err
 	}

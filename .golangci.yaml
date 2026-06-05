@@ -1,35 +1,82 @@
 ---
+version: "2"
+
 linters:
-  enable-all: true
+  default: 'all'
   disable:
+    # Opinionated / intentionally disabled
     - 'depguard'
+    - 'ireturn'
     - 'mnd'
     - 'nlreturn'
     - 'tagliatelle'
-    - 'ireturn'
+    # Whitespace/cuddle linter. v1 'wsl' was disabled; v2 ships it as two
+    # separate linters (wsl + wsl_v5), both enabled by `default: all`.
+    - 'wsl'
+    - 'wsl_v5'
+    # Deprecated: superseded by gomodguard_v2 (which stays enabled via default: all).
+    - 'gomodguard'
 
-    # Temporary
-    - 'cyclop'
+    # Temporary — re-enable as the codebase is cleaned up
     - 'dupl'
     - 'err113'
     - 'exhaustruct'
     - 'forbidigo'
     - 'funlen'
     - 'gochecknoglobals'
-    - 'gocognit'
     - 'goconst'
     - 'gocritic'
-    - 'gocyclo'
     - 'godox'
-    - 'gosec'
     - 'lll'
     - 'maintidx'
-    - 'nestif'
+    - 'noinlineerr'
+    - 'paralleltest'
     - 'revive'
-    - 'stylecheck'
     - 'varnamelen'
     - 'wrapcheck'
-    - 'wsl'
 
-    # Deprecated
-    - 'exportloopref'
+  settings:
+    tagalign:
+      # Generated structs carry very long `validate` tags (some 200+ chars), so
+      # column-aligning them produces unreadable padding. Keep tag order stable,
+      # skip alignment.
+      align: false
+      sort: true
+
+  exclusions:
+    # Lint generated code too — the generator is responsible for emitting
+    # lint-clean output (see codegen/). Only a few categories are inherent to
+    # the generated code and are excluded below.
+    generated: 'disable'
+    presets:
+      - 'comments'
+      - 'common-false-positives'
+      - 'legacy'
+      - 'std-error-handling'
+    rules:
+      # Generated code: issues inherent to the UniFi API / generator design and
+      # not fixable without breaking the API mapping.
+      - path: '\.generated\.go'
+        linters:
+          - 'misspell'        # field names mirror UniFi's JSON keys (e.g. IGMPSupression, dynamicdns)
+          - 'modernize'
+          - 'interfacebloat'  # the aggregate Client interface exposes many methods by design
+          - 'unused'          # generated helpers/types not referenced within this module
+      - path: 'client.generated.go'
+        linters:
+          - 'gofumpt'         # strict linting not needed
+    paths:
+      - 'third_party$'
+      - 'builtin$'
+      - 'examples$'
+
+formatters:
+  enable:
+    - 'gofumpt'
+    - 'goimports'
+  exclusions:
+    generated: 'disable'
+    paths:
+      - 'third_party$'
+      - 'builtin$'
+      - 'examples$'

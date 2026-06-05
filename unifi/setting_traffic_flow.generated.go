@@ -9,7 +9,7 @@ import (
 	"fmt"
 )
 
-// just to fix compile issues with the import
+// just to fix compile issues with the import.
 var (
 	_ context.Context
 	_ fmt.Formatter
@@ -60,7 +60,11 @@ func (c *client) GetSettingTrafficFlow(ctx context.Context, site string) (*Setti
 	if s.Key != SettingTrafficFlowKey {
 		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingTrafficFlowKey, s.Key)
 	}
-	return f.(*SettingTrafficFlow), nil
+	resource, ok := f.(*SettingTrafficFlow)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingTrafficFlow, received: %T", f)
+	}
+	return resource, nil
 }
 
 // UpdateSettingTrafficFlow Experimental! This function is not yet stable and may change in the future.
@@ -70,5 +74,9 @@ func (c *client) UpdateSettingTrafficFlow(ctx context.Context, site string, s *S
 	if err != nil {
 		return nil, err
 	}
-	return result.(*SettingTrafficFlow), nil
+	updatedResource, ok := result.(*SettingTrafficFlow)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingTrafficFlow, received: %T", result)
+	}
+	return updatedResource, nil
 }

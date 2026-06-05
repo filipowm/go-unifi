@@ -9,7 +9,7 @@ import (
 	"fmt"
 )
 
-// just to fix compile issues with the import
+// just to fix compile issues with the import.
 var (
 	_ context.Context
 	_ fmt.Formatter
@@ -102,9 +102,9 @@ func (c *client) createDpiGroup(ctx context.Context, site string, d *DpiGroup) (
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	newResource := respBody.Data[0]
 
-	return &new, nil
+	return &newResource, nil
 }
 
 func (c *client) updateDpiGroup(ctx context.Context, site string, d *DpiGroup) (*DpiGroup, error) {
@@ -122,7 +122,7 @@ func (c *client) updateDpiGroup(ctx context.Context, site string, d *DpiGroup) (
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	updatedResource := respBody.Data[0]
 
-	return &new, nil
+	return &updatedResource, nil
 }

@@ -9,7 +9,7 @@ import (
 	"fmt"
 )
 
-// just to fix compile issues with the import
+// just to fix compile issues with the import.
 var (
 	_ context.Context
 	_ fmt.Formatter
@@ -57,7 +57,11 @@ func (c *client) GetSettingUsw(ctx context.Context, site string) (*SettingUsw, e
 	if s.Key != SettingUswKey {
 		return nil, fmt.Errorf("unexpected setting key received. Requested: %q, received: %q", SettingUswKey, s.Key)
 	}
-	return f.(*SettingUsw), nil
+	resource, ok := f.(*SettingUsw)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingUsw, received: %T", f)
+	}
+	return resource, nil
 }
 
 // UpdateSettingUsw Experimental! This function is not yet stable and may change in the future.
@@ -67,5 +71,9 @@ func (c *client) UpdateSettingUsw(ctx context.Context, site string, s *SettingUs
 	if err != nil {
 		return nil, err
 	}
-	return result.(*SettingUsw), nil
+	updatedResource, ok := result.(*SettingUsw)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type for setting value. expected: *SettingUsw, received: %T", result)
+	}
+	return updatedResource, nil
 }

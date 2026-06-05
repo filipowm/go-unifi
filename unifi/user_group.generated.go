@@ -9,7 +9,7 @@ import (
 	"fmt"
 )
 
-// just to fix compile issues with the import
+// just to fix compile issues with the import.
 var (
 	_ context.Context
 	_ fmt.Formatter
@@ -33,10 +33,10 @@ type UserGroup struct {
 func (dst *UserGroup) UnmarshalJSON(b []byte) error {
 	type Alias UserGroup
 	aux := &struct {
+		*Alias
+
 		QOSRateMaxDown emptyStringInt `json:"qos_rate_max_down"`
 		QOSRateMaxUp   emptyStringInt `json:"qos_rate_max_up"`
-
-		*Alias
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -107,9 +107,9 @@ func (c *client) createUserGroup(ctx context.Context, site string, d *UserGroup)
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	newResource := respBody.Data[0]
 
-	return &new, nil
+	return &newResource, nil
 }
 
 func (c *client) updateUserGroup(ctx context.Context, site string, d *UserGroup) (*UserGroup, error) {
@@ -127,7 +127,7 @@ func (c *client) updateUserGroup(ctx context.Context, site string, d *UserGroup)
 		return nil, ErrNotFound
 	}
 
-	new := respBody.Data[0]
+	updatedResource := respBody.Data[0]
 
-	return &new, nil
+	return &updatedResource, nil
 }
