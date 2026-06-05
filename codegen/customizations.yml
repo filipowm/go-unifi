@@ -1,12 +1,8 @@
 ---
 customizations:
   client:
-    imports:
-      - "io"
-    excludeResources:
-      - "DescribedFeature"
-      - "Dpi*"
-      - "FirewallZoneMatrix"
+    imports: ["io"]
+    excludeResources: ["DescribedFeature", "Dpi*", "FirewallZoneMatrix"]
     functions:
       - name: "Login"
         comment: "Login logs in to the controller. Useful only for user/password authentication."
@@ -432,6 +428,25 @@ customizations:
         TxPower:
           ifFieldType: "string"
           customUnmarshalType: "numberOrString"
+    ContentFiltering:
+      resourcePath: "content-filtering"
+      excludeFunctions: ["Get"]
+      fields:
+        AllowList:
+          omitEmpty: false
+        BlockList:
+          omitEmpty: false
+        Categories:
+          omitEmpty: false
+        Date:
+          fieldType: "string"
+          customUnmarshalType: ""
+        DateStart:
+          fieldType: "string"
+          customUnmarshalType: ""
+        DateEnd:
+          fieldType: "string"
+          customUnmarshalType: ""
     DNSRecord:
       resourcePath: "static-dns"
     DescribedFeature:
