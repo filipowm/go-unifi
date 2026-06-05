@@ -15,10 +15,12 @@ no public signature or documented behavior changes.
 
 ## Wave 1 — P1 hardening
 
-Three public breaking changes landed in this wave. Two are TLS-related (ARCH-06) and one is the
-concurrency cleanup (ARCH-04). The full migration walk-through lives in the
-[migration guide](../../migrating_from_upstream.md) and [client configuration](../../configuration.md);
-this section is the authoritative changelog entry.
+Public changes in this wave: the TLS field type + default flip (ARCH-06), the `UseLocking` no-op and the
+`CSRFInterceptor.CSRFToken` field→method change (ARCH-04 concurrency cleanup), the `ErrNotFound` widening
+for 404s (ARCH-05), and the `Client`-interface/`Dpi` change (ARCH-08). The TLS migration walk-through lives
+in the [migration guide](../../migrating_from_upstream.md) and [client configuration](../../configuration.md);
+this section is the authoritative changelog entry. *(Entries 4 and 5 were added retroactively by the final
+whole-codebase review — the changes shipped in Wave 1 but were initially undocumented.)*
 
 ### 1. `ClientConfig.VerifySSL` type changed: `bool` → `*bool` (ARCH-06)
 
@@ -67,7 +69,39 @@ retained for source compatibility but has **no effect** — setting it `true` or
 The field is marked `// Deprecated:` and can be removed from your config. Requests now always run
 concurrently and are not serialized.
 
-### 4. `Client` interface gained `SetSetting`; `DpiApp`/`DpiGroup` removed (ARCH-08)
+### 4. `CSRFInterceptor.CSRFToken`: exported field → accessor method (ARCH-04)
+
+**Signature change (compile break).** Making the CSRF token data-race-safe (ARCH-04) required moving it
+behind a mutex, so the previously-exported, directly-settable field became an unexported field with a
+read-only accessor:
+
+```go
+// before
+type CSRFInterceptor struct { CSRFToken string /* ... */ }
+csrf.CSRFToken = "tok"          // settable
+tok := csrf.CSRFToken           // field read
+// after
+type CSRFInterceptor struct { csrfToken string /* guarded by sync.RWMutex */ }
+tok := csrf.CSRFToken()         // accessor method; no setter
+```
+
+Reads migrate `csrf.CSRFToken` → `csrf.CSRFToken()`. The token can **no longer be set directly** — it is
+captured automatically from controller responses (race-safe). Blast radius is tiny: the token is managed
+internally and few consumers touch `CSRFInterceptor` directly, but any code that read or set the field, or
+used a composite literal with `CSRFToken:`, no longer compiles. *(Documented retroactively — found by the
+final whole-codebase review; the change shipped in Wave 1.)*
+
+### 5. A real HTTP 404 now satisfies `errors.Is(err, ErrNotFound)` (ARCH-05)
+
+**Behavioral widening (no compile break).** Wave 1 added `func (s *ServerError) Is(target error) bool`
+mapping a `*ServerError` with `StatusCode == 404` to the `ErrNotFound` sentinel. Previously only the
+hand-written list/get wrappers returned `ErrNotFound` (on empty data); now a genuine 404 from **any**
+endpoint also matches `errors.Is(err, ErrNotFound)`. This unifies the not-found contract and is almost
+always what callers want, but a consumer that distinguished "404 server error" from the `ErrNotFound`
+sentinel will now see them as equal. *(Documented retroactively — found by the final review; shipped in
+Wave 1. This is the same mechanism Wave 2 #4 relies on to keep soft rc:errors out of `ErrNotFound`.)*
+
+### 6. `Client` interface gained `SetSetting`; `DpiApp`/`DpiGroup` removed (ARCH-08)
 
 **Interface addition (compile break for custom `Client` implementations).** The generated `Client`
 interface now declares:

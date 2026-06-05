@@ -59,4 +59,30 @@ for codegen: **9.5.21** (offline cache; regen via `cd unifi && go run ../codegen
 
 **Verification (final, in-workflow + independently re-run by the orchestrator):** `go build ./...` ✓ · `golangci-lint run` 0 issues ✓ · `go test ./unifi/...` ✓ · `go test ./unifi/ -race` ✓ · `go test -short ./codegen/...` offline (`GOPROXY=off`) ✓ · `go test -short ./codegen/ -race` ✓ · `go vet ./codegen/...` ✓ · regen idempotent (H1==H2) ✓ · mock idempotent (M1==M2) ✓
 
-> **Commit note:** Wave 2 landed as a **single atomic code commit** (`d8f5f25`), unlike Wave 1's lane-split. TEST-14's shared-helper consolidation made the `unifi` test files mutually compile-dependent, and the regenerated Client interface (TEST-15) couples the generated tree to the hand-written impl — so no finer split keeps every commit build+test green without de-consolidating TEST-14. Per-finding traceability lives in the commit body + this log. `.unifi-version` (user's `10.3.58`) was kept out of the commit per the standing rule.
+> **Commit note:** Wave 2 landed as a **single atomic code commit** (`d8f5f25`), unlike Wave 1's lane-split. TEST-14's shared-helper consolidation made the `unifi` test files mutually compile-dependent, and the regenerated Client interface (TEST-15) couples the generated tree to the hand-written impl — so no finer split keeps every commit build+test green without de-consolidating TEST-14. Per-finding traceability lives in the commit body + this log. `.unifi-version` (user-owned, uncommitted) was kept out of the commit per the standing rule.
+
+## Final whole-codebase review (process contract §2.8)
+
+- Status: **complete** ✅ — verdict **ship-with-followups**. 33 agents: in-workflow baseline (9/9 green) → 8 parallel adversarial dimension reviewers (client/config, requests pipeline, error model, settings/wrappers, codegen templates, codegen resources, codegen download-security, tests+doc-accuracy) → per-finding adversarial verification (real? in-scope? severity?) → synthesis → gated remediation.
+- **Zero confirmed in-scope blocker/major findings; zero must-fixes.** Of 23 verified findings, 9 were skipped (not real / out-of-scope / binding-decision outcomes), 14 confirmed real+in-scope but all **minor/nit, recommendation=document**. Final verify all-green; regen + mock idempotent.
+
+**Acted on (high-value, low-risk):**
+- **breaking_changes.md gaps closed** (found by the review): (4) `CSRFInterceptor.CSRFToken` exported field → accessor method (ARCH-04, Wave 1) — a real compile break that was undocumented; (5) the 404 → `ErrNotFound` widening via `ServerError.Is` (ARCH-05, Wave 1) — an undocumented behavioral widening.
+- **Capital-`M` `Meta` regression test** (`TestHandleResponseMetaRcErrorCapitalMeta`, requests_test.go): pins the centralized soft-error probe's reliance on `encoding/json` case-insensitive key matching (real v1 envelopes emit capital `Meta`; the probe tags lowercase `meta`). Guards against a future exact-case refactor silently re-breaking what ARCH-10/O5 fixed — the one test the review actively recommended scheduling.
+
+**Deferred follow-ups (all minor/nit, doc/comment/defense-in-depth — optional later cleanup pass):**
+- `FR-error-model-1` (req): note that the O5 soft-error check only runs for non-nil `respBody` (bodyless DELETE/Post soft-200 rc:errors still pass — strictly better than pre-1.11.0, not a regression).
+- `FR-requests-pipeline-2` (req): comment that `decodeResponseBody` parses the buffered body twice (meta probe + decode); the *network* read is single. Accepted O5 tradeoff.
+- `FR-requests-pipeline-4` (unifi_errors): optionally truncate the raw-body fallback in `errorBodyFallbackMessage` to keep error strings log-friendly (body already capped at 1 MiB).
+- `FR-codegen-templates-1` (resources/templates): `QuerySuffix()` splices an unescaped `url.Values` string into `fmt.Sprintf` format literals — document the "values must not need percent-encoding" constraint in codegen/CLAUDE.md (benign today; would trip `go vet`/CI, not ship). Optional robust fix: `strings.ReplaceAll(r.QueryString, "%", "%%")`.
+- `FR-client-config-1` (client): document `ClientConfig.Interceptors` dedup-by-concrete-type + built-in precedence on the public field godoc; optional `Debugf` on skip.
+- `FR-client-config-4` (api_paths): an out-of-range `APIStyle` enum silently pins new-style + skips probing — optional erroring default / validate tag; at least document.
+- `FR-error-model-3` (validation): the non-struct `Validate` fallback renders an empty `ValidationError` message — append `Root.Error()` when `Messages` is empty.
+- `FR-codegen-resources-1` (resources): the ARCH-14 collision guard doesn't cover whitespace-keyed injected base fields — iterate map values (skip nil spacers) or add a comment. No real collision in the 9.5.21 catalog.
+- `FR-settings-wrappers-1` (setting): dead/unused per-call `Meta` fields in Get/SetSetting response structs after O5 centralization — optionally drop or lowercase the tag.
+- `FR-codegen-download-security-1` (download): ARCH-15 host pinning validates hop 0 only; redirects are followed unconstrained — document in codegen/CLAUDE.md trust-model; optional per-hop `CheckRedirect` re-validation.
+- `FR-tests-and-docs-3` (testhelpers): two stale comments after the mutex fix (a non-existent `requestsSnapshot`; an outdated "unsynchronized slice" note).
+
+**Verification (final review, in-workflow):** all 9 baseline checks green (build, lint 0, `unifi` + `-race`, `codegen -short` offline `GOPROXY=off`, `vet`, `codegen -race`, regen-idempotent, mock-idempotent). Coverage unifi **10.6%** / codegen **84.4%** (low unifi aggregate is the un-unit-exercised generated-CRUD surface; the hand-written core + codegen pipeline carry real coverage).
+
+**1.11.0 effort: COMPLETE.** P0/P1/P2 all delivered; P3 + ARCH-12 out of scope by decision. Tree green, `-race`-clean, codegen idempotent. No code surgery warranted before shipping.
