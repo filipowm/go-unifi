@@ -43,6 +43,14 @@ func TestQuerySuffix(t *testing.T) {
 	with := NewResource("Bar", "bar")
 	with.QueryString = "includeSystemFeatures=true"
 	assert.Equal(t, "?includeSystemFeatures=true", with.QuerySuffix())
+
+	// A query value that url-encodes to contain '%' (e.g. '&' -> '%26') must have
+	// the '%' DOUBLED, because templates splice QuerySuffix into a fmt.Sprintf
+	// FORMAT-string literal; a lone '%' would be read as a (malformed) verb and
+	// trip go vet / corrupt the generated URL. See ARCH-19 / FR-codegen-templates-1.
+	enc := NewResource("Baz", "baz")
+	enc.QueryString = buildQueryString(map[string]string{"q": "a&b"}) // -> "q=a%26b"
+	assert.Equal(t, "?q=a%%26b", enc.QuerySuffix(), "percent signs must be escaped for the fmt.Sprintf format literal")
 }
 
 // TestQueryParamsAppendedAfterIDSegmentV2 is the core ARCH-19 regression: the V2
