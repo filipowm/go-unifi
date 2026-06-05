@@ -25,14 +25,14 @@ const (
 	maxJSONSize   = 5 << 20   // 5 MiB — individual API field JSONs are tiny
 )
 
-func DownloadAndExtract(downloadUrl url.URL, outputDir string) error {
+func DownloadAndExtract(client *http.Client, downloadUrl url.URL, outputDir string) error {
 	// Check if output directory exists, if not create and perform extraction
 
 	if created, err := ensurePath(outputDir); err != nil {
 		return fmt.Errorf("unable to create output directory %s: %w", outputDir, err)
 	} else if created {
 		log.Debugf("downloading UniFi Controller package from: %s", downloadUrl.String())
-		jarFile, err := downloadJar(downloadUrl, outputDir)
+		jarFile, err := downloadJar(client, downloadUrl, outputDir)
 		if err != nil {
 			return err
 		}
@@ -56,13 +56,17 @@ func DownloadAndExtract(downloadUrl url.URL, outputDir string) error {
 	return nil
 }
 
-func downloadJar(downloadUrl url.URL, outputDir string) (string, error) {
+func downloadJar(client *http.Client, downloadUrl url.URL, outputDir string) (string, error) {
+	if client == nil {
+		client = http.DefaultClient
+	}
+
 	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, downloadUrl.String(), nil)
 	if err != nil {
 		return "", fmt.Errorf("unable to download UniFi Controller deb: %w", err)
 	}
 
-	debResp, err := http.DefaultClient.Do(req)
+	debResp, err := client.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("unable to download UniFi Controller deb: %w", err)
 	}

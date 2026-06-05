@@ -54,9 +54,8 @@ func findCodegenDir() (string, error) {
 }
 
 // copyWithLimit copies src to dst, capping total bytes to guard against
-// decompression bombs (gosec G110). Returns an error if the cap is exceeded.
-//
-//nolint:unparam
+// decompression bombs (gosec G110). Returns the number of bytes copied and an
+// error if the cap is exceeded.
 func copyWithLimit(dst io.Writer, src io.Reader, maxSize int64) (int64, error) {
 	n, err := io.CopyN(dst, src, maxSize+1) // read one past the cap to detect overflow
 	if errors.Is(err, io.EOF) {

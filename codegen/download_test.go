@@ -1,14 +1,21 @@
 package main
 
 import (
+	"archive/tar"
 	"archive/zip"
+	"bytes"
+	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/ulikunitz/xz"
+	"github.com/xor-gate/ar"
 )
 
 // Helper function to create a temporary zip file with given entries. 'entries' maps file names to their content.
@@ -33,6 +40,82 @@ func createTempZipFile(t *testing.T, entries map[string]string) string {
 	return tempFile.Name()
 }
 
+// buildAceJar builds an in-memory zip (mimicking ace.jar) holding the given
+// api/fields/*.json entries.
+func buildAceJar(t *testing.T, fields map[string]string) []byte {
+	t.Helper()
+	var buf bytes.Buffer
+	zw := zip.NewWriter(&buf)
+	for name, content := range fields {
+		f, err := zw.Create(name)
+		require.NoError(t, err, "creating zip entry %s", name)
+		_, err = f.Write([]byte(content))
+		require.NoError(t, err, "writing zip entry %s", name)
+	}
+	require.NoError(t, zw.Close(), "closing zip writer")
+	return buf.Bytes()
+}
+
+// buildDataTarXz wraps the given files in a tar archive and xz-compresses it,
+// mimicking the data.tar.xz member of a .deb. The map keys are tar entry names.
+func buildDataTarXz(t *testing.T, files map[string][]byte) []byte {
+	t.Helper()
+	var tarBuf bytes.Buffer
+	tw := tar.NewWriter(&tarBuf)
+	for name, content := range files {
+		hdr := &tar.Header{
+			Name:     name,
+			Typeflag: tar.TypeReg,
+			Mode:     0o644,
+			Size:     int64(len(content)),
+		}
+		require.NoError(t, tw.WriteHeader(hdr), "writing tar header %s", name)
+		_, err := tw.Write(content)
+		require.NoError(t, err, "writing tar body %s", name)
+	}
+	require.NoError(t, tw.Close(), "closing tar writer")
+
+	var xzBuf bytes.Buffer
+	xw, err := xz.NewWriter(&xzBuf)
+	require.NoError(t, err, "creating xz writer")
+	_, err = xw.Write(tarBuf.Bytes())
+	require.NoError(t, err, "writing xz body")
+	require.NoError(t, xw.Close(), "closing xz writer")
+	return xzBuf.Bytes()
+}
+
+// buildDeb builds an ar archive (the .deb container) holding the supplied
+// members. Use it to construct a tiny ar(data.tar.xz(ace.jar)) fixture or a
+// malformed one missing the data.tar.xz member.
+func buildDeb(t *testing.T, members map[string][]byte) []byte {
+	t.Helper()
+	var buf bytes.Buffer
+	aw := ar.NewWriter(&buf)
+	require.NoError(t, aw.WriteGlobalHeader(), "writing ar global header")
+	for name, content := range members {
+		hdr := &ar.Header{
+			Name: name,
+			Size: int64(len(content)),
+			Mode: 0o644,
+		}
+		require.NoError(t, aw.WriteHeader(hdr), "writing ar header %s", name)
+		_, err := aw.Write(content)
+		require.NoError(t, err, "writing ar body %s", name)
+	}
+	return buf.Bytes()
+}
+
+// buildControllerDeb assembles a full ar(data.tar.xz(tar(ace.jar))) fixture
+// whose ace.jar contains the given api/fields/*.json entries.
+func buildControllerDeb(t *testing.T, fields map[string]string) []byte {
+	t.Helper()
+	aceJar := buildAceJar(t, fields)
+	dataTarXz := buildDataTarXz(t, map[string][]byte{
+		"./usr/lib/unifi/lib/ace.jar": aceJar,
+	})
+	return buildDeb(t, map[string][]byte{"data.tar.xz": dataTarXz})
+}
+
 // Test when the output directory already exists. In this case, DownloadAndExtract should not call downloadJarFn or extractJSONFn.
 func TestDownloadAndExtract_WithExistingDirectory(t *testing.T) {
 	t.Parallel()
@@ -41,7 +124,7 @@ func TestDownloadAndExtract_WithExistingDirectory(t *testing.T) {
 	tempDir := t.TempDir()
 	testURL, _ := url.Parse("http://example.com/test.deb")
 
-	err := DownloadAndExtract(*testURL, tempDir)
+	err := DownloadAndExtract(http.DefaultClient, *testURL, tempDir)
 
 	r.NoError(err, "Expected no error when directory exists")
 }
@@ -57,7 +140,7 @@ func TestDownloadAndExtract_PathNotDirectory(t *testing.T) {
 	r.NoError(err, "Failed to create temp file")
 	testURL, _ := url.Parse("http://example.com/test.deb")
 
-	err = DownloadAndExtract(*testURL, tempFilePath)
+	err = DownloadAndExtract(http.DefaultClient, *testURL, tempFilePath)
 
 	r.Error(err, "Expected error because tempFilePath is not a directory")
 	r.ErrorContains(err, tempFilePath+" isn't a directory")
@@ -187,4 +270,295 @@ func TestExtractJSON_InvalidSettings(t *testing.T) {
 
 	r.Error(err)
 	r.ErrorContains(err, "unable to unmarshal settings")
+}
+
+// TestSanitizeExtractedPath_Traversal pins the zip-slip / path-traversal guard.
+// filepath.Base() strips the directory components so traversal-style names are
+// mitigated by being re-anchored inside destinationDir; the test documents that
+// intended behavior and exercises the !HasPrefix 'invalid file path' branch.
+func TestSanitizeExtractedPath_Traversal(t *testing.T) {
+	t.Parallel()
+
+	cases := map[string]struct {
+		// the entry name as it appears inside the archive
+		filePath string
+		// when set, the produced path must equal filepath.Join(destDir, wantBase)
+		wantBase string
+		// when set, the call must error and contain this substring
+		wantErr string
+	}{
+		"parent traversal is re-anchored in dir": {
+			filePath: "../../etc/passwd",
+			wantBase: "passwd",
+		},
+		"absolute path is re-anchored in dir": {
+			filePath: "/etc/shadow",
+			wantBase: "shadow",
+		},
+		"dot-dot only collapses to dir itself -> rejected": {
+			// filepath.Base("..") == "..", so Join(dir, "..") escapes the dir
+			// and trips the HasPrefix guard with the 'invalid file path' error.
+			filePath: "..",
+			wantErr:  "invalid file path",
+		},
+		"plain name stays in dir": {
+			filePath: "Device.json",
+			wantBase: "Device.json",
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
+			destDir := t.TempDir()
+			got, err := sanitizeExtractedPath(tc.filePath, destDir)
+
+			if tc.wantErr != "" {
+				r.ErrorContains(err, tc.wantErr)
+				return
+			}
+
+			r.NoError(err)
+			absExpected, absErr := filepath.Abs(filepath.Join(destDir, tc.wantBase))
+			r.NoError(absErr)
+			a.Equal(absExpected, got)
+			// The sanitized result must always stay inside the destination dir.
+			absDest, absErr := filepath.Abs(destDir)
+			r.NoError(absErr)
+			a.True(strings.HasPrefix(got, absDest), "sanitized path %q escaped dest %q", got, absDest)
+		})
+	}
+}
+
+// TestSanitizeExtractedPath_SiblingPrefix ensures a sibling directory that
+// shares the destination dir's name prefix (e.g. /tmp/dest vs /tmp/dest-evil)
+// cannot be reached: because filepath.Base re-anchors the file inside destDir,
+// the result is always within destDir.
+func TestSanitizeExtractedPath_SiblingPrefix(t *testing.T) {
+	t.Parallel()
+	a := assert.New(t)
+	r := require.New(t)
+
+	base := t.TempDir()
+	destDir := filepath.Join(base, "dest")
+	r.NoError(os.Mkdir(destDir, 0o755))
+	sibling := filepath.Join(base, "dest-evil")
+	r.NoError(os.Mkdir(sibling, 0o755))
+
+	// An attacker-style name pointing at the sibling dir.
+	got, err := sanitizeExtractedPath("../dest-evil/payload.json", destDir)
+	r.NoError(err)
+
+	absDest, err := filepath.Abs(destDir)
+	r.NoError(err)
+	absSibling, err := filepath.Abs(sibling)
+	r.NoError(err)
+
+	a.Equal(filepath.Join(absDest, "payload.json"), got, "must be re-anchored inside dest")
+	a.False(strings.HasPrefix(got, absSibling+string(filepath.Separator)), "must not land in sibling dir")
+}
+
+// TestExtractZipEntry_Oversize crafts a zip entry larger than maxJSONSize and
+// asserts the decompression-bomb error propagates out of extractJSON as
+// 'unable to write JSON file'.
+func TestExtractZipEntry_Oversize(t *testing.T) {
+	t.Parallel()
+	r := require.New(t)
+	tempDir := t.TempDir()
+
+	oversize := strings.Repeat("a", maxJSONSize+1)
+	jarFile := createTempZipFile(t, map[string]string{"api/fields/Big.json": oversize})
+
+	err := extractJSON(jarFile, tempDir)
+	r.Error(err)
+	r.ErrorContains(err, "unable to write JSON file")
+	r.ErrorContains(err, "decompression bomb")
+}
+
+// TestOpenDebDataTar_MissingMember feeds an ar archive without a data.tar.xz
+// member and asserts the 'unable to find .deb data file' error.
+func TestOpenDebDataTar_MissingMember(t *testing.T) {
+	t.Parallel()
+	r := require.New(t)
+
+	deb := buildDeb(t, map[string][]byte{"control.tar.gz": []byte("nope")})
+
+	_, err := openDebDataTar(bytes.NewReader(deb))
+	r.Error(err)
+	r.ErrorContains(err, "unable to find .deb data file")
+}
+
+// TestOpenDebDataTar_HappyPath decodes a well-formed ar(data.tar.xz) stream and
+// returns a reader over the decompressed tar contents.
+func TestOpenDebDataTar_HappyPath(t *testing.T) {
+	t.Parallel()
+	r := require.New(t)
+
+	dataTarXz := buildDataTarXz(t, map[string][]byte{"./hello.txt": []byte("hi")})
+	deb := buildDeb(t, map[string][]byte{"data.tar.xz": dataTarXz})
+
+	reader, err := openDebDataTar(bytes.NewReader(deb))
+	r.NoError(err)
+
+	tr := tar.NewReader(reader)
+	hdr, err := tr.Next()
+	r.NoError(err)
+	r.Equal("./hello.txt", hdr.Name)
+}
+
+// TestExtractAceJar_MissingJar walks a tar stream that does not contain ace.jar
+// and asserts the 'unable to find ace.jar' error branch.
+func TestExtractAceJar_MissingJar(t *testing.T) {
+	t.Parallel()
+	r := require.New(t)
+
+	var tarBuf bytes.Buffer
+	tw := tar.NewWriter(&tarBuf)
+	content := []byte("not a jar")
+	r.NoError(tw.WriteHeader(&tar.Header{Name: "./usr/lib/unifi/lib/other.txt", Typeflag: tar.TypeReg, Mode: 0o644, Size: int64(len(content))}))
+	_, err := tw.Write(content)
+	r.NoError(err)
+	r.NoError(tw.Close())
+
+	_, err = extractAceJar(bytes.NewReader(tarBuf.Bytes()), t.TempDir())
+	r.Error(err)
+	r.ErrorContains(err, "unable to find ace.jar")
+}
+
+// TestExtractAceJar_HappyPath finds ace.jar inside a tar stream and writes it to
+// outputDir, returning the created file's path.
+func TestExtractAceJar_HappyPath(t *testing.T) {
+	t.Parallel()
+	r := require.New(t)
+	a := assert.New(t)
+
+	jarBytes := buildAceJar(t, map[string]string{"api/fields/Device.json": `{"k":"v"}`})
+	var tarBuf bytes.Buffer
+	tw := tar.NewWriter(&tarBuf)
+	r.NoError(tw.WriteHeader(&tar.Header{Name: "./usr/lib/unifi/lib/ace.jar", Typeflag: tar.TypeReg, Mode: 0o644, Size: int64(len(jarBytes))}))
+	_, err := tw.Write(jarBytes)
+	r.NoError(err)
+	r.NoError(tw.Close())
+
+	outputDir := t.TempDir()
+	jarPath, err := extractAceJar(bytes.NewReader(tarBuf.Bytes()), outputDir)
+	r.NoError(err)
+	a.Equal(filepath.Join(outputDir, "ace.jar"), jarPath)
+
+	written, err := os.ReadFile(jarPath)
+	r.NoError(err)
+	a.Equal(jarBytes, written)
+}
+
+// TestDownloadJar_HappyPath drives downloadJar against an httptest server
+// serving a tiny hand-built ar(data.tar.xz(ace.jar)) fixture, fully offline.
+func TestDownloadJar_HappyPath(t *testing.T) {
+	t.Parallel()
+	r := require.New(t)
+	a := assert.New(t)
+
+	deb := buildControllerDeb(t, map[string]string{"api/fields/Device.json": `{"k":"v"}`})
+	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
+		_, _ = rw.Write(deb)
+	}))
+	defer server.Close()
+
+	u, err := url.Parse(server.URL)
+	r.NoError(err)
+
+	outputDir := t.TempDir()
+	jarPath, err := downloadJar(server.Client(), *u, outputDir)
+	r.NoError(err)
+	a.Equal(filepath.Join(outputDir, "ace.jar"), jarPath)
+
+	_, err = os.Stat(jarPath)
+	r.NoError(err)
+}
+
+// TestDownloadJar_NotFound asserts the non-200 branch returns the HTTP%d error.
+func TestDownloadJar_NotFound(t *testing.T) {
+	t.Parallel()
+	r := require.New(t)
+
+	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
+		rw.WriteHeader(http.StatusNotFound)
+	}))
+	defer server.Close()
+
+	u, err := url.Parse(server.URL)
+	r.NoError(err)
+
+	_, err = downloadJar(server.Client(), *u, t.TempDir())
+	r.Error(err)
+	r.ErrorContains(err, "HTTP404")
+}
+
+// TestDownloadJar_NilClientDefaults verifies the nil-client default does not
+// panic and still issues the request (against a local server here).
+func TestDownloadJar_NilClientDefaults(t *testing.T) {
+	t.Parallel()
+	r := require.New(t)
+
+	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
+		rw.WriteHeader(http.StatusNotFound)
+	}))
+	defer server.Close()
+
+	u, err := url.Parse(server.URL)
+	r.NoError(err)
+
+	// nil -> http.DefaultClient; the local httptest URL is reachable offline.
+	_, err = downloadJar(nil, *u, t.TempDir())
+	r.Error(err)
+	r.ErrorContains(err, "HTTP404")
+}
+
+// TestDownloadAndExtract_FullChainOffline exercises the full
+// download -> ar -> xz -> tar -> ace.jar -> extractJSON chain offline using the
+// injected client seam and a tiny in-memory .deb fixture.
+func TestDownloadAndExtract_FullChainOffline(t *testing.T) {
+	t.Parallel()
+	r := require.New(t)
+	a := assert.New(t)
+
+	deb := buildControllerDeb(t, map[string]string{"api/fields/Device.json": `{"key":"value"}`})
+	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
+		_, _ = rw.Write(deb)
+	}))
+	defer server.Close()
+
+	u, err := url.Parse(server.URL)
+	r.NoError(err)
+
+	// Use a not-yet-created subdirectory so DownloadAndExtract performs the download+extract.
+	outputDir := filepath.Join(t.TempDir(), "fields")
+	err = DownloadAndExtract(server.Client(), *u, outputDir)
+	r.NoError(err)
+
+	data, err := os.ReadFile(filepath.Join(outputDir, "Device.json"))
+	r.NoError(err)
+	a.JSONEq(`{"key":"value"}`, string(data))
+}
+
+// TestDownloadAndExtract_NotFoundOffline drives the 404 path through the public
+// DownloadAndExtract entrypoint using the injected client seam.
+func TestDownloadAndExtract_NotFoundOffline(t *testing.T) {
+	t.Parallel()
+	r := require.New(t)
+
+	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
+		rw.WriteHeader(http.StatusNotFound)
+	}))
+	defer server.Close()
+
+	u, err := url.Parse(server.URL)
+	r.NoError(err)
+
+	outputDir := filepath.Join(t.TempDir(), "fields")
+	err = DownloadAndExtract(server.Client(), *u, outputDir)
+	r.Error(err)
+	r.ErrorContains(err, "HTTP404")
 }

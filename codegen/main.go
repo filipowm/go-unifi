@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"flag"
 	"fmt"
+	"net/http"
 	"os"
 	"path"
 	"path/filepath"
@@ -92,7 +93,7 @@ func generate(opts options) error {
 	structuresDir := resolveDir(wd, opts.versionBaseDir)
 	structuresDir = filepath.Join(structuresDir, fmt.Sprintf("v%s", unifiVersion.Version))
 	log.Infoln("Downloading UniFi Controller API structures definitions...")
-	err = DownloadAndExtract(*unifiVersion.DownloadUrl, structuresDir)
+	err = DownloadAndExtract(http.DefaultClient, *unifiVersion.DownloadUrl, structuresDir)
 	if err != nil {
 		return fmt.Errorf("unable to download and extract UniFi Controller API structures definitions: %w", err)
 	}

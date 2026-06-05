@@ -57,7 +57,16 @@ func TestResolveDir(t *testing.T) {
 }
 
 // integration tests for the CLI
-// these test require Internet access
+// these tests require Internet access and/or shell out to `go run .`; gate them
+// behind testing.Short() so `go test -short ./codegen/...` runs fully offline.
+
+// skipIfShort skips a live-network / subprocess integration test under -short.
+func skipIfShort(t *testing.T) {
+	t.Helper()
+	if testing.Short() {
+		t.Skip("skipping live-network / subprocess integration test in -short mode")
+	}
+}
 
 func execCli(ctx context.Context, args ...string) (string, error) {
 	in := make([]string, 0, 2+len(args))
@@ -70,6 +79,7 @@ func execCli(ctx context.Context, args ...string) (string, error) {
 
 func TestHelpFlag(t *testing.T) {
 	t.Parallel()
+	skipIfShort(t)
 
 	out, err := execCli(t.Context(), "-h")
 
@@ -79,6 +89,7 @@ func TestHelpFlag(t *testing.T) {
 
 func TestInvalidFlag(t *testing.T) {
 	t.Parallel()
+	skipIfShort(t)
 
 	out, err := execCli(t.Context(), "-invalid")
 
@@ -88,6 +99,7 @@ func TestInvalidFlag(t *testing.T) {
 
 func TestDefaultVersion(t *testing.T) {
 	t.Parallel()
+	skipIfShort(t)
 
 	out, err := execCli(t.Context(), "-version-base-dir", t.TempDir(), "-output-dir", t.TempDir())
 
@@ -113,6 +125,7 @@ func testGenerate(t *testing.T, opts *options) error {
 
 func TestNonExistentVersion(t *testing.T) {
 	t.Parallel()
+	skipIfShort(t)
 
 	err := testGenerate(t, &options{version: "1.2.3"})
 
@@ -132,6 +145,7 @@ func TestInvalidVersion(t *testing.T) {
 
 func TestGenerateLatest(t *testing.T) {
 	t.Parallel()
+	skipIfShort(t)
 	r := require.New(t)
 
 	opts := &options{version: LatestVersionMarker}
@@ -150,6 +164,7 @@ func TestGenerateLatest(t *testing.T) {
 
 func TestGenerateDownloadOnly(t *testing.T) {
 	t.Parallel()
+	skipIfShort(t)
 	r := require.New(t)
 
 	opts := &options{version: LatestVersionMarker, downloadOnly: true}
