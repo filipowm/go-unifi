@@ -18,6 +18,13 @@ var (
 
 const SettingMagicSiteToSiteVpnKey = "magic_site_to_site_vpn"
 
+// Self-register this setting's fields factory so the settingFactories registry
+// in setting_registry.go stays a 1:1 reflection of the generated catalog and
+// can never drift from it by hand.
+func init() { //nolint:gochecknoinits
+	registerSetting(SettingMagicSiteToSiteVpnKey, func() any { return &SettingMagicSiteToSiteVpn{} })
+}
+
 type SettingMagicSiteToSiteVpn struct {
 	ID     string `json:"_id,omitempty"`
 	SiteID string `json:"site_id,omitempty"`

@@ -588,6 +588,8 @@ type Client interface {
 
 	GetSetting(ctx context.Context, site string, key string) (*Setting, any, error)
 
+	SetSetting(ctx context.Context, site string, key string, reqBody any) (any, error)
+
 	// ==== client methods for SettingAutoSpeedtest resource ====
 
 	// GetSettingAutoSpeedtest retrieves the settings for a resource

@@ -12,56 +12,9 @@ type Setting struct {
 	Key    string `json:"key"`
 }
 
-// settingFactories maps a setting key to a constructor for its concrete fields type.
-//
-// Each entry MUST be a closure returning a fresh pointer: the returned value is
-// passed to json.Unmarshal, so sharing a single instance across calls would alias
-// decoded state between callers.
-var settingFactories = map[string]func() any{
-	SettingAutoSpeedtestKey:       func() any { return &SettingAutoSpeedtest{} },
-	SettingBaresipKey:             func() any { return &SettingBaresip{} },
-	SettingBroadcastKey:           func() any { return &SettingBroadcast{} },
-	SettingConnectivityKey:        func() any { return &SettingConnectivity{} },
-	SettingCountryKey:             func() any { return &SettingCountry{} },
-	SettingDashboardKey:           func() any { return &SettingDashboard{} },
-	SettingDohKey:                 func() any { return &SettingDoh{} },
-	SettingDpiKey:                 func() any { return &SettingDpi{} },
-	SettingElementAdoptKey:        func() any { return &SettingElementAdopt{} },
-	SettingEtherLightingKey:       func() any { return &SettingEtherLighting{} },
-	SettingEvaluationScoreKey:     func() any { return &SettingEvaluationScore{} },
-	SettingGlobalApKey:            func() any { return &SettingGlobalAp{} },
-	SettingGlobalNatKey:           func() any { return &SettingGlobalNat{} },
-	SettingGlobalSwitchKey:        func() any { return &SettingGlobalSwitch{} },
-	SettingGuestAccessKey:         func() any { return &SettingGuestAccess{} },
-	SettingIpsKey:                 func() any { return &SettingIps{} },
-	SettingLcmKey:                 func() any { return &SettingLcm{} },
-	SettingLocaleKey:              func() any { return &SettingLocale{} },
-	SettingMagicSiteToSiteVpnKey:  func() any { return &SettingMagicSiteToSiteVpn{} },
-	SettingMdnsKey:                func() any { return &SettingMdns{} },
-	SettingMgmtKey:                func() any { return &SettingMgmt{} },
-	SettingNetflowKey:             func() any { return &SettingNetflow{} },
-	SettingNetworkOptimizationKey: func() any { return &SettingNetworkOptimization{} },
-	SettingNtpKey:                 func() any { return &SettingNtp{} },
-	SettingPortaKey:               func() any { return &SettingPorta{} },
-	SettingRadioAiKey:             func() any { return &SettingRadioAi{} },
-	SettingRadiusKey:              func() any { return &SettingRadius{} },
-	SettingRoamingAssistantKey:    func() any { return &SettingRoamingAssistant{} },
-	SettingRsyslogdKey:            func() any { return &SettingRsyslogd{} },
-	SettingSnmpKey:                func() any { return &SettingSnmp{} },
-	SettingSslInspectionKey:       func() any { return &SettingSslInspection{} },
-	SettingSuperCloudaccessKey:    func() any { return &SettingSuperCloudaccess{} },
-	SettingSuperEventsKey:         func() any { return &SettingSuperEvents{} },
-	SettingSuperFwupdateKey:       func() any { return &SettingSuperFwupdate{} },
-	SettingSuperIdentityKey:       func() any { return &SettingSuperIdentity{} },
-	SettingSuperMailKey:           func() any { return &SettingSuperMail{} },
-	SettingSuperMgmtKey:           func() any { return &SettingSuperMgmt{} },
-	SettingSuperSdnKey:            func() any { return &SettingSuperSdn{} },
-	SettingSuperSmtpKey:           func() any { return &SettingSuperSmtp{} },
-	SettingTeleportKey:            func() any { return &SettingTeleport{} },
-	SettingTrafficFlowKey:         func() any { return &SettingTrafficFlow{} },
-	SettingUsgKey:                 func() any { return &SettingUsg{} },
-	SettingUswKey:                 func() any { return &SettingUsw{} },
-}
+// The settingFactories registry lives in setting_registry.go and is populated
+// exclusively by the generated per-setting init() functions (registerSetting),
+// so it can never drift from the generated setting catalog by hand.
 
 func (s *Setting) newFields() (any, error) {
 	factory, ok := settingFactories[s.Key]

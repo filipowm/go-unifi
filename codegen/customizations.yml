@@ -2,7 +2,14 @@
 customizations:
   client:
     imports: ["io"]
-    excludeResources: ["DescribedFeature", "Dpi*", "FirewallZoneMatrix"]
+    # excludeResources omits a resource from the Client interface only; its
+    # generated types + private CRUD still ship for a hand-written wrapper.
+    #   DescribedFeature  -> list-only wrapper in described_feature.go
+    #   FirewallZoneMatrix -> list-only wrapper in firewall_zone_matrix.go
+    excludeResources: ["DescribedFeature", "FirewallZoneMatrix"]
+    # excludeGeneration skips a resource entirely (no .generated.go at all).
+    #   Dpi* (DpiApp/DpiGroup) -> unsupported, no wrapper; would be dead code.
+    excludeGeneration: ["Dpi*"]
     functions:
       - name: "Login"
         comment: "Login logs in to the controller. Useful only for user/password authentication."
@@ -161,6 +168,20 @@ customizations:
             type: "string"
         returns:
           - "*Setting"
+          - "any"
+          - "error"
+      - name: "SetSetting"
+        resourceName: "Setting"
+        params:
+          - name: "ctx"
+            type: "context.Context"
+          - name: "site"
+            type: "string"
+          - name: "key"
+            type: "string"
+          - name: "reqBody"
+            type: "any"
+        returns:
           - "any"
           - "error"
       - name: "ListSites"

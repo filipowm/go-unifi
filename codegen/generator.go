@@ -46,7 +46,6 @@ func generateCode(fieldsDir, outDir string, customizer CodeCustomizer) error {
 		return fmt.Errorf("unable to create output directory %s: %w", outDir, err)
 	}
 
-	generators := make([]Generatable, 0)
 	resources, err := buildResourcesFromDownloadedFields(fieldsDir, customizer, false)
 	if err != nil {
 		return fmt.Errorf("failed to build resources from downloaded fields: %w", err)
@@ -61,16 +60,7 @@ func generateCode(fieldsDir, outDir string, customizer CodeCustomizer) error {
 		return fmt.Errorf("failed to build resources from downloaded fields: %w", err)
 	}
 	resources = append(resources, resourcesCustomV2...)
-	cb := NewClientInfoBuilder()
-	customizer.ApplyToClient(cb)
-	for _, resource := range resources {
-		if !customizer.IsExcludedFromClient(resource.Name()) {
-			cb.AddResource(resource, customizer.ExcludedClientFunctions(resource))
-		}
-		customizer.ApplyToResource(resource)
-		generators = append(generators, resource)
-	}
-	generators = append(generators, cb.Build())
+	generators := collectResourceGenerators(resources, customizer)
 
 	for _, g := range generators {
 		var code string
@@ -87,6 +77,30 @@ func generateCode(fieldsDir, outDir string, customizer CodeCustomizer) error {
 		log.Debugf("Generated %s with resource %s\n\n", filename, g.Name())
 	}
 	return nil
+}
+
+// collectResourceGenerators filters resources, wires the eligible ones into the
+// Client interface builder, applies their customizations, and returns the
+// per-resource generators followed by the built client generator. Resources
+// excluded from generation produce no .generated.go file and no Client interface
+// methods at all — they are unsupported and have no hand-written wrapper, so
+// emitting them would only ship dead code.
+func collectResourceGenerators(resources []*Resource, customizer CodeCustomizer) []Generatable {
+	cb := NewClientInfoBuilder()
+	customizer.ApplyToClient(cb)
+	generators := make([]Generatable, 0, len(resources)+1)
+	for _, resource := range resources {
+		if customizer.IsExcludedFromGeneration(resource.Name()) {
+			log.Debugf("Skipping generation for excluded resource %s\n", resource.Name())
+			continue
+		}
+		if !customizer.IsExcludedFromClient(resource.Name()) {
+			cb.AddResource(resource, customizer.ExcludedClientFunctions(resource))
+		}
+		customizer.ApplyToResource(resource)
+		generators = append(generators, resource)
+	}
+	return append(generators, cb.Build())
 }
 
 // writeGeneratedFile writes generated file content to a file.

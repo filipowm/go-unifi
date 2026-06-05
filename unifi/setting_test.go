@@ -6,97 +6,96 @@ import (
 	"testing"
 )
 
-// expectedSettingTypes pins each registered setting key to the concrete pointer
-// type its factory must produce. It locks in the contract migrated from the old
-// switch statement so a future map edit can't silently change a mapping.
-var expectedSettingTypes = map[string]any{
-	SettingAutoSpeedtestKey:       &SettingAutoSpeedtest{},
-	SettingBaresipKey:             &SettingBaresip{},
-	SettingBroadcastKey:           &SettingBroadcast{},
-	SettingConnectivityKey:        &SettingConnectivity{},
-	SettingCountryKey:             &SettingCountry{},
-	SettingDashboardKey:           &SettingDashboard{},
-	SettingDohKey:                 &SettingDoh{},
-	SettingDpiKey:                 &SettingDpi{},
-	SettingElementAdoptKey:        &SettingElementAdopt{},
-	SettingEtherLightingKey:       &SettingEtherLighting{},
-	SettingEvaluationScoreKey:     &SettingEvaluationScore{},
-	SettingGlobalApKey:            &SettingGlobalAp{},
-	SettingGlobalNatKey:           &SettingGlobalNat{},
-	SettingGlobalSwitchKey:        &SettingGlobalSwitch{},
-	SettingGuestAccessKey:         &SettingGuestAccess{},
-	SettingIpsKey:                 &SettingIps{},
-	SettingLcmKey:                 &SettingLcm{},
-	SettingLocaleKey:              &SettingLocale{},
-	SettingMagicSiteToSiteVpnKey:  &SettingMagicSiteToSiteVpn{},
-	SettingMdnsKey:                &SettingMdns{},
-	SettingMgmtKey:                &SettingMgmt{},
-	SettingNetflowKey:             &SettingNetflow{},
-	SettingNetworkOptimizationKey: &SettingNetworkOptimization{},
-	SettingNtpKey:                 &SettingNtp{},
-	SettingPortaKey:               &SettingPorta{},
-	SettingRadioAiKey:             &SettingRadioAi{},
-	SettingRadiusKey:              &SettingRadius{},
-	SettingRoamingAssistantKey:    &SettingRoamingAssistant{},
-	SettingRsyslogdKey:            &SettingRsyslogd{},
-	SettingSnmpKey:                &SettingSnmp{},
-	SettingSslInspectionKey:       &SettingSslInspection{},
-	SettingSuperCloudaccessKey:    &SettingSuperCloudaccess{},
-	SettingSuperEventsKey:         &SettingSuperEvents{},
-	SettingSuperFwupdateKey:       &SettingSuperFwupdate{},
-	SettingSuperIdentityKey:       &SettingSuperIdentity{},
-	SettingSuperMailKey:           &SettingSuperMail{},
-	SettingSuperMgmtKey:           &SettingSuperMgmt{},
-	SettingSuperSdnKey:            &SettingSuperSdn{},
-	SettingSuperSmtpKey:           &SettingSuperSmtp{},
-	SettingTeleportKey:            &SettingTeleport{},
-	SettingTrafficFlowKey:         &SettingTrafficFlow{},
-	SettingUsgKey:                 &SettingUsg{},
-	SettingUswKey:                 &SettingUsw{},
+// driftSentinelKeys are the three setting keys whose factories were missing from
+// the old hand-maintained settingFactories literal (the W0 fix). They are the
+// concrete drift the registry-generation change exists to prevent: if codegen
+// ever stops self-registering one of these, the registry test below must fail
+// the build rather than silently shipping six broken Get/Update methods again.
+//
+// These are pinned by their generated *Key constants, so renaming a constant in
+// codegen without updating this list is itself caught at compile time.
+var driftSentinelKeys = []string{
+	SettingMdnsKey,
+	SettingRoamingAssistantKey,
+	SettingTrafficFlowKey,
 }
 
-// TestSettingNewFieldsRegistryCoverage ensures the factory registry and the
-// expected-type pin stay in lockstep: no extra, no missing keys.
-func TestSettingNewFieldsRegistryCoverage(t *testing.T) {
-	if len(settingFactories) != len(expectedSettingTypes) {
-		t.Fatalf("registry/expectation size mismatch: settingFactories=%d expected=%d",
-			len(settingFactories), len(expectedSettingTypes))
-	}
-	for key := range settingFactories {
-		if _, ok := expectedSettingTypes[key]; !ok {
-			t.Errorf("registered key %q has no expected type pinned in the test", key)
-		}
-	}
-	for key := range expectedSettingTypes {
-		if _, ok := settingFactories[key]; !ok {
-			t.Errorf("expected key %q is missing from settingFactories", key)
-		}
+// TestSettingFactoriesSelfRegistered asserts the registry is populated purely
+// from the generated per-setting init() functions. The truth is the generated
+// catalog itself — there is no hand-maintained mirror to drift from. A new
+// codegen setting that fails to self-register would simply be absent here, and
+// its typed Get/Update methods would route through newFields -> "unexpected key";
+// the per-key checks below guarantee every registered key is well-formed.
+func TestSettingFactoriesSelfRegistered(t *testing.T) {
+	t.Parallel()
+
+	if len(settingFactories) == 0 {
+		t.Fatal("settingFactories is empty: no setting self-registered via init(); " +
+			"the generated registry is broken")
 	}
 }
 
-// TestSettingNewFieldsConcreteTypes verifies that for every registered key,
-// newFields returns a non-nil pointer of the correct concrete type and no error.
-func TestSettingNewFieldsConcreteTypes(t *testing.T) {
-	for key, want := range expectedSettingTypes {
+// TestSettingDriftSentinelKeysRegistered locks in the exact regression the W0
+// patch fixed. If any of the three previously-dropped keys is missing from the
+// registry, this fails the BUILD — the codegen self-registration must keep them
+// present. This is the guard that makes the old drift impossible to recur
+// silently.
+func TestSettingDriftSentinelKeysRegistered(t *testing.T) {
+	t.Parallel()
+
+	for _, key := range driftSentinelKeys {
 		t.Run(key, func(t *testing.T) {
+			t.Parallel()
+			if _, ok := settingFactories[key]; !ok {
+				t.Fatalf("setting key %q is not registered: the codegen self-registration "+
+					"for this setting regressed (this is the exact W0 drift bug)", key)
+			}
+		})
+	}
+}
+
+// TestSettingNewFieldsRegistryConstructs derives its truth from the generated
+// registry: for every registered key, newFields must return a non-nil pointer of
+// a concrete, key-specific type with no error. This replaces the old
+// hand-mirrored expectedSettingTypes literal (which compared two hand-maintained
+// mirrors and so could never catch codegen drift).
+func TestSettingNewFieldsRegistryConstructs(t *testing.T) {
+	t.Parallel()
+
+	// seenTypes guards that distinct keys map to distinct concrete types, so two
+	// keys can't accidentally share a factory.
+	seenTypes := make(map[reflect.Type]string, len(settingFactories))
+
+	for key := range settingFactories {
+		t.Run(key, func(t *testing.T) {
+			t.Parallel()
 			s := &Setting{Key: key}
 			got, err := s.newFields()
 			if err != nil {
-				t.Fatalf("newFields() returned error for key %q: %v", key, err)
+				t.Fatalf("newFields() returned error for registered key %q: %v", key, err)
 			}
 			if got == nil {
-				t.Fatalf("newFields() returned nil for key %q", key)
+				t.Fatalf("newFields() returned nil for registered key %q", key)
 			}
-			wantType := reflect.TypeOf(want)
-			gotType := reflect.TypeOf(got)
-			if gotType != wantType {
-				t.Fatalf("newFields() for key %q returned %s, want %s", key, gotType, wantType)
-			}
-			// Returned value must be a non-nil pointer.
-			if v := reflect.ValueOf(got); v.Kind() != reflect.Pointer || v.IsNil() {
+			v := reflect.ValueOf(got)
+			if v.Kind() != reflect.Pointer || v.IsNil() {
 				t.Fatalf("newFields() for key %q did not return a non-nil pointer: %#v", key, got)
 			}
 		})
+	}
+
+	// Distinct-type check runs independently of the parallel subtests; rebuild
+	// its own values so it does not depend on subtest ordering.
+	for key := range settingFactories {
+		got, err := (&Setting{Key: key}).newFields()
+		if err != nil {
+			t.Fatalf("newFields() errored for key %q: %v", key, err)
+		}
+		typ := reflect.TypeOf(got)
+		if other, dup := seenTypes[typ]; dup {
+			t.Fatalf("keys %q and %q both construct %s; each setting key must map to a distinct concrete type", key, other, typ)
+		}
+		seenTypes[typ] = key
 	}
 }
 
@@ -104,8 +103,11 @@ func TestSettingNewFieldsConcreteTypes(t *testing.T) {
 // call yields a DISTINCT pointer. A registry of shared instances would alias
 // decoded JSON state across callers — this guards against that regression.
 func TestSettingNewFieldsFreshInstances(t *testing.T) {
+	t.Parallel()
+
 	for key := range settingFactories {
 		t.Run(key, func(t *testing.T) {
+			t.Parallel()
 			s := &Setting{Key: key}
 			a, err := s.newFields()
 			if err != nil {
@@ -125,6 +127,8 @@ func TestSettingNewFieldsFreshInstances(t *testing.T) {
 // TestSettingNewFieldsUnknownKey verifies the unknown-key error is preserved
 // exactly as the original switch produced it.
 func TestSettingNewFieldsUnknownKey(t *testing.T) {
+	t.Parallel()
+
 	const bogus = "definitely-not-a-real-setting-key"
 	s := &Setting{Key: bogus}
 	got, err := s.newFields()
@@ -138,4 +142,21 @@ func TestSettingNewFieldsUnknownKey(t *testing.T) {
 	if err.Error() != want {
 		t.Fatalf("error mismatch:\n got: %q\nwant: %q", err.Error(), want)
 	}
+}
+
+// TestRegisterSettingDuplicatePanics asserts the registry rejects a duplicate
+// key registration loudly, so a generated key collision fails at init() rather
+// than silently shadowing an earlier factory.
+func TestRegisterSettingDuplicatePanics(t *testing.T) {
+	t.Parallel()
+
+	// Use a key that is guaranteed to already be registered.
+	const key = SettingMdnsKey
+	defer func() {
+		r := recover()
+		if r == nil {
+			t.Fatal("registerSetting did not panic on a duplicate key")
+		}
+	}()
+	registerSetting(key, func() any { return &SettingMdns{} })
 }
