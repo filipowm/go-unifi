@@ -90,17 +90,17 @@ type TrafficFlowTarget struct {
 
 // TrafficFlowClientFingerprint represents the fingerprint of a client involved in a traffic flow.
 type TrafficFlowClientFingerprint struct {
-	ComputedDevID   int  `json:"computed_dev_id"`
-	ComputedEngine  int  `json:"computed_engine"`
-	Confidence      int  `json:"confidence"`
-	DevCat          int  `json:"dev_cat"`
-	DevFamily       int  `json:"dev_family"`
-	DevID           int  `json:"dev_id"`
-	DevIDOverride   int  `json:"dev_id_override"`
-	DevVendor       int  `json:"dev_vendor"`
-	HasOverride     bool `json:"has_override"`
-	OSClass         int  `json:"os_class"`
-	OSName          int  `json:"os_name"`
+	ComputedDevID  int  `json:"computed_dev_id"`
+	ComputedEngine int  `json:"computed_engine"`
+	Confidence     int  `json:"confidence"`
+	DevCat         int  `json:"dev_cat"`
+	DevFamily      int  `json:"dev_family"`
+	DevID          int  `json:"dev_id"`
+	DevIDOverride  int  `json:"dev_id_override"`
+	DevVendor      int  `json:"dev_vendor"`
+	HasOverride    bool `json:"has_override"`
+	OSClass        int  `json:"os_class"`
+	OSName         int  `json:"os_name"`
 }
 
 // TrafficFlowPolicy represents a policy applied to a traffic flow.
