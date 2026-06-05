@@ -1,6 +1,7 @@
 package unifi
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -20,21 +21,31 @@ func (e *numberOrString) UnmarshalJSON(b []byte) error {
 	if len(b) == 0 {
 		return nil
 	}
-	s := string(b)
-	if s == `""` {
+	s := strings.TrimSpace(string(b))
+	// Treat the JSON null token like the empty-string token: a server-sent null
+	// must NOT become the literal 4-character string "null", which would then be
+	// marshaled straight back to the controller on the next PUT, corrupting the
+	// value.
+	if s == `""` || s == "null" {
 		*e = ""
 		return nil
 	}
-	var err error
+	// Quoted string: unquote and store the raw string value (e.g. "auto").
 	if strings.HasPrefix(s, `"`) && strings.HasSuffix(s, `"`) {
-		s, err = strconv.Unquote(s)
+		unquoted, err := strconv.Unquote(s)
 		if err != nil {
 			return err
 		}
-		*e = numberOrString(s)
+		*e = numberOrString(unquoted)
 		return nil
 	}
-	*e = numberOrString(string(b))
+	// Bare JSON number: accept integers and floats, storing their textual form.
+	// Reject any other unquoted scalar (true/false/objects/arrays) rather than
+	// storing raw bytes that round-trip into a bogus value.
+	if _, err := strconv.ParseFloat(s, 64); err != nil {
+		return fmt.Errorf("numberOrString: cannot unmarshal %q as number or string", s)
+	}
+	*e = numberOrString(s)
 	return nil
 }
 
