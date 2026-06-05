@@ -86,9 +86,6 @@ type FirewallZonePolicyDestination struct {
 func (dst *FirewallZonePolicyDestination) UnmarshalJSON(b []byte) error {
 	type Alias FirewallZonePolicyDestination
 	aux := &struct {
-		AppCategoryIDs []emptyStringInt `json:"app_category_ids"`
-		AppIDs         []emptyStringInt `json:"app_ids"`
-
 		*Alias
 
 		AppCategoryIDs []emptyStringInt `json:"app_category_ids"`

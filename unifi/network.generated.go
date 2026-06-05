@@ -444,30 +444,6 @@ func (dst *NetworkWANDHCPv6Options) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-type NetworkWANDHCPv6Options struct {
-	OptionNumber int    `json:"optionNumber,omitempty"` // (1|11|15|16|17)
-	Value        string `json:"value,omitempty"`
-}
-
-func (dst *NetworkWANDHCPv6Options) UnmarshalJSON(b []byte) error {
-	type Alias NetworkWANDHCPv6Options
-	aux := &struct {
-		OptionNumber emptyStringInt `json:"optionNumber"`
-
-		*Alias
-	}{
-		Alias: (*Alias)(dst),
-	}
-
-	err := json.Unmarshal(b, &aux)
-	if err != nil {
-		return fmt.Errorf("unable to unmarshal alias: %w", err)
-	}
-	dst.OptionNumber = int(aux.OptionNumber)
-
-	return nil
-}
-
 type NetworkWANProviderCapabilities struct {
 	DownloadKilobitsPerSecond int `json:"download_kilobits_per_second,omitempty" validate:"omitempty,numeric_nonzero"` // ^[1-9][0-9]*$
 	UploadKilobitsPerSecond   int `json:"upload_kilobits_per_second,omitempty" validate:"omitempty,numeric_nonzero"`   // ^[1-9][0-9]*$
