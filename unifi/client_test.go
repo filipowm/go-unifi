@@ -4,8 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"reflect"
+	"sync"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -248,6 +252,123 @@ func TestNewClientFromConfigTrimsURL(t *testing.T) {
 	require.NoError(t, err)
 	a.Equal(testUrl, config.URL)
 	a.Equal(testUrl, c.BaseURL())
+}
+
+// TestVersionWithLockingNoDeadlock is a regression test for ARCH-01: Version()
+// on a UseLocking:true client with an uncached sysInfo used to acquire c.lock and
+// then re-enter it through executeRequest, self-deadlocking the goroutine. The
+// fetch must now happen while holding no lock. A select + time.After makes a
+// deadlock FAIL the test (timeout) rather than hang the whole suite.
+func TestVersionWithLockingNoDeadlock(t *testing.T) {
+	t.Parallel()
+
+	const wantVersion = "9.9.9-test"
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "", "/":
+			// 200 at the root makes determineApiStyle pick the new-style API.
+			w.WriteHeader(http.StatusOK)
+		case "/proxy/network/api/s/default/stat/sysinfo":
+			w.WriteHeader(http.StatusOK)
+			fmt.Fprintf(w, `{"data": [{"version": "%s"}]}`, wantVersion)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer ts.Close()
+
+	// NewBareClient leaves sysInfo uncached, so Version() takes the fetch path —
+	// the exact path that previously deadlocked under UseLocking.
+	c, err := NewBareClient(&ClientConfig{
+		URL:        ts.URL,
+		APIKey:     "dummy",
+		VerifySSL:  false,
+		UseLocking: true,
+	})
+	require.NoError(t, err)
+
+	done := make(chan string, 1)
+	go func() {
+		done <- c.Version()
+	}()
+
+	select {
+	case got := <-done:
+		assert.Equal(t, wantVersion, got, "Version() must return the controller version")
+	case <-time.After(2 * time.Second):
+		t.Fatal("Version() deadlocked: UseLocking:true client re-entered its own mutex (ARCH-01)")
+	}
+}
+
+// TestVersionConcurrentCachedFetch is the load-bearing -race test for ARCH-01:
+// it hammers Version() from many goroutines at once so the race detector
+// actually exercises the sysInfoMu RWMutex + double-checked locking that guards
+// c.sysInfo. The single-goroutine TestVersionWithLockingNoDeadlock only proves
+// no self-deadlock; only concurrent callers can surface a data race or torn read
+// on c.sysInfo (e.g. if a refactor drops sysInfoMu or aliases it back to c.lock).
+// Run with -race for this to bite.
+func TestVersionConcurrentCachedFetch(t *testing.T) {
+	t.Parallel()
+
+	const (
+		wantVersion = "9.9.9-test"
+		goroutines  = 50
+	)
+
+	var sysInfoHits atomic.Int32
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "", "/":
+			// 200 at the root makes determineApiStyle pick the new-style API.
+			w.WriteHeader(http.StatusOK)
+		case "/proxy/network/api/s/default/stat/sysinfo":
+			sysInfoHits.Add(1)
+			w.WriteHeader(http.StatusOK)
+			fmt.Fprintf(w, `{"data": [{"version": "%s"}]}`, wantVersion)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer ts.Close()
+
+	// NewBareClient leaves sysInfo uncached, so the first Version() fetches.
+	c, err := NewBareClient(&ClientConfig{
+		URL:        ts.URL,
+		APIKey:     "dummy",
+		VerifySSL:  false,
+		UseLocking: true,
+	})
+	require.NoError(t, err)
+
+	results := make([]string, goroutines)
+	start := make(chan struct{})
+	var wg sync.WaitGroup
+	wg.Add(goroutines)
+	for i := range goroutines {
+		go func(idx int) {
+			defer wg.Done()
+			<-start // release all goroutines together to maximize contention
+			results[idx] = c.Version()
+		}(i)
+	}
+	close(start)
+	wg.Wait()
+
+	// Every concurrent caller must observe the full, untorn version string.
+	for i, got := range results {
+		assert.Equalf(t, wantVersion, got, "goroutine %d got a wrong/torn Version()", i)
+	}
+
+	// The burst against an initially-uncached client may legitimately race
+	// several fetches (the HTTP fetch happens under NO lock; the double-check
+	// only de-dupes the cache WRITE, not the fetch), so we only require >=1.
+	// What MUST hold once the dust settles is that the cache is populated: a
+	// post-burst Version() must serve from c.sysInfo without any new round-trip.
+	burstHits := sysInfoHits.Load()
+	assert.GreaterOrEqual(t, burstHits, int32(1), "at least one sysInfo fetch must occur")
+
+	assert.Equal(t, wantVersion, c.Version(), "post-burst Version() must serve the cached version")
+	assert.Equal(t, burstHits, sysInfoHits.Load(), "cached Version() must not trigger another sysInfo fetch")
 }
 
 func TestHttpTransportCustomizerError(t *testing.T) {
