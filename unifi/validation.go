@@ -24,6 +24,16 @@ type ValidationError struct {
 // Field keys are sorted so the output is deterministic across runs (the
 // underlying Messages map has nondeterministic iteration order).
 func (v *ValidationError) Error() string {
+	// With no per-field messages (e.g. the non-struct/InvalidValidationError
+	// fallback in Validate), surface the root cause instead of rendering an empty
+	// "validation failed: \n" body that drops the real error (FR-error-model-3).
+	if len(v.Messages) == 0 {
+		if v.Root != nil {
+			return "validation failed: " + v.Root.Error()
+		}
+		return "validation failed"
+	}
+
 	err := "validation failed: \n"
 	fields := make([]string, 0, len(v.Messages))
 	for field := range v.Messages {

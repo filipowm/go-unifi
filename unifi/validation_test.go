@@ -189,6 +189,12 @@ func TestValidateNonStructFallback(t *testing.T) {
 	require.ErrorAs(t, verr, &ve)
 	require.Error(t, ve.Root, "the raw validator error must be preserved as Root")
 	a.Nil(ve.Messages, "no translated messages exist for a non-struct validation failure")
+
+	// With no per-field Messages, Error() must surface the root cause rather than
+	// render an empty "validation failed: \n" body (FR-error-model-3).
+	a.Contains(ve.Error(), "validation failed")
+	a.Contains(ve.Error(), ve.Root.Error(), "Error() must include the root cause when there are no per-field messages")
+	a.NotContains(ve.Error(), "validation failed: \n", "must not render an empty message body")
 }
 
 // TestNewValidatorExtraValidators pins the optional-extra-validators seam

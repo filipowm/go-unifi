@@ -241,7 +241,11 @@ func (r *Resource) QuerySuffix() string {
 	if r.QueryString == "" {
 		return ""
 	}
-	return "?" + r.QueryString
+	// Templates splice this into a fmt.Sprintf FORMAT-string literal, so any '%'
+	// produced by url.Values.Encode (e.g. '&' -> '%26') must be doubled to stay a
+	// literal percent rather than a (malformed) verb. Today's only param is
+	// %-free, so this is zero-diff hardening against future queryParams. See ARCH-19.
+	return "?" + strings.ReplaceAll(r.QueryString, "%", "%%")
 }
 
 //go:embed api.go.tmpl

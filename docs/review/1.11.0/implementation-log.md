@@ -70,14 +70,16 @@ for codegen: **9.5.21** (offline cache; regen via `cd unifi && go run ../codegen
 - **breaking_changes.md gaps closed** (found by the review): (4) `CSRFInterceptor.CSRFToken` exported field → accessor method (ARCH-04, Wave 1) — a real compile break that was undocumented; (5) the 404 → `ErrNotFound` widening via `ServerError.Is` (ARCH-05, Wave 1) — an undocumented behavioral widening.
 - **Capital-`M` `Meta` regression test** (`TestHandleResponseMetaRcErrorCapitalMeta`, requests_test.go): pins the centralized soft-error probe's reliance on `encoding/json` case-insensitive key matching (real v1 envelopes emit capital `Meta`; the probe tags lowercase `meta`). Guards against a future exact-case refactor silently re-breaking what ARCH-10/O5 fixed — the one test the review actively recommended scheduling.
 
-**Deferred follow-ups (all minor/nit, doc/comment/defense-in-depth — optional later cleanup pass):**
+**Post-review fixes applied (the two latent-correctness items, TDD failing-then-green):**
+- `FR-codegen-templates-1` (codegen/resources.go) ✅: `QuerySuffix()` now doubles `%` (`strings.ReplaceAll(r.QueryString, "%", "%%")`) so a future `queryParams` value that url-encodes to contain `%` (e.g. `&`→`%26`) stays a literal in the `fmt.Sprintf` format string instead of a malformed verb. Zero generated diff (today's only param is `%`-free). Test: `codegen TestQuerySuffix` `%`-case.
+- `FR-error-model-3` (unifi/validation.go) ✅: `ValidationError.Error()` now surfaces `Root.Error()` when `Messages` is empty (the non-struct fallback), instead of rendering an empty `"validation failed: \n"`. Test: `TestValidateNonStructFallback` asserts the root cause is in the message.
+
+**Deferred follow-ups (remaining; all nit/cosmetic doc/comment/defense-in-depth — optional later pass):**
 - `FR-error-model-1` (req): note that the O5 soft-error check only runs for non-nil `respBody` (bodyless DELETE/Post soft-200 rc:errors still pass — strictly better than pre-1.11.0, not a regression).
 - `FR-requests-pipeline-2` (req): comment that `decodeResponseBody` parses the buffered body twice (meta probe + decode); the *network* read is single. Accepted O5 tradeoff.
 - `FR-requests-pipeline-4` (unifi_errors): optionally truncate the raw-body fallback in `errorBodyFallbackMessage` to keep error strings log-friendly (body already capped at 1 MiB).
-- `FR-codegen-templates-1` (resources/templates): `QuerySuffix()` splices an unescaped `url.Values` string into `fmt.Sprintf` format literals — document the "values must not need percent-encoding" constraint in codegen/CLAUDE.md (benign today; would trip `go vet`/CI, not ship). Optional robust fix: `strings.ReplaceAll(r.QueryString, "%", "%%")`.
 - `FR-client-config-1` (client): document `ClientConfig.Interceptors` dedup-by-concrete-type + built-in precedence on the public field godoc; optional `Debugf` on skip.
 - `FR-client-config-4` (api_paths): an out-of-range `APIStyle` enum silently pins new-style + skips probing — optional erroring default / validate tag; at least document.
-- `FR-error-model-3` (validation): the non-struct `Validate` fallback renders an empty `ValidationError` message — append `Root.Error()` when `Messages` is empty.
 - `FR-codegen-resources-1` (resources): the ARCH-14 collision guard doesn't cover whitespace-keyed injected base fields — iterate map values (skip nil spacers) or add a comment. No real collision in the 9.5.21 catalog.
 - `FR-settings-wrappers-1` (setting): dead/unused per-call `Meta` fields in Get/SetSetting response structs after O5 centralization — optionally drop or lowercase the tag.
 - `FR-codegen-download-security-1` (download): ARCH-15 host pinning validates hop 0 only; redirects are followed unconstrained — document in codegen/CLAUDE.md trust-model; optional per-hop `CheckRedirect` re-validation.
