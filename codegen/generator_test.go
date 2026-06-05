@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -83,6 +85,43 @@ type {{.TypeName}} struct {
 			a.Contains(code, tt.expectedCode)
 		})
 	}
+}
+
+// TestGenerateCode_InjectedV2BaseDir proves generateCode runs end-to-end against
+// INJECTED fieldsDir and v2BaseDir fixtures, with no dependency on the real repo
+// layout or findCodegenDir/cwd (TEST-16). Both a v1 and a v2 resource are
+// emitted as <name>.generated.go alongside the client.generated.go, and the
+// supplied logger receives the per-resource Debug lines.
+func TestGenerateCode_InjectedV2BaseDir(t *testing.T) {
+	t.Parallel()
+
+	fieldsDir := t.TempDir()
+	v2BaseDir := t.TempDir()
+	outDir := t.TempDir()
+
+	// A v1 resource and a v2 resource, each a trivial inferable field set.
+	require.NoError(t, os.WriteFile(filepath.Join(fieldsDir, "Widget.json"), []byte(`{"name": ".{0,32}"}`), 0o644))  //nolint:gosec
+	require.NoError(t, os.WriteFile(filepath.Join(v2BaseDir, "Gadget.json"), []byte(`{"label": ".{0,32}"}`), 0o644)) //nolint:gosec
+
+	logger, hook := test.NewNullLogger()
+	logger.SetLevel(logrus.DebugLevel)
+
+	err := generateCode(fieldsDir, v2BaseDir, outDir, CodeCustomizer{}, logger)
+	require.NoError(t, err)
+
+	// Both resources and the client interface land in outDir.
+	for _, want := range []string{"widget.generated.go", "gadget.generated.go", "client.generated.go"} {
+		_, statErr := os.Stat(filepath.Join(outDir, want))
+		require.NoErrorf(t, statErr, "expected generated file %s", want)
+	}
+
+	// The injected logger (not the package global) captured the pipeline output.
+	entries := hook.AllEntries()
+	debugMsgs := make([]string, 0, len(entries))
+	for _, e := range entries {
+		debugMsgs = append(debugMsgs, e.Message)
+	}
+	assert.NotEmpty(t, debugMsgs, "injected logger must receive pipeline output")
 }
 
 func TestWriteGeneratedFile(t *testing.T) {
@@ -199,7 +238,10 @@ func TestGenerateCodeFromFields(t *testing.T) {
 				tt.setupMockFiles(tt.fieldsDir)
 			}
 
-			err := generateCode(tt.fieldsDir, tt.outDir, CodeCustomizer{})
+			// Inject an empty v2 base dir (a fresh temp dir) so generation is
+			// decoupled from the real repo layout (TEST-16) and never touches
+			// findCodegenDir.
+			err := generateCode(tt.fieldsDir, t.TempDir(), tt.outDir, CodeCustomizer{}, nil)
 
 			if tt.expectedError {
 				require.Error(t, err)

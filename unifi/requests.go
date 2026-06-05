@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -101,16 +102,98 @@ func (c *client) handleResponse(resp *http.Response, respBody any, method, apiPa
 	if err := c.errorHandler.HandleError(resp); err != nil {
 		return err
 	}
-	// If no response body is expected, return
-	if respBody == nil || resp.ContentLength == 0 {
+	// If no response body is expected, this is the only unconditional skip.
+	// ARCH-11: do NOT key the decode decision off resp.ContentLength — a server,
+	// proxy, or HTTP/2 path can deliver a non-empty JSON body while reporting
+	// ContentLength==0 (or -1 for chunked), which would silently leave respBody
+	// zero-valued. Decide on the body itself instead.
+	if respBody == nil {
 		c.Trace("No response body to decode")
 		return nil
 	}
+	return c.decodeResponseBody(resp, respBody, method, apiPath)
+}
+
+// decodeResponseBody buffers the response body once and decodes it into respBody.
+// It also performs the centralized v1 meta rc:error check (ARCH-10/O5) and the
+// decode-on-body / empty-body handling (ARCH-11). respBody is assumed non-nil.
+func (c *client) decodeResponseBody(resp *http.Response, respBody any, method, apiPath string) error {
+	// Buffer the body ONCE into a capped []byte so it can be both probed for a v1
+	// meta envelope (ARCH-10/O5) and decoded into respBody without re-reading the
+	// network stream. The cap bounds memory against a runaway/hostile body while
+	// staying generous enough for large legitimate list responses.
+	//
+	// ARCH-11: read ONE byte past the cap so an over-cap body can be detected
+	// rather than silently truncated (a truncated body would otherwise surface as
+	// an opaque "unable to decode body" JSON error that hides the real cause).
+	body, err := io.ReadAll(io.LimitReader(resp.Body, int64(maxResponseBodySize)+1))
+	if err != nil {
+		return fmt.Errorf("unable to read body: %s %s %w", method, apiPath, err)
+	}
+	if len(body) > maxResponseBodySize {
+		return fmt.Errorf("response body exceeded %d bytes: %s %s", maxResponseBodySize, method, apiPath)
+	}
+
+	if metaErr := metaEnvelopeError(resp, body); metaErr != nil {
+		c.Trace("Response carries a meta rc:error envelope")
+		return metaErr
+	}
+
 	c.Trace("Decoding response body")
-	if err := json.NewDecoder(resp.Body).Decode(respBody); err != nil {
+	// Decode from the buffered bytes. A genuinely empty body yields io.EOF, which
+	// we treat as "no content": leave respBody untouched and return nil.
+	if err := json.NewDecoder(bytes.NewReader(body)).Decode(respBody); err != nil {
+		if errors.Is(err, io.EOF) {
+			c.Trace("Empty response body, nothing to decode")
+			return nil
+		}
 		return fmt.Errorf("unable to decode body: %s %s %w", method, apiPath, err)
 	}
 	return nil
+}
+
+// metaEnvelopeError detects a v1 API soft failure (HTTP 200 with meta.rc=="error",
+// ARCH-10/O5). It is gated strictly on a meta block actually being present in the
+// body (probe.Meta != nil): a v2-style bare body carries no meta envelope and must
+// never fabricate an error. The probe uses the canonical lowercase "meta" wire tag
+// regardless of respBody's own struct tags. A body that is not valid JSON yields no
+// meta error here — the subsequent decode surfaces the real decode failure.
+//
+// ARCH-10: a soft rc:error is surfaced as a *ServerError that, on its own, carries
+// only the rc/msg from Meta.error(). The HTTP context (status code, request method,
+// request URL) is stamped onto that *ServerError here so ServerError.Error() renders
+// the same rich message the non-2xx HandleError path produces — instead of the lossy
+// "Server error (0) for  : <msg>". A soft rc:error is NOT a 404, so the stamped
+// StatusCode (typically 200) keeps errors.Is(err, ErrNotFound)==false.
+func metaEnvelopeError(resp *http.Response, body []byte) error {
+	var probe struct {
+		Meta *Meta `json:"meta"`
+	}
+	// A body that is not valid JSON has no meta envelope to inspect; the probe
+	// error is intentionally ignored because the caller's decode of respBody
+	// surfaces the real decode failure. On any failure probe.Meta stays nil.
+	_ = json.Unmarshal(body, &probe)
+	if probe.Meta == nil {
+		return nil
+	}
+	err := probe.Meta.error()
+	if err == nil {
+		return nil
+	}
+	// Enrich the soft-error *ServerError with the response context so it does not
+	// render with a zero status/empty method+URL. resp.Request can be nil on a
+	// hand-built *http.Response (e.g. unit tests), so guard it.
+	var serverErr *ServerError
+	if errors.As(err, &serverErr) {
+		serverErr.StatusCode = resp.StatusCode
+		if resp.Request != nil {
+			serverErr.RequestMethod = resp.Request.Method
+			if resp.Request.URL != nil {
+				serverErr.RequestURL = resp.Request.URL.String()
+			}
+		}
+	}
+	return err
 }
 
 // executeRequest executes an HTTP request with the given context, method, URL, body, and headers.
@@ -179,16 +262,22 @@ func createFormFile(w *multipart.Writer, mimeType, fieldname, filename string) (
 	return w.CreatePart(h)
 }
 
-// UploadFileFromReader uploads a file to the UniFi controller from an io.Reader.
-// It takes a context, API path, reader, filename, field name, and additional form fields.
-// The file is uploaded as multipart/form-data.
-func (c *client) UploadFileFromReader(ctx context.Context, apiPath string, reader io.Reader, filename, fieldName string, respBody any) error {
-	c.Tracef("Uploading file: %s to %s", filename, apiPath)
-
+// buildMultipartUpload assembles a multipart/form-data body for a file upload from
+// reader. It is the pure (no filesystem, no network) heart of UploadFileFromReader,
+// extracted so the field-name defaulting, MIME detection and Content-Disposition
+// quoting can be unit-tested in isolation (TEST-12).
+//
+// fieldName defaults to "file" when empty. The MIME type is detected from the
+// content with mimetype.DetectReader; because DetectReader consumes the reader,
+// the content is buffered once up front and the buffer is read TWICE — once to
+// detect, once to copy into the form part (the documented buffer-twice
+// workaround). It returns the assembled body buffer and the matching multipart
+// Content-Type (writer.FormDataContentType()).
+func buildMultipartUpload(reader io.Reader, filename, fieldName string) (*bytes.Buffer, string, error) {
 	// Read the entire content into a buffer first to avoid deadlock. I tied using TeeReader and Pipe but ended up in deadlock.
 	var buf bytes.Buffer
 	if _, err := io.Copy(&buf, reader); err != nil {
-		return fmt.Errorf("unable to read file content into buffer: %w", err)
+		return nil, "", fmt.Errorf("unable to read file content into buffer: %w", err)
 	}
 	contentReader := bytes.NewReader(buf.Bytes())
 
@@ -199,28 +288,42 @@ func (c *client) UploadFileFromReader(ctx context.Context, apiPath string, reade
 	// Detect MIME type from the first reader
 	mt, err := mimetype.DetectReader(contentReader)
 	if err != nil {
-		return fmt.Errorf("unable to detect file mimetype: %w", err)
+		return nil, "", fmt.Errorf("unable to detect file mimetype: %w", err)
 	}
 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 	part, err := createFormFile(writer, mt.String(), fieldName, filename)
 	if err != nil {
-		return fmt.Errorf("unable to create form file: %w", err)
+		return nil, "", fmt.Errorf("unable to create form file: %w", err)
 	}
 	// reinit reader
 	contentReader = bytes.NewReader(buf.Bytes())
 	// Copy the file content to the form field from the second reader
 	if _, err = io.Copy(part, contentReader); err != nil {
-		return fmt.Errorf("unable to copy file content: %w", err)
+		return nil, "", fmt.Errorf("unable to copy file content: %w", err)
 	}
 
 	if err := writer.Close(); err != nil {
-		return fmt.Errorf("unable to close multipart writer: %w", err)
+		return nil, "", fmt.Errorf("unable to close multipart writer: %w", err)
+	}
+
+	return body, writer.FormDataContentType(), nil
+}
+
+// UploadFileFromReader uploads a file to the UniFi controller from an io.Reader.
+// It takes a context, API path, reader, filename, field name, and additional form fields.
+// The file is uploaded as multipart/form-data.
+func (c *client) UploadFileFromReader(ctx context.Context, apiPath string, reader io.Reader, filename, fieldName string, respBody any) error {
+	c.Tracef("Uploading file: %s to %s", filename, apiPath)
+
+	body, contentType, err := buildMultipartUpload(reader, filename, fieldName)
+	if err != nil {
+		return err
 	}
 
 	headers := http.Header{}
-	headers.Set("Content-Type", writer.FormDataContentType())
+	headers.Set("Content-Type", contentType)
 	headers.Set("X-Requested-With", "XMLHttpRequest") // TODO if not provided, the response will be 404. UniFi bug?
 
 	return c.executeRequest(ctx, http.MethodPost, apiPath, body, headers, respBody)

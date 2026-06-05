@@ -1,6 +1,7 @@
 package unifi //nolint: testpackage
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -95,14 +96,13 @@ func TestUnifiIntegrationUserPassInjected(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
 	// given
-	srv := runTestServer(NewStyleAPI.LoginPath)
-	interceptor := NewTestInterceptor()
-	c := newNewStyleClient(&ClientConfig{
-		URL:          srv.URL,
-		User:         "test-user",
-		Password:     "test-pass",
-		Interceptors: interceptor.AsList(),
+	cs := newControllerServer(t, route{
+		path: NewStyleAPI.LoginPath,
+		fn:   func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) },
 	})
+	c := cs.clientUserPass()
+	interceptor := NewTestInterceptor()
+	c.AddInterceptor(interceptor)
 
 	// when
 	err := c.Login()
@@ -144,20 +144,57 @@ func TestParseBaseUrl(t *testing.T) {
 	require.ErrorContains(t, err, "expected a base URL without the `/api`")
 }
 
+// nonComparableInterceptor is a ClientInterceptor whose concrete type is NOT
+// comparable with == (it holds a slice). Adding it must NOT panic the
+// concrete-type dedup (ARCH-18): containsInterceptorType compares reflect.TypeOf
+// values, never the interface values themselves.
+type nonComparableInterceptor struct {
+	tags []string
+}
+
+func (nonComparableInterceptor) InterceptRequest(_ *http.Request) error   { return nil }
+func (nonComparableInterceptor) InterceptResponse(_ *http.Response) error { return nil }
+
 func TestRegisterInterceptor(t *testing.T) {
 	t.Parallel()
-	// Create a manual client with an empty interceptor slice.
-	client := &client{
-		interceptors: []ClientInterceptor{},
-	}
-	// Create a dummy interceptor (using TestInterceptor already defined in the file).
-	var dummy ClientInterceptor = &TestInterceptor{}
-	initialCount := len(client.interceptors)
-	client.AddInterceptor(&dummy)
-	assert.Len(t, client.interceptors, initialCount+1)
-	// Attempt to add the same interceptor again.
-	client.AddInterceptor(&dummy)
-	assert.Len(t, client.interceptors, initialCount+1)
+
+	t.Run("dedup by concrete type", func(t *testing.T) {
+		t.Parallel()
+		// Two DISTINCT instances of the same concrete type collapse to one (ARCH-18:
+		// dedup is by concrete type, not by pointer identity).
+		c := &client{interceptors: []ClientInterceptor{}}
+		c.AddInterceptor(&TestInterceptor{})
+		assert.Len(t, c.interceptors, 1)
+		c.AddInterceptor(&TestInterceptor{})
+		assert.Len(t, c.interceptors, 1, "a second instance of the same type must not be added")
+	})
+
+	t.Run("different types both kept", func(t *testing.T) {
+		t.Parallel()
+		c := &client{interceptors: []ClientInterceptor{}}
+		c.AddInterceptor(&TestInterceptor{})
+		c.AddInterceptor(&CSRFInterceptor{})
+		assert.Len(t, c.interceptors, 2, "distinct concrete types must both be kept")
+	})
+
+	t.Run("nil is ignored", func(t *testing.T) {
+		t.Parallel()
+		c := &client{interceptors: []ClientInterceptor{}}
+		c.AddInterceptor(nil)
+		assert.Empty(t, c.interceptors, "a nil interceptor must be ignored")
+	})
+
+	t.Run("non-comparable type does not panic", func(t *testing.T) {
+		t.Parallel()
+		// A struct holding a slice is not comparable with ==; the old
+		// slices.Contains dedup would panic. Concrete-type dedup must not (ARCH-18).
+		c := &client{interceptors: []ClientInterceptor{}}
+		assert.NotPanics(t, func() {
+			c.AddInterceptor(nonComparableInterceptor{tags: []string{"a"}})
+			c.AddInterceptor(nonComparableInterceptor{tags: []string{"b"}})
+		})
+		assert.Len(t, c.interceptors, 1, "two non-comparable instances of one type collapse to one")
+	})
 }
 
 func TestLoginWithAPIKeyDirect(t *testing.T) {
@@ -222,24 +259,52 @@ func TestBuildInterceptorsDedup(t *testing.T) {
 	a.Equal(1, count, "duplicate interceptor must only be added once")
 }
 
-func TestBuildInterceptorsSetsDefaultUserAgent(t *testing.T) {
+// TestBuildInterceptorsDefaultsUserAgentWithoutMutatingConfig is the ARCH-09
+// non-mutation guard for the User-Agent path: buildInterceptors must default an
+// empty UserAgent into the produced DefaultHeadersInterceptor WITHOUT writing the
+// default back through the caller-owned config.
+func TestBuildInterceptorsDefaultsUserAgentWithoutMutatingConfig(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
-	// Empty UserAgent must be defaulted on the config (mutation preserved).
-	config := &ClientConfig{}
-	buildInterceptors(config, NewDefaultLogger(InfoLevel), nil)
-	a.Equal(defaultUserAgent, config.UserAgent)
 
-	// Custom UserAgent must be left untouched.
+	// Empty UserAgent: the default lands on the headers interceptor, but the
+	// caller's config.UserAgent must stay empty (ARCH-09: no write-back).
+	config := &ClientConfig{}
+	interceptors := buildInterceptors(config, NewDefaultLogger(InfoLevel), nil)
+	a.Empty(config.UserAgent, "config.UserAgent must not be mutated")
+	a.Equal(defaultUserAgent, headerUserAgent(t, interceptors), "default User-Agent must reach the headers interceptor")
+
+	// Custom UserAgent: left untouched on the config and propagated to the headers.
 	config = &ClientConfig{UserAgent: "custom-agent"}
-	buildInterceptors(config, NewDefaultLogger(InfoLevel), nil)
-	a.Equal("custom-agent", config.UserAgent)
+	interceptors = buildInterceptors(config, NewDefaultLogger(InfoLevel), nil)
+	a.Equal("custom-agent", config.UserAgent, "config.UserAgent must be left untouched")
+	a.Equal("custom-agent", headerUserAgent(t, interceptors), "custom User-Agent must reach the headers interceptor")
 }
 
-func TestNewClientFromConfigTrimsURL(t *testing.T) {
+// headerUserAgent extracts the User-Agent the DefaultHeadersInterceptor would set
+// on a request, so the test asserts the resolved value without reaching through
+// the caller's config.
+func headerUserAgent(t *testing.T, interceptors []ClientInterceptor) string {
+	t.Helper()
+	for _, i := range interceptors {
+		if dh, ok := i.(*DefaultHeadersInterceptor); ok {
+			req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "http://example.test", http.NoBody)
+			require.NoError(t, dh.InterceptRequest(req))
+			return req.Header.Get(UserAgentHeader)
+		}
+	}
+	t.Fatal("no DefaultHeadersInterceptor in chain")
+	return ""
+}
+
+// TestNewClientFromConfigTrimsURLWithoutMutatingConfig is the ARCH-09 non-mutation
+// guard for the URL path: newClientFromConfig must normalize the trailing slash on
+// the client's baseURL WITHOUT rewriting the caller-owned config.URL.
+func TestNewClientFromConfigTrimsURLWithoutMutatingConfig(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
-	// Trailing slashes must be trimmed off the config URL (mutation preserved).
+	// Trailing slashes are trimmed on the client's baseURL only; the caller's
+	// config.URL must keep its trailing slashes (ARCH-09: no write-back).
 	config := &ClientConfig{
 		URL:    testUrl + "///",
 		APIKey: "test-key",
@@ -248,8 +313,8 @@ func TestNewClientFromConfigTrimsURL(t *testing.T) {
 	require.NoError(t, err)
 	c, err := newClientFromConfig(config, v)
 	require.NoError(t, err)
-	a.Equal(testUrl, config.URL)
-	a.Equal(testUrl, c.BaseURL())
+	a.Equal(testUrl+"///", config.URL, "config.URL must not be mutated")
+	a.Equal(testUrl, c.BaseURL(), "client baseURL must be normalized (trailing slash trimmed)")
 }
 
 // TestVersionWithLockingNoDeadlock is a regression test for ARCH-01: Version()
@@ -365,6 +430,122 @@ func TestVersionConcurrentCachedFetch(t *testing.T) {
 
 	assert.Equal(t, wantVersion, c.Version(), "post-burst Version() must serve the cached version")
 	assert.Equal(t, burstHits, sysInfoHits.Load(), "cached Version() must not trigger another sysInfo fetch")
+}
+
+// TestNewBareClientDoesNotMutateConfig is the end-to-end ARCH-09 guard: building a
+// client from a config that carries a trailing-slash URL and an empty UserAgent
+// must leave the CALLER's config byte-for-byte intact, while the constructed
+// client behaves normalized — requests land on the trimmed URL. The APIStyle
+// override keeps construction fully offline (no network probe).
+func TestNewBareClientDoesNotMutateConfig(t *testing.T) {
+	t.Parallel()
+	a := assert.New(t)
+
+	var gotPath string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, `{"meta":{"rc":"ok"},"data":[{"version":"9.9.9"}]}`)
+	}))
+	defer srv.Close()
+
+	// Trailing slash on the URL and an EMPTY UserAgent: both are the fields
+	// newClientFromConfig/buildInterceptors used to rewrite through the pointer.
+	config := &ClientConfig{
+		URL:      srv.URL + "/",
+		APIKey:   "test-key",
+		APIStyle: APIStyleNew, // offline: skip the network probe
+	}
+	origURL := config.URL
+	origUserAgent := config.UserAgent
+
+	c, err := newBareClient(config)
+	require.NoError(t, err)
+
+	// ARCH-09: the caller's struct must be untouched.
+	a.Equal(origURL, config.URL, "config.URL must retain its trailing slash (no write-back)")
+	a.Empty(origUserAgent, "precondition: UserAgent started empty")
+	a.Empty(config.UserAgent, "config.UserAgent must stay empty (no default written back)")
+
+	// The client itself is normalized: baseURL has no trailing slash and requests
+	// reach the trimmed URL.
+	a.Equal(srv.URL, c.BaseURL(), "client baseURL must be the trimmed URL")
+	_, err = c.GetSystemInformation()
+	require.NoError(t, err)
+	a.Equal(apiV1Path("s/default/stat/sysinfo"), gotPath, "request must reach the normalized (trimmed) URL path")
+}
+
+// TestLogout mirrors the Login tests (TEST-11): for API-key auth Logout is a
+// no-op that issues NO request; for user/pass auth it POSTs to the controller's
+// logout path. Both paths are exercised through the shared mock controller so the
+// client is constructed fully offline.
+func TestLogout(t *testing.T) {
+	t.Parallel()
+
+	t.Run("api key issues no request", func(t *testing.T) {
+		t.Parallel()
+		cs := newControllerServer(t)
+		c := cs.client() // APIStyleNew + APIKey: API-key credentials
+		require.NoError(t, c.Logout())
+		assert.Zero(t, cs.requestCount(), "API-key Logout must not issue any HTTP request")
+	})
+
+	t.Run("user pass posts to logout path", func(t *testing.T) {
+		t.Parallel()
+		var hits int
+		cs := newControllerServer(t, route{
+			path: NewStyleAPI.LogoutPath,
+			fn: func(w http.ResponseWriter, _ *http.Request) {
+				hits++
+				w.WriteHeader(http.StatusOK)
+			},
+		})
+		c, err := newBareClient(&ClientConfig{
+			URL:      cs.srv.URL,
+			User:     "test-user",
+			Password: "test-pass",
+			APIStyle: APIStyleNew,
+		})
+		require.NoError(t, err)
+
+		require.NoError(t, c.Logout())
+		require.Equal(t, 1, hits, "user/pass Logout must POST exactly once to the logout path")
+		last := cs.lastRequest()
+		assert.Equal(t, http.MethodPost, last.Method)
+		assert.Equal(t, NewStyleAPI.LogoutPath, last.Path)
+	})
+}
+
+// TestVersion pins the two Version() branches (TEST-11): the cached fast path
+// returns the stored sysInfo version without any HTTP round-trip, and the
+// error path swallows a failing sysinfo fetch into an empty string.
+func TestVersion(t *testing.T) {
+	t.Parallel()
+
+	t.Run("cached fast path serves without a round-trip", func(t *testing.T) {
+		t.Parallel()
+		cs := newControllerServer(t) // no routes: any HTTP call would 404
+		c := cs.client()
+		c.sysInfo = &SysInfo{Version: "9.1.2-cached"}
+
+		assert.Equal(t, "9.1.2-cached", c.Version())
+		assert.Zero(t, cs.requestCount(), "a cached Version() must not issue any HTTP request")
+	})
+
+	t.Run("fetch error returns empty string", func(t *testing.T) {
+		t.Parallel()
+		// The sysinfo endpoint 500s, so the fetch fails and Version() swallows the
+		// error into "". Any non-sysinfo path also 404s.
+		cs := newControllerServer(t, route{
+			path: apiV1Path("s/default/stat/sysinfo"),
+			fn: func(w http.ResponseWriter, _ *http.Request) {
+				w.WriteHeader(http.StatusInternalServerError)
+			},
+		})
+		c := cs.client()
+
+		assert.Empty(t, c.Version(), "a failing sysinfo fetch must make Version() return an empty string")
+	})
 }
 
 func TestHttpTransportCustomizerError(t *testing.T) {

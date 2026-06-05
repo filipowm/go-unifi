@@ -59,7 +59,14 @@ func (c *client) CreateUser(ctx context.Context, site string, d *User) (*User, e
 		return nil, errors.New("malformed group response")
 	}
 
-	// TODO verify if this is still needed cause it's the only place where old-style error handling is used
+	// ARCH-10: the centralized soft (HTTP 200) rc:error check in handleResponse only
+	// probes the TOP-LEVEL meta envelope. The stamgr group-create response nests a
+	// SECOND envelope ({meta:{rc}, data:[{Meta:{rc}, data:[...]}]}); a nested
+	// rc=="error" with empty inner data would otherwise fall through to the
+	// len(inner)!=1 guard below and return ErrNotFound, masking the real server
+	// message. This per-object check is INTENTIONAL business logic now (top-level
+	// handled centrally, nested handled here); it resolves the old TODO without
+	// losing the nested soft-error.
 	if err := respBody.Data[0].Meta.error(); err != nil {
 		return nil, err
 	}

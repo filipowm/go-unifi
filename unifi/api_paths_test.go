@@ -135,6 +135,45 @@ func TestApiStyleOverrideOldStyleRejectsAPIKey(t *testing.T) {
 	assert.Contains(t, err.Error(), "unable to use API key authentication with old style API")
 }
 
+// TestApiStyleSetCopiesAreIsolated pins the value-returning seam (TEST-13):
+// oldStyleAPI()/newStyleAPI() return fresh copies equal to the canonical package
+// vars, and mutating a returned copy must NOT corrupt the shared OldStyleAPI /
+// NewStyleAPI used for pointer-identity style detection.
+func TestApiStyleSetCopiesAreIsolated(t *testing.T) {
+	t.Parallel()
+	a := assert.New(t)
+
+	// The copies equal the canonical sets by value.
+	a.Equal(OldStyleAPI, oldStyleAPI())
+	a.Equal(NewStyleAPI, newStyleAPI())
+
+	// The two styles are genuinely different sets.
+	a.NotEqual(oldStyleAPI(), newStyleAPI())
+
+	// Mutating a local copy must not bleed into the package-level globals.
+	cp := newStyleAPI()
+	cp.ApiPath = "/corrupted"
+	a.Equal(apiPathNew, NewStyleAPI.ApiPath, "mutating a copy must not corrupt the shared NewStyleAPI")
+	a.Equal(apiPathNew, newStyleAPI().ApiPath, "each call returns a pristine copy")
+
+	cpOld := oldStyleAPI()
+	cpOld.LoginPath = "/corrupted"
+	a.Equal(loginPath, OldStyleAPI.LoginPath, "mutating a copy must not corrupt the shared OldStyleAPI")
+}
+
+// TestApiPathsForStyle pins the pinned-style->paths mapping (TEST-13): the old
+// style resolves to the &OldStyleAPI identity and the new style (and the auto
+// default) resolve to &NewStyleAPI, preserving the pointer-identity contract the
+// rest of the client relies on.
+func TestApiPathsForStyle(t *testing.T) {
+	t.Parallel()
+	a := assert.New(t)
+
+	a.Same(&OldStyleAPI, apiPathsForStyle(APIStyleOld))
+	a.Same(&NewStyleAPI, apiPathsForStyle(APIStyleNew))
+	a.Same(&NewStyleAPI, apiPathsForStyle(APIStyleAuto), "auto defaults to the new style set")
+}
+
 // TestDetermineApiStyle_OldStyle exercises the 302 -> old-style branch end to
 // end against an httptest server that redirects at the root, proving the probe
 // (now routed through a clone of c.http) does NOT follow the redirect.

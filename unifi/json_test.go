@@ -89,3 +89,93 @@ func TestNumberOrStringUnmarshal(t *testing.T) {
 		})
 	}
 }
+
+// TestEmptyStringIntUnmarshal pins emptyStringInt.UnmarshalJSON (TEST-11): the
+// empty-string token decodes to 0, a quoted number is unquoted then parsed, a bare
+// number is parsed directly, and the malformed cases (non-numeric quoted string,
+// unterminated quote, bare non-numeric token) surface the Unquote/Atoi errors
+// rather than silently zeroing.
+func TestEmptyStringIntUnmarshal(t *testing.T) {
+	t.Parallel()
+
+	cases := map[string]struct {
+		input   string
+		want    int
+		wantErr bool
+	}{
+		"empty string":           {input: `""`, want: 0},
+		"bare zero":              {input: `0`, want: 0},
+		"bare positive":          {input: `42`, want: 42},
+		"bare negative":          {input: `-7`, want: -7},
+		"quoted number":          {input: `"100"`, want: 100},
+		"quoted negative":        {input: `"-3"`, want: -3},
+		"quoted non-numeric":     {input: `"abc"`, wantErr: true},
+		"bare non-numeric":       {input: `auto`, wantErr: true},
+		"unterminated quote":     {input: `"123`, wantErr: true},
+		"float is not an int":    {input: `3.14`, wantErr: true},
+		"quoted float not int":   {input: `"3.14"`, wantErr: true},
+		"quoted empty in quotes": {input: `"  "`, wantErr: true},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			a := assert.New(t)
+
+			var n emptyStringInt
+			err := json.Unmarshal([]byte(tc.input), &n)
+			if tc.wantErr {
+				require.Error(t, err, "input %q should be rejected", tc.input)
+				return
+			}
+			require.NoError(t, err, "input %q should decode cleanly", tc.input)
+			a.Equal(tc.want, int(n), "input %q decoded to wrong value", tc.input)
+		})
+	}
+}
+
+// TestEmptyStringIntMarshal pins emptyStringInt.MarshalJSON (TEST-11): nil and the
+// zero value both marshal to the empty-string token "" (matching the controller's
+// wire form), while a non-zero value marshals to its bare integer.
+func TestEmptyStringIntMarshal(t *testing.T) {
+	t.Parallel()
+	a := assert.New(t)
+
+	// nil receiver marshals to "".
+	var nilPtr *emptyStringInt
+	b, err := nilPtr.MarshalJSON()
+	require.NoError(t, err)
+	a.Equal(`""`, string(b), "nil emptyStringInt must marshal to empty-string token")
+
+	// zero value marshals to "".
+	zero := emptyStringInt(0)
+	b, err = zero.MarshalJSON()
+	require.NoError(t, err)
+	a.Equal(`""`, string(b), "zero emptyStringInt must marshal to empty-string token")
+
+	// non-zero marshals to its bare integer.
+	nonZero := emptyStringInt(57)
+	b, err = nonZero.MarshalJSON()
+	require.NoError(t, err)
+	a.Equal(`57`, string(b))
+
+	// negative non-zero marshals to its bare integer.
+	neg := emptyStringInt(-12)
+	b, err = neg.MarshalJSON()
+	require.NoError(t, err)
+	a.Equal(`-12`, string(b))
+
+	// end-to-end through json.Marshal of an addressable struct (a *holder, as the
+	// client marshals request bodies by pointer): the addressable field lets the
+	// json package invoke the pointer-receiver MarshalJSON.
+	type holder struct {
+		N emptyStringInt `json:"n"`
+	}
+	out, err := json.Marshal(&holder{N: 0})
+	require.NoError(t, err)
+	a.JSONEq(`{"n":""}`, string(out))
+
+	out, err = json.Marshal(&holder{N: 9})
+	require.NoError(t, err)
+	a.JSONEq(`{"n":9}`, string(out))
+}

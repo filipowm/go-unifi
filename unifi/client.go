@@ -1,13 +1,14 @@
 package unifi
 
 import (
+	"context"
 	"crypto/tls"
 	"errors"
 	"fmt"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
-	"slices"
+	"reflect"
 	"strings"
 	"sync"
 	"time"
@@ -161,12 +162,36 @@ func (c *client) BaseURL() string {
 	return c.baseURL.String()
 }
 
-// AddInterceptor adds a ClientInterceptor to the client's interceptor list if it is not already present.
-// It appends the interceptor only if it is not already included in the list.
-func (c *client) AddInterceptor(interceptor *ClientInterceptor) {
-	if !slices.Contains(c.interceptors, *interceptor) {
-		c.interceptors = append(c.interceptors, *interceptor)
+// AddInterceptor adds a ClientInterceptor to the client's interceptor list if no
+// interceptor of the same concrete type is already present. Dedup is BY CONCRETE
+// TYPE (reflect.TypeOf), not by value: this honors the "only one of a kind"
+// intent (a single CSRF / API-key interceptor) and is panic-safe for interceptor
+// types that are not comparable with == (e.g. structs holding a slice/map/func).
+// See ARCH-18.
+func (c *client) AddInterceptor(interceptor ClientInterceptor) {
+	if interceptor == nil {
+		return
 	}
+	if !containsInterceptorType(c.interceptors, interceptor) {
+		c.interceptors = append(c.interceptors, interceptor)
+	}
+}
+
+// containsInterceptorType reports whether interceptors already holds one whose
+// concrete dynamic type matches the candidate's. Comparing reflect.TypeOf values
+// (which are themselves always comparable) avoids the == panic that slices.Contains
+// over potentially-non-comparable interface values would trigger (ARCH-18).
+func containsInterceptorType(interceptors []ClientInterceptor, candidate ClientInterceptor) bool {
+	if candidate == nil {
+		return false
+	}
+	t := reflect.TypeOf(candidate)
+	for _, existing := range interceptors {
+		if reflect.TypeOf(existing) == t {
+			return true
+		}
+	}
+	return false
 }
 
 func parseBaseURL(base string) (*url.URL, error) {
@@ -181,22 +206,33 @@ func parseBaseURL(base string) (*url.URL, error) {
 	return baseURL, nil
 }
 
+// Version returns the cached controller version, fetching it once if the cache
+// is empty. It swallows any fetch error (returning "") for source compatibility;
+// callers that need to observe the error should use VersionContext. It derives a
+// fresh request context honoring the client-wide timeout.
 func (c *client) Version() string {
+	ctx, cancel := c.newRequestContext()
+	defer cancel()
+	v, _ := c.VersionContext(ctx)
+	return v
+}
+
+// VersionContext returns the version of the UniFi Controller API using the
+// supplied context for cancellation/deadline. Unlike Version(), it surfaces the
+// fetch error rather than swallowing it. It uses the same sysInfo cache and
+// double-checked locking as Version() (ARCH-01).
+func (c *client) VersionContext(ctx context.Context) (string, error) {
 	// Fast path: read the cache under the dedicated read lock.
-	c.sysInfoMu.RLock()
-	if c.sysInfo != nil {
-		v := c.sysInfo.Version
-		c.sysInfoMu.RUnlock()
-		return v
+	if v, ok := c.cachedVersion(); ok {
+		return v, nil
 	}
-	c.sysInfoMu.RUnlock()
 
 	// Slow path: fetch over HTTP while holding NO lock. Holding sysInfoMu across
 	// the round-trip would block every concurrent reader for the duration of the
 	// fetch; it is taken again only to store the result below (ARCH-01).
-	i, err := c.GetSystemInformation()
+	i, err := c.GetSystemInformationContext(ctx)
 	if err != nil {
-		return ""
+		return "", err
 	}
 
 	// Store under the write lock, double-checking the cache in case a concurrent
@@ -206,7 +242,7 @@ func (c *client) Version() string {
 	if c.sysInfo == nil {
 		c.sysInfo = i
 	}
-	return c.sysInfo.Version
+	return c.sysInfo.Version, nil
 }
 
 // resolveLogger returns the configured logger or a default info-level logger.
@@ -284,23 +320,25 @@ func resolveCredentials(config *ClientConfig, log Logger) (Credentials, []Client
 
 // buildInterceptors assembles the final interceptor chain: the provided auth
 // interceptors, the default headers interceptor (with resolved User-Agent), and
-// any user-supplied config.Interceptors. Note: this mutates config.UserAgent to
-// the default when none is provided, preserving prior behavior. User-supplied
-// interceptors are deduplicated using the same semantics as (*client).AddInterceptor.
+// any user-supplied config.Interceptors. The User-Agent is resolved into a local
+// (the default when none is provided); per ARCH-09 nothing is written back
+// through config. User-supplied interceptors are deduplicated by concrete type
+// using the same semantics as (*client).AddInterceptor.
 func buildInterceptors(config *ClientConfig, log Logger, auth []ClientInterceptor) []ClientInterceptor {
 	interceptors := auth
-	if len(config.UserAgent) == 0 {
-		config.UserAgent = defaultUserAgent
+	userAgent := config.UserAgent
+	if len(userAgent) == 0 {
+		userAgent = defaultUserAgent
 	} else {
-		log.Debugf("Using custom User-Agent header: %s", config.UserAgent)
+		log.Debugf("Using custom User-Agent header: %s", userAgent)
 	}
 	interceptors = append(interceptors, &DefaultHeadersInterceptor{headers: map[string]string{
-		UserAgentHeader:   config.UserAgent,
+		UserAgentHeader:   userAgent,
 		AcceptHeader:      "application/json",
 		ContentTypeHeader: "application/json; charset=utf-8",
 	}})
 	for _, interceptor := range config.Interceptors {
-		if !slices.Contains(interceptors, interceptor) {
+		if !containsInterceptorType(interceptors, interceptor) {
 			interceptors = append(interceptors, interceptor)
 		}
 	}
@@ -320,26 +358,31 @@ func resolveErrorHandler(config *ClientConfig, log Logger) ResponseErrorHandler 
 func newClientFromConfig(config *ClientConfig, v *validator) (*client, error) {
 	log := resolveLogger(config)
 	log.Info("Initializing new UniFi client")
-	config.URL = strings.TrimRight(config.URL, "/")
-	log.Debugf("Connecting to UniFi controller at %s", config.URL)
+	// ARCH-09: operate on a shallow copy so we never write back through the
+	// caller-owned *ClientConfig. URL normalization (trailing-slash trim) and the
+	// default User-Agent are applied to this local copy only; the caller's struct
+	// is left byte-for-byte intact.
+	cfg := *config
+	cfg.URL = strings.TrimRight(cfg.URL, "/")
+	log.Debugf("Connecting to UniFi controller at %s", cfg.URL)
 
-	httpClient, err := buildHTTPClient(config, log)
+	httpClient, err := buildHTTPClient(&cfg, log)
 	if err != nil {
 		return nil, err
 	}
-	baseURL, err := parseBaseURL(config.URL)
+	baseURL, err := parseBaseURL(cfg.URL)
 	if err != nil {
 		return nil, fmt.Errorf("failed parsing base URL: %w", err)
 	}
-	credentials, auth := resolveCredentials(config, log)
-	interceptors := buildInterceptors(config, log, auth)
-	errorHandler := resolveErrorHandler(config, log)
-	log.Tracef("Validation mode: %d", config.ValidationMode)
+	credentials, auth := resolveCredentials(&cfg, log)
+	interceptors := buildInterceptors(&cfg, log, auth)
+	errorHandler := resolveErrorHandler(&cfg, log)
+	log.Tracef("Validation mode: %d", cfg.ValidationMode)
 	return &client{
 		baseURL:        baseURL,
-		timeout:        config.Timeout,
+		timeout:        cfg.Timeout,
 		credentials:    credentials,
-		validationMode: config.ValidationMode,
+		validationMode: cfg.ValidationMode,
 		http:           httpClient,
 		interceptors:   interceptors,
 		errorHandler:   errorHandler,
@@ -410,15 +453,24 @@ func newBareClient(config *ClientConfig) (*client, error) {
 // Login authenticates the client using user/pass credentials.
 // For API key authentication, Login does nothing.
 // It returns an error if the authentication process fails.
+// It derives a fresh request context honoring the client-wide timeout and
+// delegates to LoginContext.
 func (c *client) Login() error {
+	ctx, cancel := c.newRequestContext()
+	defer cancel()
+	return c.LoginContext(ctx)
+}
+
+// LoginContext authenticates the client using user/pass credentials, using the
+// supplied context for cancellation/deadline. For API key authentication it does
+// nothing. The passed ctx is threaded through to the underlying HTTP call so a
+// cancelled or expired context aborts the request.
+func (c *client) LoginContext(ctx context.Context) error {
 	if c.credentials.IsAPIKey() {
 		c.Trace("API key authentication; skipping login")
 		return nil
 	}
 	c.Trace("Logging in with user/pass credentials")
-
-	ctx, cancel := c.newRequestContext()
-	defer cancel()
 
 	err := c.Post(ctx, c.apiPaths.LoginPath, &struct {
 		Username string `json:"username"`
@@ -438,14 +490,35 @@ func (c *client) Login() error {
 // Logout terminates the client's session for user/pass authentication.
 // For API key authentication, Logout does nothing.
 // It returns an error if the logout process fails.
+// It derives a fresh request context honoring the client-wide timeout and
+// delegates to LogoutContext.
 func (c *client) Logout() error {
+	ctx, cancel := c.newRequestContext()
+	defer cancel()
+	return c.LogoutContext(ctx)
+}
+
+// LogoutContext terminates the client's session for user/pass authentication,
+// using the supplied context for cancellation/deadline. For API key
+// authentication it does nothing. The passed ctx is threaded through to the
+// underlying HTTP call so a cancelled or expired context aborts the request.
+func (c *client) LogoutContext(ctx context.Context) error {
 	if c.credentials.IsAPIKey() {
 		return nil
 	}
 
-	ctx, cancel := c.newRequestContext()
-	defer cancel()
+	return c.Post(ctx, c.apiPaths.LogoutPath, nil, nil)
+}
 
-	err := c.Post(ctx, c.apiPaths.LogoutPath, nil, nil)
-	return err
+// cachedVersion returns the cached version and whether the cache was populated.
+// It is the pure cache-decision half of VersionContext, split out from the IO so
+// the cached-vs-fetch branch is testable without timing hacks (TEST-15). The read
+// is performed under the dedicated read lock.
+func (c *client) cachedVersion() (string, bool) {
+	c.sysInfoMu.RLock()
+	defer c.sysInfoMu.RUnlock()
+	if c.sysInfo != nil {
+		return c.sysInfo.Version, true
+	}
+	return "", false
 }

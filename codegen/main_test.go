@@ -11,21 +11,30 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestSetupLogging asserts the level mapping on the logger RETURNED by
+// setupLogging. setupLogging no longer mutates the package-global logger (it
+// returns a fresh instance the CLI injects), so this test is now fully
+// parallel-safe and shares no state with any other test. See TEST-13.
 func TestSetupLogging(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 
-	setupLogging(false, false)
-	a.Equal(logrus.InfoLevel, log.Level)
+	cases := map[string]struct {
+		debug, trace bool
+		want         logrus.Level
+	}{
+		"default is info":       {debug: false, trace: false, want: logrus.InfoLevel},
+		"debug enables debug":   {debug: true, trace: false, want: logrus.DebugLevel},
+		"trace enables trace":   {debug: false, trace: true, want: logrus.TraceLevel},
+		"trace wins over debug": {debug: true, trace: true, want: logrus.TraceLevel},
+	}
 
-	setupLogging(true, false)
-	a.Equal(logrus.DebugLevel, log.Level)
-
-	setupLogging(false, true)
-	a.Equal(logrus.TraceLevel, log.Level)
-
-	setupLogging(true, true)
-	a.Equal(logrus.TraceLevel, log.Level)
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			l := setupLogging(tc.debug, tc.trace)
+			assert.Equal(t, tc.want, l.Level)
+		})
+	}
 }
 
 func TestResolveDir(t *testing.T) {
@@ -110,7 +119,9 @@ func TestDefaultVersion(t *testing.T) {
 func testGenerate(t *testing.T, opts *options) error {
 	t.Helper()
 
-	setupLogging(false, false)
+	if opts.logger == nil {
+		opts.logger = setupLogging(false, false)
+	}
 	if opts.versionBaseDir == "" {
 		opts.versionBaseDir = t.TempDir()
 	}

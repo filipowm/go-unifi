@@ -59,7 +59,7 @@ func (c *client) listDescribedFeature(ctx context.Context, site string) ([]Descr
 func (c *client) getDescribedFeature(ctx context.Context, site, id string) (*DescribedFeature, error) {
 	var respBody DescribedFeature
 
-	err := c.Get(ctx, fmt.Sprintf("%s/site/%s/described-features?includeSystemFeatures=true/%s", c.apiPaths.ApiV2Path, site, id), nil, &respBody)
+	err := c.Get(ctx, fmt.Sprintf("%s/site/%s/described-features/%s?includeSystemFeatures=true", c.apiPaths.ApiV2Path, site, id), nil, &respBody)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +70,7 @@ func (c *client) getDescribedFeature(ctx context.Context, site, id string) (*Des
 }
 
 func (c *client) deleteDescribedFeature(ctx context.Context, site, id string) error {
-	err := c.Delete(ctx, fmt.Sprintf("%s/site/%s/described-features?includeSystemFeatures=true/%s", c.apiPaths.ApiV2Path, site, id), struct{}{}, nil)
+	err := c.Delete(ctx, fmt.Sprintf("%s/site/%s/described-features/%s?includeSystemFeatures=true", c.apiPaths.ApiV2Path, site, id), struct{}{}, nil)
 	if err != nil {
 		return err
 	}
@@ -91,7 +91,7 @@ func (c *client) createDescribedFeature(ctx context.Context, site string, d *Des
 func (c *client) updateDescribedFeature(ctx context.Context, site string, d *DescribedFeature) (*DescribedFeature, error) {
 	var respBody DescribedFeature
 
-	err := c.Put(ctx, fmt.Sprintf("%s/site/%s/described-features?includeSystemFeatures=true/%s", c.apiPaths.ApiV2Path, site, d.ID), d, &respBody)
+	err := c.Put(ctx, fmt.Sprintf("%s/site/%s/described-features/%s?includeSystemFeatures=true", c.apiPaths.ApiV2Path, site, d.ID), d, &respBody)
 	if err != nil {
 		return nil, err
 	}

@@ -1,39 +1,5 @@
 {{- $structName := .StructName }}
-
-{{ define "field" }}
-	{{ .FieldName }} {{ if .IsArray }}[]{{end}}{{ .FieldType }} `json:"{{ .JSONName }}{{ if .OmitEmpty }},omitempty{{ end }}"{{if .FieldValidation }} {{ .FieldValidation }}{{ end }}` {{ if .FieldValidationComment }}// {{ .FieldValidationComment }}{{ end }} {{- end }}
-{{ define "field-customUnmarshalType" }}
-	{{- if eq .CustomUnmarshalType "" }}{{else}}
-			{{ .FieldName }} {{ if .IsArray }}[]{{end}}{{ .CustomUnmarshalType }} `json:"{{ .JSONName }}"`{{ end }} {{- end }}
-{{ define "typecast" }}
-	{{- if ne .CustomUnmarshalFunc "" }}
-		dst.{{ .FieldName }}= {{ .CustomUnmarshalFunc }}(aux.{{ .FieldName }})
-	{{- else if eq .CustomUnmarshalType "" }}{{else}}
-		{{- if .IsArray }}
-		dst.{{ .FieldName }}= make([]{{ .FieldType }}, len(aux.{{ .FieldName }}))
-		for i, v := range aux.{{ .FieldName }} {
-				dst.{{ .FieldName }}[i] = {{ .FieldType }}(v)
-		}
-		{{- else }}
-		dst.{{ .FieldName }} = {{ .FieldType }}(aux.{{ .FieldName }})
-		{{- end }}{{- end }}{{- end }}
-// Code generated from ace.jar fields *.json files
-// DO NOT EDIT.
-
-package unifi
-
-import (
-	"context"
-	"encoding/json"
-	"fmt"
-)
-
-// just to fix compile issues with the import.
-var (
-	_ context.Context
-	_ fmt.Formatter
-	_ json.Marshaler
-)
+{{ template "header" . }}
 
 {{ if .IsSetting }}
 const {{ .StructName }}Key = "{{ .ResourcePath }}"
@@ -82,7 +48,7 @@ func (c *client) list{{ .StructName }}(ctx context.Context, site string) ([]{{ .
 		Data []{{ .StructName }} `json:"data"`
 	}
 
-	err := c.Get(ctx, fmt.Sprintf("s/%s/{{ if eq .StructName "Device" }}stat/{{else if eq .StructName "APGroup" }}{{ else }}rest/{{ end }}{{ .ResourcePath }}", site), nil, &respBody)
+	err := c.Get(ctx, fmt.Sprintf("s/%s/{{ if eq .StructName "Device" }}stat/{{else if eq .StructName "APGroup" }}{{ else }}rest/{{ end }}{{ .ResourcePath }}{{ .QuerySuffix }}", site), nil, &respBody)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +80,7 @@ func (c *client) get{{ .StructName }}(ctx context.Context, site, id string) (*{{
 		Data []{{ .StructName }} `json:"data"`
 	}
 
-	err := c.Get(ctx, fmt.Sprintf("s/%s/{{ if eq .StructName "Device" }}stat{{ else }}rest{{ end }}/{{ .ResourcePath }}/%s", site, id), nil, &respBody)
+	err := c.Get(ctx, fmt.Sprintf("s/%s/{{ if eq .StructName "Device" }}stat{{ else }}rest{{ end }}/{{ .ResourcePath }}/%s{{ .QuerySuffix }}", site, id), nil, &respBody)
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +96,7 @@ func (c *client) get{{ .StructName }}(ctx context.Context, site, id string) (*{{
 
 {{ if not .IsSetting }}
 func (c *client) delete{{ .StructName }}(ctx context.Context, site, id string) error {
-	err := c.Delete(ctx, fmt.Sprintf("s/%s/rest/{{ .ResourcePath }}/%s", site, id), struct{}{}, nil)
+	err := c.Delete(ctx, fmt.Sprintf("s/%s/rest/{{ .ResourcePath }}/%s{{ .QuerySuffix }}", site, id), struct{}{}, nil)
 	if err != nil {
 		return err
 	}
@@ -143,13 +109,17 @@ func (c *client) create{{ .StructName }}(ctx context.Context, site string, d *{{
 		Data []{{ .StructName }} `json:"data"`
 	}
 
-	err := c.Post(ctx, fmt.Sprintf("s/%s/rest/{{ .ResourcePath }}", site), d, &respBody)
+	err := c.Post(ctx, fmt.Sprintf("s/%s/rest/{{ .ResourcePath }}{{ .QuerySuffix }}", site), d, &respBody)
 	if err != nil {
 		return nil, err
 	}
 
+	// A successful create must echo back exactly the one resource it created.
+	// Anything else is an unexpected response shape, NOT a "not found" — so we
+	// return a descriptive error rather than ErrNotFound, which is reserved for
+	// the get/list-single path. See ARCH-13.
 	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
+		return nil, fmt.Errorf("unexpected response: expected 1 {{ .StructName }}, got %d", len(respBody.Data))
 	}
 
 	newResource := respBody.Data[0]
@@ -181,13 +151,17 @@ func (c *client) update{{ .StructName }}(ctx context.Context, site string, d *{{
 		Data []{{ .StructName }} `json:"data"`
 	}
 
-	err := c.Put(ctx, fmt.Sprintf("s/%s/rest/{{ .ResourcePath }}/%s", site, d.ID), d, &respBody)
+	err := c.Put(ctx, fmt.Sprintf("s/%s/rest/{{ .ResourcePath }}/%s{{ .QuerySuffix }}", site, d.ID), d, &respBody)
 	if err != nil {
 		return nil, err
 	}
 
+	// A successful update must echo back exactly the one resource it updated.
+	// Anything else is an unexpected response shape, NOT a "not found" — so we
+	// return a descriptive error rather than ErrNotFound, which is reserved for
+	// the get/list-single path. See ARCH-13.
 	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
+		return nil, fmt.Errorf("unexpected response: expected 1 {{ .StructName }}, got %d", len(respBody.Data))
 	}
 
 	updatedResource := respBody.Data[0]

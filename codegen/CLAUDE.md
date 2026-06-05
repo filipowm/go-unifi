@@ -11,6 +11,28 @@ which runs: `go run ../codegen/ -version-base-dir=../codegen/ <version>`.
 3. `customize.go` — applies `customizations.yml` field overrides.
 4. `generator.go` — renders `api.go.tmpl` / `apiv2.go.tmpl` → `<resource>.generated.go`; writes `version.generated.go` and the repo `.unifi-version` marker.
 
+## Download trust model (ARCH-15 / ARCH-16)
+
+The download pipeline (`download.go`, `version.go`) is the only point where codegen
+ingests remote, code-influencing data. Guards in place:
+
+- **Cancellation/timeouts:** `DownloadAndExtract` / `downloadJar` take a `context.Context`;
+  `generate()` passes a bounded one. A nil/timeout-less injected client gets a default
+  timeout (`defaultDownloadTimeout`), and the firmware-latest call uses `firmwareApiTimeout`.
+  A hung dl.ui.com / fw-update.ubnt.com now fails cleanly instead of stalling the CI job.
+- **Host/scheme pinning:** `validateDownloadURL` requires `https` on a Ubiquiti host
+  (`ui.com` / `ubnt.com`, host-or-`*.suffix`) before any fetch; loopback hosts are exempt
+  for the offline httptest seam. `Latest()` also re-validates `channel==release` /
+  `product==unifi-controller` locally rather than trusting server-side filtering.
+- **Atomic extraction:** extraction runs in a sibling `*.tmp-*` dir that is `os.Rename`d
+  into place only after a fully-successful extract, with a `.extract-complete` sentinel
+  written last. A version dir lacking the sentinel (a crashed prior run) is treated as
+  incomplete and re-extracted — a partial tree is never silently accepted.
+- **NOT yet pinned:** there is no checksum/signature verification of the `.deb` — the
+  firmware API exposes no checksum to verify against. Provenance rests on HTTPS + host
+  pinning + the `api/fields/*.json` allowlist + size caps (`copyWithLimit`). To harden
+  further, pin known-good SHA256s per supported version alongside `.unifi-version`.
+
 ## Versioning
 
 - `codegen/v<X.Y.Z>/` holds the JSON field defs per controller version (`v2/` = V2 API resources, rendered with `apiv2.go.tmpl`, different endpoints).
@@ -22,8 +44,20 @@ which runs: `go run ../codegen/ -version-base-dir=../codegen/ <version>`.
   generated changes.
 - **Override a generated field**: edit `customizations.yml` under the resource (`fieldName`, `fieldType`, `omitEmpty`, `customUnmarshalType`, `jsonPath`,
   `ifFieldType`), then regenerate. New unmarshaler types go in `../unifi/json.go`.
+- **Add query params to a resource's URLs**: use the `queryParams` map under the resource in `customizations.yml`
+  (e.g. `queryParams: { includeSystemFeatures: "true" }`), NOT a `?foo=bar` suffix on `resourcePath`. The templates render the query string AFTER the `/%s`
+  id segment on get/update/delete URLs (and after the bare path on list/create), so the id never lands behind the query string. A raw `?` in `resourcePath`
+  is a generation footgun (`described-features?q=1/%s` is never a valid URL) and is rejected under `UNIFI_CODEGEN_STRICT` / warned otherwise. See ARCH-19.
 - **Fix bad generated output**: NEVER edit the `.generated.go`. Fix it at the source — `customizations.yml`, the version JSON, or the `*.tmpl` template — and
   regenerate. For behavior, add a hand-written wrapper in `../unifi/<resource>.go`.
+
+## Generated-code conventions
+
+- **`ErrNotFound` is ONLY for get/list-single, never create/update.** The v1 (`api.go.tmpl`) and v2 (`apiv2.go.tmpl`) templates return `ErrNotFound` solely on
+  the single-resource GET path (data array length != 1 / empty struct id). A create or update that comes back with an unexpected response shape returns a
+  descriptive `fmt.Errorf("unexpected response: expected 1 <Resource>, got %d", ...)` instead — returning a "not found" sentinel from a successful write is
+  semantically wrong and misleads callers doing `errors.Is(err, ErrNotFound)`. See ARCH-13. (Hand-written wrappers like `CreateUser`, which post to a nested
+  `group/user` endpoint, may still surface `ErrNotFound` for their own inner-lookup semantics — that is wrapper business logic, not the template contract.)
 
 ## CI
 

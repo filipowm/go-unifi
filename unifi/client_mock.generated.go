@@ -499,6 +499,9 @@ var _ Client = &ClientMock{}
 //			GetSystemInformationFunc: func() (*SysInfo, error) {
 //				panic("mock out the GetSystemInformation method")
 //			},
+//			GetSystemInformationContextFunc: func(ctx context.Context) (*SysInfo, error) {
+//				panic("mock out the GetSystemInformationContext method")
+//			},
 //			GetTagFunc: func(ctx context.Context, site string, id string) (*Tag, error) {
 //				panic("mock out the GetTag method")
 //			},
@@ -649,8 +652,14 @@ var _ Client = &ClientMock{}
 //			LoginFunc: func() error {
 //				panic("mock out the Login method")
 //			},
+//			LoginContextFunc: func(ctx context.Context) error {
+//				panic("mock out the LoginContext method")
+//			},
 //			LogoutFunc: func() error {
 //				panic("mock out the Logout method")
+//			},
+//			LogoutContextFunc: func(ctx context.Context) error {
+//				panic("mock out the LogoutContext method")
 //			},
 //			OverrideUserFingerprintFunc: func(ctx context.Context, site string, mac string, devIdOverride int) error {
 //				panic("mock out the OverrideUserFingerprint method")
@@ -921,6 +930,9 @@ var _ Client = &ClientMock{}
 //			},
 //			VersionFunc: func() string {
 //				panic("mock out the Version method")
+//			},
+//			VersionContextFunc: func(ctx context.Context) (string, error) {
+//				panic("mock out the VersionContext method")
 //			},
 //			WarnFunc: func(format string)  {
 //				panic("mock out the Warn method")
@@ -1415,6 +1427,9 @@ type ClientMock struct {
 	// GetSystemInformationFunc mocks the GetSystemInformation method.
 	GetSystemInformationFunc func() (*SysInfo, error)
 
+	// GetSystemInformationContextFunc mocks the GetSystemInformationContext method.
+	GetSystemInformationContextFunc func(ctx context.Context) (*SysInfo, error)
+
 	// GetTagFunc mocks the GetTag method.
 	GetTagFunc func(ctx context.Context, site string, id string) (*Tag, error)
 
@@ -1565,8 +1580,14 @@ type ClientMock struct {
 	// LoginFunc mocks the Login method.
 	LoginFunc func() error
 
+	// LoginContextFunc mocks the LoginContext method.
+	LoginContextFunc func(ctx context.Context) error
+
 	// LogoutFunc mocks the Logout method.
 	LogoutFunc func() error
+
+	// LogoutContextFunc mocks the LogoutContext method.
+	LogoutContextFunc func(ctx context.Context) error
 
 	// OverrideUserFingerprintFunc mocks the OverrideUserFingerprint method.
 	OverrideUserFingerprintFunc func(ctx context.Context, site string, mac string, devIdOverride int) error
@@ -1837,6 +1858,9 @@ type ClientMock struct {
 
 	// VersionFunc mocks the Version method.
 	VersionFunc func() string
+
+	// VersionContextFunc mocks the VersionContext method.
+	VersionContextFunc func(ctx context.Context) (string, error)
 
 	// WarnFunc mocks the Warn method.
 	WarnFunc func(format string)
@@ -3176,6 +3200,11 @@ type ClientMock struct {
 		// GetSystemInformation holds details about calls to the GetSystemInformation method.
 		GetSystemInformation []struct {
 		}
+		// GetSystemInformationContext holds details about calls to the GetSystemInformationContext method.
+		GetSystemInformationContext []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+		}
 		// GetTag holds details about calls to the GetTag method.
 		GetTag []struct {
 			// Ctx is the ctx argument value.
@@ -3536,8 +3565,18 @@ type ClientMock struct {
 		// Login holds details about calls to the Login method.
 		Login []struct {
 		}
+		// LoginContext holds details about calls to the LoginContext method.
+		LoginContext []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+		}
 		// Logout holds details about calls to the Logout method.
 		Logout []struct {
+		}
+		// LogoutContext holds details about calls to the LogoutContext method.
+		LogoutContext []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
 		}
 		// OverrideUserFingerprint holds details about calls to the OverrideUserFingerprint method.
 		OverrideUserFingerprint []struct {
@@ -4349,6 +4388,11 @@ type ClientMock struct {
 		// Version holds details about calls to the Version method.
 		Version []struct {
 		}
+		// VersionContext holds details about calls to the VersionContext method.
+		VersionContext []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+		}
 		// Warn holds details about calls to the Warn method.
 		Warn []struct {
 			// Format is the format argument value.
@@ -4522,6 +4566,7 @@ type ClientMock struct {
 	lockGetSpatialRecord                 sync.RWMutex
 	lockGetSystemInfo                    sync.RWMutex
 	lockGetSystemInformation             sync.RWMutex
+	lockGetSystemInformationContext      sync.RWMutex
 	lockGetTag                           sync.RWMutex
 	lockGetUser                          sync.RWMutex
 	lockGetUserByMAC                     sync.RWMutex
@@ -4572,7 +4617,9 @@ type ClientMock struct {
 	lockListWLAN                         sync.RWMutex
 	lockListWLANGroup                    sync.RWMutex
 	lockLogin                            sync.RWMutex
+	lockLoginContext                     sync.RWMutex
 	lockLogout                           sync.RWMutex
+	lockLogoutContext                    sync.RWMutex
 	lockOverrideUserFingerprint          sync.RWMutex
 	lockPost                             sync.RWMutex
 	lockPut                              sync.RWMutex
@@ -4663,6 +4710,7 @@ type ClientMock struct {
 	lockUploadPortalFile                 sync.RWMutex
 	lockUploadPortalFileFromReader       sync.RWMutex
 	lockVersion                          sync.RWMutex
+	lockVersionContext                   sync.RWMutex
 	lockWarn                             sync.RWMutex
 	lockWarnf                            sync.RWMutex
 }
@@ -10845,6 +10893,38 @@ func (mock *ClientMock) GetSystemInformationCalls() []struct {
 	return calls
 }
 
+// GetSystemInformationContext calls GetSystemInformationContextFunc.
+func (mock *ClientMock) GetSystemInformationContext(ctx context.Context) (*SysInfo, error) {
+	if mock.GetSystemInformationContextFunc == nil {
+		panic("ClientMock.GetSystemInformationContextFunc: method is nil but Client.GetSystemInformationContext was just called")
+	}
+	callInfo := struct {
+		Ctx context.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetSystemInformationContext.Lock()
+	mock.calls.GetSystemInformationContext = append(mock.calls.GetSystemInformationContext, callInfo)
+	mock.lockGetSystemInformationContext.Unlock()
+	return mock.GetSystemInformationContextFunc(ctx)
+}
+
+// GetSystemInformationContextCalls gets all the calls that were made to GetSystemInformationContext.
+// Check the length with:
+//
+//	len(mockedClient.GetSystemInformationContextCalls())
+func (mock *ClientMock) GetSystemInformationContextCalls() []struct {
+	Ctx context.Context
+} {
+	var calls []struct {
+		Ctx context.Context
+	}
+	mock.lockGetSystemInformationContext.RLock()
+	calls = mock.calls.GetSystemInformationContext
+	mock.lockGetSystemInformationContext.RUnlock()
+	return calls
+}
+
 // GetTag calls GetTagFunc.
 func (mock *ClientMock) GetTag(ctx context.Context, site string, id string) (*Tag, error) {
 	if mock.GetTagFunc == nil {
@@ -12664,6 +12744,38 @@ func (mock *ClientMock) LoginCalls() []struct {
 	return calls
 }
 
+// LoginContext calls LoginContextFunc.
+func (mock *ClientMock) LoginContext(ctx context.Context) error {
+	if mock.LoginContextFunc == nil {
+		panic("ClientMock.LoginContextFunc: method is nil but Client.LoginContext was just called")
+	}
+	callInfo := struct {
+		Ctx context.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockLoginContext.Lock()
+	mock.calls.LoginContext = append(mock.calls.LoginContext, callInfo)
+	mock.lockLoginContext.Unlock()
+	return mock.LoginContextFunc(ctx)
+}
+
+// LoginContextCalls gets all the calls that were made to LoginContext.
+// Check the length with:
+//
+//	len(mockedClient.LoginContextCalls())
+func (mock *ClientMock) LoginContextCalls() []struct {
+	Ctx context.Context
+} {
+	var calls []struct {
+		Ctx context.Context
+	}
+	mock.lockLoginContext.RLock()
+	calls = mock.calls.LoginContext
+	mock.lockLoginContext.RUnlock()
+	return calls
+}
+
 // Logout calls LogoutFunc.
 func (mock *ClientMock) Logout() error {
 	if mock.LogoutFunc == nil {
@@ -12688,6 +12800,38 @@ func (mock *ClientMock) LogoutCalls() []struct {
 	mock.lockLogout.RLock()
 	calls = mock.calls.Logout
 	mock.lockLogout.RUnlock()
+	return calls
+}
+
+// LogoutContext calls LogoutContextFunc.
+func (mock *ClientMock) LogoutContext(ctx context.Context) error {
+	if mock.LogoutContextFunc == nil {
+		panic("ClientMock.LogoutContextFunc: method is nil but Client.LogoutContext was just called")
+	}
+	callInfo := struct {
+		Ctx context.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockLogoutContext.Lock()
+	mock.calls.LogoutContext = append(mock.calls.LogoutContext, callInfo)
+	mock.lockLogoutContext.Unlock()
+	return mock.LogoutContextFunc(ctx)
+}
+
+// LogoutContextCalls gets all the calls that were made to LogoutContext.
+// Check the length with:
+//
+//	len(mockedClient.LogoutContextCalls())
+func (mock *ClientMock) LogoutContextCalls() []struct {
+	Ctx context.Context
+} {
+	var calls []struct {
+		Ctx context.Context
+	}
+	mock.lockLogoutContext.RLock()
+	calls = mock.calls.LogoutContext
+	mock.lockLogoutContext.RUnlock()
 	return calls
 }
 
@@ -16287,6 +16431,38 @@ func (mock *ClientMock) VersionCalls() []struct {
 	mock.lockVersion.RLock()
 	calls = mock.calls.Version
 	mock.lockVersion.RUnlock()
+	return calls
+}
+
+// VersionContext calls VersionContextFunc.
+func (mock *ClientMock) VersionContext(ctx context.Context) (string, error) {
+	if mock.VersionContextFunc == nil {
+		panic("ClientMock.VersionContextFunc: method is nil but Client.VersionContext was just called")
+	}
+	callInfo := struct {
+		Ctx context.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockVersionContext.Lock()
+	mock.calls.VersionContext = append(mock.calls.VersionContext, callInfo)
+	mock.lockVersionContext.Unlock()
+	return mock.VersionContextFunc(ctx)
+}
+
+// VersionContextCalls gets all the calls that were made to VersionContext.
+// Check the length with:
+//
+//	len(mockedClient.VersionContextCalls())
+func (mock *ClientMock) VersionContextCalls() []struct {
+	Ctx context.Context
+} {
+	var calls []struct {
+		Ctx context.Context
+	}
+	mock.lockVersionContext.RLock()
+	calls = mock.calls.VersionContext
+	mock.lockVersionContext.RUnlock()
 	return calls
 }
 

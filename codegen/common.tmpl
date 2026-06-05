@@ -1,0 +1,36 @@
+{{ define "field" }}
+	{{ .FieldName }} {{ if .IsArray }}[]{{end}}{{ .FieldType }} `json:"{{ .JSONName }}{{ if .OmitEmpty }},omitempty{{ end }}"{{if .FieldValidation }} {{ .FieldValidation }}{{ end }}` {{ if .FieldValidationComment }}// {{ .FieldValidationComment }}{{ end }} {{- end }}
+{{ define "field-customUnmarshalType" }}
+	{{- if eq .CustomUnmarshalType "" }}{{else}}
+			{{ .FieldName }} {{ if .IsArray }}[]{{end}}{{ .CustomUnmarshalType }} `json:"{{ .JSONName }}"`{{ end }} {{- end }}
+{{ define "typecast" }}
+	{{- if ne .CustomUnmarshalFunc "" }}
+		dst.{{ .FieldName }}= {{ .CustomUnmarshalFunc }}(aux.{{ .FieldName }})
+	{{- else if eq .CustomUnmarshalType "" }}{{else}}
+		{{- if .IsArray }}
+		dst.{{ .FieldName }}= make([]{{ .FieldType }}, len(aux.{{ .FieldName }}))
+		for i, v := range aux.{{ .FieldName }} {
+				dst.{{ .FieldName }}[i] = {{ .FieldType }}(v)
+		}
+		{{- else }}
+		dst.{{ .FieldName }} = {{ .FieldType }}(aux.{{ .FieldName }})
+		{{- end }}{{- end }}{{- end }}
+{{- define "header" -}}
+// Code generated from ace.jar fields *.json files
+// DO NOT EDIT.
+
+package unifi
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+)
+
+// just to fix compile issues with the import.
+var (
+	_ context.Context
+	_ fmt.Formatter
+	_ json.Marshaler
+)
+{{- end }}

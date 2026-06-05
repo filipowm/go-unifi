@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/hashicorp/go-version"
 )
@@ -17,6 +18,10 @@ import (
 const (
 	LatestVersionMarker = "latest"
 	baseDownloadUrl     = "https://dl.ui.com/unifi/%s/unifi_sysvinit_all.deb"
+
+	// firmwareApiTimeout bounds the firmware-latest JSON call (ARCH-15): a slow
+	// or hung fw-update.ubnt.com must fail cleanly rather than stall codegen.
+	firmwareApiTimeout = 30 * time.Second
 )
 
 type UnifiVersion struct {
@@ -57,12 +62,14 @@ func (p *defaultUnifiVersionProvider) Latest() (*UnifiVersion, error) {
 	query.Add("filter", firmwareUpdateApiFilter("product", unifiControllerProduct))
 	url.RawQuery = query.Encode()
 
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, url.String(), nil)
+	ctx, cancel := context.WithTimeout(context.Background(), firmwareApiTimeout)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url.String(), nil)
 	if err != nil {
 		return nil, err
 	}
 
-	client := &http.Client{}
+	client := &http.Client{Timeout: firmwareApiTimeout}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
@@ -77,6 +84,11 @@ func (p *defaultUnifiVersionProvider) Latest() (*UnifiVersion, error) {
 
 	for _, firmware := range respData.Embedded.Firmware {
 		if firmware.Platform != debianPlatform || firmware.Version == nil {
+			continue
+		}
+		// ARCH-15 (folds ARCH-E13): re-validate the channel/product locally
+		// instead of trusting the server-side filter on the firmware API.
+		if firmware.Channel != releaseChannel || firmware.Product != unifiControllerProduct {
 			continue
 		}
 		return NewUnifiVersion(firmware.Version.Core(), firmware.Links.Data.Href), nil

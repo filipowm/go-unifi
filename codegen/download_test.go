@@ -4,12 +4,14 @@ import (
 	"archive/tar"
 	"archive/zip"
 	"bytes"
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -116,17 +118,41 @@ func buildControllerDeb(t *testing.T, fields map[string]string) []byte {
 	return buildDeb(t, map[string][]byte{"data.tar.xz": dataTarXz})
 }
 
-// Test when the output directory already exists. In this case, DownloadAndExtract should not call downloadJarFn or extractJSONFn.
-func TestDownloadAndExtract_WithExistingDirectory(t *testing.T) {
+// Test when the output directory already exists AND carries the completion
+// sentinel: DownloadAndExtract treats it as already-extracted and performs no
+// download. The URL is a non-loopback dummy that would be rejected by the host
+// guard if the code mistakenly tried to fetch it, so reaching NoError proves the
+// download was skipped.
+func TestDownloadAndExtract_WithCompletedDirectory(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 
 	tempDir := t.TempDir()
+	r.NoError(os.WriteFile(filepath.Join(tempDir, extractCompleteSentinel), nil, 0o600))
 	testURL, _ := url.Parse("http://example.com/test.deb")
 
-	err := DownloadAndExtract(http.DefaultClient, *testURL, tempDir)
+	err := DownloadAndExtract(context.Background(), http.DefaultClient, *testURL, tempDir)
 
-	r.NoError(err, "Expected no error when directory exists")
+	r.NoError(err, "Expected no error / no download when sentinel present")
+}
+
+// Test that an existing-but-sentinel-less directory (a partial/crashed prior
+// run, ARCH-16) is NOT treated as complete: the code proceeds to validate+fetch,
+// and here the disallowed host trips the ARCH-15 guard, proving the dir was not
+// silently accepted.
+func TestDownloadAndExtract_PartialDirectoryReExtracts(t *testing.T) {
+	t.Parallel()
+	r := require.New(t)
+
+	tempDir := t.TempDir()
+	// Simulate leftover junk from a crashed extract, but no sentinel.
+	r.NoError(os.WriteFile(filepath.Join(tempDir, "Partial.json"), []byte("{}"), 0o600))
+	testURL, _ := url.Parse("https://example.com/test.deb")
+
+	err := DownloadAndExtract(context.Background(), http.DefaultClient, *testURL, tempDir)
+
+	r.Error(err, "partial dir must not be accepted as complete")
+	r.ErrorContains(err, "not an allowed Ubiquiti host")
 }
 
 // // Test when output path is not a directory.
@@ -140,7 +166,7 @@ func TestDownloadAndExtract_PathNotDirectory(t *testing.T) {
 	r.NoError(err, "Failed to create temp file")
 	testURL, _ := url.Parse("http://example.com/test.deb")
 
-	err = DownloadAndExtract(http.DefaultClient, *testURL, tempFilePath)
+	err = DownloadAndExtract(context.Background(), http.DefaultClient, *testURL, tempFilePath)
 
 	r.Error(err, "Expected error because tempFilePath is not a directory")
 	r.ErrorContains(err, tempFilePath+" isn't a directory")
@@ -470,7 +496,7 @@ func TestDownloadJar_HappyPath(t *testing.T) {
 	r.NoError(err)
 
 	outputDir := t.TempDir()
-	jarPath, err := downloadJar(server.Client(), *u, outputDir)
+	jarPath, err := downloadJar(context.Background(), server.Client(), *u, outputDir)
 	r.NoError(err)
 	a.Equal(filepath.Join(outputDir, "ace.jar"), jarPath)
 
@@ -491,7 +517,7 @@ func TestDownloadJar_NotFound(t *testing.T) {
 	u, err := url.Parse(server.URL)
 	r.NoError(err)
 
-	_, err = downloadJar(server.Client(), *u, t.TempDir())
+	_, err = downloadJar(context.Background(), server.Client(), *u, t.TempDir())
 	r.Error(err)
 	r.ErrorContains(err, "HTTP404")
 }
@@ -510,8 +536,8 @@ func TestDownloadJar_NilClientDefaults(t *testing.T) {
 	u, err := url.Parse(server.URL)
 	r.NoError(err)
 
-	// nil -> http.DefaultClient; the local httptest URL is reachable offline.
-	_, err = downloadJar(nil, *u, t.TempDir())
+	// nil -> a default client with a timeout; the local httptest URL is reachable offline.
+	_, err = downloadJar(context.Background(), nil, *u, t.TempDir())
 	r.Error(err)
 	r.ErrorContains(err, "HTTP404")
 }
@@ -535,12 +561,19 @@ func TestDownloadAndExtract_FullChainOffline(t *testing.T) {
 
 	// Use a not-yet-created subdirectory so DownloadAndExtract performs the download+extract.
 	outputDir := filepath.Join(t.TempDir(), "fields")
-	err = DownloadAndExtract(server.Client(), *u, outputDir)
+	err = DownloadAndExtract(context.Background(), server.Client(), *u, outputDir)
 	r.NoError(err)
 
 	data, err := os.ReadFile(filepath.Join(outputDir, "Device.json"))
 	r.NoError(err)
 	a.JSONEq(`{"key":"value"}`, string(data))
+
+	// ARCH-16: a successful extract drops the completion sentinel and removes the
+	// intermediate ace.jar from the published directory.
+	_, err = os.Stat(filepath.Join(outputDir, extractCompleteSentinel))
+	r.NoError(err, "completion sentinel must be present after a successful extract")
+	_, err = os.Stat(filepath.Join(outputDir, "ace.jar"))
+	r.ErrorIs(err, os.ErrNotExist, "intermediate ace.jar must not be left behind")
 }
 
 // TestDownloadAndExtract_NotFoundOffline drives the 404 path through the public
@@ -558,7 +591,183 @@ func TestDownloadAndExtract_NotFoundOffline(t *testing.T) {
 	r.NoError(err)
 
 	outputDir := filepath.Join(t.TempDir(), "fields")
-	err = DownloadAndExtract(server.Client(), *u, outputDir)
+	err = DownloadAndExtract(context.Background(), server.Client(), *u, outputDir)
 	r.Error(err)
 	r.ErrorContains(err, "HTTP404")
+
+	// ARCH-16: a failed download must not leave a sentinel-bearing (or even
+	// existing) output dir behind.
+	_, statErr := os.Stat(filepath.Join(outputDir, extractCompleteSentinel))
+	r.ErrorIs(statErr, os.ErrNotExist, "no sentinel after a failed download")
+}
+
+// TestDownloadAndExtract_ContextCancelled asserts ARCH-15: a pre-cancelled
+// context aborts the download before (or during) the request and surfaces a
+// context error, leaving no completed output dir.
+func TestDownloadAndExtract_ContextCancelled(t *testing.T) {
+	t.Parallel()
+	r := require.New(t)
+
+	var hits atomic.Int32
+	deb := buildControllerDeb(t, map[string]string{"api/fields/Device.json": `{"k":"v"}`})
+	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
+		hits.Add(1)
+		_, _ = rw.Write(deb)
+	}))
+	defer server.Close()
+
+	u, err := url.Parse(server.URL)
+	r.NoError(err)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // cancel up front
+
+	outputDir := filepath.Join(t.TempDir(), "fields")
+	err = DownloadAndExtract(ctx, server.Client(), *u, outputDir)
+	r.Error(err, "a cancelled context must abort the download")
+	r.ErrorIs(err, context.Canceled)
+
+	_, statErr := os.Stat(outputDir)
+	r.ErrorIs(statErr, os.ErrNotExist, "cancelled download must not leave an output dir")
+}
+
+// TestValidateDownloadURL pins the ARCH-15 host/scheme guard: only https on a
+// Ubiquiti host (or any loopback host, for the offline test seam) is allowed.
+func TestValidateDownloadURL(t *testing.T) {
+	t.Parallel()
+
+	cases := map[string]struct {
+		rawURL  string
+		wantErr string
+	}{
+		"https dl.ui.com allowed": {
+			rawURL: "https://dl.ui.com/unifi/9.5.21/unifi_sysvinit_all.deb",
+		},
+		"https fw-download.ubnt.com allowed": {
+			rawURL: "https://fw-download.ubnt.com/data/unifi-controller/x-debian-9.5.21.deb",
+		},
+		"https bare ui.com allowed": {
+			rawURL: "https://ui.com/file.deb",
+		},
+		"loopback ip over http allowed (test seam)": {
+			rawURL: "http://127.0.0.1:8080/test.deb",
+		},
+		"localhost over http allowed (test seam)": {
+			rawURL: "http://localhost:9000/test.deb",
+		},
+		"http on ubiquiti host rejected": {
+			rawURL:  "http://dl.ui.com/unifi/x.deb",
+			wantErr: "must use https",
+		},
+		"https on unknown host rejected": {
+			rawURL:  "https://evil.example.com/x.deb",
+			wantErr: "not an allowed Ubiquiti host",
+		},
+		"lookalike suffix host rejected": {
+			rawURL:  "https://ui.com.evil.example/x.deb",
+			wantErr: "not an allowed Ubiquiti host",
+		},
+		"missing host rejected": {
+			rawURL:  "https:///x.deb",
+			wantErr: "no host",
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			r := require.New(t)
+
+			u, err := url.Parse(tc.rawURL)
+			r.NoError(err)
+
+			err = validateDownloadURL(*u)
+			if tc.wantErr != "" {
+				r.ErrorContains(err, tc.wantErr)
+				return
+			}
+			r.NoError(err)
+		})
+	}
+}
+
+// TestDownloadAndExtract_RejectsBadURL drives the host guard through the public
+// entrypoint: a non-allowed host is rejected before any HTTP request is made.
+func TestDownloadAndExtract_RejectsBadURL(t *testing.T) {
+	t.Parallel()
+	r := require.New(t)
+
+	u, err := url.Parse("http://dl.ui.com/unifi/x.deb") // http, not https
+	r.NoError(err)
+
+	outputDir := filepath.Join(t.TempDir(), "fields")
+	err = DownloadAndExtract(context.Background(), http.DefaultClient, *u, outputDir)
+	r.Error(err)
+	r.ErrorContains(err, "must use https")
+
+	_, statErr := os.Stat(outputDir)
+	r.ErrorIs(statErr, os.ErrNotExist, "rejected URL must not create an output dir")
+}
+
+// TestDownloadAndExtract_MidExtractFailureReExtracts pins ARCH-16's core
+// guarantee: an extract that fails partway (here, an oversize JSON entry trips
+// the decompression-bomb cap) leaves NO completed output dir, and a subsequent
+// run against a healthy server re-extracts successfully.
+func TestDownloadAndExtract_MidExtractFailureReExtracts(t *testing.T) {
+	t.Parallel()
+	r := require.New(t)
+	a := assert.New(t)
+
+	oversize := strings.Repeat("a", maxJSONSize+1)
+	badDeb := buildControllerDeb(t, map[string]string{
+		"api/fields/Device.json": `{"k":"v"}`,
+		"api/fields/Big.json":    oversize,
+	})
+	goodDeb := buildControllerDeb(t, map[string]string{
+		"api/fields/Device.json": `{"key":"value"}`,
+	})
+
+	// First requests get the corrupting deb; later requests get the good one.
+	var serveGood atomic.Bool
+	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
+		if serveGood.Load() {
+			_, _ = rw.Write(goodDeb)
+		} else {
+			_, _ = rw.Write(badDeb)
+		}
+	}))
+	defer server.Close()
+
+	u, err := url.Parse(server.URL)
+	r.NoError(err)
+
+	outputDir := filepath.Join(t.TempDir(), "fields")
+
+	// Run 1: extraction fails on the oversize entry.
+	err = DownloadAndExtract(context.Background(), server.Client(), *u, outputDir)
+	r.Error(err, "mid-extract failure must surface an error")
+	r.ErrorContains(err, "decompression bomb")
+
+	// The failed run must not leave a directory that a re-run treats as complete.
+	complete, cerr := extractionComplete(outputDir)
+	r.NoError(cerr)
+	a.False(complete, "partial extract must not be marked complete")
+	// And no sibling temp dir should be left lying around.
+	entries, derr := os.ReadDir(filepath.Dir(outputDir))
+	r.NoError(derr)
+	for _, e := range entries {
+		a.NotContains(e.Name(), ".tmp-", "temp extraction dir must be cleaned up on failure")
+	}
+
+	// Run 2: healthy server -> the re-run actually re-extracts to success.
+	serveGood.Store(true)
+	err = DownloadAndExtract(context.Background(), server.Client(), *u, outputDir)
+	r.NoError(err, "re-run after a failed extract must re-extract")
+
+	data, err := os.ReadFile(filepath.Join(outputDir, "Device.json"))
+	r.NoError(err)
+	a.JSONEq(`{"key":"value"}`, string(data))
+	complete, cerr = extractionComplete(outputDir)
+	r.NoError(cerr)
+	a.True(complete, "successful re-run must be marked complete")
 }

@@ -191,6 +191,39 @@ func TestValidateNonStructFallback(t *testing.T) {
 	a.Nil(ve.Messages, "no translated messages exist for a non-struct validation failure")
 }
 
+// TestNewValidatorExtraValidators pins the optional-extra-validators seam
+// (TEST-13): a one-off CustomValidator passed to newValidator is registered on
+// that instance only and must NOT leak into the shared customValidators global, so
+// a freshly built plain validator does not know the throwaway tag.
+func TestNewValidatorExtraValidators(t *testing.T) {
+	t.Parallel()
+	a := assert.New(t)
+
+	type onlyDigits struct {
+		Code string `validate:"only_digits"`
+	}
+
+	extra := NewCustomRegexValidator("only_digits", `^[0-9]+$`)
+
+	// A validator that knows the one-off tag.
+	withExtra, err := newValidator(extra)
+	require.NoError(t, err)
+
+	a.NoError(withExtra.Validate(&onlyDigits{Code: "12345"}), "matching value must pass the extra validator")
+	require.ErrorContains(t, withExtra.Validate(&onlyDigits{Code: "12x45"}), "validation failed", "non-matching value must fail")
+
+	// A plain validator built WITHOUT the extra must not know the tag — registering
+	// it on a per-instance basis must not have mutated the shared customValidators
+	// global. validator.Struct panics on an unknown tag, so a vanilla validator
+	// validating the only_digits-tagged struct must panic, proving the tag never
+	// leaked.
+	plain, err := newValidator()
+	require.NoError(t, err)
+	a.Panics(func() {
+		_ = plain.Validate(&onlyDigits{Code: "123"})
+	}, "the one-off tag must not leak into a freshly built validator (no global mutation)")
+}
+
 type validateableBody struct {
 	Data string `json:"data" validate:"required"`
 }
@@ -212,12 +245,8 @@ func TestValidationModes(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 			// given
-			interceptor := NewTestInterceptor()
-			c := newNewStyleClient(&ClientConfig{
-				URL:            testUrl,
-				APIKey:         "test-key",
-				Interceptors:   []ClientInterceptor{interceptor},
-				ValidationMode: tc.validationMode,
+			c, interceptor := newInterceptedClient(t, func(cfg *ClientConfig) {
+				cfg.ValidationMode = tc.validationMode
 			})
 			// when
 			err := c.Get(context.Background(), "", validateableBody{}, nil)

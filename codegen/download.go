@@ -8,12 +8,14 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/iancoleman/strcase"
 	"github.com/ulikunitz/xz"
@@ -23,45 +25,180 @@ import (
 const (
 	maxAceJarSize = 128 << 20 // 128 MiB — ace.jar is ~tens of MB; generous headroom
 	maxJSONSize   = 5 << 20   // 5 MiB — individual API field JSONs are tiny
+
+	// defaultDownloadTimeout caps the whole .deb download+stream when the caller
+	// injects a client without its own Timeout (or a nil client). Streaming the
+	// multi-MB .deb body is the long pole, so this is generous.
+	defaultDownloadTimeout = 5 * time.Minute
+
+	// extractCompleteSentinel marks a fully-extracted output directory. ARCH-16:
+	// a version dir without this file is treated as partial/crashed and is
+	// re-extracted, so a run that dies mid-extraction can never be silently
+	// accepted on the next invocation.
+	extractCompleteSentinel = ".extract-complete"
 )
 
-func DownloadAndExtract(client *http.Client, downloadUrl url.URL, outputDir string) error {
-	// Check if output directory exists, if not create and perform extraction
+// allowedDownloadHostSuffixes pins the controller download to Ubiquiti-owned
+// hosts (ARCH-15). The static base URL lives under dl.ui.com and the firmware
+// API redirects downloads to fw-download.ubnt.com, so both registrable domains
+// are permitted (host == suffix or *.suffix). Loopback hosts are allowed
+// separately to keep the offline httptest seam working.
+var allowedDownloadHostSuffixes = []string{"ui.com", "ubnt.com"}
 
-	if created, err := ensurePath(outputDir); err != nil {
-		return fmt.Errorf("unable to create output directory %s: %w", outputDir, err)
-	} else if created {
-		log.Debugf("downloading UniFi Controller package from: %s", downloadUrl.String())
-		jarFile, err := downloadJar(client, downloadUrl, outputDir)
-		if err != nil {
-			return err
-		}
-
-		log.Debugf("extracting JSON files with API structures from: %s to: %s", jarFile, outputDir)
-		if err = extractJSON(jarFile, outputDir); err != nil {
-			return err
-		}
-
-		log.Debugf("JSON files extracted to: %s", outputDir)
-		_, err = os.Stat(outputDir)
-		if err != nil {
-			return err
-		}
-	}
-	if targetInfo, err := os.Stat(outputDir); err != nil {
+// DownloadAndExtract downloads the controller .deb from downloadUrl and extracts
+// the API field-definition JSONs into outputDir. ctx bounds the network
+// download (ARCH-15). Extraction is atomic (ARCH-16): work happens in a sibling
+// temp dir that is renamed into place only after a fully-successful extract, and
+// a non-existent or sentinel-less outputDir is treated as missing and
+// re-extracted, so a crashed prior run can never be silently accepted.
+func DownloadAndExtract(ctx context.Context, client *http.Client, downloadUrl url.URL, outputDir string) error {
+	// ctx must be non-nil; callers (generate(), tests) pass a bounded or
+	// background context. A nil ctx panics in http.NewRequestWithContext.
+	if complete, err := extractionComplete(outputDir); err != nil {
 		return err
-	} else if !targetInfo.IsDir() {
-		return errors.New("fields info isn't a directory")
+	} else if complete {
+		log.Debugf("API structures already extracted in %s, skipping download", outputDir)
+		return nil
+	}
+
+	// ARCH-15: reject anything that is not an https URL on a Ubiquiti host (or a
+	// loopback test server) before issuing any request.
+	if err := validateDownloadURL(downloadUrl); err != nil {
+		return fmt.Errorf("refusing to download controller package: %w", err)
+	}
+
+	return downloadAndExtractAtomic(ctx, client, downloadUrl, outputDir)
+}
+
+// downloadAndExtractAtomic performs the download+extract into a sibling temp dir
+// and renames it into place only after a fully-successful extract (ARCH-16), so
+// a partial extract never lands at outputDir and a crashed run is re-extracted.
+func downloadAndExtractAtomic(ctx context.Context, client *http.Client, downloadUrl url.URL, outputDir string) error {
+	parent := filepath.Dir(outputDir)
+	if err := os.MkdirAll(parent, 0o755); err != nil {
+		return fmt.Errorf("unable to create parent directory %s: %w", parent, err)
+	}
+	tmpDir, err := os.MkdirTemp(parent, filepath.Base(outputDir)+".tmp-")
+	if err != nil {
+		return fmt.Errorf("unable to create temp extraction directory: %w", err)
+	}
+	// Best-effort cleanup of the temp dir on any failure; on success it is gone
+	// (renamed away) and the RemoveAll is a no-op.
+	defer os.RemoveAll(tmpDir)
+
+	log.Debugf("downloading UniFi Controller package from: %s", downloadUrl.String())
+	jarFile, err := downloadJar(ctx, client, downloadUrl, tmpDir)
+	if err != nil {
+		return err
+	}
+
+	log.Debugf("extracting JSON files with API structures from: %s to: %s", jarFile, tmpDir)
+	if err = extractJSON(jarFile, tmpDir); err != nil {
+		return err
+	}
+
+	// Drop the intermediate ace.jar so only the field JSONs remain, then write the
+	// completion sentinel last so the dir renamed into place is atomically complete.
+	_ = os.Remove(jarFile)
+	if err = os.WriteFile(filepath.Join(tmpDir, extractCompleteSentinel), nil, 0o644); err != nil { //nolint:gosec
+		return fmt.Errorf("unable to write extraction sentinel: %w", err)
+	}
+
+	return publishExtractedDir(tmpDir, outputDir)
+}
+
+// publishExtractedDir removes any stale partial dir left by a previous crashed
+// run and atomically moves the freshly-extracted temp dir into place.
+func publishExtractedDir(tmpDir, outputDir string) error {
+	if err := os.RemoveAll(outputDir); err != nil {
+		return fmt.Errorf("unable to remove stale output directory %s: %w", outputDir, err)
+	}
+	if err := os.Rename(tmpDir, outputDir); err != nil {
+		return fmt.Errorf("unable to move extracted files into %s: %w", outputDir, err)
+	}
+	log.Debugf("JSON files extracted to: %s", outputDir)
+	return nil
+}
+
+// extractionComplete reports whether outputDir already holds a fully-extracted
+// field set, identified by the completion sentinel. A missing dir, a dir without
+// the sentinel (partial/crashed run), or a non-directory all report false so the
+// caller re-extracts; a path that exists but is not a directory is an error.
+func extractionComplete(outputDir string) (bool, error) {
+	info, err := os.Stat(outputDir)
+	if errors.Is(err, os.ErrNotExist) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	if !info.IsDir() {
+		return false, fmt.Errorf("%s isn't a directory", outputDir)
+	}
+	if _, err = os.Stat(filepath.Join(outputDir, extractCompleteSentinel)); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			log.Debugf("output directory %s exists but is missing the completion sentinel; re-extracting", outputDir)
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
+}
+
+// validateDownloadURL enforces the download provenance guard (ARCH-15): the URL
+// must use https and target a Ubiquiti-owned host. Loopback hosts (the offline
+// httptest seam) are exempted from the scheme/host checks.
+func validateDownloadURL(downloadUrl url.URL) error {
+	host := downloadUrl.Hostname()
+	if host == "" {
+		return fmt.Errorf("download URL has no host: %s", downloadUrl.String())
+	}
+	if isLoopbackHost(host) {
+		return nil
+	}
+	if downloadUrl.Scheme != "https" {
+		return fmt.Errorf("download URL must use https, got %q in %s", downloadUrl.Scheme, downloadUrl.String())
+	}
+	if !hostAllowed(host) {
+		return fmt.Errorf("download host %q is not an allowed Ubiquiti host %v", host, allowedDownloadHostSuffixes)
 	}
 	return nil
 }
 
-func downloadJar(client *http.Client, downloadUrl url.URL, outputDir string) (string, error) {
+func isLoopbackHost(host string) bool {
+	if host == "localhost" {
+		return true
+	}
+	if ip := net.ParseIP(host); ip != nil {
+		return ip.IsLoopback()
+	}
+	return false
+}
+
+func hostAllowed(host string) bool {
+	host = strings.ToLower(strings.TrimSuffix(host, "."))
+	for _, suffix := range allowedDownloadHostSuffixes {
+		if host == suffix || strings.HasSuffix(host, "."+suffix) {
+			return true
+		}
+	}
+	return false
+}
+
+func downloadJar(ctx context.Context, client *http.Client, downloadUrl url.URL, outputDir string) (string, error) {
 	if client == nil {
-		client = http.DefaultClient
+		// ARCH-15: never use http.DefaultClient (no timeout) for a multi-MB
+		// streamed download; construct one with a sane default timeout.
+		client = &http.Client{Timeout: defaultDownloadTimeout}
+	} else if client.Timeout == 0 {
+		// Injected client without a timeout: bound this request via context so a
+		// hung server cannot stall the (CI) generate job indefinitely.
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, defaultDownloadTimeout)
+		defer cancel()
 	}
 
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, downloadUrl.String(), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, downloadUrl.String(), nil)
 	if err != nil {
 		return "", fmt.Errorf("unable to download UniFi Controller deb: %w", err)
 	}
@@ -70,10 +207,10 @@ func downloadJar(client *http.Client, downloadUrl url.URL, outputDir string) (st
 	if err != nil {
 		return "", fmt.Errorf("unable to download UniFi Controller deb: %w", err)
 	}
+	defer debResp.Body.Close()
 	if debResp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("unable to download UniFi Controller deb: HTTP%d. Probably it does not exist under %s", debResp.StatusCode, downloadUrl.String())
 	}
-	defer debResp.Body.Close()
 
 	uncompressedReader, err := openDebDataTar(debResp.Body)
 	if err != nil {

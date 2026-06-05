@@ -3,7 +3,9 @@ package main
 import (
 	_ "embed"
 	"fmt"
+	"net/url"
 	"os"
+	"sort"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -24,10 +26,17 @@ type Generate struct {
 }
 
 type ResourceCustomization struct {
-	ResourceName     string                         `yaml:"-"`
-	Fields           map[string]*FieldCustomization `yaml:"fields"`
-	ResourcePath     string                         `yaml:"resourcePath"`
-	ExcludeFunctions []string                       `yaml:"excludeFunctions"`
+	ResourceName string                         `yaml:"-"`
+	Fields       map[string]*FieldCustomization `yaml:"fields"`
+	ResourcePath string                         `yaml:"resourcePath"`
+	// QueryParams declares query-string parameters appended to every emitted URL
+	// for this resource (after the id segment on id-suffixed get/update/delete
+	// URLs, and after the bare path on list/create). This is the first-class
+	// alternative to smuggling a "?foo=bar" suffix into resourcePath, which would
+	// otherwise produce malformed id-suffixed URLs like ".../x?q=1/%s". See
+	// ARCH-19. Keys are rendered in deterministic (sorted) order and URL-encoded.
+	QueryParams      map[string]string `yaml:"queryParams"`
+	ExcludeFunctions []string          `yaml:"excludeFunctions"`
 }
 
 type ClientCustomization struct {
@@ -73,29 +82,77 @@ func compositeCustomizationsProcessor(customizationsProcessor FieldProcessor) Fi
 	}
 }
 
+// ApplyTo applies this resource's customizations to resource exactly once.
+//
+// It is the single entry point that mutates resource, and it cleanly separates
+// the two kinds of override:
+//
+//   - resource-level overrides (resourcePath) are applied by applyResourceOverrides;
+//   - field-level overrides (the per-field FieldProcessor) are composed by
+//     applyFieldOverrides.
+//
+// Ordering contract for the field processor: the YAML field customizations run
+// FIRST (the _all keyword, then the named field), then any pre-installed
+// processor from customizeResource (the SettingGlobalAp / SettingMgmt /
+// SettingUsg special cases). The composed processor is invoked once per field
+// during Resource.processJSON; ApplyTo itself never runs it. Because processJSON
+// is the only consumer, ApplyTo must be called before processJSON and exactly
+// once per resource — collectResourceGenerators no longer re-applies it (that
+// second call was dead: it re-wrapped a processor nobody invoked again and
+// re-set resourcePath to the same value). See ARCH-21.
 func (r *ResourceCustomization) ApplyTo(resource *Resource) {
-	if resource.StructName == r.ResourceName {
-		currentProcessor := resource.FieldProcessor
-		customizationsProcessor := r.toFieldProcessor()
-		if currentProcessor != nil {
-			// create composite processor with existing processor, first running pre-defined customizations, then user-defined
-			r.applyCurrentProcessor(resource, customizationsProcessor, currentProcessor)
-		} else {
-			resource.FieldProcessor = compositeCustomizationsProcessor(customizationsProcessor)
-		}
+	if resource.StructName != r.ResourceName {
+		return
+	}
+	r.applyResourceOverrides(resource)
+	r.applyFieldOverrides(resource)
+}
+
+// applyResourceOverrides applies the resource-level overrides (resourcePath and
+// queryParams). excludeFunctions is a resource-level override too, but it is
+// consumed directly at client-build time via CodeCustomizer.ExcludedClientFunctions
+// rather than mutating the resource here.
+func (r *ResourceCustomization) applyResourceOverrides(resource *Resource) {
+	if r.ResourcePath != "" {
+		resource.ResourcePath = r.ResourcePath
+	}
+	if len(r.QueryParams) > 0 {
+		resource.QueryString = buildQueryString(r.QueryParams)
 	}
 }
 
-func (r *ResourceCustomization) applyCurrentProcessor(resource *Resource, customizationsProcessor FieldProcessor, currentProcessor FieldProcessor) {
+// buildQueryString renders params into a deterministic, URL-encoded query string
+// WITHOUT a leading "?", e.g. {"a":"1","b":"2"} -> "a=1&b=2". Keys are sorted so
+// the generated output is reproducible run-to-run. Templates prepend the "?".
+func buildQueryString(params map[string]string) string {
+	keys := make([]string, 0, len(params))
+	for k := range params {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	values := url.Values{}
+	for _, k := range keys {
+		values.Set(k, params[k])
+	}
+	return values.Encode()
+}
+
+// applyFieldOverrides composes the YAML field customizations with any processor
+// already installed on the resource, preserving the ordering contract documented
+// on ApplyTo (YAML customizations first, then the pre-installed processor).
+func (r *ResourceCustomization) applyFieldOverrides(resource *Resource) {
+	customizationsProcessor := compositeCustomizationsProcessor(r.toFieldProcessor())
+	currentProcessor := resource.FieldProcessor
+	if currentProcessor == nil {
+		resource.FieldProcessor = customizationsProcessor
+		return
+	}
 	resource.FieldProcessor = func(name string, f *FieldInfo) error {
-		err := compositeCustomizationsProcessor(customizationsProcessor)(name, f)
-		if err != nil {
+		if err := customizationsProcessor(name, f); err != nil {
 			return err
 		}
 		return currentProcessor(name, f)
-	}
-	if r.ResourcePath != "" {
-		resource.ResourcePath = r.ResourcePath
 	}
 }
 
@@ -163,6 +220,11 @@ func unmarshalCustomizationYaml(customizationsPath string) (*Generate, error) {
 
 type CodeCustomizer struct {
 	Customizations Customizations
+	// logger receives customizer diagnostics (the unknown-excludeFunctions
+	// warning). It is injected by generate()/generateCode; when nil, log()
+	// falls back to the package-global logger so a directly-built customizer
+	// (tests) still works. See TEST-13.
+	logger Logger
 }
 
 func NewCodeCustomizer(customizationsPath string) (*CodeCustomizer, error) {
@@ -173,7 +235,7 @@ func NewCodeCustomizer(customizationsPath string) (*CodeCustomizer, error) {
 	if generate.Customizations == nil {
 		generate.Customizations = &Customizations{}
 	}
-	return &CodeCustomizer{*generate.Customizations}, nil
+	return &CodeCustomizer{Customizations: *generate.Customizations}, nil
 }
 
 func (r *CodeCustomizer) IsExcludedFromClient(resourceName string) bool {
@@ -216,7 +278,7 @@ func (r *CodeCustomizer) ExcludedClientFunctions(res *Resource) []string {
 	valid := standardActionNames(res)
 	for _, a := range rc.ExcludeFunctions {
 		if !valid[a] {
-			log.Warnf("excludeFunctions: unknown action %q for resource %s (ignored)", a, res.Name())
+			r.log().Warnf("excludeFunctions: unknown action %q for resource %s (ignored)", a, res.Name())
 		}
 	}
 	return rc.ExcludeFunctions
@@ -260,4 +322,10 @@ func (r *CodeCustomizer) ApplyToClient(client *ClientInfoBuilder) {
 	}
 	client.AddFunctions(r.Customizations.Client.Functions)
 	client.AddImports(r.Customizations.Client.Imports)
+}
+
+// log returns the customizer's injected logger, or the package-global fallback
+// when none was set. See TEST-13.
+func (r *CodeCustomizer) log() Logger {
+	return orDefaultLogger(r.logger)
 }

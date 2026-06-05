@@ -14,8 +14,8 @@ import (
 // Adding a method here is a deliberate decision to keep it interface-private;
 // the default is that every exported method is exposed via Client.
 var interfacePrivateClientMethods = map[string]string{
-	// Pointer-to-interface signature; kept off the interface so callers configure
-	// interceptors only through ClientConfig at construction time.
+	// Takes a ClientInterceptor value (ARCH-18); kept off the interface so callers
+	// configure interceptors only through ClientConfig at construction time.
 	"AddInterceptor": "configured via ClientConfig.Interceptors, not the public interface",
 	// Multipart upload helpers are low-level and not part of the curated surface.
 	"UploadFile":           "low-level multipart helper; not part of the curated public surface",

@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -23,9 +24,17 @@ type recordedRequest struct {
 // routes requests by URL path to a handler, records every request it serves, and
 // exposes a client pinned (via the APIStyle seam) to that server so the whole
 // thing is constructed fully offline — no live controller, no network probe.
+//
+// The httptest.Server serves each request on its own goroutine, so the request
+// log is guarded by mu: the handler appends under the lock and every reader
+// (lastRequest/requestsSnapshot/requestCount) reads under it, making the helper
+// concurrency-safe by construction (-race clean even when a test drives the
+// client from multiple goroutines).
 type controllerServer struct {
-	t        *testing.T
-	srv      *httptest.Server
+	t   *testing.T
+	srv *httptest.Server
+
+	mu       sync.Mutex
 	requests []recordedRequest
 }
 
@@ -46,9 +55,12 @@ func newControllerServer(t *testing.T, routes ...route) *controllerServer {
 	cs := &controllerServer{t: t}
 	mux := http.NewServeMux()
 	cs.srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Record every request (body is fully buffered for later assertions).
+		// Record every request (body is fully buffered for later assertions). The
+		// append runs on the per-request server goroutine, so guard it with mu.
 		body, _ := io.ReadAll(r.Body)
+		cs.mu.Lock()
 		cs.requests = append(cs.requests, recordedRequest{Method: r.Method, Path: r.URL.Path, Body: body})
+		cs.mu.Unlock()
 		// Restore the body so the matched handler can decode it.
 		r.Body = io.NopCloser(bytes.NewReader(body))
 		w.Header().Set(CsrfHeader, "csrf-token")
@@ -75,12 +87,72 @@ func (cs *controllerServer) client() *client {
 	return c
 }
 
+// clientUserPass builds a new-style user/pass client pointed at the mock server,
+// constructed fully offline via the APIStyle override. User/pass auth (rather than
+// the API key used by client()) is required so Login/Logout actually perform a
+// round-trip instead of short-circuiting for API-key auth.
+func (cs *controllerServer) clientUserPass() *client {
+	cs.t.Helper()
+	return newOfflineClient(cs.t, &ClientConfig{
+		URL:      cs.srv.URL,
+		User:     "test-user",
+		Password: "test-pass",
+		APIStyle: APIStyleNew,
+	})
+}
+
+// newOfflineClient builds a *client from cfg WITHOUT a swallowed construction
+// error: it pins the new-style API (skipping the network probe) when the caller
+// has not chosen a style, so construction succeeds even against an unreachable URL,
+// and asserts no error via require. This replaces the old swallowed-error
+// newNewStyleClient foot-gun (TEST-14). Tests that exercise request behavior
+// against an unreachable URL still get the later request failure they rely on,
+// without silently dropping the construction error.
+func newOfflineClient(t *testing.T, cfg *ClientConfig) *client {
+	t.Helper()
+	if cfg.APIStyle == APIStyleAuto {
+		cfg.APIStyle = APIStyleNew
+	}
+	c, err := newBareClient(cfg)
+	require.NoError(t, err)
+	return c
+}
+
+// newInterceptedClient builds an offline new-style client pointed at the
+// unreachable testUrl and wired with a fresh TestInterceptor, returning both so a
+// test can drive a request (which fails at dial after the interceptor has captured
+// it) and then assert on what the interceptor captured. opts mutate the config
+// before construction (e.g. to set a custom User-Agent or validation mode).
+func newInterceptedClient(t *testing.T, opts ...func(*ClientConfig)) (*client, *TestInterceptor) {
+	t.Helper()
+	interceptor := NewTestInterceptor()
+	cfg := &ClientConfig{
+		URL:          testUrl,
+		APIKey:       "test-key",
+		Interceptors: interceptor.AsList(),
+		APIStyle:     APIStyleNew,
+	}
+	for _, opt := range opts {
+		opt(cfg)
+	}
+	return newOfflineClient(t, cfg), interceptor
+}
+
 // lastRequest returns the most recently recorded request, failing the test if
-// none was served.
+// none was served. Read under mu so it is safe against the handler goroutine.
 func (cs *controllerServer) lastRequest() recordedRequest {
 	cs.t.Helper()
+	cs.mu.Lock()
+	defer cs.mu.Unlock()
 	require.NotEmpty(cs.t, cs.requests, "expected at least one request to reach the mock controller")
 	return cs.requests[len(cs.requests)-1]
+}
+
+// requestCount returns the number of requests recorded so far, read under mu.
+func (cs *controllerServer) requestCount() int {
+	cs.mu.Lock()
+	defer cs.mu.Unlock()
+	return len(cs.requests)
 }
 
 // apiPath returns the full new-style request path for a controller-relative path
