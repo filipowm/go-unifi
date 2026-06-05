@@ -254,6 +254,40 @@ func TestHandleResponseMetaRcError(t *testing.T) {
 	assert.NotErrorIs(t, err, ErrNotFound)
 }
 
+// TestHandleResponseMetaRcErrorCapitalMeta pins the centralized soft-error probe's
+// reliance on encoding/json case-insensitive key matching. Real v1 envelopes
+// (sysinfo, user, sites, …) serialize the wrapper as capital-M "Meta", whereas
+// metaEnvelopeError probes with the canonical lowercase `json:"meta"` tag. The probe
+// surfaces the soft failure ONLY because encoding/json matches object keys
+// case-insensitively; a future exact-case refactor of the probe would silently stop
+// catching soft rc:error responses — the exact regression ARCH-10/O5 set out to kill.
+// This test fails loudly if that reliance ever breaks.
+func TestHandleResponseMetaRcErrorCapitalMeta(t *testing.T) {
+	t.Parallel()
+
+	c := newRequestHelperClient()
+	// Capital-M "Meta" — the wire form real v1 endpoints actually emit.
+	payload := `{"Meta":{"rc":"error","msg":"api.err.InvalidPayload"},"data":[]}`
+	resp := &http.Response{
+		StatusCode:    http.StatusOK,
+		ContentLength: int64(len(payload)),
+		Body:          io.NopCloser(strings.NewReader(payload)),
+	}
+
+	var out struct {
+		Meta Meta  `json:"meta"`
+		Data []int `json:"data"`
+	}
+	err := c.handleResponse(resp, &out, http.MethodPost, "/test")
+	require.Error(t, err)
+
+	var serverErr *ServerError
+	require.ErrorAs(t, err, &serverErr)
+	assert.Equal(t, "error", serverErr.ErrorCode)
+	assert.Equal(t, "api.err.InvalidPayload", serverErr.Message)
+	assert.NotErrorIs(t, err, ErrNotFound)
+}
+
 // TestHandleResponseMetaRcErrorCarriesResponseContext is the ARCH-10 fidelity
 // regression: the *ServerError surfaced for a soft (HTTP 200) meta.rc=="error"
 // must carry the HTTP context (status code, request method, request URL) stamped
