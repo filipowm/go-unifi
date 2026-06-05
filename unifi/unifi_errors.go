@@ -1,14 +1,21 @@
 package unifi
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 )
 
 var ErrNotFound = errors.New("not found")
+
+// maxErrorBodySize caps how much of an error response body we buffer before
+// decoding, so a hostile or runaway error page (e.g. a multi-megabyte HTML
+// gateway response) can never exhaust memory while we build a ServerError.
+const maxErrorBodySize = 1 << 20 // 1 MiB
 
 type Meta struct {
 	RC      string `json:"rc"`
@@ -95,6 +102,16 @@ func (s *ServerError) Error() string {
 	return b.String()
 }
 
+// Is lets a *ServerError participate in errors.Is. A real HTTP 404 maps to the
+// ErrNotFound sentinel so that errors.Is(err, ErrNotFound) holds uniformly for
+// both a genuine 404 response and the existing empty-data 200 case.
+func (s *ServerError) Is(target error) bool {
+	if target == ErrNotFound {
+		return s.StatusCode == http.StatusNotFound
+	}
+	return false
+}
+
 func parseApiV2Error(err apiV2ResponseError, serverError *ServerError) {
 	serverError.Message = err.Message
 	serverError.ErrorCode = err.Code
@@ -130,15 +147,31 @@ func (d *DefaultResponseErrorHandler) HandleError(resp *http.Response) error {
 		return nil
 	}
 
-	var errBody apiResponseError
-	if err := json.NewDecoder(resp.Body).Decode(&errBody); err != nil {
-		return err
-	}
 	serverError := ServerError{
 		StatusCode:    resp.StatusCode,
 		RequestMethod: resp.Request.Method,
 		RequestURL:    resp.Request.URL.String(),
 	}
+
+	// Read the body ONCE into a capped buffer before attempting to decode, so the
+	// raw text remains available for a fallback message. On an empty body (common
+	// for 401/403) or a non-JSON body (e.g. an HTML 502/504 gateway page) we still
+	// return a fully-populated *ServerError carrying the status/method/URL rather
+	// than leaking a bare io.EOF or "invalid character" decode error.
+	body, readErr := io.ReadAll(io.LimitReader(resp.Body, maxErrorBodySize))
+	if readErr != nil {
+		serverError.Message = fmt.Sprintf("unable to read error response body: %v", readErr)
+		return &serverError
+	}
+
+	var errBody apiResponseError
+	if decodeErr := json.NewDecoder(bytes.NewReader(body)).Decode(&errBody); decodeErr != nil {
+		// Non-JSON or empty body: surface a useful message instead of the raw
+		// decode error so the status code and request context are never lost.
+		serverError.Message = errorBodyFallbackMessage(body, decodeErr)
+		return &serverError
+	}
+
 	if errBody.Code != "" || errBody.Message != "" {
 		parseApiV2Error(errBody.apiV2ResponseError, &serverError)
 	} else {
@@ -146,4 +179,16 @@ func (d *DefaultResponseErrorHandler) HandleError(resp *http.Response) error {
 	}
 
 	return &serverError
+}
+
+// errorBodyFallbackMessage builds a human-readable Message for a ServerError when
+// the response body could not be decoded as a UniFi error envelope. It prefers
+// the raw body text (trimmed) and falls back to the decode error when the body is
+// empty.
+func errorBodyFallbackMessage(body []byte, decodeErr error) string {
+	trimmed := strings.TrimSpace(string(body))
+	if trimmed == "" {
+		return fmt.Sprintf("empty error response body: %v", decodeErr)
+	}
+	return trimmed
 }

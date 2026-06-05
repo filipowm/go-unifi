@@ -2,11 +2,14 @@ package unifi //nolint: testpackage
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	vd "github.com/go-playground/validator/v10"
 )
 
 func TestAuthConfigurationValidation(t *testing.T) {
@@ -120,6 +123,72 @@ func TestValidationModeValidation(t *testing.T) {
 			require.NoError(t, err)
 		})
 	}
+}
+
+// TestValidationErrorUnwrap asserts that ValidationError exposes its underlying
+// validator error via Unwrap so errors.Is/errors.As can reach it (ARCH-22).
+func TestValidationErrorUnwrap(t *testing.T) {
+	t.Parallel()
+	a := assert.New(t)
+
+	root := errors.New("root cause")
+	ve := &ValidationError{Root: root}
+
+	require.ErrorIs(t, ve, root, "errors.Is must reach the wrapped Root error")
+
+	var asValErr vd.ValidationErrors
+	// Validate a struct that genuinely fails so Root is a vd.ValidationErrors and
+	// errors.As can extract it through Unwrap.
+	v, err := newValidator()
+	require.NoError(t, err)
+	verr := v.Validate(&ClientConfig{})
+	require.Error(t, verr)
+	a.ErrorAs(verr, &asValErr, "errors.As must extract the underlying vd.ValidationErrors")
+}
+
+// TestValidationErrorDeterministicOutput asserts that Error() sorts field keys so
+// the message is stable across runs (ARCH-22).
+func TestValidationErrorDeterministicOutput(t *testing.T) {
+	t.Parallel()
+	a := assert.New(t)
+
+	ve := &ValidationError{
+		Messages: map[string]string{
+			"Zeta":  "must be set",
+			"Alpha": "must be set",
+			"Mu":    "must be set",
+		},
+	}
+
+	want := "validation failed: \nAlpha: must be set\nMu: must be set\nZeta: must be set\n"
+	// Build repeatedly; a map-iteration implementation would eventually diverge.
+	for range 50 {
+		a.Equal(want, ve.Error())
+	}
+}
+
+// TestValidateNonStructFallback asserts that Validate does not panic when the
+// validator returns a non-vd.ValidationErrors error (e.g. a nil/non-struct
+// argument); it must fall back to wrapping the raw error (ARCH-22).
+func TestValidateNonStructFallback(t *testing.T) {
+	t.Parallel()
+	a := assert.New(t)
+
+	v, err := newValidator()
+	require.NoError(t, err)
+
+	// Passing a non-struct, non-pointer value makes validator.Struct return an
+	// *InvalidValidationError, which is NOT a vd.ValidationErrors.
+	var verr error
+	a.NotPanics(func() {
+		verr = v.Validate(42)
+	})
+	require.Error(t, verr)
+
+	var ve *ValidationError
+	require.ErrorAs(t, verr, &ve)
+	require.Error(t, ve.Root, "the raw validator error must be preserved as Root")
+	a.Nil(ve.Messages, "no translated messages exist for a non-struct validation failure")
 }
 
 type validateableBody struct {

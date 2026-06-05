@@ -188,3 +188,71 @@ func TestHandleError(t *testing.T) {
 		})
 	}
 }
+
+// TestHandleError_NonJSONBody asserts that an empty or non-JSON error body still
+// yields a populated *ServerError carrying the status/method/URL (ARCH-05),
+// rather than leaking a bare io.EOF or "invalid character" decode error.
+func TestHandleError_NonJSONBody(t *testing.T) {
+	t.Parallel()
+	tests := map[string]struct {
+		responseBody    string
+		statusCode      int
+		wantMsgContains string
+	}{
+		"empty body 401": {responseBody: "", statusCode: http.StatusUnauthorized, wantMsgContains: "empty error response body"},
+		"empty body 403": {responseBody: "", statusCode: http.StatusForbidden, wantMsgContains: "empty error response body"},
+		"html body 502":  {responseBody: "<html><body>Bad Gateway</body></html>", statusCode: http.StatusBadGateway, wantMsgContains: "<html>"},
+		"plain text 504": {responseBody: "gateway timeout", statusCode: http.StatusGatewayTimeout, wantMsgContains: "gateway timeout"},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			a := assert.New(t)
+			handler := &DefaultResponseErrorHandler{}
+
+			recorder := httptest.NewRecorder()
+			recorder.WriteHeader(tt.statusCode)
+			recorder.Body = bytes.NewBufferString(tt.responseBody)
+			req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "http://example.com", nil)
+			recorder.Result().Request = req
+
+			err := handler.HandleError(recorder.Result())
+			require.Error(t, err)
+
+			var serverErr *ServerError
+			require.ErrorAs(t, err, &serverErr)
+			a.Equal(tt.statusCode, serverErr.StatusCode)
+			a.Equal(http.MethodGet, serverErr.RequestMethod)
+			a.Equal("http://example.com", serverErr.RequestURL)
+			a.Contains(serverErr.Message, tt.wantMsgContains)
+		})
+	}
+}
+
+// TestHandleError_NotFound asserts that a real HTTP 404 maps to ErrNotFound via
+// ServerError.Is, so errors.Is(err, ErrNotFound) holds for both a genuine 404
+// and the existing empty-data 200 case (ARCH-05).
+func TestHandleError_NotFound(t *testing.T) {
+	t.Parallel()
+	a := assert.New(t)
+	handler := &DefaultResponseErrorHandler{}
+
+	recorder := httptest.NewRecorder()
+	recorder.WriteHeader(http.StatusNotFound)
+	recorder.Body = bytes.NewBufferString("")
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "http://example.com/thing", nil)
+	recorder.Result().Request = req
+
+	err := handler.HandleError(recorder.Result())
+	require.Error(t, err)
+
+	var serverErr *ServerError
+	require.ErrorAs(t, err, &serverErr)
+	a.Equal(http.StatusNotFound, serverErr.StatusCode)
+	require.ErrorIs(t, err, ErrNotFound, "a 404 ServerError must satisfy errors.Is(err, ErrNotFound)")
+
+	// A non-404 ServerError must NOT be reported as not-found.
+	other := &ServerError{StatusCode: http.StatusInternalServerError}
+	a.NotErrorIs(other, ErrNotFound, "a 500 ServerError must not satisfy errors.Is(err, ErrNotFound)")
+}
