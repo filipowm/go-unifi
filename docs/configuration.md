@@ -139,7 +139,7 @@ This flexibility allows you to modify client behavior to suit your application's
 
 The `ClientConfig` struct is the central configuration for initializing the UniFi client. It allows you to
 fine-tune every aspect of the client's behavior such as the controller URL, authentication credentials, HTTP timeout,
-SSL verification, custom HTTP transport settings, interceptors, error handling, concurrency locking, and request validation modes.
+SSL verification (secure by default), custom HTTP transport settings, interceptors, error handling, and request validation modes. The client is safe for concurrent use by multiple goroutines; requests run concurrently and are not serialized (the legacy `UseLocking` option is now a deprecated no-op).
 
 Below is a full example demonstrating how to configure and use all available properties of `ClientConfig` when
 initializing the client with `unifi.NewClient`:
@@ -200,12 +200,14 @@ func main() {
 		// User:         "username",                                 // Uncomment and provide if using user/password authentication
 		// Password:     "password",                                 // Uncomment and provide if using user/password authentication
 		Timeout:        30 * time.Second,                                // Maximum duration to wait for a response
-		VerifySSL:      true,                                            // Enable SSL certificate verification
+		// VerifySSL controls TLS verification and is SECURE BY DEFAULT: leave it nil to verify
+		// certificates. Set it to new(false) only for self-signed controller certs (logs a warning).
+		// VerifySSL:   new(false),
 		Interceptors:   []unifi.ClientInterceptor{&customInterceptor{}}, // Custom interceptors for request/response manipulation
 		HttpTransportCustomizer: customTransportCustomizer,              // Function to customize the underlying HTTP transport
 		UserAgent:      "MyCustomAgent/1.0",                             // Custom User-Agent string
 		ErrorHandler:   &myErrorHandler{},                               // Custom error handler for processing HTTP response errors
-		UseLocking:     true,                                            // Enable internal locking for safe concurrent request processing
+		// UseLocking is DEPRECATED and a no-op since 1.11.0 (net/http.Client is goroutine-safe; requests are no longer serialized).
 		ValidationMode: unifi.SoftValidation,                            // Validation mode: SoftValidation, HardValidation, or DisableValidation
 	}
 
