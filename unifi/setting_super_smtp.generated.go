@@ -18,6 +18,13 @@ var (
 
 const SettingSuperSmtpKey = "super_smtp"
 
+// Self-register this setting's fields factory so the settingFactories registry
+// in setting_registry.go stays a 1:1 reflection of the generated catalog and
+// can never drift from it by hand.
+func init() { //nolint:gochecknoinits
+	registerSetting(SettingSuperSmtpKey, func() any { return &SettingSuperSmtp{} })
+}
+
 type SettingSuperSmtp struct {
 	ID     string `json:"_id,omitempty"`
 	SiteID string `json:"site_id,omitempty"`

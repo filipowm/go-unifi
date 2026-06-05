@@ -31,9 +31,17 @@ type ResourceCustomization struct {
 }
 
 type ClientCustomization struct {
-	Imports          []string               `yaml:"imports"`
-	Functions        []CustomClientFunction `yaml:"functions"`
-	ExcludeResources []string               `yaml:"excludeResources"`
+	Imports   []string               `yaml:"imports"`
+	Functions []CustomClientFunction `yaml:"functions"`
+	// ExcludeResources omits a resource from the generated Client interface only;
+	// its <resource>.generated.go (types + private CRUD) is still emitted so a
+	// hand-written wrapper (like FirewallZoneMatrix) can wire it up.
+	ExcludeResources []string `yaml:"excludeResources"`
+	// ExcludeGeneration omits a resource from generation entirely: no
+	// <resource>.generated.go file is written at all. Use this for resources that
+	// are unsupported and have no hand-written wrapper, so no dead generated code
+	// ships. Glob patterns follow the same rules as ExcludeResources.
+	ExcludeGeneration []string `yaml:"excludeGeneration"`
 }
 
 type FieldCustomization struct {
@@ -173,6 +181,20 @@ func (r *CodeCustomizer) IsExcludedFromClient(resourceName string) bool {
 		return false
 	}
 	for _, pattern := range r.Customizations.Client.ExcludeResources {
+		if matchesExcludePattern(pattern, resourceName) {
+			return true
+		}
+	}
+	return false
+}
+
+// IsExcludedFromGeneration reports whether the resource must be skipped entirely
+// at the generation step, so no <resource>.generated.go file is written for it.
+func (r *CodeCustomizer) IsExcludedFromGeneration(resourceName string) bool {
+	if r.Customizations.Client == nil {
+		return false
+	}
+	for _, pattern := range r.Customizations.Client.ExcludeGeneration {
 		if matchesExcludePattern(pattern, resourceName) {
 			return true
 		}

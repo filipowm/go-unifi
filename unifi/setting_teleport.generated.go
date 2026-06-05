@@ -18,6 +18,13 @@ var (
 
 const SettingTeleportKey = "teleport"
 
+// Self-register this setting's fields factory so the settingFactories registry
+// in setting_registry.go stays a 1:1 reflection of the generated catalog and
+// can never drift from it by hand.
+func init() { //nolint:gochecknoinits
+	registerSetting(SettingTeleportKey, func() any { return &SettingTeleport{} })
+}
+
 type SettingTeleport struct {
 	ID     string `json:"_id,omitempty"`
 	SiteID string `json:"site_id,omitempty"`
