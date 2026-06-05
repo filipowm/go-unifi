@@ -29,6 +29,7 @@ var expectedSettingTypes = map[string]any{
 	SettingLcmKey:                 &SettingLcm{},
 	SettingLocaleKey:              &SettingLocale{},
 	SettingMagicSiteToSiteVpnKey:  &SettingMagicSiteToSiteVpn{},
+	SettingMdnsKey:                &SettingMdns{},
 	SettingMgmtKey:                &SettingMgmt{},
 	SettingNetflowKey:             &SettingNetflow{},
 	SettingNetworkOptimizationKey: &SettingNetworkOptimization{},
@@ -36,6 +37,7 @@ var expectedSettingTypes = map[string]any{
 	SettingPortaKey:               &SettingPorta{},
 	SettingRadioAiKey:             &SettingRadioAi{},
 	SettingRadiusKey:              &SettingRadius{},
+	SettingRoamingAssistantKey:    &SettingRoamingAssistant{},
 	SettingRsyslogdKey:            &SettingRsyslogd{},
 	SettingSnmpKey:                &SettingSnmp{},
 	SettingSslInspectionKey:       &SettingSslInspection{},
@@ -48,6 +50,7 @@ var expectedSettingTypes = map[string]any{
 	SettingSuperSdnKey:            &SettingSuperSdn{},
 	SettingSuperSmtpKey:           &SettingSuperSmtp{},
 	SettingTeleportKey:            &SettingTeleport{},
+	SettingTrafficFlowKey:         &SettingTrafficFlow{},
 	SettingUsgKey:                 &SettingUsg{},
 	SettingUswKey:                 &SettingUsw{},
 }

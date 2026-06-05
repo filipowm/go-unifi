@@ -37,6 +37,7 @@ var settingFactories = map[string]func() any{
 	SettingLcmKey:                 func() any { return &SettingLcm{} },
 	SettingLocaleKey:              func() any { return &SettingLocale{} },
 	SettingMagicSiteToSiteVpnKey:  func() any { return &SettingMagicSiteToSiteVpn{} },
+	SettingMdnsKey:                func() any { return &SettingMdns{} },
 	SettingMgmtKey:                func() any { return &SettingMgmt{} },
 	SettingNetflowKey:             func() any { return &SettingNetflow{} },
 	SettingNetworkOptimizationKey: func() any { return &SettingNetworkOptimization{} },
@@ -44,6 +45,7 @@ var settingFactories = map[string]func() any{
 	SettingPortaKey:               func() any { return &SettingPorta{} },
 	SettingRadioAiKey:             func() any { return &SettingRadioAi{} },
 	SettingRadiusKey:              func() any { return &SettingRadius{} },
+	SettingRoamingAssistantKey:    func() any { return &SettingRoamingAssistant{} },
 	SettingRsyslogdKey:            func() any { return &SettingRsyslogd{} },
 	SettingSnmpKey:                func() any { return &SettingSnmp{} },
 	SettingSslInspectionKey:       func() any { return &SettingSslInspection{} },
@@ -56,6 +58,7 @@ var settingFactories = map[string]func() any{
 	SettingSuperSdnKey:            func() any { return &SettingSuperSdn{} },
 	SettingSuperSmtpKey:           func() any { return &SettingSuperSmtp{} },
 	SettingTeleportKey:            func() any { return &SettingTeleport{} },
+	SettingTrafficFlowKey:         func() any { return &SettingTrafficFlow{} },
 	SettingUsgKey:                 func() any { return &SettingUsg{} },
 	SettingUswKey:                 func() any { return &SettingUsw{} },
 }
