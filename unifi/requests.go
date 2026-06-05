@@ -128,12 +128,12 @@ func (c *client) executeRequest(ctx context.Context, method, apiPath string, bod
 		return fmt.Errorf("unable to create request: %s %s %w", method, apiPath, err)
 	}
 
-	if c.useLocking {
-		c.lock.Lock()
-		c.Trace("Acquired lock for request")
-		defer c.lock.Unlock()
-	}
-
+	// NOTE: requests are intentionally NOT serialized here. net/http.Client is
+	// goroutine-safe and the only mutable shared state on the request path (the
+	// CSRF token) is guarded inside CSRFInterceptor. The former coarse
+	// per-request lock (gated on ClientConfig.UseLocking) was removed in 1.11.0
+	// (ARCH-04/O4): it killed HTTP concurrency and enabled the Version()
+	// re-entrant deadlock. ClientConfig.UseLocking is now a no-op.
 	if err := c.applyRequestInterceptors(req); err != nil {
 		return err
 	}

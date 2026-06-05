@@ -42,10 +42,9 @@ func TestNewBareClient(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
 	c, err := newBareClient(&ClientConfig{
-		URL:       localUrl,
-		User:      "admin",
-		Password:  "password",
-		VerifySSL: false,
+		URL:      localUrl,
+		User:     "admin",
+		Password: "password",
 	})
 	require.Error(t, err)
 	a.Equal(localUrl, c.BaseURL())
@@ -59,9 +58,8 @@ func TestNewClientWithApiKey(t *testing.T) {
 	a := assert.New(t)
 	// when
 	c, err := newBareClient(&ClientConfig{
-		URL:       localUrl,
-		APIKey:    "test",
-		VerifySSL: false,
+		URL:    localUrl,
+		APIKey: "test",
 	})
 
 	// then
@@ -282,7 +280,6 @@ func TestVersionWithLockingNoDeadlock(t *testing.T) {
 	c, err := NewBareClient(&ClientConfig{
 		URL:        ts.URL,
 		APIKey:     "dummy",
-		VerifySSL:  false,
 		UseLocking: true,
 	})
 	require.NoError(t, err)
@@ -335,7 +332,6 @@ func TestVersionConcurrentCachedFetch(t *testing.T) {
 	c, err := NewBareClient(&ClientConfig{
 		URL:        ts.URL,
 		APIKey:     "dummy",
-		VerifySSL:  false,
 		UseLocking: true,
 	})
 	require.NoError(t, err)
@@ -379,7 +375,6 @@ func TestHttpTransportCustomizerError(t *testing.T) {
 	_, err := NewClient(&ClientConfig{
 		URL:                     testUrl,
 		APIKey:                  "test-key",
-		VerifySSL:               false,
 		HttpTransportCustomizer: customizer,
 	})
 	require.Error(t, err)

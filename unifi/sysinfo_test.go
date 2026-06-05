@@ -69,9 +69,8 @@ func TestGetSystemInformation(t *testing.T) {
 			defer ts.Close()
 
 			c, _ := NewClient(&ClientConfig{
-				URL:       ts.URL,
-				APIKey:    "dummy",
-				VerifySSL: false,
+				URL:    ts.URL,
+				APIKey: "dummy",
 			})
 
 			sysInfo, err := c.GetSystemInformation()
