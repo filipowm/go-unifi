@@ -4,6 +4,7 @@ This table maps `go-unifi` library releases to the range of UniFi Network Contro
 
 | `go-unifi` version  | Min UniFi Controller | Latest UniFi Controller |
 |---------------------|----------------------|-------------------------|
+| `1.11.0`            | `5.12.35`            | `9.5.21`                |
 | `1.10.0`            | `5.12.35`            | `9.4.19`                |
 | `v1.9.0` – `v1.9.1` | `5.12.35`            | `9.3.45`                |
 | `v0.0.1` – `v1.8.1` | `5.12.35`            | `9.0.114`               |
@@ -18,6 +19,23 @@ The library is updated daily to track the latest UniFi Controller releases, so t
 The controller version a given build targets is recorded in [`.unifi-version`](../.unifi-version).
 
 ## Compatibility Changelog
+
+### 1.11.0 / UniFi Controller 9.5.21
+
+**Breaking changes**
+
+`ChannelPlan` — trimmed down to `Date` and `RadioTable` (no replacement identified):
+- removed fields `ApBlacklistedChannels`, `ConfSource`, `Coupling`, `Fitness`, `Note`, `Radio`, `Satisfaction`, `SatisfactionTable`, `SiteBlacklistedChannels`
+- removed types `ChannelPlanApBlacklistedChannels`, `ChannelPlanCoupling`, `ChannelPlanSatisfactionTable`, `ChannelPlanSiteBlacklistedChannels`
+- removed field `ChannelPlanRadioTable.BackupChannel` 
+
+`DeviceRadioTable`:
+- removed fields `BackupChannel` and `ChannelOptimizationEnabled`
+
+**Additions**
+
+- `Network`: `WANDHCPv6PDSizeAuto` (auto IPv6 prefix-delegation size); `WANType` accepts `dslite-over-pppoe`.
+- `SettingRadioAi`: `HighPriorityDevices` (high-priority device MACs); `Radios` accepts `6e` (Wi-Fi 6E band).
 
 ### 1.10.0 / UniFi Controller 9.4.19
 
