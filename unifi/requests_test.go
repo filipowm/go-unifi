@@ -168,6 +168,297 @@ func TestHandleResponseDecodeError(t *testing.T) {
 	require.ErrorContains(t, err, "/widgets")
 }
 
+// TestHandleResponseDecodesBodyWithZeroContentLength is the ARCH-11 regression:
+// a 200 carrying a real JSON body but reporting ContentLength==0 (as a proxy or
+// HTTP/2 path can) must still decode into respBody instead of being silently
+// skipped. The decode decision is made on the body, not the transport header.
+func TestHandleResponseDecodesBodyWithZeroContentLength(t *testing.T) {
+	t.Parallel()
+
+	c := newRequestHelperClient()
+	resp := &http.Response{
+		StatusCode:    http.StatusOK,
+		ContentLength: 0, // header lies; body is non-empty
+		Body:          io.NopCloser(strings.NewReader(`{"name":"unifi"}`)),
+	}
+
+	var out struct {
+		Name string `json:"name"`
+	}
+	require.NoError(t, c.handleResponse(resp, &out, http.MethodGet, "/test"))
+	assert.Equal(t, "unifi", out.Name)
+}
+
+// TestHandleResponseChunkedBody verifies the chunked transfer case
+// (ContentLength == -1) still decodes correctly after the ARCH-11 change.
+func TestHandleResponseChunkedBody(t *testing.T) {
+	t.Parallel()
+
+	c := newRequestHelperClient()
+	resp := &http.Response{
+		StatusCode:    http.StatusOK,
+		ContentLength: -1, // chunked
+		Body:          io.NopCloser(strings.NewReader(`{"name":"chunked"}`)),
+	}
+
+	var out struct {
+		Name string `json:"name"`
+	}
+	require.NoError(t, c.handleResponse(resp, &out, http.MethodGet, "/test"))
+	assert.Equal(t, "chunked", out.Name)
+}
+
+// TestHandleResponseEmptyBodyNoContent verifies that a genuinely empty body
+// (io.EOF on decode) is treated as "no content": no error, respBody untouched.
+func TestHandleResponseEmptyBodyNoContent(t *testing.T) {
+	t.Parallel()
+
+	c := newRequestHelperClient()
+	resp := &http.Response{
+		StatusCode:    http.StatusOK,
+		ContentLength: -1, // unknown length, but body is truly empty
+		Body:          io.NopCloser(strings.NewReader("")),
+	}
+
+	var out map[string]any
+	require.NoError(t, c.handleResponse(resp, &out, http.MethodGet, "/test"))
+	assert.Nil(t, out, "respBody must remain untouched on a genuinely empty body")
+}
+
+// TestHandleResponseMetaRcError is the ARCH-10/O5 regression: a 200 carrying
+// meta.rc=="error" (a soft application failure) must surface as a *ServerError
+// carrying the rc/msg, NOT be swallowed into an empty decode or ErrNotFound.
+func TestHandleResponseMetaRcError(t *testing.T) {
+	t.Parallel()
+
+	c := newRequestHelperClient()
+	payload := `{"meta":{"rc":"error","msg":"api.err.InvalidPayload"},"data":[]}`
+	resp := &http.Response{
+		StatusCode:    http.StatusOK,
+		ContentLength: int64(len(payload)),
+		Body:          io.NopCloser(strings.NewReader(payload)),
+	}
+
+	var out struct {
+		Meta Meta  `json:"meta"`
+		Data []int `json:"data"`
+	}
+	err := c.handleResponse(resp, &out, http.MethodPost, "/test")
+	require.Error(t, err)
+
+	var serverErr *ServerError
+	require.ErrorAs(t, err, &serverErr)
+	assert.Equal(t, "error", serverErr.ErrorCode)
+	assert.Equal(t, "api.err.InvalidPayload", serverErr.Message)
+	// A soft 200-rc-error is NOT a 404 and must not satisfy the ErrNotFound sentinel.
+	assert.NotErrorIs(t, err, ErrNotFound)
+}
+
+// TestHandleResponseMetaRcErrorCarriesResponseContext is the ARCH-10 fidelity
+// regression: the *ServerError surfaced for a soft (HTTP 200) meta.rc=="error"
+// must carry the HTTP context (status code, request method, request URL) stamped
+// from the response — not render the lossy "Server error (0) for  : <msg>". The
+// status must remain 200 (a soft rc:error is NOT a 404), so errors.Is(ErrNotFound)
+// stays false.
+func TestHandleResponseMetaRcErrorCarriesResponseContext(t *testing.T) {
+	t.Parallel()
+
+	c := newRequestHelperClient()
+	payload := `{"meta":{"rc":"error","msg":"api.err.InvalidPayload"},"data":[]}`
+	reqURL, err := url.Parse("https://controller.example/proxy/network/api/s/default/group/user")
+	require.NoError(t, err)
+	resp := &http.Response{
+		StatusCode:    http.StatusOK,
+		ContentLength: int64(len(payload)),
+		Body:          io.NopCloser(strings.NewReader(payload)),
+		Request: &http.Request{
+			Method: http.MethodPost,
+			URL:    reqURL,
+		},
+	}
+
+	var out struct {
+		Meta Meta  `json:"meta"`
+		Data []int `json:"data"`
+	}
+	err = c.handleResponse(resp, &out, http.MethodPost, "s/default/group/user")
+	require.Error(t, err)
+
+	var serverErr *ServerError
+	require.ErrorAs(t, err, &serverErr)
+	assert.Equal(t, http.StatusOK, serverErr.StatusCode, "soft-error ServerError must carry the 200 status, not zero")
+	assert.Equal(t, http.MethodPost, serverErr.RequestMethod, "soft-error ServerError must carry the request method")
+	assert.Equal(t, reqURL.String(), serverErr.RequestURL, "soft-error ServerError must carry the request URL")
+	// The rendered message must include the HTTP context rather than the lossy
+	// "Server error (0) for  : <msg>".
+	assert.Contains(t, serverErr.Error(), "(200)")
+	assert.Contains(t, serverErr.Error(), reqURL.String())
+	// A soft rc:error is NOT a 404.
+	assert.NotErrorIs(t, err, ErrNotFound)
+}
+
+// TestHandleResponseMetaRcErrorNilRequest guards the resp.Request==nil branch of
+// the ARCH-10 enrichment: a hand-built response with no Request must not panic and
+// must still carry the status code (method/URL stay empty).
+func TestHandleResponseMetaRcErrorNilRequest(t *testing.T) {
+	t.Parallel()
+
+	c := newRequestHelperClient()
+	payload := `{"meta":{"rc":"error","msg":"boom"},"data":[]}`
+	resp := &http.Response{
+		StatusCode:    http.StatusOK,
+		ContentLength: int64(len(payload)),
+		Body:          io.NopCloser(strings.NewReader(payload)),
+		// Request intentionally nil.
+	}
+
+	var out struct {
+		Meta Meta  `json:"meta"`
+		Data []int `json:"data"`
+	}
+	err := c.handleResponse(resp, &out, http.MethodPost, "/test")
+	require.Error(t, err)
+
+	var serverErr *ServerError
+	require.ErrorAs(t, err, &serverErr)
+	assert.Equal(t, http.StatusOK, serverErr.StatusCode)
+	assert.Empty(t, serverErr.RequestMethod)
+	assert.Empty(t, serverErr.RequestURL)
+}
+
+// TestDecodeResponseBodyExceedsCap is the ARCH-11 regression: a body larger than
+// maxResponseBodySize must surface an explicit "exceeded N bytes" error BEFORE any
+// decode attempt — not a silently-truncated body that fails with an opaque JSON
+// decode error. The cap is temporarily lowered (and restored via defer) so the
+// test stays cheap and the production 64 MiB default is unchanged.
+func TestDecodeResponseBodyExceedsCap(t *testing.T) {
+	// NOT parallel: it mutates the package-level maxResponseBodySize cap, which
+	// every concurrent handleResponse reads. Restored via Cleanup.
+	orig := maxResponseBodySize
+	maxResponseBodySize = 16
+	t.Cleanup(func() { maxResponseBodySize = orig })
+
+	c := newRequestHelperClient()
+	// Valid JSON, but longer than the lowered cap so truncation would otherwise
+	// produce a JSON decode error rather than the explicit overflow error.
+	payload := `{"name":"` + strings.Repeat("x", 64) + `"}`
+	resp := &http.Response{
+		StatusCode:    http.StatusOK,
+		ContentLength: int64(len(payload)),
+		Body:          io.NopCloser(strings.NewReader(payload)),
+	}
+
+	var out map[string]any
+	err := c.handleResponse(resp, &out, http.MethodGet, "/big")
+	require.Error(t, err)
+	require.ErrorContains(t, err, "exceeded 16 bytes")
+	// It must be the explicit overflow error, not a downstream JSON decode error.
+	assert.NotContains(t, err.Error(), "unable to decode body")
+}
+
+// TestHandleResponseMetaRcOk verifies that a 200 with meta.rc=="ok" decodes
+// normally and surfaces no error.
+func TestHandleResponseMetaRcOk(t *testing.T) {
+	t.Parallel()
+
+	c := newRequestHelperClient()
+	payload := `{"meta":{"rc":"ok"},"data":[{"name":"unifi"}]}`
+	resp := &http.Response{
+		StatusCode:    http.StatusOK,
+		ContentLength: int64(len(payload)),
+		Body:          io.NopCloser(strings.NewReader(payload)),
+	}
+
+	var out struct {
+		Meta Meta `json:"meta"`
+		Data []struct {
+			Name string `json:"name"`
+		} `json:"data"`
+	}
+	require.NoError(t, c.handleResponse(resp, &out, http.MethodGet, "/test"))
+	require.Len(t, out.Data, 1)
+	assert.Equal(t, "unifi", out.Data[0].Name)
+}
+
+// TestHandleResponseNoMetaBlock verifies that a v2-style bare body that carries
+// NO meta envelope decodes normally — the centralized rc-error check must be
+// gated on a meta block actually being present and never fabricate an error.
+func TestHandleResponseNoMetaBlock(t *testing.T) {
+	t.Parallel()
+
+	c := newRequestHelperClient()
+	payload := `{"name":"v2-bare","value":42}`
+	resp := &http.Response{
+		StatusCode:    http.StatusOK,
+		ContentLength: int64(len(payload)),
+		Body:          io.NopCloser(strings.NewReader(payload)),
+	}
+
+	var out struct {
+		Name  string `json:"name"`
+		Value int    `json:"value"`
+	}
+	require.NoError(t, c.handleResponse(resp, &out, http.MethodGet, "/test"))
+	assert.Equal(t, "v2-bare", out.Name)
+	assert.Equal(t, 42, out.Value)
+}
+
+// TestHandleResponseMetaRcOkButRespBodyNil verifies the rc-error check is
+// skipped entirely when no respBody is expected (respBody == nil) even if the
+// body would carry a meta envelope: nothing to decode, nothing to validate.
+func TestHandleResponseRespBodyNilSkipsMetaCheck(t *testing.T) {
+	t.Parallel()
+
+	c := newRequestHelperClient()
+	resp := &http.Response{
+		StatusCode:    http.StatusOK,
+		ContentLength: 0,
+		Body:          io.NopCloser(strings.NewReader(`{"meta":{"rc":"error","msg":"ignored"}}`)),
+	}
+
+	require.NoError(t, c.handleResponse(resp, nil, http.MethodGet, "/test"))
+}
+
+// TestMetaErrorSemantics pins the refined Meta.error() gating used by the
+// centralized handleResponse rc-error check (ARCH-10/O5): rc=="ok" and an
+// absent rc (rc=="") both carry no failure; only a non-empty, non-"ok" rc
+// surfaces a *ServerError carrying the rc/msg.
+func TestMetaErrorSemantics(t *testing.T) {
+	t.Parallel()
+
+	cases := map[string]struct {
+		meta     Meta
+		wantErr  bool
+		wantCode string
+		wantMsg  string
+	}{
+		"rc ok is no error":    {meta: Meta{RC: "ok"}, wantErr: false},
+		"empty rc is no error": {meta: Meta{RC: ""}, wantErr: false},
+		"rc error surfaces": {
+			meta:     Meta{RC: "error", Message: "api.err.Invalid"},
+			wantErr:  true,
+			wantCode: "error",
+			wantMsg:  "api.err.Invalid",
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			m := tc.meta
+			err := m.error()
+			if !tc.wantErr {
+				require.NoError(t, err)
+				return
+			}
+			var serverErr *ServerError
+			require.ErrorAs(t, err, &serverErr)
+			assert.Equal(t, tc.wantCode, serverErr.ErrorCode)
+			assert.Equal(t, tc.wantMsg, serverErr.Message)
+		})
+	}
+}
+
 // TestApplyRequestInterceptorsError verifies that the first interceptor error
 // short-circuits and is returned.
 func TestApplyRequestInterceptorsError(t *testing.T) {
@@ -187,31 +478,24 @@ func TestApplyRequestInterceptorsError(t *testing.T) {
 	assert.True(t, interceptor.IsRequestIntercepted())
 }
 
-func newTestClientWithInterceptor() (*client, *TestInterceptor) {
-	interceptor := NewTestInterceptor()
-	c := newNewStyleClient(&ClientConfig{
-		URL:          testUrl,
-		APIKey:       "test-key",
-		Interceptors: interceptor.AsList(),
-	})
-	return c, interceptor
-}
-
-// runClientGetRequest creates a new test client, performs a GET request,
-// asserts that an error occurred, and returns the client and its interceptor.
+// runClientGetRequest creates a new offline test client wired with a fresh
+// interceptor, performs a GET request against the unreachable testUrl (so the
+// round-trip fails after the interceptor has captured the request), asserts that
+// an error occurred, and returns the client and its interceptor.
 func runClientGetRequest(t *testing.T, path string, data any) (*client, *TestInterceptor) {
 	t.Helper()
-	c, interceptor := newTestClientWithInterceptor()
+	c, interceptor := newInterceptedClient(t)
 	err := c.Get(context.Background(), path, data, nil)
 	require.Error(t, err)
 	return c, interceptor
 }
 
-// runClientRequest creates a new test client, performs a request with the given method,
-// asserts that an error occurred, and returns the client and its interceptor.
+// runClientRequest creates a new offline test client wired with a fresh
+// interceptor, performs a request with the given method, asserts that an error
+// occurred, and returns the client and its interceptor.
 func runClientRequest(t *testing.T, method, path string, body any) (*client, *TestInterceptor) {
 	t.Helper()
-	c, interceptor := newTestClientWithInterceptor()
+	c, interceptor := newInterceptedClient(t)
 	err := c.Do(context.Background(), method, path, body, nil)
 	require.Error(t, err)
 	return c, interceptor
@@ -234,7 +518,7 @@ func TestRequestInterceptorBehavior(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			c, interceptor := newTestClientWithInterceptor()
+			c, interceptor := newInterceptedClient(t)
 			interceptor.failOnRequest = tc.failOnRequest
 			err := c.Get(context.Background(), "/", nil, nil)
 			require.Error(t, err)
@@ -331,11 +615,14 @@ func TestResponseDataHandling(t *testing.T) {
 	reqData := TestData{
 		Data: "request",
 	}
-	srv := runTestServer(NewStyleAPI.ApiPath + "/test")
-	c := newNewStyleClient(&ClientConfig{
-		URL:    srv.URL,
-		APIKey: "test-key",
+	cs := newControllerServer(t, route{
+		path: apiV1Path("test"),
+		fn: func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(TestData{Data: "test"})
+		},
 	})
+	c := cs.client()
 	var data TestData
 
 	// when
@@ -349,15 +636,14 @@ func TestResponseDataHandling(t *testing.T) {
 func TestCsrfHandling(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
-	// given
-	srv := runTestServer("")
+	// given: a mock controller with no data routes — the GET to the bare ApiPath is
+	// unrouted (404), but newControllerServer sets the CSRF header on EVERY reply
+	// (including the 404), so the response interceptor still captures the token and
+	// replays it on the next request.
+	cs := newControllerServer(t)
+	c := cs.clientUserPass()
 	interceptor := NewTestInterceptor()
-	c := newNewStyleClient(&ClientConfig{
-		URL:          srv.URL,
-		User:         "test-user",
-		Password:     "test-pass",
-		Interceptors: interceptor.AsList(),
-	})
+	c.AddInterceptor(interceptor)
 
 	// when
 	err := c.Get(context.Background(), "", nil, nil)
@@ -370,7 +656,7 @@ func TestCsrfHandling(t *testing.T) {
 	// when
 	err = c.Get(context.Background(), "", nil, nil)
 
-	// then
+	// then: the captured token is now replayed on the outgoing request.
 	require.Error(t, err)
 	a.Equal("csrf-token", interceptor.RequestHeader(CsrfHeader))
 }
@@ -379,12 +665,8 @@ func TestOverrideUserAgent(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
 	// given
-	interceptor := NewTestInterceptor()
-	c := newNewStyleClient(&ClientConfig{
-		URL:          testUrl,
-		APIKey:       "test-key",
-		Interceptors: interceptor.AsList(),
-		UserAgent:    "test-agent",
+	c, interceptor := newInterceptedClient(t, func(cfg *ClientConfig) {
+		cfg.UserAgent = "test-agent"
 	})
 
 	// when

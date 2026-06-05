@@ -1,0 +1,240 @@
+type Device
+  ID string json:"_id"
+  Adopted bool json:"adopted"
+  AfcEnabled bool json:"afc_enabled"
+  AtfEnabled bool json:"atf_enabled"
+  Hidden bool json:"attr_hidden"
+  HiddenID string json:"attr_hidden_id"
+  NoDelete bool json:"attr_no_delete"
+  NoEdit bool json:"attr_no_edit"
+  BandsteeringMode string json:"bandsteering_mode"
+  BaresipAuthUser string json:"baresip_auth_user"
+  BaresipEnabled bool json:"baresip_enabled"
+  BaresipExtension string json:"baresip_extension"
+  ConfigNetwork DeviceConfigNetwork json:"config_network"
+  Disabled bool json:"disabled"
+  Dot1XFallbackNetworkID string json:"dot1x_fallback_networkconf_id"
+  Dot1XPortctrlEnabled bool json:"dot1x_portctrl_enabled"
+  DPIEnabled bool json:"dpi_enabled"
+  EtherLighting DeviceEtherLighting json:"ether_lighting"
+  EthernetOverrides []DeviceEthernetOverrides json:"ethernet_overrides"
+  FanModeOverride string json:"fan_mode_override"
+  FlowctrlEnabled bool json:"flowctrl_enabled"
+  GatewayVrrpMode string json:"gateway_vrrp_mode"
+  GatewayVrrpPriority int json:"gateway_vrrp_priority" unmarshalType:emptyStringInt
+  GreenApEnabled bool json:"green_ap_enabled"
+  HardwareOffload bool json:"hardware_offload"
+  HeightInMeters float64 json:"heightInMeters"
+  Hostname string json:"hostname"
+  JumboframeEnabled bool json:"jumboframe_enabled"
+  LcmBrightness int json:"lcm_brightness" unmarshalType:emptyStringInt
+  LcmBrightnessOverride bool json:"lcm_brightness_override"
+  LcmIDleTimeout int json:"lcm_idle_timeout" unmarshalType:emptyStringInt
+  LcmIDleTimeoutOverride bool json:"lcm_idle_timeout_override"
+  LcmNightModeBegins string json:"lcm_night_mode_begins"
+  LcmNightModeEnds string json:"lcm_night_mode_ends"
+  LcmOrientationOverride int json:"lcm_orientation_override" unmarshalType:emptyStringInt
+  LcmSettingsRestrictedAccess bool json:"lcm_settings_restricted_access"
+  LcmTrackerEnabled bool json:"lcm_tracker_enabled"
+  LcmTrackerSeed string json:"lcm_tracker_seed"
+  LedOverride string json:"led_override"
+  LedOverrideColor string json:"led_override_color"
+  LedOverrideColorBrightness int json:"led_override_color_brightness" unmarshalType:emptyStringInt
+  Locked bool json:"locked"
+  LowpfmodeOverride bool json:"lowpfmode_override"
+  LteApn string json:"lte_apn"
+  LteAuthType string json:"lte_auth_type"
+  LteDataLimitEnabled bool json:"lte_data_limit_enabled"
+  LteDataWarningEnabled bool json:"lte_data_warning_enabled"
+  LteExtAnt bool json:"lte_ext_ant" unmarshalType:booleanishString
+  LteHardLimit int json:"lte_hard_limit" unmarshalType:emptyStringInt
+  LtePassword string json:"lte_password"
+  LtePoe bool json:"lte_poe" unmarshalType:booleanishString
+  LteRoamingAllowed bool json:"lte_roaming_allowed"
+  LteSimPin int json:"lte_sim_pin" unmarshalType:emptyStringInt
+  LteSoftLimit int json:"lte_soft_limit" unmarshalType:emptyStringInt
+  LteUsername string json:"lte_username"
+  MAC string json:"mac"
+  MapID string json:"map_id"
+  MbbOverrides DeviceMbbOverrides json:"mbb_overrides"
+  MeshStaVapEnabled bool json:"mesh_sta_vap_enabled"
+  MgmtNetworkID string json:"mgmt_network_id"
+  Model string json:"model"
+  Name string json:"name"
+  NutServer DeviceNutServer json:"nut_server"
+  OutdoorModeOverride string json:"outdoor_mode_override"
+  OutletEnabled bool json:"outlet_enabled"
+  OutletOverrides []DeviceOutletOverrides json:"outlet_overrides"
+  OutletPowerCycleEnabled bool json:"outlet_power_cycle_enabled"
+  PeerToPeerMode string json:"peer_to_peer_mode"
+  PoeMode string json:"poe_mode"
+  PortOverrides []DevicePortOverrides json:"port_overrides"
+  PowerSourceCtrl string json:"power_source_ctrl"
+  PowerSourceCtrlBudget int json:"power_source_ctrl_budget" unmarshalType:emptyStringInt
+  PowerSourceCtrlEnabled bool json:"power_source_ctrl_enabled"
+  PtmpApMAC string json:"ptmp_ap_mac"
+  PtpApMAC string json:"ptp_ap_mac"
+  RadioTable []DeviceRadioTable json:"radio_table"
+  RADIUSProfileID string json:"radiusprofile_id"
+  ResetbtnEnabled string json:"resetbtn_enabled"
+  RpsOverride DeviceRpsOverride json:"rps_override"
+  SiteID string json:"site_id"
+  SnmpContact string json:"snmp_contact"
+  SnmpLocation string json:"snmp_location"
+  State DeviceState json:"state"
+  StationMode string json:"station_mode"
+  StpPriority string json:"stp_priority" unmarshalType:numberOrString
+  StpVersion string json:"stp_version"
+  SwitchVLANEnabled bool json:"switch_vlan_enabled"
+  Type string json:"type"
+  UbbPairName string json:"ubb_pair_name"
+  Volume int json:"volume" unmarshalType:emptyStringInt
+  X float64 json:"x"
+  XBaresipPassword string json:"x_baresip_password"
+  Y float64 json:"y"
+type DeviceConfigNetwork
+  BondingEnabled bool json:"bonding_enabled"
+  DNS1 string json:"dns1"
+  DNS2 string json:"dns2"
+  DNSsuffix string json:"dnssuffix"
+  Gateway string json:"gateway"
+  IP string json:"ip"
+  Netmask string json:"netmask"
+  Type string json:"type"
+type DeviceCurrentApn
+  Apn string json:"apn"
+  AuthType string json:"auth_type"
+  Password string json:"password"
+  PDpType string json:"pdp_type"
+  Roaming bool json:"roaming"
+  Username string json:"username"
+type DeviceEtherLighting
+  Behavior string json:"behavior"
+  Brightness int json:"brightness" unmarshalType:emptyStringInt
+  LedMode string json:"led_mode"
+  Mode string json:"mode"
+type DeviceEthernetOverrides
+  Disabled bool json:"disabled"
+  Ifname string json:"ifname"
+  NetworkGroup string json:"networkgroup"
+type DeviceMbbOverrides
+  PrimarySlot int json:"primary_slot" unmarshalType:emptyStringInt
+  Sim []DeviceSim json:"sim"
+type DeviceNutServer
+  CredentialRequired bool json:"credential_required"
+  Enabled bool json:"enabled"
+  ID string json:"id"
+  Password string json:"password"
+  Port int json:"port" unmarshalType:emptyStringInt
+  Username string json:"username"
+type DeviceOutletOverrides
+  CycleEnabled bool json:"cycle_enabled"
+  Index int json:"index" unmarshalType:emptyStringInt
+  Name string json:"name"
+  RelayState bool json:"relay_state"
+type DevicePortOverrides
+  AggregateMembers []int json:"aggregate_members" unmarshalType:emptyStringInt
+  Autoneg bool json:"autoneg"
+  Dot1XCtrl string json:"dot1x_ctrl"
+  Dot1XIDleTimeout int json:"dot1x_idle_timeout" unmarshalType:emptyStringInt
+  EgressRateLimitKbps int json:"egress_rate_limit_kbps" unmarshalType:emptyStringInt
+  EgressRateLimitKbpsEnabled bool json:"egress_rate_limit_kbps_enabled"
+  ExcludedNetworkIDs []string json:"excluded_networkconf_ids"
+  FecMode string json:"fec_mode"
+  FlowControlEnabled bool json:"flow_control_enabled"
+  Forward string json:"forward"
+  FullDuplex bool json:"full_duplex"
+  Isolation bool json:"isolation"
+  LldpmedEnabled bool json:"lldpmed_enabled"
+  LldpmedNotifyEnabled bool json:"lldpmed_notify_enabled"
+  MirrorPortIDX int json:"mirror_port_idx" unmarshalType:emptyStringInt
+  MulticastRouterNetworkIDs []string json:"multicast_router_networkconf_ids"
+  Name string json:"name"
+  NATiveNetworkID string json:"native_networkconf_id"
+  OpMode string json:"op_mode"
+  PoeMode string json:"poe_mode"
+  PortIDX int json:"port_idx" unmarshalType:emptyStringInt
+  PortKeepaliveEnabled bool json:"port_keepalive_enabled"
+  PortSecurityEnabled bool json:"port_security_enabled"
+  PortSecurityMACAddress []string json:"port_security_mac_address"
+  PortProfileID string json:"portconf_id"
+  PriorityQueue1Level int json:"priority_queue1_level" unmarshalType:emptyStringInt
+  PriorityQueue2Level int json:"priority_queue2_level" unmarshalType:emptyStringInt
+  PriorityQueue3Level int json:"priority_queue3_level" unmarshalType:emptyStringInt
+  PriorityQueue4Level int json:"priority_queue4_level" unmarshalType:emptyStringInt
+  QOSProfile DeviceQOSProfile json:"qos_profile"
+  SettingPreference string json:"setting_preference"
+  Speed int json:"speed" unmarshalType:emptyStringInt
+  StormctrlBroadcastastEnabled bool json:"stormctrl_bcast_enabled"
+  StormctrlBroadcastastLevel int json:"stormctrl_bcast_level" unmarshalType:emptyStringInt
+  StormctrlBroadcastastRate int json:"stormctrl_bcast_rate" unmarshalType:emptyStringInt
+  StormctrlMcastEnabled bool json:"stormctrl_mcast_enabled"
+  StormctrlMcastLevel int json:"stormctrl_mcast_level" unmarshalType:emptyStringInt
+  StormctrlMcastRate int json:"stormctrl_mcast_rate" unmarshalType:emptyStringInt
+  StormctrlType string json:"stormctrl_type"
+  StormctrlUcastEnabled bool json:"stormctrl_ucast_enabled"
+  StormctrlUcastLevel int json:"stormctrl_ucast_level" unmarshalType:emptyStringInt
+  StormctrlUcastRate int json:"stormctrl_ucast_rate" unmarshalType:emptyStringInt
+  StpPortMode bool json:"stp_port_mode"
+  TaggedVLANMgmt string json:"tagged_vlan_mgmt"
+  VoiceNetworkID string json:"voice_networkconf_id"
+type DeviceQOSMarking
+  CosCode int json:"cos_code" unmarshalType:emptyStringInt
+  DscpCode int json:"dscp_code" unmarshalType:emptyStringInt
+  IPPrecedenceCode int json:"ip_precedence_code" unmarshalType:emptyStringInt
+  Queue int json:"queue" unmarshalType:emptyStringInt
+type DeviceQOSMatching
+  CosCode int json:"cos_code" unmarshalType:emptyStringInt
+  DscpCode int json:"dscp_code" unmarshalType:emptyStringInt
+  DstPort int json:"dst_port" unmarshalType:emptyStringInt
+  IPPrecedenceCode int json:"ip_precedence_code" unmarshalType:emptyStringInt
+  Protocol string json:"protocol"
+  SrcPort int json:"src_port" unmarshalType:emptyStringInt
+type DeviceQOSPolicies
+  QOSMarking DeviceQOSMarking json:"qos_marking"
+  QOSMatching DeviceQOSMatching json:"qos_matching"
+type DeviceQOSProfile
+  QOSPolicies []DeviceQOSPolicies json:"qos_policies"
+  QOSProfileMode string json:"qos_profile_mode"
+type DeviceRadioIDentifiers
+  DeviceID string json:"device_id"
+  RadioName string json:"radio_name"
+type DeviceRadioTable
+  AntennaGain int json:"antenna_gain" unmarshalType:emptyStringInt
+  AntennaID int json:"antenna_id" unmarshalType:emptyStringInt
+  AssistedRoamingEnabled bool json:"assisted_roaming_enabled"
+  AssistedRoamingRssi int json:"assisted_roaming_rssi" unmarshalType:emptyStringInt
+  Channel string json:"channel" unmarshalType:numberOrString
+  Dfs bool json:"dfs"
+  HardNoiseFloorEnabled bool json:"hard_noise_floor_enabled"
+  Ht int json:"ht" unmarshalType:emptyStringInt
+  LoadbalanceEnabled bool json:"loadbalance_enabled"
+  Maxsta int json:"maxsta" unmarshalType:emptyStringInt
+  MinRssi int json:"min_rssi" unmarshalType:emptyStringInt
+  MinRssiEnabled bool json:"min_rssi_enabled"
+  Name string json:"name"
+  Radio string json:"radio"
+  RadioIDentifiers []DeviceRadioIDentifiers json:"radio_identifiers"
+  SensLevel int json:"sens_level" unmarshalType:emptyStringInt
+  SensLevelEnabled bool json:"sens_level_enabled"
+  TxPower string json:"tx_power" unmarshalType:numberOrString
+  TxPowerMode string json:"tx_power_mode"
+  VwireEnabled bool json:"vwire_enabled"
+type DeviceRpsOverride
+  PowerManagementMode string json:"power_management_mode"
+  RpsPortTable []DeviceRpsPortTable json:"rps_port_table"
+type DeviceRpsPortTable
+  Name string json:"name"
+  PortIDX int json:"port_idx" unmarshalType:emptyStringInt
+  PortMode string json:"port_mode"
+type DeviceSim
+  CurrentApn DeviceCurrentApn json:"current_apn"
+  DataHardLimitBytes int json:"data_hard_limit_bytes" unmarshalType:emptyStringInt
+  DataLimitEnabled bool json:"data_limit_enabled"
+  DataSoftLimitBytes int json:"data_soft_limit_bytes" unmarshalType:emptyStringInt
+  DataSoftLimitDisplayUnit string json:"data_soft_limit_display_unit"
+  DataWarningThreshold int json:"data_warning_threshold" unmarshalType:emptyStringInt
+  ResetDate int json:"reset_date" unmarshalType:emptyStringInt
+  ResetPolicy string json:"reset_policy"
+  Slot int json:"slot" unmarshalType:emptyStringInt
+  UseCustomApn bool json:"use_custom_apn"

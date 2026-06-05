@@ -44,8 +44,26 @@ type APIPaths struct {
 	UploadPath string
 }
 
+// OldStyleAPI and NewStyleAPI are the canonical path sets for the two controller
+// API styles. They are compared by POINTER IDENTITY on the package-level addresses
+// (&OldStyleAPI / &NewStyleAPI) by apiStyleFromStatus, apiPathsForStyle and
+// determineApiStyle, so a *client's apiPaths can be identified back to a style.
+//
+// IMMUTABLE: treat these as read-only. Mutating a field of either corrupts every
+// client and every parallel test that shares the pointer. Code (and tests) that
+// needs an independent, mutable copy must call oldStyleAPI()/newStyleAPI(), which
+// return fresh value copies (TEST-13).
 var (
-	OldStyleAPI = APIPaths{
+	OldStyleAPI = oldStyleAPI()
+	NewStyleAPI = newStyleAPI()
+)
+
+// oldStyleAPI returns a fresh copy of the legacy (classic controller) API path
+// set. Returning a value (not a shared pointer) lets callers/tests hold an
+// independent APIPaths that can be mutated without corrupting the package-level
+// OldStyleAPI used for style identity (TEST-13).
+func oldStyleAPI() APIPaths {
+	return APIPaths{
 		ApiPath:    apiPath,
 		ApiV2Path:  apiV2Path,
 		LoginPath:  loginPath,
@@ -53,7 +71,12 @@ var (
 		LogoutPath: logoutPath,
 		UploadPath: uploadPath,
 	}
-	NewStyleAPI = APIPaths{
+}
+
+// newStyleAPI returns a fresh copy of the new (UniFi OS / proxy) API path set.
+// See oldStyleAPI for why this returns a value rather than a shared pointer.
+func newStyleAPI() APIPaths {
+	return APIPaths{
 		ApiPath:    apiPathNew,
 		ApiV2Path:  apiV2PathNew,
 		LoginPath:  loginPathNew,
@@ -61,7 +84,7 @@ var (
 		LogoutPath: logoutPath,
 		UploadPath: uploadPathNew,
 	}
-)
+}
 
 // APIStyle selects which UniFi controller API style the client should use.
 //

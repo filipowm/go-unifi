@@ -104,7 +104,12 @@ func (v *validator) RegisterCustomValidator(cv CustomValidator) error {
 	return nil
 }
 
-func newValidator() (*validator, error) {
+// newValidator builds a *validator pre-registered with the package's built-in
+// custom validators (customValidators). Any additional one-off validators passed
+// as extra are registered on top of those — WITHOUT mutating the shared
+// customValidators global, so a test can register a throwaway validator on its own
+// instance and not leak it into every other newValidator() call (TEST-13).
+func newValidator(extra ...CustomValidator) (*validator, error) {
 	validate := vd.New(vd.WithRequiredStructEnabled())
 	enLocale := en.New()
 	uni := ut.New(enLocale, enLocale)
@@ -120,6 +125,11 @@ func newValidator() (*validator, error) {
 	}
 
 	for _, customValidator := range customValidators {
+		if err = v.RegisterCustomValidator(customValidator); err != nil {
+			return nil, err
+		}
+	}
+	for _, customValidator := range extra {
 		if err = v.RegisterCustomValidator(customValidator); err != nil {
 			return nil, err
 		}

@@ -3,16 +3,60 @@ package main
 import (
 	_ "embed"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
 	"slices"
+	"sort"
 	"strconv"
 	"strings"
 
 	"github.com/iancoleman/strcase"
 )
+
+// strictEnvVar, when set to a truthy value, promotes every dropped field
+// (failed type inference) and every CamelCase field-name collision from a WARN
+// into a hard generation error. It is OFF by default so the daily auto-regen
+// keeps its current best-effort behavior; CI can opt in by exporting the var.
+const strictEnvVar = "UNIFI_CODEGEN_STRICT"
+
+// strictMode reports whether strict generation is enabled via the environment.
+// Accepted truthy values: "1", "true", "yes", "on" (case-insensitive).
+func strictMode() bool {
+	switch strings.ToLower(strings.TrimSpace(os.Getenv(strictEnvVar))) {
+	case "1", "true", "yes", "on":
+		return true
+	default:
+		return false
+	}
+}
+
+// strictViolationError wraps a dropped-field or field-collision error produced under
+// strict mode. It lets the file-processing loop distinguish a strict policy
+// failure (which must abort the whole generation) from an ordinary per-file
+// error like malformed JSON (which is still skipped with a warning). Detected
+// with errors.As.
+type strictViolationError struct {
+	err error
+}
+
+func (e *strictViolationError) Error() string { return e.err.Error() }
+func (e *strictViolationError) Unwrap() error { return e.err }
+
+// sortedKeys returns the keys of a string-keyed map in deterministic (sorted)
+// order. Ranging over this instead of the raw map makes field processing —
+// including collision resolution and the resulting generated output —
+// reproducible run-to-run regardless of Go's randomized map iteration order.
+func sortedKeys[V any](m map[string]V) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
+}
 
 type replacement struct {
 	Old string
@@ -85,11 +129,22 @@ var fileReps = []replacement{
 type FieldProcessor func(name string, f *FieldInfo) error
 
 type Resource struct {
-	StructName     string
-	ResourcePath   string
+	StructName   string
+	ResourcePath string
+	// QueryString is the URL-encoded query parameters (without a leading "?")
+	// declared via customizations.yml queryParams, e.g. "includeSystemFeatures=true".
+	// It is appended AFTER the id segment on id-suffixed URLs so the id never lands
+	// behind the query string. Empty when the resource declares no query params.
+	// See ARCH-19.
+	QueryString    string
 	Types          map[string]*FieldInfo
 	FieldProcessor FieldProcessor
 	V2             bool
+	// logger receives this resource's generation diagnostics (dropped-field and
+	// collision warnings). It is injected by buildResourcesFromDownloadedFields;
+	// when nil (e.g. a Resource built directly in a test), log() falls back to
+	// the package-global logger. See TEST-13.
+	logger Logger
 }
 
 func NewResource(structName string, resourcePath string) *Resource {
@@ -178,6 +233,17 @@ func (r *Resource) Name() string {
 	return r.StructName
 }
 
+// QuerySuffix returns the query string ready to splice into a URL format string:
+// "?a=1&b=2" when query params are declared, or "" otherwise. Templates append
+// this AFTER the id segment so an id never lands behind the query string. See
+// ARCH-19.
+func (r *Resource) QuerySuffix() string {
+	if r.QueryString == "" {
+		return ""
+	}
+	return "?" + r.QueryString
+}
+
 //go:embed api.go.tmpl
 var apiGoTemplate string
 
@@ -191,16 +257,92 @@ func (r *Resource) GenerateCode() (string, error) {
 	return generateCodeFromTemplate("api.go.tmpl", apiGoTemplate, r)
 }
 
-func (r *Resource) processFields(fields map[string]any) {
+// log returns the resource's injected logger, or the package-global fallback
+// when none was set. Keeping access behind this accessor lets directly-built
+// Resource values (tests) log without panicking on a nil field. See TEST-13.
+func (r *Resource) log() Logger {
+	return orDefaultLogger(r.logger)
+}
+
+// validateResourcePath guards against the ARCH-19 footgun: a query string smuggled
+// into ResourcePath ("described-features?includeSystemFeatures=true") makes the
+// id-suffixed get/update/delete templates emit ".../described-features?q=1/%s",
+// where the id lands AFTER the query string — a never-correct URL. The first-class
+// fix is the queryParams customization (rendered via QuerySuffix); this guard
+// ensures nobody re-introduces the raw "?" form. In strict mode it is a hard
+// error; otherwise it warns. It is intentionally unconditional: even list-only
+// resources should migrate to queryParams rather than rely on the query happening
+// to terminate the URL cleanly.
+func (r *Resource) validateResourcePath() error {
+	if !strings.Contains(r.ResourcePath, "?") {
+		return nil
+	}
+	msg := fmt.Sprintf("resource %s: resourcePath %q contains a raw query string; use the queryParams customization instead so id-suffixed URLs stay well-formed (see ARCH-19)",
+		r.StructName, r.ResourcePath)
+	if strictMode() {
+		return &strictViolationError{errors.New(msg)}
+	}
+	r.log().Warnf("%s", msg)
+	return nil
+}
+
+func (r *Resource) processFields(fields map[string]any) error {
 	t := r.Types[r.StructName]
-	for name, validation := range fields {
+	// Process JSON keys in deterministic (sorted) order so collision resolution
+	// and the resulting field map are reproducible run-to-run (Go randomizes map
+	// iteration). See ARCH-14.
+	for _, name := range sortedKeys(fields) {
+		validation := fields[name]
 		fieldInfo, err := r.fieldInfoFromValidation(name, validation, false)
 		if err != nil {
+			if dropErr := r.reportDroppedField(name, validation, err); dropErr != nil {
+				return dropErr
+			}
 			continue
+		}
+
+		if collErr := r.reportFieldNameCollision(t.Fields, fieldInfo); collErr != nil {
+			return collErr
 		}
 
 		t.Fields[fieldInfo.FieldName] = fieldInfo
 	}
+	return nil
+}
+
+// reportDroppedField records that the field named jsonKey could not be inferred
+// and is being dropped from the generated struct. In strict mode it returns a
+// hard error (failing generation); otherwise it logs a WARN and returns nil so
+// the caller skips only this field. The raw validation is included so a human
+// (or CI) can see exactly what shape was unrecognized.
+func (r *Resource) reportDroppedField(jsonKey string, validation any, err error) error {
+	if strictMode() {
+		return &strictViolationError{fmt.Errorf("resource %s: dropping field %q (validation %#v): %w", r.StructName, jsonKey, validation, err)}
+	}
+	r.log().Warnf("resource %s: dropping field %q (validation %#v): %s", r.StructName, jsonKey, validation, err)
+	return nil
+}
+
+// reportFieldNameCollision detects when fieldInfo's derived Go FieldName already
+// exists in fields under a DIFFERENT JSONName — i.e. two distinct controller
+// JSON keys normalized (strcase.ToCamel + cleanName acronym substitution) to the
+// same exported identifier, so assigning the second would silently overwrite the
+// first and lose a field + its json tag. In strict mode this is a hard error;
+// otherwise it logs a WARN. The deterministic key sort in the callers guarantees
+// which JSON key is processed first, so the surviving (overwritten) winner is
+// stable across runs. Returns nil when there is no collision.
+func (r *Resource) reportFieldNameCollision(fields map[string]*FieldInfo, fieldInfo *FieldInfo) error {
+	existing, ok := fields[fieldInfo.FieldName]
+	if !ok || existing == nil || existing.JSONName == fieldInfo.JSONName {
+		return nil
+	}
+	if strictMode() {
+		return &strictViolationError{fmt.Errorf("resource %s: CamelCase collision on Go field %q between JSON keys %q and %q",
+			r.StructName, fieldInfo.FieldName, existing.JSONName, fieldInfo.JSONName)}
+	}
+	r.log().Warnf("resource %s: CamelCase collision on Go field %q between JSON keys %q and %q (the latter overwrites the former)",
+		r.StructName, fieldInfo.FieldName, existing.JSONName, fieldInfo.JSONName)
+	return nil
 }
 
 func (r *Resource) fieldInfoFromValidation(name string, validation any, isArray bool) (*FieldInfo, error) {
@@ -251,10 +393,24 @@ func (r *Resource) fieldInfoFromMap(fieldName, name string, validation map[strin
 	result := NewFieldInfo(fieldName, name, typeName, "", "", true, false, "")
 	result.Fields = make(map[string]*FieldInfo)
 
-	for name, fv := range validation {
-		child, err := r.fieldInfoFromValidation(name, fv, false)
+	// Process nested keys in deterministic (sorted) order, mirroring
+	// processFields, so nested-struct field ordering and collision resolution are
+	// reproducible. See ARCH-14.
+	for _, childName := range sortedKeys(validation) {
+		fv := validation[childName]
+		child, err := r.fieldInfoFromValidation(childName, fv, false)
 		if err != nil {
-			return empty, err
+			// Skip ONLY the failing nested child rather than discarding the whole
+			// nested struct and its siblings (the old behavior). In strict mode the
+			// drop is promoted to a hard error.
+			if dropErr := r.reportDroppedField(typeName+"."+childName, fv, err); dropErr != nil {
+				return empty, dropErr
+			}
+			continue
+		}
+
+		if collErr := r.reportFieldNameCollision(result.Fields, child); collErr != nil {
+			return empty, collErr
 		}
 
 		result.Fields[child.FieldName] = child
@@ -279,7 +435,7 @@ func (r *Resource) fieldInfoFromString(fieldName, name, validation string, isArr
 	}
 
 	if validation != "" && normalized != "" {
-		log.Tracef("normalize %q to %q", validation, normalized)
+		r.log().Tracef("normalize %q to %q", validation, normalized)
 	}
 
 	fieldValidation := defineFieldValidation(fieldValidationComment, isArray)
@@ -326,9 +482,7 @@ func (r *Resource) processJSON(b []byte) error {
 		return err
 	}
 
-	r.processFields(fields)
-
-	return nil
+	return r.processFields(fields)
 }
 
 func normalizeValidation(re string) string {
@@ -353,7 +507,8 @@ func normalizeValidation(re string) string {
 
 var skippable = []string{"AuthenticationRequest.json", "Setting.json", "Wall.json"}
 
-func buildResourcesFromDownloadedFields(fieldsDir string, customizer CodeCustomizer, v2 bool) ([]*Resource, error) {
+func buildResourcesFromDownloadedFields(fieldsDir string, customizer CodeCustomizer, v2 bool, logger Logger) ([]*Resource, error) {
+	logger = orDefaultLogger(logger)
 	fieldsFiles, err := os.ReadDir(fieldsDir)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read fields directory %s: %w", fieldsDir, err)
@@ -368,7 +523,7 @@ func buildResourcesFromDownloadedFields(fieldsDir string, customizer CodeCustomi
 		if slices.Contains(skippable, name) || ext != ".json" {
 			continue
 		}
-		log.Debugf("Processing %s...", fieldsFile.Name())
+		logger.Debugf("Processing %s...", fieldsFile.Name())
 		name = name[:len(name)-len(ext)]
 
 		urlPath := strings.ToLower(name)
@@ -377,17 +532,35 @@ func buildResourcesFromDownloadedFields(fieldsDir string, customizer CodeCustomi
 		fieldsFilePath := filepath.Join(fieldsDir, fieldsFile.Name())
 		b, err := os.ReadFile(fieldsFilePath)
 		if err != nil {
-			log.Warnf("skipping file %s: %s", fieldsFile.Name(), err)
+			logger.Warnf("skipping file %s: %s", fieldsFile.Name(), err)
 			continue
 		}
 
 		resource := NewResource(structName, urlPath)
+		resource.logger = logger
 		customizeResource(resource, v2)
 		customizer.ApplyToResource(resource)
 
+		// Guard against a raw query string smuggled into resourcePath, which would
+		// emit malformed id-suffixed URLs (id after the query). See ARCH-19.
+		if err = resource.validateResourcePath(); err != nil {
+			var sv *strictViolationError
+			if errors.As(err, &sv) {
+				return nil, fmt.Errorf("strict mode: %s: %w", fieldsFile.Name(), err)
+			}
+			logger.Warnf("skipping file %s: %s", fieldsFile.Name(), err)
+			continue
+		}
+
 		err = resource.processJSON(b)
 		if err != nil {
-			log.Warnf("skipping file %s: %s", fieldsFile.Name(), err)
+			// A strict-mode field-drop/collision must abort the whole generation,
+			// not be quietly skipped like a malformed-JSON file. See ARCH-14.
+			var sv *strictViolationError
+			if errors.As(err, &sv) {
+				return nil, fmt.Errorf("strict mode: %s: %w", fieldsFile.Name(), err)
+			}
+			logger.Warnf("skipping file %s: %s", fieldsFile.Name(), err)
 			continue
 		}
 		resources = append(resources, resource)
@@ -395,8 +568,8 @@ func buildResourcesFromDownloadedFields(fieldsDir string, customizer CodeCustomi
 	return resources, nil
 }
 
-func buildCustomResources(dir string, customizer CodeCustomizer, v2 bool) ([]*Resource, error) {
-	return buildResourcesFromDownloadedFields(dir, customizer, v2)
+func buildCustomResources(dir string, customizer CodeCustomizer, v2 bool, logger Logger) ([]*Resource, error) {
+	return buildResourcesFromDownloadedFields(dir, customizer, v2, logger)
 }
 
 func customizeBaseType(resource *Resource) {

@@ -32,11 +32,16 @@ func TestCreateUser(t *testing.T) {
 		// response is the raw JSON the mock controller returns.
 		response string
 		// status is the HTTP status; defaults to 200 when zero.
-		status     int
-		wantName   string
-		wantErr    bool
-		wantErrIs  error
+		status   int
+		wantName string
+		wantErr  bool
+		// wantErrIs, when set, asserts errors.Is(err, wantErrIs).
+		wantErrIs error
+		// wantErrMsg, when set, asserts the error message contains the substring.
 		wantErrMsg string
+		// wantServerErr, when true, asserts the error is a *ServerError (and is NOT
+		// the ErrNotFound sentinel).
+		wantServerErr bool
 	}
 
 	cases := map[string]testCase{
@@ -49,11 +54,28 @@ func TestCreateUser(t *testing.T) {
 			wantErr:    true,
 			wantErrMsg: "malformed group response",
 		},
-		"inner Meta error is surfaced": {
-			response:   `{"meta":{"rc":"ok"},"data":[{"Meta":{"rc":"error","msg":"api.err.Invalid"},"data":[]}]}`,
+		// ARCH-10/O5: the soft (HTTP 200) meta rc:error check is now centralized in
+		// handleResponse and gated on the TOP-LEVEL meta envelope. A top-level
+		// meta.rc=="error" is surfaced as a *ServerError carrying the rc/msg.
+		"top-level Meta error is surfaced": {
+			response:   `{"meta":{"rc":"error","msg":"api.err.Invalid"},"data":[]}`,
 			wantErr:    true,
 			wantErrMsg: "api.err.Invalid",
 		},
+		// ARCH-10 (restored): the centralized top-level rc:error check does not see
+		// the NESTED per-object meta (data[0].Meta). CreateUser keeps its own nested
+		// Meta.error() check, so a nested rc=="error" with empty inner data surfaces
+		// a *ServerError carrying the inner rc/msg — NOT ErrNotFound. This preserves
+		// the pre-Wave-2 behavior (eliminating the previously-documented
+		// ARCH-10-user breaking change).
+		"inner Meta error is surfaced as ServerError": {
+			response:      `{"meta":{"rc":"ok"},"data":[{"Meta":{"rc":"error","msg":"api.err.Invalid"},"data":[]}]}`,
+			wantErr:       true,
+			wantServerErr: true,
+			wantErrMsg:    "api.err.Invalid",
+		},
+		// Genuine empty inner WITHOUT a nested error (inner rc absent, inner len 0)
+		// still maps to ErrNotFound.
 		"inner data not length 1 yields ErrNotFound": {
 			response:  `{"meta":{"rc":"ok"},"data":[{"Meta":{"rc":"ok"},"data":[]}]}`,
 			wantErr:   true,
@@ -83,6 +105,11 @@ func TestCreateUser(t *testing.T) {
 				assert.Nil(t, got)
 				if tc.wantErrIs != nil {
 					require.ErrorIs(t, err, tc.wantErrIs)
+				}
+				if tc.wantServerErr {
+					var serverErr *ServerError
+					require.ErrorAs(t, err, &serverErr)
+					require.NotErrorIs(t, err, ErrNotFound, "a nested soft rc:error is NOT a 404")
 				}
 				if tc.wantErrMsg != "" {
 					require.ErrorContains(t, err, tc.wantErrMsg)

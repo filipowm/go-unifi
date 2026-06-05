@@ -5,11 +5,57 @@ import (
 	"maps"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
+	"github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// TestResourceWarningsUseInjectedLogger pins TEST-13: a Resource routes its
+// dropped-field and CamelCase-collision WARNs through its INJECTED logger, not
+// the package global, so the assertions read only this test's own hook and the
+// test is fully parallel-safe. buildResourcesFromDownloadedFields wires the
+// injected logger onto every resource it builds.
+func TestResourceWarningsUseInjectedLogger(t *testing.T) {
+	t.Parallel()
+
+	tmpDir := t.TempDir()
+	// 123 is not an inferable validation -> dropped field WARN.
+	// "id" and "i_d" both normalize to Go field "ID" -> collision WARN.
+	require.NoError(t, os.WriteFile(filepath.Join(tmpDir, "Dropper.json"), []byte(`{"bad": 123}`), 0o644))                  //nolint:gosec
+	require.NoError(t, os.WriteFile(filepath.Join(tmpDir, "Collider.json"), []byte(`{"id": "", "i_d": ".{0,32}"}`), 0o644)) //nolint:gosec
+
+	logger, hook := test.NewNullLogger()
+	logger.SetLevel(logrus.DebugLevel)
+
+	resources, err := buildResourcesFromDownloadedFields(tmpDir, CodeCustomizer{}, false, logger)
+	require.NoError(t, err)
+	require.NotEmpty(t, resources)
+
+	var warns []string
+	for _, e := range hook.AllEntries() {
+		if e.Level == logrus.WarnLevel {
+			warns = append(warns, e.Message)
+		}
+	}
+	require.NotEmpty(t, warns, "injected logger must capture resource WARNs")
+	assertContainsSubstr(t, warns, "dropping field")
+	assertContainsSubstr(t, warns, "CamelCase collision on Go field")
+}
+
+// assertContainsSubstr asserts at least one string in msgs contains substr.
+func assertContainsSubstr(t *testing.T, msgs []string, substr string) {
+	t.Helper()
+	for _, m := range msgs {
+		if strings.Contains(m, substr) {
+			return
+		}
+	}
+	t.Errorf("no logged message contained %q; got %v", substr, msgs)
+}
 
 func TestFieldInfoFromValidation(t *testing.T) {
 	t.Parallel()
@@ -403,14 +449,6 @@ func TestFieldInfoFromValidationErrors(t *testing.T) {
 			[]any{"item1", "item2"},
 			"unknown validation",
 		},
-		{
-			"invalid nested validation",
-			"field",
-			map[string]any{
-				"nested": 123,
-			},
-			"unable to determine type from validation",
-		},
 	}
 
 	for _, tc := range tests {
@@ -429,6 +467,137 @@ func TestFieldInfoFromValidationErrors(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestFieldInfoFromMapSkipsFailingChild pins ARCH-14's nested-struct robustness:
+// a single un-inferable nested child is dropped (not the whole struct + its
+// siblings). In the default (non-strict) mode the nested struct is still
+// produced, carrying every well-formed sibling, and only the bad child is
+// missing. This is the nested mirror of processFields' per-field skip.
+func TestFieldInfoFromMapSkipsFailingChild(t *testing.T) {
+	t.Parallel()
+	a := assert.New(t)
+
+	resource := NewResource("Test", "test")
+	fieldInfo, err := resource.fieldInfoFromValidation("outer", map[string]any{
+		"good":    ".{0,32}",
+		"bad":     123, // un-inferable -> dropped
+		"also_ok": "true|false",
+	}, false)
+
+	require.NoError(t, err, "non-strict mode must not error on a single bad nested child")
+	require.NotNil(t, fieldInfo)
+	a.Equal("TestOuter", fieldInfo.FieldType)
+
+	// The two well-formed siblings survive; the bad child is dropped.
+	a.NotNil(fieldByJSONName(fieldInfo.Fields, "good"), "good sibling retained")
+	a.NotNil(fieldByJSONName(fieldInfo.Fields, "also_ok"), "also_ok sibling retained")
+	a.Nil(fieldByJSONName(fieldInfo.Fields, "bad"), "bad child dropped")
+	a.Len(fieldInfo.Fields, 2, "only the two inferable children remain")
+}
+
+// TestStrictModeDroppedField pins ARCH-14's strict-mode opt-in: with
+// UNIFI_CODEGEN_STRICT set, an un-inferable field is a HARD error rather than a
+// silently-dropped WARN, both at the top level (processFields via processJSON)
+// and inside a nested struct (fieldInfoFromMap). NOT parallel: mutates a process
+// env var that strictMode() reads globally.
+func TestStrictModeDroppedField(t *testing.T) {
+	t.Setenv(strictEnvVar, "1")
+
+	t.Run("top-level field", func(t *testing.T) {
+		resource := NewResource("Test", "test")
+		err := resource.processJSON([]byte(`{"bad": 123}`))
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), `dropping field "bad"`)
+	})
+
+	t.Run("nested child", func(t *testing.T) {
+		resource := NewResource("Test", "test")
+		_, err := resource.fieldInfoFromValidation("outer", map[string]any{"bad": 123}, false)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), `dropping field "TestOuter.bad"`)
+	})
+}
+
+// TestStrictModeAbortsGeneration pins that under strict mode a field-drop in a
+// single resource file aborts the whole buildResourcesFromDownloadedFields run
+// (returns an error) instead of skipping that file, while an ordinary
+// malformed-JSON file is still skipped (parse errors are not strict violations).
+// NOT parallel: sets a process env var.
+func TestStrictModeAbortsGeneration(t *testing.T) {
+	t.Setenv(strictEnvVar, "1")
+
+	tmpDir := t.TempDir()
+	// Drops a field (123 is not an inferable validation) -> strict violation.
+	require.NoError(t, os.WriteFile(filepath.Join(tmpDir, "Dropper.json"), []byte(`{"bad": 123}`), 0o644)) //nolint:gosec
+
+	_, err := buildResourcesFromDownloadedFields(tmpDir, CodeCustomizer{}, false, nil)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "strict mode")
+	assert.Contains(t, err.Error(), "Dropper.json")
+}
+
+// TestStrictModeSkipsMalformedJSON confirms a malformed-JSON file is still a
+// per-file skip (not a strict abort) even in strict mode: a JSON parse error is
+// not a field-drop/collision strict violation. NOT parallel: env var.
+func TestStrictModeSkipsMalformedJSON(t *testing.T) {
+	t.Setenv(strictEnvVar, "1")
+
+	tmpDir := t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(tmpDir, "Bad.json"), []byte(`not json`), 0o644))             //nolint:gosec
+	require.NoError(t, os.WriteFile(filepath.Join(tmpDir, "Good.json"), []byte(`{"name": ".{0,32}"}`), 0o644)) //nolint:gosec
+
+	resources, err := buildResourcesFromDownloadedFields(tmpDir, CodeCustomizer{}, false, nil)
+	require.NoError(t, err, "malformed JSON must be skipped, not abort generation, even in strict mode")
+	assert.Len(t, resources, 1)
+	assert.Equal(t, "Good", resources[0].StructName)
+}
+
+// TestStrictModeDisabledByDefault confirms the env var is OFF unless explicitly
+// set to a truthy value, preserving the daily auto-regen's best-effort behavior.
+func TestStrictModeDisabledByDefault(t *testing.T) {
+	t.Setenv(strictEnvVar, "")
+	assert.False(t, strictMode(), "empty env var must not enable strict mode")
+	t.Setenv(strictEnvVar, "0")
+	assert.False(t, strictMode(), "0 must not enable strict mode")
+	t.Setenv(strictEnvVar, "1")
+	assert.True(t, strictMode(), "1 must enable strict mode")
+	t.Setenv(strictEnvVar, "true")
+	assert.True(t, strictMode(), "true must enable strict mode")
+}
+
+// TestFieldNameCollision pins ARCH-14's collision detection: two distinct JSON
+// keys that normalize to the SAME Go field name (e.g. "id" and "ID" both ->
+// "ID") collide. In non-strict mode the deterministic key sort decides the
+// surviving winner; in strict mode it is a hard error.
+func TestFieldNameCollision(t *testing.T) {
+	// Two JSON keys collide on Go name "Foobar":
+	//   "foobar" -> ToCamel -> "Foobar"
+	//   "foo_bar" -> ToCamel -> "FooBar" (no collision) ... so craft a real one:
+	//   "id" -> cleanName -> "ID"; "i_d" -> ToCamel -> "ID" -> collision.
+	const colliding = `{"id": "", "i_d": ".{0,32}"}`
+
+	t.Run("non-strict resolves deterministically", func(t *testing.T) {
+		resource := NewResource("Test", "test")
+		// Sorted order: "i_d" < "id". "i_d" is processed and assigned to the Go
+		// field "ID" first, then "id" collides and (in non-strict) overwrites it.
+		// The base-struct's injected ID lives under a whitespace-prefixed key and
+		// does not participate, so t.Fields["ID"] holds exactly the colliding
+		// winner — and which key wins is stable across runs.
+		err := resource.processJSON([]byte(colliding))
+		require.NoError(t, err)
+		got := resource.BaseType().Fields["ID"]
+		require.NotNil(t, got)
+		assert.Equal(t, "id", got.JSONName, "later-sorted key wins deterministically")
+	})
+
+	t.Run("strict mode errors", func(t *testing.T) {
+		t.Setenv(strictEnvVar, "1")
+		resource := NewResource("Test", "test")
+		err := resource.processJSON([]byte(colliding))
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "collision on Go field")
+	})
 }
 
 func TestBuildResourcesFromDownloadedFields(t *testing.T) {
@@ -477,7 +646,7 @@ func TestBuildResourcesFromDownloadedFields(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
-			resources, err := buildResourcesFromDownloadedFields(tc.dir, CodeCustomizer{}, false)
+			resources, err := buildResourcesFromDownloadedFields(tc.dir, CodeCustomizer{}, false, nil)
 			if tc.errorContains != "" {
 				require.ErrorContains(t, err, tc.errorContains)
 				a.Nil(resources)

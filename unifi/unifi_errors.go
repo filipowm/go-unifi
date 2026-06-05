@@ -17,13 +17,30 @@ var ErrNotFound = errors.New("not found")
 // gateway response) can never exhaust memory while we build a ServerError.
 const maxErrorBodySize = 1 << 20 // 1 MiB
 
+// maxResponseBodySize caps how much of a SUCCESS (2xx) response body we buffer
+// before decoding. The body is buffered once so it can be both probed for a v1
+// meta envelope (the rc:error soft-failure check, ARCH-10/O5) and decoded into
+// respBody without re-reading the network stream. Legitimate list endpoints can
+// be large (thousands of devices/clients), so this is far more generous than
+// maxErrorBodySize while still bounding memory against a runaway/hostile body.
+//
+// It is a var (not a const) solely so tests can temporarily lower the cap to
+// exercise the overflow path (ARCH-11) without allocating 64 MiB; the production
+// default is unchanged.
+var maxResponseBodySize = 64 << 20 // 64 MiB
+
 type Meta struct {
 	RC      string `json:"rc"`
 	Message string `json:"msg"`
 }
 
+// error reports a soft (HTTP 200) application-level failure carried in the v1
+// meta envelope. A controller signals success with rc=="ok"; an absent rc
+// (rc=="") carries no verdict and is treated as success so that a meta block
+// without an explicit rc never fabricates an error. Any other rc (in practice
+// "error") is surfaced as a *ServerError carrying the rc/msg.
 func (m *Meta) error() error {
-	if m.RC != "ok" {
+	if m.RC != "" && m.RC != "ok" {
 		return &ServerError{
 			ErrorCode: m.RC,
 			Message:   m.Message,

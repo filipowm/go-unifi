@@ -2,15 +2,23 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// offlineCacheVersion is the controller version whose JSON field cache
+// (codegen/v<version>/) is committed to the repo and used as the offline
+// fixture source for the type-signature golden. It must match the version the
+// generator is pinned to.
+const offlineCacheVersion = "9.5.21"
 
 // updateGolden, when set, rewrites the *.golden files under testdata/ from the
 // current generator output instead of asserting against them. Regenerate with:
@@ -286,4 +294,117 @@ func TestResourceGenerateCodeEndpointPaths(t *testing.T) {
 		a.Contains(line, "rest/")
 		a.Contains(line, "s/%s/rest/widget")
 	})
+}
+
+// renderTypeSignature produces a compact, deterministic, gofmt-independent
+// snapshot of a resource's INFERRED Go types: for every registered type, every
+// field's Go name, Go type, json tag name, and the flags that affect the wire
+// shape (array, custom-unmarshal type/func). It deliberately captures only what
+// ARCH-14 guards — the type each field resolves to and the set of fields present
+// — so a controller-version regex change that flips int<->float64<->string or
+// drops a field shows up as a one-line diff, while pure template/formatting
+// churn does not. Output is fully sorted (types, then fields) so it is stable
+// regardless of map iteration order.
+func renderTypeSignature(r *Resource) string {
+	var b strings.Builder
+
+	typeNames := make([]string, 0, len(r.Types))
+	for name := range r.Types {
+		typeNames = append(typeNames, name)
+	}
+	sort.Strings(typeNames)
+
+	for _, typeName := range typeNames {
+		t := r.Types[typeName]
+		fmt.Fprintf(&b, "type %s\n", typeName)
+
+		// Sort the fields by JSONName (the wire identity) so the snapshot does not
+		// depend on the whitespace-prefixed map keys the base struct uses.
+		fields := make([]*FieldInfo, 0, len(t.Fields))
+		for _, f := range t.Fields {
+			if f == nil { // spacer entries
+				continue
+			}
+			fields = append(fields, f)
+		}
+		sort.Slice(fields, func(i, j int) bool {
+			if fields[i].JSONName != fields[j].JSONName {
+				return fields[i].JSONName < fields[j].JSONName
+			}
+			return fields[i].FieldName < fields[j].FieldName
+		})
+
+		for _, f := range fields {
+			goType := f.FieldType
+			if f.IsArray {
+				goType = "[]" + goType
+			}
+			line := fmt.Sprintf("  %s %s json:%q", f.FieldName, goType, f.JSONName)
+			if f.CustomUnmarshalType != "" {
+				line += " unmarshalType:" + f.CustomUnmarshalType
+			}
+			if f.CustomUnmarshalFunc != "" {
+				line += " unmarshalFunc:" + f.CustomUnmarshalFunc
+			}
+			b.WriteString(line)
+			b.WriteByte('\n')
+		}
+	}
+	return b.String()
+}
+
+// buildResourceFromCache reconstructs a single resource through the REAL
+// generation pipeline (buildResourcesFromDownloadedFields over the committed
+// offline cache + the production customizations.yml), so the snapshot reflects
+// exactly what the generator would emit — including customizations like
+// Device.LtePoe's booleanishString unmarshal. It is the offline fixture path the
+// orchestrator pins; no network is touched.
+func buildResourceFromCache(t *testing.T, structName string) *Resource {
+	t.Helper()
+
+	customizer, err := NewCodeCustomizer(defaultCustomizationsPath)
+	require.NoError(t, err)
+
+	cacheDir := filepath.Join("v"+offlineCacheVersion, "")
+	resources, err := buildResourcesFromDownloadedFields(cacheDir, *customizer, false, nil)
+	require.NoError(t, err)
+
+	for _, r := range resources {
+		if r.StructName == structName {
+			return r
+		}
+	}
+	t.Fatalf("resource %q not found in offline cache %s", structName, cacheDir)
+	return nil
+}
+
+// TestResourceTypeSignatureGolden is ARCH-14's type-flip / dropped-field guard.
+// It snapshots the inferred Go type signature of representative resources built
+// from the committed offline 9.5.21 cache and diffs against a checked-in golden.
+// A controller-version regex change that flips a field's Go type
+// (int<->float64<->string) or drops a field is caught here in CI before it can
+// ship via the daily auto-regen PR. Regenerate after an intentional change with:
+//
+//	go test ./codegen/ -run TestResourceTypeSignatureGolden -update-golden
+//
+// NOT parallel: with -update-golden it writes shared files.
+//
+// Device is the representative resource: it exercises string/int(emptyStringInt)/
+// float64/bool, the customizations.yml booleanishString override (LtePoe/
+// LteExtAnt), and nested structs — the full inference + customization matrix.
+func TestResourceTypeSignatureGolden(t *testing.T) {
+	cases := map[string]struct {
+		structName string
+	}{
+		"device": {structName: "Device"},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			r := buildResourceFromCache(t, tc.structName)
+			sig := renderTypeSignature(r)
+			require.NotEmpty(t, sig)
+			assertGolden(t, "type_signature_"+name, sig)
+		})
+	}
 }

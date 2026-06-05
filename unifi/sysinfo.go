@@ -116,10 +116,19 @@ func (c *client) getOldSysInfo(ctx context.Context) (*SysInfo, error) {
 }
 
 // GetSystemInformation retrieves system information, trying the new API first and falling back to the old API if necessary.
+// It derives a fresh request context honoring the client-wide timeout and delegates to GetSystemInformationContext.
 func (c *client) GetSystemInformation() (*SysInfo, error) {
-	c.Trace("Reading system information")
 	ctx, cancel := c.newRequestContext()
 	defer cancel()
+	return c.GetSystemInformationContext(ctx)
+}
+
+// GetSystemInformationContext retrieves system information using the supplied context for
+// cancellation/deadline, trying the new API first and falling back to the old API if necessary.
+// The passed ctx is threaded through to the underlying HTTP calls so a cancelled or expired
+// context aborts the request.
+func (c *client) GetSystemInformationContext(ctx context.Context) (*SysInfo, error) {
+	c.Trace("Reading system information")
 
 	var resultingError error
 	info, err := c.GetSystemInfo(ctx, "default")

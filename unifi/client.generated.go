@@ -26,8 +26,14 @@ type Client interface {
 	// Login logs in to the controller. Useful only for user/password authentication.
 	Login() error
 
+	// LoginContext logs in to the controller using the supplied context for cancellation/deadline. Useful only for user/password authentication.
+	LoginContext(ctx context.Context) error
+
 	// Logout logs out from the controller.
 	Logout() error
+
+	// LogoutContext logs out from the controller using the supplied context for cancellation/deadline.
+	LogoutContext(ctx context.Context) error
 
 	// Post sends a POST request to the controller.
 	Post(ctx context.Context, apiPath string, reqBody any, respBody any) error
@@ -37,6 +43,9 @@ type Client interface {
 
 	// Version returns the version of the UniFi Controller API.
 	Version() string
+
+	// VersionContext returns the version of the UniFi Controller API using the supplied context, surfacing any fetch error instead of swallowing it.
+	VersionContext(ctx context.Context) (string, error)
 
 	// ==== client methods for APGroup resource ====
 
@@ -1052,6 +1061,9 @@ type Client interface {
 	GetSystemInfo(ctx context.Context, id string) (*SysInfo, error)
 
 	GetSystemInformation() (*SysInfo, error)
+
+	// GetSystemInformationContext retrieves system information using the supplied context for cancellation/deadline.
+	GetSystemInformationContext(ctx context.Context) (*SysInfo, error)
 
 	// ==== client methods for Tag resource ====
 

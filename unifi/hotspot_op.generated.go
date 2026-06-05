@@ -98,8 +98,12 @@ func (c *client) createHotspotOp(ctx context.Context, site string, d *HotspotOp)
 		return nil, err
 	}
 
+	// A successful create must echo back exactly the one resource it created.
+	// Anything else is an unexpected response shape, NOT a "not found" — so we
+	// return a descriptive error rather than ErrNotFound, which is reserved for
+	// the get/list-single path. See ARCH-13.
 	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
+		return nil, fmt.Errorf("unexpected response: expected 1 HotspotOp, got %d", len(respBody.Data))
 	}
 
 	newResource := respBody.Data[0]
@@ -118,8 +122,12 @@ func (c *client) updateHotspotOp(ctx context.Context, site string, d *HotspotOp)
 		return nil, err
 	}
 
+	// A successful update must echo back exactly the one resource it updated.
+	// Anything else is an unexpected response shape, NOT a "not found" — so we
+	// return a descriptive error rather than ErrNotFound, which is reserved for
+	// the get/list-single path. See ARCH-13.
 	if len(respBody.Data) != 1 {
-		return nil, ErrNotFound
+		return nil, fmt.Errorf("unexpected response: expected 1 HotspotOp, got %d", len(respBody.Data))
 	}
 
 	updatedResource := respBody.Data[0]
