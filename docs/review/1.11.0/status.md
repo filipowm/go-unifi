@@ -4,7 +4,7 @@
 [1.11.0 review](summary.md). Read this first, then [plan.md](plan.md), [architect-review.md](architect-review.md),
 [test-review.md](test-review.md), [breaking_changes.md](breaking_changes.md), [implementation-log.md](implementation-log.md).
 
-**Last updated:** after Wave 1 completed and was committed. **Next action: Wave 2.**
+**Last updated:** after Wave 2 completed and was committed (`d8f5f25`). **Next action: final whole-codebase review (process contract §2.8), then closing summary.**
 
 ---
 
@@ -15,7 +15,7 @@ Implement the review findings as a phased, workflow-orchestrated effort.
 - **In scope:** all **P0, P1, P2** findings.
 - **Discarded:** all **P3** findings (ARCH-23..31, TEST-17..20). Do NOT implement them.
 - **Skipped (user decision):** **ARCH-12** (the L-effort codegen-emit-wrappers refactor). There is **no Wave 3**.
-- Net: Wave 0 (P0) ✅ done · Wave 1 (P1) ✅ done · **Wave 2 (P2) ← do this next** · then a final whole-codebase review.
+- Net: Wave 0 (P0) ✅ done · Wave 1 (P1) ✅ done · Wave 2 (P2) ✅ done (`d8f5f25`) · **final whole-codebase review ← do this next**.
 
 ## 2. Process contract (user's binding requirements — follow exactly)
 
@@ -70,7 +70,14 @@ ARCH-04/05/06/07/08/22 + TEST-02/03/04/05/06/07/08/09/10 + ARCH-17. See [impleme
 - Verify all-green; architect + test-lead reviewed (no regressions); 1 major remediated. Deferred minors logged in implementation-log.md.
 - New seams a Wave-2 author should reuse: **`ClientConfig.APIStyle` offline-construction override**, the wrapper **`testhelpers_test.go`** + `newTestClient`/RoundTripper pattern, the moq **`ClientMock`** (`unifi/client_mock.generated.go`, regen via `//go:generate` in `unifi/mock.go`), the injectable `*http.Client` in `codegen` download pipeline, and `go test -short ./codegen` offline gating.
 
-## 7. Wave 2 — TODO (P2 quality & codegen robustness, ~17 findings)
+### Wave 2 — P2 quality & codegen robustness ✅ (single atomic code commit `d8f5f25`; HEAD after docs commit)
+ARCH-09/10/11/13/14/15/16/18/19/20/21 + TEST-11/12/13/14/15/16. See [implementation-log.md](implementation-log.md) for detail.
+- **Breaking (documented):** ARCH-13 (generated create/update no longer return `ErrNotFound`); ARCH-18 (`AddInterceptor` value sig + concrete-type dedup); TEST-15 (Client interface +4 `*Context` methods); ARCH-10 (HTTP 200 `meta.rc=="error"` → `*ServerError`); internal ARCH-15 (`DownloadAndExtract` gains ctx).
+- Verify 8/8 all-green (regen + mock idempotency gates); architect + test-lead reviewed (no regressions); 1 major remediated in-workflow + 5 high-value minors/1 regression remediated in a follow-up workflow. Coverage unifi 9.1%→10.6%, codegen 83.5%→84.4%.
+- **Why one commit:** TEST-14's helper consolidation + the regenerated interface (TEST-15) couple the whole `unifi` test/impl surface and the generated tree into one build-green unit. moq pre-installed at `/Users/filipowm/go/bin/moq` (v0.7.1) → offline mock regen.
+- Deferred nits (documented, low value) in implementation-log.md.
+
+## 7. Wave 2 — DONE (P2 quality & codegen robustness, ~17 findings) ✅
 
 Findings (full text in [architect-review.md](architect-review.md)/[test-review.md](test-review.md)):
 **ARCH-09** constructor mutates caller `ClientConfig` (URL/UserAgent) · **ARCH-10** Meta `rc:error` (200-with-error) unchecked → centralize in `handleResponse` per **O5** + resolve `user.go` TODO · **ARCH-11** `ContentLength==0` short-circuit (decode on body, treat `io.EOF` as empty) · **ARCH-13** v1 template returns `ErrNotFound` from successful create/update → distinct error; doc `ErrNotFound` is get/list-only · **ARCH-14** codegen field-drop/CamelCase-collision silently lost → warn + strict mode + deterministic ordering + golden type-diff · **ARCH-15** download pipeline timeouts/cancellation + integrity/host validation · **ARCH-16** atomic extraction (temp dir+rename or `.complete` sentinel) · **ARCH-18** interceptor dedup by concrete type; `AddInterceptor(ClientInterceptor)` not `*ClientInterceptor` · **ARCH-19** real query-param support / reject `?` in id-suffixed `resourcePath` (DescribedFeature) · **ARCH-20** factor shared template header/defines/struct+unmarshal into a common partial · **ARCH-21** apply customizations exactly once (drop double-apply); split resource-level overrides · **TEST-11** unmarshaler branches + `Logout`/`Version`/`Meta.error()` tests · **TEST-12** extract pure `buildMultipartUpload` + upload tests · **TEST-13** thread codegen logger / `newValidator` extra validators / immutable API-path sets · **TEST-14** single shared `unifi/testhelpers_test.go` (consolidate; partly seeded in W1) · **TEST-15** ctx-first variants for `Version`/`Login`/`Logout`/`GetSystemInformation` · **TEST-16** `utils_test.go` for `ensurePath`/`findProjectRoot`/`findCodegenDir` + inject codegen v2 base dir.
