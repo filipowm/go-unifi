@@ -297,6 +297,19 @@ customizations:
             type: "int"
         returns:
           - "error"
+      - name: "GetTrafficFlows"
+        resourceName: "TrafficFlow"
+        comment: "GetTrafficFlows fetches traffic flows using the provided request payload."
+        params:
+          - name: "ctx"
+            type: "context.Context"
+          - name: "site"
+            type: "string"
+          - name: "req"
+            type: "*TrafficFlowsRequest"
+        returns:
+          - "*TrafficFlowsResponse"
+          - "error"
       - name: "ListFirewallZoneMatrix"
         resourceName: "FirewallZoneMatrix"
         params:

@@ -1070,6 +1070,9 @@ type Client interface {
 
 	// ==== end of client methods for Tag resource ====
 
+	// GetTrafficFlows fetches traffic flows using the provided request payload.
+	GetTrafficFlows(ctx context.Context, site string, req *TrafficFlowsRequest) (*TrafficFlowsResponse, error)
+
 	// ==== client methods for User resource ====
 
 	BlockUserByMAC(ctx context.Context, site string, mac string) error
