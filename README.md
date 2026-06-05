@@ -23,9 +23,12 @@ Check out the detailed [documentation](docs/readme.md) for more information.
 
 ## Supported UniFi Controller Versions
 
-Any version after 5.12.35 is supported as of now. **Latest version: 9.3.45**.
+Any version after 5.12.35 is supported as of now. **Latest version: 9.4.19**.
 The SDK is updated daily to track the latest UniFi Controller versions.
 If you encounter any issues with the latest UniFi Controller version, please open an issue.
+
+See the [compatibility matrix](docs/compatibility_matrix.md) for the mapping between `go-unifi` releases and supported UniFi Controller versions.
+It also includes a changelog of breaking compatibility changes for each release.
 
 ## Code Generation
 
