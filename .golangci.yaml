@@ -62,9 +62,13 @@ linters:
           - 'modernize'
           - 'interfacebloat'  # the aggregate Client interface exposes many methods by design
           - 'unused'          # generated helpers/types not referenced within this module
+          - 'containedctx'    # moq's client_mock.generated.go records calls in structs that hold the ctx arg
       - path: 'client.generated.go'
         linters:
           - 'gofumpt'         # strict linting not needed
+      - path: 'client_mock.generated.go'
+        linters:
+          - 'gofumpt'         # moq emits gofmt (not gofumpt) formatting; it is generated, DO NOT EDIT
     paths:
       - 'third_party$'
       - 'builtin$'
@@ -80,3 +84,6 @@ formatters:
       - 'third_party$'
       - 'builtin$'
       - 'examples$'
+      # moq emits gofmt-formatted output, not gofumpt; it is generated and
+      # carries a DO NOT EDIT banner, so do not hold it to the formatter.
+      - 'client_mock\.generated\.go'
