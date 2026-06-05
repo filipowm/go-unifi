@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
 	"sync"
 
@@ -20,14 +21,28 @@ type ValidationError struct {
 }
 
 // Error returns the error message with combined all validation error messages.
+// Field keys are sorted so the output is deterministic across runs (the
+// underlying Messages map has nondeterministic iteration order).
 func (v *ValidationError) Error() string {
 	err := "validation failed: \n"
+	fields := make([]string, 0, len(v.Messages))
+	for field := range v.Messages {
+		fields = append(fields, field)
+	}
+	sort.Strings(fields)
 	var errSb24 strings.Builder
-	for field, message := range v.Messages {
-		fmt.Fprintf(&errSb24, "%s: %s\n", field, message)
+	for _, field := range fields {
+		fmt.Fprintf(&errSb24, "%s: %s\n", field, v.Messages[field])
 	}
 	err += errSb24.String()
 	return err
+}
+
+// Unwrap exposes the underlying validator error so callers can use
+// errors.Is/errors.As to reach the wrapped vd.ValidationErrors (or whatever
+// raw error Validate fell back to).
+func (v *ValidationError) Unwrap() error {
+	return v.Root
 }
 
 // Validator is the interface for the validator. Use it to validate structs. You can register structure-level validations
@@ -51,7 +66,12 @@ type validator struct {
 func (v *validator) Validate(i any) error {
 	if err := v.validate.Struct(i); err != nil {
 		var errs vd.ValidationErrors
-		errors.As(err, &errs)
+		// Validate.Struct can also return an *InvalidValidationError (e.g. a nil
+		// or non-struct argument); guard the type assertion so we never call
+		// Translate on a nil errs slice and panic.
+		if !errors.As(err, &errs) {
+			return &ValidationError{Root: err}
+		}
 		messages := errs.Translate(v.trans)
 
 		return &ValidationError{Root: err, Messages: messages}
