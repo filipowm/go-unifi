@@ -401,14 +401,6 @@ func buildCustomResources(dir string, customizer CodeCustomizer, v2 bool) ([]*Re
 
 func customizeBaseType(resource *Resource) {
 	baseType := resource.BaseType()
-	if resource.IsSetting() {
-		baseType.Fields[" Key"] = NewFieldInfo("Key", "key", "string", "", "", false, false, "")
-
-		if resource.StructName == "SettingUsg" {
-			// Removed in v7, retaining for backwards compatibility
-			baseType.Fields["MdnsEnabled"] = NewFieldInfo("MdnsEnabled", "mdns_enabled", "bool", "", "", false, false, "")
-		}
-	}
 	switch {
 	case resource.IsSetting():
 		baseType.Fields[" Key"] = NewFieldInfo("Key", "key", "string", "", "", false, false, "")

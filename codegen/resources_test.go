@@ -492,3 +492,273 @@ func TestBuildResourcesFromDownloadedFields(t *testing.T) {
 		})
 	}
 }
+
+// fieldByJSONName scans a base type's fields for one whose JSONName matches.
+// The map keys in baseType.Fields are not the field names (they carry sorting
+// whitespace prefixes), so look-ups must go through JSONName.
+func fieldByJSONName(fields map[string]*FieldInfo, jsonName string) *FieldInfo {
+	for _, f := range fields {
+		if f != nil && f.JSONName == jsonName {
+			return f
+		}
+	}
+	return nil
+}
+
+// TestCustomizeBaseType pins the per-resource fields that customizeBaseType
+// injects into the base struct for backwards compatibility. These are
+// non-generated fields the controller no longer emits (or never did) but that
+// the library must keep producing so existing consumers do not break.
+func TestCustomizeBaseType(t *testing.T) {
+	t.Parallel()
+
+	type expectedField struct {
+		jsonName  string
+		fieldName string
+		fieldType string
+	}
+
+	cases := map[string]struct {
+		structName string
+		present    []expectedField
+		// absent JSON names assert that fields injected for OTHER resources do
+		// not leak into this one.
+		absent []string
+	}{
+		"Device injects mac/adopted/model/state/type": {
+			structName: "Device",
+			present: []expectedField{
+				{"mac", "MAC", "string"},
+				{"adopted", "Adopted", "bool"},
+				{"model", "Model", "string"},
+				{"state", "State", "DeviceState"},
+				{"type", "Type", "string"},
+			},
+			absent: []string{"key", "ip", "dev_id_override", "wlangroup_id"},
+		},
+		"User injects ip/dev_id_override": {
+			structName: "User",
+			present: []expectedField{
+				{"ip", "IP", "string"},
+				{"dev_id_override", "DevIdOverride", "int"},
+			},
+			absent: []string{"key", "mac", "wlangroup_id"},
+		},
+		"WLAN injects wlangroup_id": {
+			structName: "WLAN",
+			present: []expectedField{
+				{"wlangroup_id", "WLANGroupID", "string"},
+			},
+			absent: []string{"key", "ip", "mac"},
+		},
+		"SettingUsg injects key/mdns_enabled": {
+			structName: "SettingUsg",
+			present: []expectedField{
+				{"key", "Key", "string"},
+				{"mdns_enabled", "MdnsEnabled", "bool"},
+			},
+			absent: []string{"ip", "mac", "wlangroup_id"},
+		},
+		"other Setting injects key but not mdns_enabled": {
+			structName: "SettingMgmt",
+			present: []expectedField{
+				{"key", "Key", "string"},
+			},
+			absent: []string{"mdns_enabled", "ip", "mac", "wlangroup_id"},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			a := assert.New(t)
+
+			resource := NewResource(tc.structName, "path")
+			customizeBaseType(resource)
+
+			fields := resource.BaseType().Fields
+			for _, ef := range tc.present {
+				f := fieldByJSONName(fields, ef.jsonName)
+				if a.NotNilf(f, "expected field with json %q to be injected", ef.jsonName) {
+					a.Equalf(ef.fieldName, f.FieldName, "FieldName for json %q", ef.jsonName)
+					a.Equalf(ef.fieldType, f.FieldType, "FieldType for json %q", ef.jsonName)
+				}
+			}
+			for _, jsonName := range tc.absent {
+				a.Nilf(fieldByJSONName(fields, jsonName), "field with json %q must not be injected for %s", jsonName, tc.structName)
+			}
+		})
+	}
+}
+
+// TestCustomizeBaseTypeValidations pins the validator tags attached to the
+// injected MAC (Device) and IP (User) fields, since those drive runtime
+// validation in the generated client.
+func TestCustomizeBaseTypeValidations(t *testing.T) {
+	t.Parallel()
+
+	cases := map[string]struct {
+		structName    string
+		jsonName      string
+		wantValidate  string
+		wantOmitEmpty bool
+	}{
+		"Device MAC gets mac validator": {
+			structName:    "Device",
+			jsonName:      "mac",
+			wantValidate:  createValidations(false, validation{v: mac}),
+			wantOmitEmpty: true,
+		},
+		"User IP gets ip validator": {
+			structName:    "User",
+			jsonName:      "ip",
+			wantValidate:  createValidations(false, validation{v: ip}),
+			wantOmitEmpty: true,
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			a := assert.New(t)
+
+			resource := NewResource(tc.structName, "path")
+			customizeBaseType(resource)
+
+			f := fieldByJSONName(resource.BaseType().Fields, tc.jsonName)
+			require.NotNil(t, f)
+			a.Equal(tc.wantValidate, f.FieldValidation)
+			a.Equal(tc.wantOmitEmpty, f.OmitEmpty)
+		})
+	}
+}
+
+// TestCustomizeResourceFieldProcessor pins the FieldProcessor side-effects that
+// customizeResource installs for the special-cased settings resources. These
+// rewrites are backwards-compat-critical and easy to break in a refactor.
+func TestCustomizeResourceFieldProcessor(t *testing.T) {
+	t.Parallel()
+
+	cases := map[string]struct {
+		structName string
+		// inputName is the cleaned CamelCase field name passed to the processor.
+		inputName     string
+		inField       *FieldInfo
+		wantFieldName string
+		wantFieldType string
+		wantUnmarsh   string
+	}{
+		"SettingGlobalAp rewrites 6E-prefixed field to SixE": {
+			structName:    "SettingGlobalAp",
+			inputName:     "6EEnabled",
+			inField:       NewFieldInfo("6EEnabled", "6e_enabled", "bool", "", "", false, false, ""),
+			wantFieldName: "SixEEnabled",
+			wantFieldType: "bool",
+		},
+		"SettingGlobalAp leaves non-6E field untouched": {
+			structName:    "SettingGlobalAp",
+			inputName:     "Enabled",
+			inField:       NewFieldInfo("Enabled", "enabled", "bool", "", "", false, false, ""),
+			wantFieldName: "Enabled",
+			wantFieldType: "bool",
+		},
+		"SettingUsg rewrites *Timeout field to int/emptyStringInt": {
+			structName:    "SettingUsg",
+			inputName:     "SessionTimeout",
+			inField:       NewFieldInfo("SessionTimeout", "session_timeout", "string", "", "", true, false, ""),
+			wantFieldName: "SessionTimeout",
+			wantFieldType: "int",
+			wantUnmarsh:   "emptyStringInt",
+		},
+		"SettingUsg leaves ArpCacheTimeout untouched": {
+			structName:    "SettingUsg",
+			inputName:     "ArpCacheTimeout",
+			inField:       NewFieldInfo("ArpCacheTimeout", "arp_cache_timeout", "string", "", "", true, false, ""),
+			wantFieldName: "ArpCacheTimeout",
+			wantFieldType: "string",
+			wantUnmarsh:   "",
+		},
+		"SettingMgmt rewrites XSshKeys field type to nested struct": {
+			structName:    "SettingMgmt",
+			inputName:     "XSshKeys",
+			inField:       NewFieldInfo("XSshKeys", "x_ssh_keys", "string", "", "", true, false, ""),
+			wantFieldName: "XSshKeys",
+			wantFieldType: "SettingMgmtXSshKeys",
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			a := assert.New(t)
+
+			resource := NewResource(tc.structName, "path")
+			customizeResource(resource, false)
+
+			err := resource.FieldProcessor(tc.inputName, tc.inField)
+			require.NoError(t, err)
+
+			a.Equal(tc.wantFieldName, tc.inField.FieldName, "FieldName")
+			a.Equal(tc.wantFieldType, tc.inField.FieldType, "FieldType")
+			a.Equal(tc.wantUnmarsh, tc.inField.CustomUnmarshalType, "CustomUnmarshalType")
+		})
+	}
+}
+
+// TestCustomizeResourceSettingMgmtRegistersNestedType pins that customizeResource
+// registers the x_ssh_keys nested struct in resource.Types so the generator
+// emits a SettingMgmtXSshKeys type with the expected sub-fields.
+func TestCustomizeResourceSettingMgmtRegistersNestedType(t *testing.T) {
+	t.Parallel()
+	a := assert.New(t)
+
+	resource := NewResource("SettingMgmt", "path")
+	customizeResource(resource, false)
+
+	nested, ok := resource.Types["SettingMgmtXSshKeys"]
+	require.True(t, ok, "SettingMgmtXSshKeys must be registered in resource.Types")
+	require.NotNil(t, nested)
+
+	a.Equal("SettingMgmtXSshKeys", nested.FieldName)
+	a.Equal("x_ssh_keys", nested.JSONName)
+	a.Equal("struct", nested.FieldType)
+
+	// The nested struct must expose the SSH-key sub-fields by their JSON names.
+	wantSubFields := map[string]string{ // json name -> Go field name
+		"name":        "Name",
+		"type":        "KeyType",
+		"key":         "Key",
+		"comment":     "Comment",
+		"date":        "Date",
+		"fingerprint": "Fingerprint",
+	}
+	for jsonName, fieldName := range wantSubFields {
+		f := fieldByJSONName(nested.Fields, jsonName)
+		if a.NotNilf(f, "nested field with json %q", jsonName) {
+			a.Equalf(fieldName, f.FieldName, "Go field name for json %q", jsonName)
+		}
+	}
+}
+
+// TestCustomizeResourceV2Flag pins that customizeResource propagates the v2
+// flag onto the resource so the V2 template is selected at render time.
+func TestCustomizeResourceV2Flag(t *testing.T) {
+	t.Parallel()
+
+	cases := map[string]struct {
+		v2     bool
+		wantV2 bool
+	}{
+		"v2 true sets V2":   {v2: true, wantV2: true},
+		"v2 false keeps V2": {v2: false, wantV2: false},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			resource := NewResource("Network", "path")
+			customizeResource(resource, tc.v2)
+			assert.Equal(t, tc.wantV2, resource.IsV2())
+		})
+	}
+}
