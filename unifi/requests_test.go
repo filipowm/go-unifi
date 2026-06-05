@@ -417,9 +417,8 @@ func TestDoInvalidJsonResponse(t *testing.T) {
 	defer ts.Close()
 
 	c, err := newBareClient(&ClientConfig{
-		URL:       ts.URL,
-		APIKey:    "test-key",
-		VerifySSL: false,
+		URL:    ts.URL,
+		APIKey: "test-key",
 	})
 	require.NoError(t, err)
 
@@ -459,7 +458,6 @@ func TestErrorHandlerCustom(t *testing.T) {
 	c, err := newBareClient(&ClientConfig{
 		URL:          ts.URL,
 		APIKey:       "test-key",
-		VerifySSL:    false,
 		ErrorHandler: customErrorHandler,
 	})
 	require.NoError(t, err)
