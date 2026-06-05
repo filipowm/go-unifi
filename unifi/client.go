@@ -130,7 +130,12 @@ type client struct {
 	interceptors []ClientInterceptor
 	errorHandler ResponseErrorHandler
 	lock         sync.Mutex
-	validator    *validator
+	// sysInfoMu guards the sysInfo cache. It is intentionally SEPARATE from lock
+	// (the request-serialization mutex) so the two concerns never alias the same
+	// mutex — aliasing them is what enabled the re-entrant Version() deadlock under
+	// UseLocking:true (ARCH-01).
+	sysInfoMu sync.RWMutex
+	validator *validator
 }
 
 var _ Client = &client{} // Ensure that client implements the Client interface. (compile-time check)
@@ -160,16 +165,31 @@ func parseBaseURL(base string) (*url.URL, error) {
 }
 
 func (c *client) Version() string {
+	// Fast path: read the cache under the dedicated read lock.
+	c.sysInfoMu.RLock()
 	if c.sysInfo != nil {
-		return c.sysInfo.Version
+		v := c.sysInfo.Version
+		c.sysInfoMu.RUnlock()
+		return v
 	}
-	c.lock.Lock()
-	defer c.lock.Unlock()
+	c.sysInfoMu.RUnlock()
+
+	// Slow path: fetch over HTTP while holding NO lock. GetSystemInformation goes
+	// through executeRequest, which re-acquires c.lock when UseLocking is set;
+	// holding c.lock (or sysInfoMu) here would re-enter a non-reentrant mutex and
+	// self-deadlock (ARCH-01).
 	i, err := c.GetSystemInformation()
 	if err != nil {
 		return ""
 	}
-	c.sysInfo = i
+
+	// Store under the write lock, double-checking the cache in case a concurrent
+	// caller populated it while we were fetching.
+	c.sysInfoMu.Lock()
+	defer c.sysInfoMu.Unlock()
+	if c.sysInfo == nil {
+		c.sysInfo = i
+	}
 	return c.sysInfo.Version
 }
 
@@ -314,7 +334,9 @@ func NewClient(config *ClientConfig) (Client, error) { //nolint: ireturn
 	if sysInfo, err := c.GetSystemInformation(); err != nil {
 		return c, fmt.Errorf("failed getting server info: %w", err)
 	} else {
+		c.sysInfoMu.Lock()
 		c.sysInfo = sysInfo
+		c.sysInfoMu.Unlock()
 		c.Debugf("Connected to UniFi controller\nversion: %s; name: %s; build: %s; hostname: %s", sysInfo.Version, sysInfo.Name, sysInfo.Build, sysInfo.Hostname)
 	}
 	return c, nil
