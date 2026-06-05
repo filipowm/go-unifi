@@ -1,7 +1,6 @@
 package unifi
 
 import (
-	"errors"
 	"strconv"
 	"strings"
 )
@@ -77,15 +76,27 @@ func (e *emptyStringInt) MarshalJSON() ([]byte, error) {
 
 type booleanishString bool
 
+// UnmarshalJSON decodes the assorted truthy/falsy wire forms the controller has
+// used for the same field over time. Historically it sent "enabled"/"disabled";
+// current controllers (9.x–10.x) send bare JSON booleans true/false for the wired
+// fields (Device.LtePoe/LteExtAnt). It is intentionally PERMISSIVE: it accepts
+// bare and quoted booleans, "enabled"/"disabled", "1"/"0", and empty/null (→false),
+// and NEVER hard-errors on an unrecognized scalar — a single bad field must not
+// poison the whole Device decode. Unrecognized input decodes to false.
 func (e *booleanishString) UnmarshalJSON(b []byte) error {
-	s := string(b)
-	switch s {
-	case `"enabled"`:
-		*e = booleanishString(true)
-		return nil
-	case `"disabled"`:
-		*e = booleanishString(false)
-		return nil
+	s := strings.TrimSpace(string(b))
+	// Unquote string tokens so quoted and bare forms collapse to one switch.
+	if len(s) >= 2 && strings.HasPrefix(s, `"`) && strings.HasSuffix(s, `"`) {
+		if unquoted, err := strconv.Unquote(s); err == nil {
+			s = unquoted
+		}
 	}
-	return errors.New("could not unmarshal JSON value")
+	switch strings.ToLower(s) {
+	case "true", "enabled", "1":
+		*e = true
+	default:
+		// "false", "disabled", "0", "", "null", and anything unrecognized → false.
+		*e = false
+	}
+	return nil
 }
