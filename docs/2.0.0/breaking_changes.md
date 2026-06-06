@@ -19,7 +19,7 @@ status, a migration note, and a provenance link.
 | 3 | [Go version bump to 1.26](#3-go-version-bump-to-126) | Medium | **DONE** |
 | 4 | [OpenAPI-shaped structs](#4-openapi-shaped-structs) | Medium | **PENDING** |
 | 5 | [Occasional field renames](#5-occasional-field-renames) | Medium | **PENDING** |
-| 6 | [New `integration/v1` API surface](#6-new-integrationv1-api-surface) | Medium | **DONE** |
+| 6 | [New `integration/v1` `APIStyle`](#6-new-integrationv1-apistyle) | Medium | **PENDING** |
 | 7 | [`Client` gains `SetSetting`](#7-client-gains-setsetting) | Medium | **DONE** |
 | 8 | [`Client` gains `*Context` variants](#8-client-gains-context-variants) | Medium | **DONE** |
 | 9 | [v1 `Create`/`Update` no longer return `ErrNotFound`](#9-v1-createupdate-no-longer-return-errnotfound) | Medium | **DONE** |
@@ -115,33 +115,24 @@ Migration: compile-error-driven; rename at each call site.
 
 ---
 
-### 6. New `integration/v1` API surface
+### 6. New `integration/v1` `APIStyle`
 
-**Status: DONE** — runtime seam landed in PR #119 (`feat/2.0.0`).
+**Status: PENDING** — routing generated resources through the official `integration/v1` API is part of
+the OpenAPI generator wave (same milestone as rows 4/5); not yet landed.
 
-**Interface change (compile break for custom `Client` implementations).** The `Client` interface now exposes
-two new accessors: `Internal() InternalClient` (the legacy resource API, unchanged call site) and
-`Official() official.Client` (the Official UniFi OpenAPI surface). All legacy resource CRUD methods are
-moved into the embedded `InternalClient` interface; existing call sites remain source-compatible.
+**Interface change (compile break for custom `Client` implementations).** A new `APIStyle` constant will
+route code-generated resources through the UniFi official `integration/v1` API path instead of the legacy
+`/api/s/{site}/...` endpoints. The generated CRUD methods and their structs will adopt OpenAPI-derived
+shapes (see rows 4/5).
 
-```go
-// before: no routing — one flat Client interface
-client.GetNetwork(ctx, site, id)
+The `integration/v1` path is a capability layered on the new-style API — it is not a fourth independent
+style alongside `V1`, `V2`, and `new-style`; see `unifi/api_paths.go` for the documented constraint.
 
-// after: explicit surface selection (both forms work)
-client.GetNetwork(ctx, site, id)           // still works — InternalClient is embedded
-client.Internal().GetNetwork(ctx, site, id) // explicit form, documents intent
-client.Official().Sites(ctx)               // new Official API surface
-```
+Note: the `Official()` accessor and the `integration/v1` info/sites vertical that **did** land in PR #119
+are documented in entries [D](#d-client-interface-split-into-internalclient--internalofficial-accessors-119)
+and [E](#e-official-api-unavailable-on-classicold-style-controllers-119) of the provenance index below.
 
-Custom `Client` implementations must add `Internal()` and `Official()` methods. The moq `ClientMock` is
-regenerated automatically.
-
-`client.Official()` operations are gated: they return `ErrOfficialAPIDisabled` when
-`ClientConfig.DisableOfficialAPI` is set, or `ErrOfficialAPIUnavailable` on old-style controllers, non-API-key
-auth, or controller versions below 10.1.68. Use `errors.Is(err, unifi.ErrOfficialAPIUnavailable)`.
-
-**Provenance:** epic #117, PR #119.
+**Provenance:** epic #117, OpenAPI generator wave (issues TBD, same milestone as rows 4/5).
 
 ---
 
