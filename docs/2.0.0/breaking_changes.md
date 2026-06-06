@@ -1,181 +1,174 @@
-# go-unifi 1.11.0 — API breaking changes
+# go-unifi 2.0.0 — API breaking changes
 
-This document tracks every public-API behavior or signature change introduced while implementing the
-[1.11.0 review](summary.md). Each entry links to the finding ID that motivated it and the migration
-guidance for downstream consumers.
+This document is the authoritative changelog of every public-API behavior or signature change introduced
+during the 2.0.0 migration (epic [#117](https://github.com/filipowm/go-unifi/issues/117)). It is keyed to
+the 13 impact-ordered breaking changes enumerated in the epic, each carrying a verified **DONE/PENDING**
+status, a migration note, and a provenance link.
 
-> Status: populated wave by wave during implementation. Empty sections mean no breaking change landed
-> in that wave (yet).
+> Status key: **DONE** = change is in the `feat/2.0.0` tree and verified against the actual code.
+> **PENDING** = planned; not yet landed.
 
-## Wave 0 — P0 hotfixes
+---
 
-_No breaking changes._ All three P0 fixes (ARCH-01 deadlock, ARCH-02 permissive `booleanishString`
-decode, ARCH-03 missing setting factories) are bug fixes that only make previously-broken paths work;
-no public signature or documented behavior changes.
+## Breaking changes — 13-row index (epic #117)
 
-## Wave 1 — P1 hardening
+| # | Change | Impact | Status |
+|---|--------|--------|--------|
+| 1 | [API-key authentication only](#1-api-key-authentication-only) | High | **PENDING** |
+| 2 | [TLS verify-by-default](#2-tls-verify-by-default) | High | **DONE** |
+| 3 | [Go version bump to 1.26](#3-go-version-bump-to-126) | Medium | **DONE** |
+| 4 | [OpenAPI-shaped structs](#4-openapi-shaped-structs) | Medium | **PENDING** |
+| 5 | [Occasional field renames](#5-occasional-field-renames) | Medium | **PENDING** |
+| 6 | [New `integration/v1` API surface](#6-new-integrationv1-api-surface) | Medium | **DONE** |
+| 7 | [`Client` gains `SetSetting`](#7-client-gains-setsetting) | Medium | **DONE** |
+| 8 | [`Client` gains `*Context` variants](#8-client-gains-context-variants) | Medium | **DONE** |
+| 9 | [v1 `Create`/`Update` no longer return `ErrNotFound`](#9-v1-createupdate-no-longer-return-errnotfound) | Medium | **DONE** |
+| 10 | [`meta.rc=="error"` on HTTP 200 → `*ServerError`](#10-metarcerror-on-http-200--servererror) | Medium | **DONE** |
+| 11 | [Map 404 → `ErrNotFound`](#11-map-404--errnotfound) | Low | **DONE** |
+| 12 | [`UseLocking` will be a no-op](#12-uselocking-will-be-a-no-op) | Low | **DONE** |
+| 13 | [Remove CSRF handling](#13-remove-csrf-handling) | Low | **PENDING** |
 
-Public changes in this wave: the TLS field type + default flip (ARCH-06), the `UseLocking` no-op and the
-`CSRFInterceptor.CSRFToken` field→method change (ARCH-04 concurrency cleanup), the `ErrNotFound` widening
-for 404s (ARCH-05), and the `Client`-interface/`Dpi` change (ARCH-08). The TLS migration walk-through lives
-in the [migration guide](../../migrating_from_upstream.md) and [client configuration](../../configuration.md);
-this section is the authoritative changelog entry. *(Entries 4 and 5 were added retroactively by the final
-whole-codebase review — the changes shipped in Wave 1 but were initially undocumented.)*
+---
 
-### 1. `ClientConfig.VerifySSL` renamed and inverted: `VerifySSL bool` → `SkipVerifySSL bool` (ARCH-06)
+### 1. API-key authentication only
 
-**Signature change (compile break).** The field was renamed and its meaning inverted; the type stays `bool`:
+**Status: PENDING** — user/password auth is still present; retirement issues are tracked under #125.
 
-```go
-// before
-VerifySSL bool
-// after
-SkipVerifySSL bool
-```
-
-Every caller that referenced `VerifySSL` no longer compiles — this is intentional, so the behavioral
-flip below can't slip through silently. Migrate by inverting the value:
-
-```go
-// before
-config := &unifi.ClientConfig{VerifySSL: false} // disable verification
-// after
-config := &unifi.ClientConfig{SkipVerifySSL: true} // disable verification (self-signed cert)
-```
-
-### 2. TLS verification is now SECURE BY DEFAULT (ARCH-06)
-
-**Behavioral flip.** The default flipped from insecure to secure, and the field name now reflects it:
-
-| | old (`VerifySSL bool`) | new (`SkipVerifySSL bool`) |
-| --- | --- | --- |
-| field unset / zero value | `false` → `InsecureSkipVerify: true` (verification OFF) | `false` → verification **ON** |
-| explicitly verify | `VerifySSL: true` | leave unset (zero value) |
-| explicitly skip | `VerifySSL: false` | `SkipVerifySSL: true` |
-
-A caller that previously left `VerifySSL` unset got `InsecureSkipVerify: true` (verification OFF) and now
-gets certificate verification ON. **This will break connections to controllers using self-signed
-certificates** (the most common UniFi deployment) at runtime — except the rename forces a compile error
-at every call site that touched the field, so the flip surfaces at build time rather than silently. To
-restore the old skip-verification behavior, set `SkipVerifySSL: true`; disabling verification is logged at
-WARN level on every client build.
-
-### 3. `ClientConfig.UseLocking` is now a deprecated no-op (ARCH-04)
-
-**Behavioral change (no compile break).** `net/http.Client` is goroutine-safe and the client no longer
-serializes requests, so the per-request locking the field used to gate has been removed. `UseLocking` is
-retained for source compatibility but has **no effect** — setting it `true` or `false` changes nothing.
-The field is marked `// Deprecated:` and can be removed from your config. Requests now always run
-concurrently and are not serialized.
-
-### 4. `CSRFInterceptor.CSRFToken`: exported field → accessor method (ARCH-04)
-
-**Signature change (compile break).** Making the CSRF token data-race-safe (ARCH-04) required moving it
-behind a mutex, so the previously-exported, directly-settable field became an unexported field with a
-read-only accessor:
+**Behavioral change (runtime break).** Username/password authentication (`ClientConfig.User`/`Password`) will
+be retired. Every consumer must authenticate with an API key via `ClientConfig.APIKey`.
 
 ```go
 // before
-type CSRFInterceptor struct { CSRFToken string /* ... */ }
-csrf.CSRFToken = "tok"          // settable
-tok := csrf.CSRFToken           // field read
+cfg := &unifi.ClientConfig{User: "admin", Password: "secret"}
 // after
-type CSRFInterceptor struct { csrfToken string /* guarded by sync.RWMutex */ }
-tok := csrf.CSRFToken()         // accessor method; no setter
+cfg := &unifi.ClientConfig{APIKey: "your-api-key"}
 ```
 
-Reads migrate `csrf.CSRFToken` → `csrf.CSRFToken()`. The token can **no longer be set directly** — it is
-captured automatically from controller responses (race-safe). Blast radius is tiny: the token is managed
-internally and few consumers touch `CSRFInterceptor` directly, but any code that read or set the field, or
-used a composite literal with `CSRFToken:`, no longer compiles. *(Documented retroactively — found by the
-final whole-codebase review; the change shipped in Wave 1.)*
+Every consumer, including the Terraform provider, must migrate to API-key auth before upgrading to 2.0.0.
+Once landed, the `User`, `Password`, `RememberMe` fields will be removed from `ClientConfig`; setting them
+will be a compile error.
 
-### 5. A real HTTP 404 now satisfies `errors.Is(err, ErrNotFound)` (ARCH-05)
+**Provenance:** epic #117, issue #125 (API-key auth retirement).
 
-**Behavioral widening (no compile break).** Wave 1 added `func (s *ServerError) Is(target error) bool`
-mapping a `*ServerError` with `StatusCode == 404` to the `ErrNotFound` sentinel. Previously only the
-hand-written list/get wrappers returned `ErrNotFound` (on empty data); now a genuine 404 from **any**
-endpoint also matches `errors.Is(err, ErrNotFound)`. This unifies the not-found contract and is almost
-always what callers want, but a consumer that distinguished "404 server error" from the `ErrNotFound`
-sentinel will now see them as equal. *(Documented retroactively — found by the final review; shipped in
-Wave 1. This is the same mechanism Wave 2 #4 relies on to keep soft rc:errors out of `ErrNotFound`.)*
+---
 
-### 6. `Client` interface gained `SetSetting`; `DpiApp`/`DpiGroup` removed (ARCH-08)
+### 2. TLS verify-by-default
 
-**Interface addition (compile break for custom `Client` implementations).** The generated `Client`
-interface now declares:
+**Status: DONE** — landed in Wave 1 (ARCH-06).
+
+**Signature change + behavioral flip (compile break + silent runtime change).** `ClientConfig.VerifySSL bool`
+was renamed and inverted to `SkipVerifySSL bool`. The zero value now enables verification (secure by
+default).
+
+```go
+// before
+config := &unifi.ClientConfig{VerifySSL: false} // disabled verification
+// after
+config := &unifi.ClientConfig{SkipVerifySSL: true} // disable for self-signed cert
+```
+
+A caller that left `VerifySSL` unset got verification OFF; the same zero value now gives verification ON.
+Connections to self-signed controllers break silently at runtime — except the rename forces a compile error
+at every call site that touched the field, surfacing the flip at build time. Disabling verification is
+logged at WARN level on every client build.
+
+**Provenance:** ARCH-06, Wave 1.
+
+---
+
+### 3. Go version bump to 1.26
+
+**Status: DONE** — `go 1.26.0` in `go.mod`.
+
+**Build constraint change.** The module requires Go 1.26 or later. Consumers still on Go 1.24/1.25 must
+upgrade their toolchain.
+
+**Provenance:** epic #117, `go.mod`.
+
+---
+
+### 4. OpenAPI-shaped structs
+
+**Status: PENDING** — no resources migrated yet; landing per-resource as part of the OpenAPI generator wave.
+
+**Type change (compile break for each migrated resource).** Resources generated from the official OpenAPI
+spec (`integration.json`) may adopt different field names, types, or nesting than the legacy reverse-engineered
+shapes. Each resource is migrated individually; the breaking surface is bounded to that resource's struct.
+
+Migration: compile against the new module version; fix any field references reported by the compiler.
+
+**Provenance:** epic #117, OpenAPI-generator wave (issues TBD).
+
+---
+
+### 5. Occasional field renames
+
+**Status: PENDING** — no field renames yet; land alongside each OpenAPI-driven resource migration.
+
+**Signature change (compile break per renamed field).** Where the official spec uses a different field name
+from the legacy one, the generated struct adopts the spec name. Each rename is documented in this file when
+it lands.
+
+Migration: compile-error-driven; rename at each call site.
+
+**Provenance:** epic #117, per-resource OpenAPI migration.
+
+---
+
+### 6. New `integration/v1` API surface
+
+**Status: DONE** — runtime seam landed in PR #119 (`feat/2.0.0`).
+
+**Interface change (compile break for custom `Client` implementations).** The `Client` interface now exposes
+two new accessors: `Internal() InternalClient` (the legacy resource API, unchanged call site) and
+`Official() official.Client` (the Official UniFi OpenAPI surface). All legacy resource CRUD methods are
+moved into the embedded `InternalClient` interface; existing call sites remain source-compatible.
+
+```go
+// before: no routing — one flat Client interface
+client.GetNetwork(ctx, site, id)
+
+// after: explicit surface selection (both forms work)
+client.GetNetwork(ctx, site, id)           // still works — InternalClient is embedded
+client.Internal().GetNetwork(ctx, site, id) // explicit form, documents intent
+client.Official().Sites(ctx)               // new Official API surface
+```
+
+Custom `Client` implementations must add `Internal()` and `Official()` methods. The moq `ClientMock` is
+regenerated automatically.
+
+`client.Official()` operations are gated: they return `ErrOfficialAPIDisabled` when
+`ClientConfig.DisableOfficialAPI` is set, or `ErrOfficialAPIUnavailable` on old-style controllers, non-API-key
+auth, or controller versions below 10.1.68. Use `errors.Is(err, unifi.ErrOfficialAPIUnavailable)`.
+
+**Provenance:** epic #117, PR #119.
+
+---
+
+### 7. `Client` gains `SetSetting`
+
+**Status: DONE** — landed in Wave 1 (ARCH-08).
+
+**Interface addition (compile break for custom `Client` implementations).** The generated `Client` interface
+declares:
 
 ```go
 SetSetting(ctx context.Context, site string, key string, reqBody any) (any, error)
 ```
 
-The concrete `*client` already implemented it — it was simply unreachable through the interface (its
-read counterpart `GetSetting` was exposed; `SetSetting` was not). Any third-party type that implements
-`unifi.Client` (e.g. a hand-rolled fake) must add this method. The moq-generated `ClientMock` is
-regenerated automatically and needs no manual change.
+The concrete `*client` already implemented it; it was simply missing from the interface. Any third-party
+type that implements `unifi.Client` must add this method; the moq `ClientMock` is regenerated automatically.
 
-**Type removal.** The unused `DpiApp` and `DpiGroup` types and their CRUD (`dpi_app.generated.go`,
-`dpi_group.generated.go`) were dead code — excluded from the `Client` interface yet still shipped — and
-are now excluded from generation entirely. No `Client` method ever exposed them, so typical consumers
-are unaffected; any code directly referencing the `unifi.DpiApp` / `unifi.DpiGroup` struct types must
-remove it. (DPI *settings* remain available via `SettingDpi`, which is unrelated.)
+**Provenance:** ARCH-08, Wave 1.
 
-> Note (internal): `DownloadAndExtract` in the `codegen` tool gained a leading `*http.Client` parameter
-> (TEST-07). This is not part of the public `unifi` API surface and affects only forks of the generator.
+---
 
-## Wave 2 — P2 quality & codegen robustness
+### 8. `Client` gains `*Context` variants
 
-Four public breaking changes landed in this wave: one generated-code contract change (ARCH-13), one
-interceptor API change (ARCH-18), one interface addition (TEST-15), and one error-handling behavioral
-change (ARCH-10). All four are documented below.
+**Status: DONE** — landed in Wave 2 (TEST-15).
 
-### 1. Generated `Create<X>`/`Update<X>` no longer return `ErrNotFound` (ARCH-13)
-
-**Behavioral change (no compile break).** The v1-REST template used to return the `ErrNotFound` sentinel
-from a *successful* create/update whenever the response data array length was not exactly 1 — semantically
-wrong (a successful write reporting "not found") and inconsistent with the v2 template. The ~29 generated
-v1 `create<X>`/`update<X>` methods (and their public `Create<X>`/`Update<X>` wrappers) now return a
-descriptive error instead:
-
-```go
-fmt.Errorf("unexpected response: expected 1 <X>, got %d", n)
-```
-
-Any caller doing `errors.Is(err, ErrNotFound)` on a **create or update** path will no longer match — that
-branch was always incorrect. Treat any non-nil error from `Create<X>`/`Update<X>` as a failure.
-`ErrNotFound` remains the contract for `Get<X>`/single-resource lookups (and list-single) only; this is
-now documented in `codegen/CLAUDE.md`. The hand-written `CreateUser` wrapper (nested group/user endpoint)
-still surfaces `ErrNotFound` for its inner lookup and is unaffected.
-
-### 2. `(*client).AddInterceptor` signature changed: `*ClientInterceptor` → `ClientInterceptor` (ARCH-18)
-
-**Signature change (compile break for direct callers).** `AddInterceptor` now takes the interceptor by
-value, matching how the interceptor slice and `ClientConfig.Interceptors` are typed:
-
-```go
-// before
-func (c *client) AddInterceptor(interceptor *ClientInterceptor)
-// after
-func (c *client) AddInterceptor(interceptor ClientInterceptor)
-```
-
-```go
-// before
-c.AddInterceptor(&myInterceptor)
-// after
-c.AddInterceptor(myInterceptor)
-```
-
-Dedup semantics also changed: previously by interface `==` (which panics on non-comparable dynamic types
-and only matched identical pointers), now **by concrete type** via `reflect.TypeOf` — only one interceptor
-of a given concrete type is retained, and non-comparable interceptors no longer panic. `AddInterceptor` is
-**not** part of the public `Client` interface (it is interface-private), so consumers using the `Client`
-interface are unaffected; this only touches code holding the concrete `*client`.
-
-### 3. `Client` interface gained four `*Context` methods (TEST-15)
-
-**Interface addition (compile break for custom `Client` implementations).** The generated `Client`
-interface now declares context-first variants so cancellation/deadline behavior is testable:
+**Interface addition (compile break for custom `Client` implementations).** Four context-first lifecycle
+methods are now part of the `Client` interface:
 
 ```go
 LoginContext(ctx context.Context) error
@@ -185,65 +178,167 @@ GetSystemInformationContext(ctx context.Context) (*SysInfo, error)
 ```
 
 The original no-ctx methods (`Login`/`Logout`/`Version`/`GetSystemInformation`) are unchanged and remain
-source-compatible — they delegate internally to the ctx variants (preserving `c.timeout`, the `sysInfo`
-cache + double-checked locking, and `Version()`'s error-swallow-to-`""`). Callers are unaffected. Any
-third-party type implementing `unifi.Client` must add these four methods; the moq `ClientMock` is
-regenerated automatically.
+source-compatible; they delegate to the ctx variants internally. Any third-party type implementing
+`unifi.Client` must add these four methods; the moq `ClientMock` is regenerated automatically.
 
-### 4. HTTP 200 with `meta.rc=="error"` now surfaces `*ServerError` (ARCH-10 / O5)
+**Provenance:** TEST-15, Wave 2.
 
-**Behavioral change (no compile break).** The UniFi v1 API can return HTTP 200 with a top-level
-`meta.rc=="error"` (a soft / application-level failure). Previously this was checked in exactly one place
-(`CreateUser`) and silently swallowed everywhere else (surfacing as empty data or a generic `ErrNotFound`).
-The check is now centralized in the hand-written `handleResponse`, gated to only trigger when a `meta`
-block is present, so **every** decoded `{meta,data}` 200 with `rc=="error"` now returns a `*ServerError`
-carrying the controller's `rc`/`msg` (enriched with status/method/URL). Use `errors.As(err, &serverErr)`.
-It is **not** `ErrNotFound` (`errors.Is(err, ErrNotFound) == false`), so genuine empty-data 200s and real
-404s are unaffected. `CreateUser` retains its nested per-object meta check, so its behavior is preserved.
+---
 
-> Note (internal): the `codegen` tool's `DownloadAndExtract`/`downloadJar` gained a leading
-> `context.Context` parameter (ARCH-15). This is not part of the public `unifi` API surface and affects
-> only forks of the generator.
+### 9. v1 `Create`/`Update` no longer return `ErrNotFound`
 
-## 2.0.0 — Official API seam (#119)
+**Status: DONE** — landed in Wave 2 (ARCH-13).
 
-The Official UniFi OpenAPI (`integration/v1`) lands behind a runtime seam. The `Client` interface is split
-and gains `Internal()`/`Official()` accessors; the Official surface is gated on controller capability.
-
-### 1. `Client` interface split into embedded `InternalClient` + accessors (#119)
-
-**Interface change (compile break for custom `Client` implementations).** The generated `Client` interface
-now embeds a new `InternalClient` interface (all resource CRUD) and adds two accessors:
+**Behavioral change (no compile break).** The v1-REST template used to return `ErrNotFound` from a
+*successful* create/update when the response data array length was not exactly 1 — semantically wrong and
+inconsistent with the v2 template. The ~29 generated v1 `create<X>`/`update<X>` methods now return a
+descriptive error instead:
 
 ```go
-type InternalClient interface { /* GetNetwork, ListNetwork, …, all resource CRUD */ }
-
-type Client interface {
-	Logger
-	InternalClient             // embedded — every resource method, unchanged
-	// transport/lifecycle: Do/Get/Post/Put/Delete, Login*/Logout*, Version*, BaseURL
-	Internal() InternalClient  // returns the legacy ("Internal") client (self)
-	Official() official.Client // returns the Official OpenAPI client
-}
+fmt.Errorf("unexpected response: expected 1 <X>, got %d", n)
 ```
 
-Existing call sites are **source-compatible**: `client.GetNetwork(...)` still works (the methods are
-embedded), and `client.Internal().GetNetwork(...)` is the new explicit form. Any third-party type that
-implements `unifi.Client` (e.g. a hand-rolled fake) must now also implement `Internal()` and `Official()`;
-the moq-generated `ClientMock` is regenerated automatically and needs no manual change. This is the
-**2.0.0-canonical-Internal** step: in 2.0.0 the embedded Internal surface stays the default so existing
-code is untouched; 3.0.0 is expected to flip the default to the Official client (the **3.0.0-flip**).
+Any caller doing `errors.Is(err, ErrNotFound)` on a create or update path will no longer match — that
+branch was always incorrect. Treat any non-nil error from `Create<X>`/`Update<X>` as a failure.
+`ErrNotFound` remains the contract for `Get<X>` / single-resource lookups only.
 
-### 2. Official API unavailable on classic/old-style controllers (#119)
+**Provenance:** ARCH-13, Wave 2.
 
-**New runtime contract (no compile break).** `client.Official()` always returns a non-nil client, but its
-operations are gated. They return:
+---
 
-- `ErrOfficialAPIDisabled` when `ClientConfig.DisableOfficialAPI` is set (fails fast, no probe);
+### 10. `meta.rc=="error"` on HTTP 200 → `*ServerError`
+
+**Status: DONE** — landed in Wave 2 (ARCH-10).
+
+**Behavioral change (no compile break).** The UniFi v1 API can return HTTP 200 with `meta.rc=="error"` (a
+soft / application-level failure). Previously this was caught in exactly one place (`CreateUser`) and
+silently swallowed everywhere else. The check is now centralized in `handleResponse`, so **every** decoded
+`{meta,data}` 200 with `rc=="error"` surfaces a `*ServerError` carrying the controller's `rc`/`msg`
+(enriched with status/method/URL).
+
+```go
+var serverErr *unifi.ServerError
+if errors.As(err, &serverErr) { /* ... */ }
+```
+
+It is **not** `ErrNotFound` (`errors.Is(err, ErrNotFound) == false`), so genuine empty-data 200s and real
+404s are unaffected. `CreateUser` retains its nested per-object meta check.
+
+**Provenance:** ARCH-10, Wave 2.
+
+---
+
+### 11. Map 404 → `ErrNotFound`
+
+**Status: DONE** — landed in Wave 1 (ARCH-05).
+
+**Behavioral widening (no compile break).** `(*ServerError).Is` maps a `*ServerError` with
+`StatusCode == 404` to the `ErrNotFound` sentinel. Previously only the hand-written list/get wrappers
+returned `ErrNotFound`; now a genuine 404 from **any** endpoint also satisfies
+`errors.Is(err, ErrNotFound)`. A consumer that distinguished "404 server error" from the `ErrNotFound`
+sentinel now sees them as equal.
+
+**Provenance:** ARCH-05, Wave 1.
+
+---
+
+### 12. `UseLocking` will be a no-op
+
+**Status: DONE** — landed in Wave 1 (ARCH-04).
+
+**Behavioral change (no compile break).** `net/http.Client` is goroutine-safe and the client no longer
+serializes requests. `ClientConfig.UseLocking` is retained for source compatibility but is marked
+`// Deprecated:` and has **no effect** — setting it `true` or `false` changes nothing. Remove it from your
+config.
+
+**Provenance:** ARCH-04, Wave 1.
+
+---
+
+### 13. Remove CSRF handling
+
+**Status: PENDING** — CSRF interceptor still active; retirement lands with issue #125 (API-key-only auth).
+
+**Type/behavior removal.** With username/password auth retired (#1), the `CSRFInterceptor` and its
+token-management logic become dead code and will be removed. The `CSRFInterceptor` exported type will
+disappear; any code referencing it directly will fail to compile.
+
+Migration: remove any direct use of `CSRFInterceptor`; the token is managed transparently for user/pass auth
+today and is irrelevant after API-key-only auth lands.
+
+**Provenance:** epic #117, dependent on #1 (API-key-only auth).
+
+---
+
+## Additional changes — provenance index
+
+Changes already documented in earlier waves that complement the 13-row table. Nothing here is new;
+entries are relocated from the prior wave-by-wave structure for traceability.
+
+### A. `CSRFInterceptor.CSRFToken`: exported field → accessor method (ARCH-04, Wave 1)
+
+**Signature change (compile break).** The previously-exported, directly-settable `CSRFToken string` field
+became an unexported field with a read-only accessor:
+
+```go
+// before
+type CSRFInterceptor struct { CSRFToken string }
+csrf.CSRFToken = "tok"  // settable
+tok := csrf.CSRFToken   // field read
+// after
+type CSRFInterceptor struct { csrfToken string /* guarded by sync.RWMutex */ }
+tok := csrf.CSRFToken() // accessor method; no setter
+```
+
+The token is managed internally and captured automatically from controller responses (race-safe). Any code
+that read or set the field, or used a composite literal with `CSRFToken:`, no longer compiles.
+
+### B. `DpiApp`/`DpiGroup` types removed (ARCH-08, Wave 1)
+
+**Type removal.** The unused `DpiApp` and `DpiGroup` types and their CRUD (`dpi_app.generated.go`,
+`dpi_group.generated.go`) were dead code — excluded from the `Client` interface yet still shipped — and are
+excluded from generation entirely. No `Client` method ever exposed them, so typical consumers are unaffected;
+any code directly referencing `unifi.DpiApp` / `unifi.DpiGroup` struct types must remove it. DPI *settings*
+remain available via `SettingDpi`.
+
+### C. `(*client).AddInterceptor` signature: `*ClientInterceptor` → `ClientInterceptor` (ARCH-18, Wave 2)
+
+**Signature change (compile break for direct callers).** `AddInterceptor` now takes the interceptor by
+value, matching how the interceptor slice and `ClientConfig.Interceptors` are typed:
+
+```go
+// before
+c.AddInterceptor(&myInterceptor)
+// after
+c.AddInterceptor(myInterceptor)
+```
+
+Dedup semantics also changed: previously by interface `==` (could panic on non-comparable types); now by
+concrete type via `reflect.TypeOf` — only one interceptor of a given concrete type is retained, and
+non-comparable interceptors no longer panic. `AddInterceptor` is **not** part of the public `Client`
+interface, so consumers using the `Client` interface are unaffected.
+
+### D. `Client` interface split into `InternalClient` + `Internal()`/`Official()` accessors (#119)
+
+See [#6 — New `integration/v1` API surface](#6-new-integrationv1-api-surface) above for the full entry. The
+`InternalClient` embedded interface and the `Internal()`/`Official()` accessors are the structural
+implementation of that row.
+
+### E. Official API unavailable on classic/old-style controllers (#119)
+
+**New runtime contract (no compile break).** `client.Official()` always returns a non-nil client, but every
+operation is gated. They return:
+
+- `ErrOfficialAPIDisabled` when `ClientConfig.DisableOfficialAPI` is set (fails fast, no probe).
 - `ErrOfficialAPIUnavailable` on an old-style (classic) controller, non-API-key auth, or a controller
-  version below `10.1.68` (the first release exposing `integration/v1`).
+  version below 10.1.68.
 
-Match with `errors.Is(err, unifi.ErrOfficialAPIUnavailable)` / `…ErrOfficialAPIDisabled`. The Internal API
-is unaffected. Note that **classic/old-style controllers are unsupported for 2.0.0's API-key-only auth**
-(the Official API requires a new-style UniFi OS controller); epic #117's breaking-changes table should
-gain a *"classic/old-style controllers unsupported in 2.0.0"* row to reflect this.
+Match with `errors.Is(err, unifi.ErrOfficialAPIUnavailable)` / `errors.Is(err, unifi.ErrOfficialAPIDisabled)`.
+The Internal API is unaffected.
+
+### F. Internal codegen-tool API changes (not public `unifi` surface)
+
+These affect only forks of the generator:
+
+- `DownloadAndExtract` gained a leading `*http.Client` parameter (TEST-07, Wave 1).
+- `DownloadAndExtract`/`downloadJar` gained a leading `context.Context` parameter (ARCH-15, Wave 2).
