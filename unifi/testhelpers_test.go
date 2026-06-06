@@ -155,6 +155,19 @@ func (cs *controllerServer) requestCount() int {
 	return len(cs.requests)
 }
 
+// countRequestsTo returns how many recorded requests matched path, read under mu.
+func (cs *controllerServer) countRequestsTo(path string) int {
+	cs.mu.Lock()
+	defer cs.mu.Unlock()
+	n := 0
+	for _, r := range cs.requests {
+		if r.Path == path {
+			n++
+		}
+	}
+	return n
+}
+
 // apiPath returns the full new-style request path for a controller-relative path
 // (the same join the client performs), e.g. "s/default/rest/user" ->
 // "/proxy/network/api/s/default/rest/user".
