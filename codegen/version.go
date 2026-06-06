@@ -19,6 +19,11 @@ const (
 	LatestVersionMarker = "latest"
 	baseDownloadUrl     = "https://dl.ui.com/unifi/%s/unifi_sysvinit_all.deb"
 
+	// officialSpecDownloadUrl is the UniFi OS Server package, served on the same
+	// dl.ui.com path as the internal deb but under a different filename; its data
+	// tar carries the Official-API OpenAPI spec (integration.json).
+	officialSpecDownloadUrl = "https://dl.ui.com/unifi/%s/unifi-uos_sysvinit.deb"
+
 	// firmwareApiTimeout bounds the firmware-latest JSON call: a slow
 	// or hung fw-update.ubnt.com must fail cleanly rather than stall codegen.
 	firmwareApiTimeout = 30 * time.Second
@@ -113,6 +118,19 @@ func (p *defaultUnifiVersionProvider) ByVersionMarker(versionMarker string) (*Un
 		}
 		return NewUnifiVersion(unifiVersion, unifiDownloadUrl), nil
 	}
+}
+
+// OfficialSpecURL returns the dl.ui.com URL of the UniFi OS Server package for
+// this version, whose data tar carries the Official-API OpenAPI spec.
+func (v *UnifiVersion) OfficialSpecURL() (*url.URL, error) {
+	return url.Parse(fmt.Sprintf(officialSpecDownloadUrl, v.Version.Core()))
+}
+
+// officialSpecSnapshotPath returns the committed snapshot path for the Official
+// OpenAPI spec of the given version: <baseDir>/openapi/integration-<ver>.json.
+// The versioned filename is the pin, mirroring the .unifi-version marker.
+func officialSpecSnapshotPath(baseDir string, version *version.Version) string {
+	return filepath.Join(baseDir, "openapi", fmt.Sprintf("integration-%s.json", version.Core()))
 }
 
 func writeVersionFile(version *version.Version, outDir string) error {

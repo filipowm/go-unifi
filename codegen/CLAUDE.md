@@ -7,6 +7,12 @@ which runs: `go run ../codegen/ -version-base-dir=../codegen/ <version>`.
 
 1. `download.go` — downloads the controller `.deb` from dl.ui.com, extracts `data.tar.xz` → `ace.jar` → JSON field definitions (`api/fields/*.json`).
    `Setting.json` is split into per-setting files.
+   1a. **Official OpenAPI spec source** (`download.go` `DownloadAndExtractOfficialSpec` + `version.go` `OfficialSpecURL`) — alongside the internal `.deb`, fetches the
+   UniFi OS Server package `unifi-uos_sysvinit.deb` (same dl.ui.com path, different filename, keyed by the same version), extracts `integration.json` (the
+   Official-API OpenAPI 3.1 spec) from `./usr/lib/unifi/webapps/ROOT/api-docs/integration.json` in its `data.tar.xz`, and commits a **byte-for-byte pinned
+   snapshot** at `codegen/openapi/integration-<ver>.json`. The versioned filename is the pin (mirrors `.unifi-version`); the committed snapshot makes generation
+   deterministic and surfaces the spec delta in PR diffs. Packages predating the Official API (< 10.1.68, no `integration.json`) are skipped with a warning so the
+   internal pipeline never regresses; downstream OpenAPI codegen stages (#121) consume the committed snapshot, not a live fetch.
 2. `resources.go` — parses each JSON into a Resource; infers Go types from the field validation regexes; snake_case → CamelCase (acronyms via `fieldReps`).
 3. `customize.go` — applies `customizations.yml` field overrides.
 4. `generator.go` — renders `api.go.tmpl` / `apiv2.go.tmpl` → `<resource>.generated.go`; writes `version.generated.go` and the repo `.unifi-version` marker.
@@ -37,7 +43,10 @@ ingests remote, code-influencing data. Guards in place:
 - **Atomic extraction:** extraction runs in a sibling `*.tmp-*` dir that is `os.Rename`d
   into place only after a fully-successful extract, with a `.extract-complete` sentinel
   written last. A version dir lacking the sentinel (a crashed prior run) is treated as
-  incomplete and re-extracted — a partial tree is never silently accepted.
+  incomplete and re-extracted — a partial tree is never silently accepted. The Official-spec
+  snapshot is a single file, so it uses a temp-file-`os.Rename` publish (no sentinel — one
+  rename is itself atomic) and the same `copyWithLimit` cap (`maxOpenAPISpecSize`); the deb
+  fetch shares the internal `withDebDataTar` helper, so host pinning + timeouts apply identically.
 - **NOT yet pinned:** there is no checksum/signature verification of the `.deb` — the
   firmware API exposes no checksum to verify against. Provenance rests on HTTPS + host
   pinning + the `api/fields/*.json` allowlist + size caps (`copyWithLimit`). To harden
@@ -45,7 +54,8 @@ ingests remote, code-influencing data. Guards in place:
 
 ## Versioning
 
-- `codegen/v<X.Y.Z>/` holds the JSON field defs per controller version (`v2/` = V2 API resources, rendered with `apiv2.go.tmpl`, different endpoints).
+- `codegen/v<X.Y.Z>/` holds the JSON field defs per controller version (`v2/` = V2 API resources, rendered with `apiv2.go.tmpl`, different endpoints). It is a
+  download cache (`.gitignore`d), unlike `codegen/openapi/integration-<ver>.json` which is a **committed** snapshot.
 - `.unifi-version` (repo root) and the version arg in `unifi/codegen.go` pin the supported version.
 
 ## Workflows
