@@ -190,7 +190,7 @@ func TestHandleError(t *testing.T) {
 }
 
 // TestHandleError_NonJSONBody asserts that an empty or non-JSON error body still
-// yields a populated *ServerError carrying the status/method/URL (ARCH-05),
+// yields a populated *ServerError carrying the status/method/URL,
 // rather than leaking a bare io.EOF or "invalid character" decode error.
 func TestHandleError_NonJSONBody(t *testing.T) {
 	t.Parallel()
@@ -232,7 +232,7 @@ func TestHandleError_NonJSONBody(t *testing.T) {
 
 // TestHandleError_NotFound asserts that a real HTTP 404 maps to ErrNotFound via
 // ServerError.Is, so errors.Is(err, ErrNotFound) holds for both a genuine 404
-// and the existing empty-data 200 case (ARCH-05).
+// and the existing empty-data 200 case.
 func TestHandleError_NotFound(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)

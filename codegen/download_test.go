@@ -137,8 +137,8 @@ func TestDownloadAndExtract_WithCompletedDirectory(t *testing.T) {
 }
 
 // Test that an existing-but-sentinel-less directory (a partial/crashed prior
-// run, ARCH-16) is NOT treated as complete: the code proceeds to validate+fetch,
-// and here the disallowed host trips the ARCH-15 guard, proving the dir was not
+// run) is NOT treated as complete: the code proceeds to validate+fetch,
+// and here the disallowed host trips the guard, proving the dir was not
 // silently accepted.
 func TestDownloadAndExtract_PartialDirectoryReExtracts(t *testing.T) {
 	t.Parallel()
@@ -568,7 +568,7 @@ func TestDownloadAndExtract_FullChainOffline(t *testing.T) {
 	r.NoError(err)
 	a.JSONEq(`{"key":"value"}`, string(data))
 
-	// ARCH-16: a successful extract drops the completion sentinel and removes the
+	// A successful extract drops the completion sentinel and removes the
 	// intermediate ace.jar from the published directory.
 	_, err = os.Stat(filepath.Join(outputDir, extractCompleteSentinel))
 	r.NoError(err, "completion sentinel must be present after a successful extract")
@@ -595,13 +595,13 @@ func TestDownloadAndExtract_NotFoundOffline(t *testing.T) {
 	r.Error(err)
 	r.ErrorContains(err, "HTTP404")
 
-	// ARCH-16: a failed download must not leave a sentinel-bearing (or even
+	// A failed download must not leave a sentinel-bearing (or even
 	// existing) output dir behind.
 	_, statErr := os.Stat(filepath.Join(outputDir, extractCompleteSentinel))
 	r.ErrorIs(statErr, os.ErrNotExist, "no sentinel after a failed download")
 }
 
-// TestDownloadAndExtract_ContextCancelled asserts ARCH-15: a pre-cancelled
+// TestDownloadAndExtract_ContextCancelled asserts that a pre-cancelled
 // context aborts the download before (or during) the request and surfaces a
 // context error, leaving no completed output dir.
 func TestDownloadAndExtract_ContextCancelled(t *testing.T) {
@@ -631,7 +631,7 @@ func TestDownloadAndExtract_ContextCancelled(t *testing.T) {
 	r.ErrorIs(statErr, os.ErrNotExist, "cancelled download must not leave an output dir")
 }
 
-// TestValidateDownloadURL pins the ARCH-15 host/scheme guard: only https on a
+// TestValidateDownloadURL pins the host/scheme guard: only https on a
 // Ubiquiti host (or any loopback host, for the offline test seam) is allowed.
 func TestValidateDownloadURL(t *testing.T) {
 	t.Parallel()
@@ -709,7 +709,7 @@ func TestDownloadAndExtract_RejectsBadURL(t *testing.T) {
 	r.ErrorIs(statErr, os.ErrNotExist, "rejected URL must not create an output dir")
 }
 
-// TestDownloadAndExtract_MidExtractFailureReExtracts pins ARCH-16's core
+// TestDownloadAndExtract_MidExtractFailureReExtracts pins the core
 // guarantee: an extract that fails partway (here, an oversize JSON entry trips
 // the decompression-bomb cap) leaves NO completed output dir, and a subsequent
 // run against a healthy server re-extracts successfully.

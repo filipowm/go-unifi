@@ -249,7 +249,7 @@ func TestExcludedClientFunctions_NilSafe(t *testing.T) {
 func TestExcludedClientFunctions_UnknownActionWarns(t *testing.T) {
 	// Parallel-safe: the warning sink is an INJECTED logger with its own local
 	// hook, not the mutated package global, so this test shares no state with any
-	// other and reads only its own entries. See TEST-13.
+	// other and reads only its own entries.
 	t.Parallel()
 	yamlContent := `
 customizations:
@@ -284,7 +284,7 @@ customizations:
 	assert.Contains(t, msgs, `excludeFunctions: unknown action "List" for resource SettingMgmt (ignored)`)
 }
 
-// TestApplyToResource_OrderingContract pins the ARCH-21 field-processor ordering
+// TestApplyToResource_OrderingContract pins the field-processor ordering
 // contract: the YAML field customizations run FIRST (the _all keyword, then the
 // named field), then any processor pre-installed by customizeResource. Each leg
 // runs once per field. A pre-installed processor that records the FieldType it
@@ -341,7 +341,7 @@ customizations:
 // mutates the processor chain on every call: a second call re-wraps the YAML
 // customization leg around the chain so it runs twice. This is exactly why
 // customizations must be applied EXACTLY ONCE per resource (and why the dead
-// re-apply in collectResourceGenerators was removed — see ARCH-21). The guard
+// re-apply in collectResourceGenerators was removed). The guard
 // counts YAML-leg invocations through a customUnmarshalFunc override that the
 // pre-installed leaf records on each pass.
 func TestApplyFieldOverrides_IsNotANoOp(t *testing.T) {
@@ -382,7 +382,7 @@ customizations:
 	// Re-wrap once more: applyFieldOverrides must produce a NEW, deeper chain (it is
 	// not a no-op). The processor function identity must change, proving a second
 	// apply would genuinely duplicate the YAML customization — which is why
-	// ApplyToResource must run exactly once per resource (ARCH-21).
+	// ApplyToResource must run exactly once per resource.
 	rc.applyFieldOverrides(res)
 	doubled := res.FieldProcessor
 	assert.NotEqual(t,
@@ -396,7 +396,7 @@ customizations:
 }
 
 // TestCollectResourceGenerators_DoesNotReapplyCustomizations is the decisive
-// ARCH-21 guard: customizations are applied once, in
+// Customizations are applied once, in
 // buildResourcesFromDownloadedFields, BEFORE processJSON. collectResourceGenerators
 // must NOT re-apply them (the removed dead line re-wrapped a processor nobody
 // invokes again). We pass a resource whose FieldProcessor is a sentinel and assert

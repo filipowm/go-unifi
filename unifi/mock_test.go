@@ -11,7 +11,7 @@ import (
 
 // TestClientMockUsableAsClient demonstrates the moq-generated ClientMock standing
 // in for the public Client interface: a consumer wires a Func, calls through the
-// interface type, and inspects the recorded calls. This locks in TEST-10's
+// interface type, and inspects the recorded calls. This locks in the
 // promise that downstreams can unit-test against go-unifi without a controller.
 func TestClientMockUsableAsClient(t *testing.T) {
 	t.Parallel()

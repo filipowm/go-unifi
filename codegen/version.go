@@ -19,7 +19,7 @@ const (
 	LatestVersionMarker = "latest"
 	baseDownloadUrl     = "https://dl.ui.com/unifi/%s/unifi_sysvinit_all.deb"
 
-	// firmwareApiTimeout bounds the firmware-latest JSON call (ARCH-15): a slow
+	// firmwareApiTimeout bounds the firmware-latest JSON call: a slow
 	// or hung fw-update.ubnt.com must fail cleanly rather than stall codegen.
 	firmwareApiTimeout = 30 * time.Second
 )
@@ -86,7 +86,7 @@ func (p *defaultUnifiVersionProvider) Latest() (*UnifiVersion, error) {
 		if firmware.Platform != debianPlatform || firmware.Version == nil {
 			continue
 		}
-		// ARCH-15 (folds ARCH-E13): re-validate the channel/product locally
+		// Re-validate the channel/product locally
 		// instead of trusting the server-side filter on the firmware API.
 		if firmware.Channel != releaseChannel || firmware.Product != unifiControllerProduct {
 			continue

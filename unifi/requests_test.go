@@ -168,7 +168,7 @@ func TestHandleResponseDecodeError(t *testing.T) {
 	require.ErrorContains(t, err, "/widgets")
 }
 
-// TestHandleResponseDecodesBodyWithZeroContentLength is the ARCH-11 regression:
+// TestHandleResponseDecodesBodyWithZeroContentLength is the regression:
 // a 200 carrying a real JSON body but reporting ContentLength==0 (as a proxy or
 // HTTP/2 path can) must still decode into respBody instead of being silently
 // skipped. The decode decision is made on the body, not the transport header.
@@ -190,7 +190,7 @@ func TestHandleResponseDecodesBodyWithZeroContentLength(t *testing.T) {
 }
 
 // TestHandleResponseChunkedBody verifies the chunked transfer case
-// (ContentLength == -1) still decodes correctly after the ARCH-11 change.
+// (ContentLength == -1) still decodes correctly after the change.
 func TestHandleResponseChunkedBody(t *testing.T) {
 	t.Parallel()
 
@@ -225,7 +225,7 @@ func TestHandleResponseEmptyBodyNoContent(t *testing.T) {
 	assert.Nil(t, out, "respBody must remain untouched on a genuinely empty body")
 }
 
-// TestHandleResponseMetaRcError is the ARCH-10/O5 regression: a 200 carrying
+// TestHandleResponseMetaRcError is the regression: a 200 carrying
 // meta.rc=="error" (a soft application failure) must surface as a *ServerError
 // carrying the rc/msg, NOT be swallowed into an empty decode or ErrNotFound.
 func TestHandleResponseMetaRcError(t *testing.T) {
@@ -260,7 +260,7 @@ func TestHandleResponseMetaRcError(t *testing.T) {
 // metaEnvelopeError probes with the canonical lowercase `json:"meta"` tag. The probe
 // surfaces the soft failure ONLY because encoding/json matches object keys
 // case-insensitively; a future exact-case refactor of the probe would silently stop
-// catching soft rc:error responses — the exact regression ARCH-10/O5 set out to kill.
+// catching soft rc:error responses — the exact regression set out to kill.
 // This test fails loudly if that reliance ever breaks.
 func TestHandleResponseMetaRcErrorCapitalMeta(t *testing.T) {
 	t.Parallel()
@@ -288,7 +288,7 @@ func TestHandleResponseMetaRcErrorCapitalMeta(t *testing.T) {
 	assert.NotErrorIs(t, err, ErrNotFound)
 }
 
-// TestHandleResponseMetaRcErrorCarriesResponseContext is the ARCH-10 fidelity
+// TestHandleResponseMetaRcErrorCarriesResponseContext is the fidelity
 // regression: the *ServerError surfaced for a soft (HTTP 200) meta.rc=="error"
 // must carry the HTTP context (status code, request method, request URL) stamped
 // from the response — not render the lossy "Server error (0) for  : <msg>". The
@@ -332,7 +332,7 @@ func TestHandleResponseMetaRcErrorCarriesResponseContext(t *testing.T) {
 }
 
 // TestHandleResponseMetaRcErrorNilRequest guards the resp.Request==nil branch of
-// the ARCH-10 enrichment: a hand-built response with no Request must not panic and
+// the enrichment: a hand-built response with no Request must not panic and
 // must still carry the status code (method/URL stay empty).
 func TestHandleResponseMetaRcErrorNilRequest(t *testing.T) {
 	t.Parallel()
@@ -360,7 +360,7 @@ func TestHandleResponseMetaRcErrorNilRequest(t *testing.T) {
 	assert.Empty(t, serverErr.RequestURL)
 }
 
-// TestDecodeResponseBodyExceedsCap is the ARCH-11 regression: a body larger than
+// TestDecodeResponseBodyExceedsCap is the regression: a body larger than
 // maxResponseBodySize must surface an explicit "exceeded N bytes" error BEFORE any
 // decode attempt — not a silently-truncated body that fails with an opaque JSON
 // decode error. The cap is temporarily lowered (and restored via defer) so the
@@ -454,7 +454,7 @@ func TestHandleResponseRespBodyNilSkipsMetaCheck(t *testing.T) {
 }
 
 // TestMetaErrorSemantics pins the refined Meta.error() gating used by the
-// centralized handleResponse rc-error check (ARCH-10/O5): rc=="ok" and an
+// centralized handleResponse rc-error check: rc=="ok" and an
 // absent rc (rc=="") both carry no failure; only a non-empty, non-"ok" rc
 // surfaces a *ServerError carrying the rc/msg.
 func TestMetaErrorSemantics(t *testing.T) {

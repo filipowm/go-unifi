@@ -14,7 +14,7 @@ import (
 // TestSetupLogging asserts the level mapping on the logger RETURNED by
 // setupLogging. setupLogging no longer mutates the package-global logger (it
 // returns a fresh instance the CLI injects), so this test is now fully
-// parallel-safe and shares no state with any other test. See TEST-13.
+// parallel-safe and shares no state with any other test.
 func TestSetupLogging(t *testing.T) {
 	t.Parallel()
 

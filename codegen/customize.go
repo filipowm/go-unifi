@@ -33,8 +33,8 @@ type ResourceCustomization struct {
 	// for this resource (after the id segment on id-suffixed get/update/delete
 	// URLs, and after the bare path on list/create). This is the first-class
 	// alternative to smuggling a "?foo=bar" suffix into resourcePath, which would
-	// otherwise produce malformed id-suffixed URLs like ".../x?q=1/%s". See
-	// ARCH-19. Keys are rendered in deterministic (sorted) order and URL-encoded.
+	// otherwise produce malformed id-suffixed URLs like ".../x?q=1/%s".
+	// Keys are rendered in deterministic (sorted) order and URL-encoded.
 	QueryParams      map[string]string `yaml:"queryParams"`
 	ExcludeFunctions []string          `yaml:"excludeFunctions"`
 }
@@ -99,7 +99,7 @@ func compositeCustomizationsProcessor(customizationsProcessor FieldProcessor) Fi
 // is the only consumer, ApplyTo must be called before processJSON and exactly
 // once per resource — collectResourceGenerators no longer re-applies it (that
 // second call was dead: it re-wrapped a processor nobody invoked again and
-// re-set resourcePath to the same value). See ARCH-21.
+// re-set resourcePath to the same value).
 func (r *ResourceCustomization) ApplyTo(resource *Resource) {
 	if resource.StructName != r.ResourceName {
 		return
@@ -223,7 +223,7 @@ type CodeCustomizer struct {
 	// logger receives customizer diagnostics (the unknown-excludeFunctions
 	// warning). It is injected by generate()/generateCode; when nil, log()
 	// falls back to the package-global logger so a directly-built customizer
-	// (tests) still works. See TEST-13.
+	// (tests) still works.
 	logger Logger
 }
 
@@ -325,7 +325,7 @@ func (r *CodeCustomizer) ApplyToClient(client *ClientInfoBuilder) {
 }
 
 // log returns the customizer's injected logger, or the package-global fallback
-// when none was set. See TEST-13.
+// when none was set.
 func (r *CodeCustomizer) log() Logger {
 	return orDefaultLogger(r.logger)
 }

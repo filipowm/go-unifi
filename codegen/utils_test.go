@@ -13,7 +13,7 @@ import (
 
 // TestEnsurePath pins ensurePath's three outcomes: an existing directory is a
 // no-op returning (false,nil); a missing path is created returning (true,nil);
-// a path that is a FILE returns the "isn't a directory" error. See TEST-16.
+// a path that is a FILE returns the "isn't a directory" error.
 func TestEnsurePath(t *testing.T) {
 	t.Parallel()
 
@@ -49,7 +49,6 @@ func TestEnsurePath(t *testing.T) {
 // TestFindProjectRoot chdirs into a synthetic tree whose only go.mod sits at the
 // temp root and asserts findProjectRoot walks up to it. NOT parallel: it mutates
 // process-global cwd via t.Chdir (restored automatically by the test framework).
-// See TEST-16.
 func TestFindProjectRoot(t *testing.T) {
 	root := t.TempDir()
 	require.NoError(t, os.WriteFile(filepath.Join(root, "go.mod"), []byte("module example.com/synthetic\n"), 0o644)) //nolint:gosec
@@ -73,7 +72,6 @@ func TestFindProjectRoot(t *testing.T) {
 
 // TestFindCodegenDir asserts findCodegenDir returns the project root (as found
 // by findProjectRoot) with "codegen" joined onto it. NOT parallel: t.Chdir.
-// See TEST-16.
 func TestFindCodegenDir(t *testing.T) {
 	root := t.TempDir()
 	require.NoError(t, os.WriteFile(filepath.Join(root, "go.mod"), []byte("module example.com/synthetic\n"), 0o644)) //nolint:gosec

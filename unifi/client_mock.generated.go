@@ -505,6 +505,9 @@ var _ Client = &ClientMock{}
 //			GetTagFunc: func(ctx context.Context, site string, id string) (*Tag, error) {
 //				panic("mock out the GetTag method")
 //			},
+//			GetTrafficFlowsFunc: func(ctx context.Context, site string, req *TrafficFlowsRequest) (*TrafficFlowsResponse, error) {
+//				panic("mock out the GetTrafficFlows method")
+//			},
 //			GetUserFunc: func(ctx context.Context, site string, id string) (*User, error) {
 //				panic("mock out the GetUser method")
 //			},
@@ -1432,6 +1435,9 @@ type ClientMock struct {
 
 	// GetTagFunc mocks the GetTag method.
 	GetTagFunc func(ctx context.Context, site string, id string) (*Tag, error)
+
+	// GetTrafficFlowsFunc mocks the GetTrafficFlows method.
+	GetTrafficFlowsFunc func(ctx context.Context, site string, req *TrafficFlowsRequest) (*TrafficFlowsResponse, error)
 
 	// GetUserFunc mocks the GetUser method.
 	GetUserFunc func(ctx context.Context, site string, id string) (*User, error)
@@ -3214,6 +3220,15 @@ type ClientMock struct {
 			// ID is the id argument value.
 			ID string
 		}
+		// GetTrafficFlows holds details about calls to the GetTrafficFlows method.
+		GetTrafficFlows []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Site is the site argument value.
+			Site string
+			// Req is the req argument value.
+			Req *TrafficFlowsRequest
+		}
 		// GetUser holds details about calls to the GetUser method.
 		GetUser []struct {
 			// Ctx is the ctx argument value.
@@ -4568,6 +4583,7 @@ type ClientMock struct {
 	lockGetSystemInformation             sync.RWMutex
 	lockGetSystemInformationContext      sync.RWMutex
 	lockGetTag                           sync.RWMutex
+	lockGetTrafficFlows                  sync.RWMutex
 	lockGetUser                          sync.RWMutex
 	lockGetUserByMAC                     sync.RWMutex
 	lockGetUserGroup                     sync.RWMutex
@@ -10962,6 +10978,46 @@ func (mock *ClientMock) GetTagCalls() []struct {
 	mock.lockGetTag.RLock()
 	calls = mock.calls.GetTag
 	mock.lockGetTag.RUnlock()
+	return calls
+}
+
+// GetTrafficFlows calls GetTrafficFlowsFunc.
+func (mock *ClientMock) GetTrafficFlows(ctx context.Context, site string, req *TrafficFlowsRequest) (*TrafficFlowsResponse, error) {
+	if mock.GetTrafficFlowsFunc == nil {
+		panic("ClientMock.GetTrafficFlowsFunc: method is nil but Client.GetTrafficFlows was just called")
+	}
+	callInfo := struct {
+		Ctx  context.Context
+		Site string
+		Req  *TrafficFlowsRequest
+	}{
+		Ctx:  ctx,
+		Site: site,
+		Req:  req,
+	}
+	mock.lockGetTrafficFlows.Lock()
+	mock.calls.GetTrafficFlows = append(mock.calls.GetTrafficFlows, callInfo)
+	mock.lockGetTrafficFlows.Unlock()
+	return mock.GetTrafficFlowsFunc(ctx, site, req)
+}
+
+// GetTrafficFlowsCalls gets all the calls that were made to GetTrafficFlows.
+// Check the length with:
+//
+//	len(mockedClient.GetTrafficFlowsCalls())
+func (mock *ClientMock) GetTrafficFlowsCalls() []struct {
+	Ctx  context.Context
+	Site string
+	Req  *TrafficFlowsRequest
+} {
+	var calls []struct {
+		Ctx  context.Context
+		Site string
+		Req  *TrafficFlowsRequest
+	}
+	mock.lockGetTrafficFlows.RLock()
+	calls = mock.calls.GetTrafficFlows
+	mock.lockGetTrafficFlows.RUnlock()
 	return calls
 }
 

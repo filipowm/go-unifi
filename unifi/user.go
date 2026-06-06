@@ -59,7 +59,7 @@ func (c *client) CreateUser(ctx context.Context, site string, d *User) (*User, e
 		return nil, errors.New("malformed group response")
 	}
 
-	// ARCH-10: the centralized soft (HTTP 200) rc:error check in handleResponse only
+	// The centralized soft (HTTP 200) rc:error check in handleResponse only
 	// probes the TOP-LEVEL meta envelope. The stamgr group-create response nests a
 	// SECOND envelope ({meta:{rc}, data:[{Meta:{rc}, data:[...]}]}); a nested
 	// rc=="error" with empty inner data would otherwise fall through to the

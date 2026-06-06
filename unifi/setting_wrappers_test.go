@@ -139,7 +139,7 @@ func TestSetSetting(t *testing.T) {
 	}
 }
 
-// TestGetSettingErrNotFoundSurvivesWrap is the TEST-05 sentinel-survival guard: a
+// TestGetSettingErrNotFoundSurvivesWrap is the sentinel-survival guard: a
 // real HTTP 404 from the controller flows through GetSetting's
 // `fmt.Errorf("unable to get setting %s: %w", ...)` wrap, and errors.Is must
 // still resolve it to the ErrNotFound sentinel (via ServerError.Is mapping 404 ->

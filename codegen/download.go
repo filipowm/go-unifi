@@ -31,7 +31,7 @@ const (
 	// multi-MB .deb body is the long pole, so this is generous.
 	defaultDownloadTimeout = 5 * time.Minute
 
-	// extractCompleteSentinel marks a fully-extracted output directory. ARCH-16:
+	// extractCompleteSentinel marks a fully-extracted output directory:
 	// a version dir without this file is treated as partial/crashed and is
 	// re-extracted, so a run that dies mid-extraction can never be silently
 	// accepted on the next invocation.
@@ -39,7 +39,7 @@ const (
 )
 
 // allowedDownloadHostSuffixes pins the controller download to Ubiquiti-owned
-// hosts (ARCH-15). The static base URL lives under dl.ui.com and the firmware
+// hosts. The static base URL lives under dl.ui.com and the firmware
 // API redirects downloads to fw-download.ubnt.com, so both registrable domains
 // are permitted (host == suffix or *.suffix). Loopback hosts are allowed
 // separately to keep the offline httptest seam working.
@@ -47,7 +47,7 @@ var allowedDownloadHostSuffixes = []string{"ui.com", "ubnt.com"}
 
 // DownloadAndExtract downloads the controller .deb from downloadUrl and extracts
 // the API field-definition JSONs into outputDir. ctx bounds the network
-// download (ARCH-15). Extraction is atomic (ARCH-16): work happens in a sibling
+// download. Extraction is atomic: work happens in a sibling
 // temp dir that is renamed into place only after a fully-successful extract, and
 // a non-existent or sentinel-less outputDir is treated as missing and
 // re-extracted, so a crashed prior run can never be silently accepted.
@@ -61,7 +61,7 @@ func DownloadAndExtract(ctx context.Context, client *http.Client, downloadUrl ur
 		return nil
 	}
 
-	// ARCH-15: reject anything that is not an https URL on a Ubiquiti host (or a
+	// Reject anything that is not an https URL on a Ubiquiti host (or a
 	// loopback test server) before issuing any request.
 	if err := validateDownloadURL(downloadUrl); err != nil {
 		return fmt.Errorf("refusing to download controller package: %w", err)
@@ -71,7 +71,7 @@ func DownloadAndExtract(ctx context.Context, client *http.Client, downloadUrl ur
 }
 
 // downloadAndExtractAtomic performs the download+extract into a sibling temp dir
-// and renames it into place only after a fully-successful extract (ARCH-16), so
+// and renames it into place only after a fully-successful extract, so
 // a partial extract never lands at outputDir and a crashed run is re-extracted.
 func downloadAndExtractAtomic(ctx context.Context, client *http.Client, downloadUrl url.URL, outputDir string) error {
 	parent := filepath.Dir(outputDir)
@@ -145,7 +145,7 @@ func extractionComplete(outputDir string) (bool, error) {
 	return true, nil
 }
 
-// validateDownloadURL enforces the download provenance guard (ARCH-15): the URL
+// validateDownloadURL enforces the download provenance guard: the URL
 // must use https and target a Ubiquiti-owned host. Loopback hosts (the offline
 // httptest seam) are exempted from the scheme/host checks.
 func validateDownloadURL(downloadUrl url.URL) error {
@@ -187,7 +187,7 @@ func hostAllowed(host string) bool {
 
 func downloadJar(ctx context.Context, client *http.Client, downloadUrl url.URL, outputDir string) (string, error) {
 	if client == nil {
-		// ARCH-15: never use http.DefaultClient (no timeout) for a multi-MB
+		// Never use http.DefaultClient (no timeout) for a multi-MB
 		// streamed download; construct one with a sane default timeout.
 		client = &http.Client{Timeout: defaultDownloadTimeout}
 	} else if client.Timeout == 0 {
