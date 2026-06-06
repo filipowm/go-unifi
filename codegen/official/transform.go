@@ -27,7 +27,7 @@ func Transform(doc map[string]any) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := downconvert(doc, schemas); err != nil {
+	if err := downconvert(doc); err != nil {
 		return nil, err
 	}
 	if err := assertUpperSnakeMappings(schemas); err != nil {
@@ -75,9 +75,9 @@ func schemasOf(doc map[string]any) (map[string]any, error) {
 	return schemas, nil
 }
 
-// thirtyOneOnly are JSON-Schema keywords that exist only in OpenAPI 3.1; the
+// fields31Only are JSON-Schema keywords that exist only in OpenAPI 3.1; the
 // downconvert is lossless precisely because the spec uses none of them.
-var thirtyOneOnly = []string{
+var fields31Only = []string{
 	"prefixItems", "const", "unevaluatedProperties", "unevaluatedItems",
 	"$dynamicRef", "$dynamicAnchor", "if", "then", "else",
 	"dependentSchemas", "dependentRequired", "patternProperties", "contentMediaType",
@@ -85,15 +85,15 @@ var thirtyOneOnly = []string{
 
 // downconvert rewrites the OpenAPI version 3.1.0 -> 3.0.3. It first asserts the
 // spec carries no 3.1-exclusive construct so the version bump cannot lose data.
-func downconvert(doc map[string]any, schemas map[string]any) error {
+// The scan walks the WHOLE document (paths, parameters, requestBodies, responses,
+// etc.), not just components.schemas, so no 3.1-only construct escapes the guard.
+func downconvert(doc map[string]any) error {
 	ver, _ := doc["openapi"].(string)
 	if !strings.HasPrefix(ver, "3.1") {
 		return fmt.Errorf("expected OpenAPI 3.1.x spec, got %q", ver)
 	}
 	var found []string
-	for name, s := range schemas {
-		scan31(name, s, &found)
-	}
+	scan31("root", doc, &found)
 	if len(found) > 0 {
 		sort.Strings(found)
 		return fmt.Errorf("spec contains OpenAPI 3.1-only constructs, downconvert would be lossy: %s", strings.Join(found, ", "))
@@ -134,7 +134,7 @@ func scan31Node(path string, n map[string]any, found *[]string) {
 			*found = append(*found, path+"."+kw)
 		}
 	}
-	for _, kw := range thirtyOneOnly {
+	for _, kw := range fields31Only {
 		if _, ok := n[kw]; ok {
 			*found = append(*found, path+"."+kw)
 		}

@@ -54,8 +54,7 @@ func TestDownconvertRejects31Constructs(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			doc := docWith(map[string]any{"Bad": bad})
-			schemas, _ := schemasOf(doc)
-			err := downconvert(doc, schemas)
+			err := downconvert(doc)
 			require.Error(t, err)
 			assert.Contains(t, err.Error(), "3.1-only")
 		})
@@ -65,8 +64,7 @@ func TestDownconvertRejects31Constructs(t *testing.T) {
 func TestDownconvertSetsVersion(t *testing.T) {
 	t.Parallel()
 	doc := docWith(map[string]any{"Ok": map[string]any{"type": "object"}})
-	schemas, _ := schemasOf(doc)
-	require.NoError(t, downconvert(doc, schemas))
+	require.NoError(t, downconvert(doc))
 	assert.Equal(t, "3.0.3", doc["openapi"])
 }
 

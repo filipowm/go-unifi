@@ -101,7 +101,7 @@ func normalizeHeader(code string) (string, error) {
 func ResolveSnapshot(dir string) (string, error) {
 	matches, err := filepath.Glob(filepath.Join(dir, "integration-*.json"))
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("glob integration snapshots in %s: %w", dir, err)
 	}
 	if len(matches) != 1 {
 		return "", fmt.Errorf("expected exactly one integration-*.json in %s, found %d", dir, len(matches))

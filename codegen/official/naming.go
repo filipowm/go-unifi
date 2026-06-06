@@ -205,11 +205,10 @@ func dedupeEnumsWith(schemas map[string]any, table []sharedEnum) error {
 		for _, t := range se.targets {
 			// Validated above by enumProperty, so the lookups are safe.
 			props, prop, _ := enumProperty(schemas, t)
-			ref := map[string]any{"$ref": schemaRefPrefix + se.name}
-			if _, isArray := enumNode(prop); isArray {
-				prop["items"] = ref // keep the array + its constraints, repoint items only
+			if node, isArray := enumNode(prop); isArray {
+				prop["items"] = enumRef(node, se.name) // repoint items, keep array constraints
 			} else {
-				props[t.property] = ref
+				props[t.property] = enumRef(node, se.name)
 			}
 		}
 	}
@@ -255,6 +254,26 @@ func propertyBags(s map[string]any) []map[string]any {
 		}
 	}
 	return bags
+}
+
+// enumRef points an enum node at the shared type while preserving any sibling
+// metadata (description, example, x-*) it carried, so dedup never drops it. A
+// bare $ref in OpenAPI 3.0 ignores siblings, so surviving keys are wrapped in a
+// single-member allOf; a node with only type/enum yields a plain $ref.
+func enumRef(node map[string]any, name string) map[string]any {
+	ref := map[string]any{"$ref": schemaRefPrefix + name}
+	rest := map[string]any{}
+	for k, v := range node {
+		if k == "type" || k == "enum" {
+			continue
+		}
+		rest[k] = v
+	}
+	if len(rest) == 0 {
+		return ref
+	}
+	rest["allOf"] = []any{ref}
+	return rest
 }
 
 // enumNode returns the map carrying the enum keyword and whether it is an array
