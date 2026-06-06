@@ -24,10 +24,14 @@ func loadSnapshot(t *testing.T) []byte {
 	return raw
 }
 
+// NOTE: the three tests below call GenerateModels, which invokes oapi-codegen's
+// codegen.Generate — NOT concurrency-safe (it mutates a package-global map).
+// They MUST run serially; do not add t.Parallel() (the paralleltest linter is
+// off and won't catch a re-add).
+
 // TestGenerateModelsDeterministic proves generation is byte-identical on re-run
 // (no map-iteration ordering leaks into the output).
 func TestGenerateModelsDeterministic(t *testing.T) {
-	t.Parallel()
 	raw := loadSnapshot(t)
 	a, err := GenerateModels(raw, defaultPackageName)
 	require.NoError(t, err)
@@ -39,7 +43,6 @@ func TestGenerateModelsDeterministic(t *testing.T) {
 // TestModelsMatchCommitted asserts the committed models.generated.go is exactly
 // what the snapshot produces today — the in-repo mirror of the determinism gate.
 func TestModelsMatchCommitted(t *testing.T) {
-	t.Parallel()
 	raw := loadSnapshot(t)
 	got, err := GenerateModels(raw, defaultPackageName)
 	require.NoError(t, err)
@@ -54,7 +57,6 @@ func TestModelsMatchCommitted(t *testing.T) {
 // real spec: DO NOT EDIT header, no leaked Integration/Dto names, deduped ACL
 // action enum, and the empty-variant alias.
 func TestGeneratedSurface(t *testing.T) {
-	t.Parallel()
 	code, err := GenerateModels(loadSnapshot(t), defaultPackageName)
 	require.NoError(t, err)
 
