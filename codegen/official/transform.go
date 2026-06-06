@@ -28,7 +28,8 @@ func Transform(doc map[string]any) ([]string, error) {
 		return nil, err
 	}
 	if err := downconvert(doc); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("downconverting OpenAPI document: %w", err)
+	}
 	}
 	if err := assertUpperSnakeMappings(schemas); err != nil {
 		return nil, err
