@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	_ "embed"
+	"errors"
 	"flag"
 	"fmt"
 	"net/http"
@@ -158,16 +159,11 @@ func generate(opts options) error {
 	if err != nil {
 		return fmt.Errorf("unable to determine working directory: %w", err)
 	}
-	structuresDir := resolveDir(wd, opts.versionBaseDir)
-	structuresDir = filepath.Join(structuresDir, fmt.Sprintf("v%s", unifiVersion.Version))
-	logger.Infoln("Downloading UniFi Controller API structures definitions...")
-	ctx, cancel := context.WithTimeout(context.Background(), defaultDownloadTimeout)
-	defer cancel()
-	err = DownloadAndExtract(ctx, http.DefaultClient, *unifiVersion.DownloadUrl, structuresDir)
+	versionBaseDir := resolveDir(wd, opts.versionBaseDir)
+	structuresDir, err := downloadGenerationInputs(unifiVersion, versionBaseDir, logger)
 	if err != nil {
-		return fmt.Errorf("unable to download and extract UniFi Controller API structures definitions: %w", err)
+		return err
 	}
-	logger.Infof("Downloaded UniFi Controller API structures definitions in %s", structuresDir)
 
 	if opts.downloadOnly {
 		logger.Infoln("Structure JSONs ready!")
@@ -207,6 +203,48 @@ func generate(opts options) error {
 	}
 
 	logger.Infof("Generated resources in %s", outDir)
+	return nil
+}
+
+// downloadGenerationInputs downloads the internal API field-definition JSONs and
+// commits the Official OpenAPI spec snapshot, returning the structures dir. Both
+// fetches share one bounded context (the .deb stream is the long pole).
+func downloadGenerationInputs(unifiVersion *UnifiVersion, versionBaseDir string, logger Logger) (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), defaultDownloadTimeout)
+	defer cancel()
+
+	structuresDir := filepath.Join(versionBaseDir, fmt.Sprintf("v%s", unifiVersion.Version))
+	logger.Infoln("Downloading UniFi Controller API structures definitions...")
+	if err := DownloadAndExtract(ctx, http.DefaultClient, *unifiVersion.DownloadUrl, structuresDir); err != nil {
+		return "", fmt.Errorf("unable to download and extract UniFi Controller API structures definitions: %w", err)
+	}
+	logger.Infof("Downloaded UniFi Controller API structures definitions in %s", structuresDir)
+
+	if err := downloadOfficialSpecSnapshot(ctx, unifiVersion, versionBaseDir, logger); err != nil {
+		return "", err
+	}
+	return structuresDir, nil
+}
+
+// downloadOfficialSpecSnapshot fetches the UniFi OS Server package and commits
+// the integration.json snapshot under versionBaseDir. A package predating the
+// Official API (no integration.json) is skipped with a warning so the internal
+// pipeline never regresses; any other failure is fatal.
+func downloadOfficialSpecSnapshot(ctx context.Context, unifiVersion *UnifiVersion, versionBaseDir string, logger Logger) error {
+	specURL, err := unifiVersion.OfficialSpecURL()
+	if err != nil {
+		return fmt.Errorf("unable to build Official OpenAPI spec URL: %w", err)
+	}
+	specPath := officialSpecSnapshotPath(versionBaseDir, unifiVersion.Version)
+	logger.Infoln("Downloading Official OpenAPI spec snapshot...")
+	if err = DownloadAndExtractOfficialSpec(ctx, http.DefaultClient, *specURL, specPath); err != nil {
+		if errors.Is(err, errOfficialSpecNotFound) {
+			logger.Warnf("Official OpenAPI spec not present for %s (requires controller >= 10.1.68); skipping snapshot", unifiVersion.Version)
+			return nil
+		}
+		return fmt.Errorf("unable to download and extract Official OpenAPI spec: %w", err)
+	}
+	logger.Infof("Committed Official OpenAPI spec snapshot to %s", specPath)
 	return nil
 }
 

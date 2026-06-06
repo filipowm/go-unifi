@@ -3,6 +3,7 @@ package main
 import (
 	"archive/tar"
 	"archive/zip"
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -26,6 +27,15 @@ const (
 	maxAceJarSize = 128 << 20 // 128 MiB — ace.jar is ~tens of MB; generous headroom
 	maxJSONSize   = 5 << 20   // 5 MiB — individual API field JSONs are tiny
 
+	// maxOpenAPISpecSize caps the extracted integration.json (the Official-API
+	// OpenAPI spec, ~240 KiB today): generous headroom while still guarding
+	// against a decompression bomb.
+	maxOpenAPISpecSize = 32 << 20
+
+	// officialSpecTarPath is integration.json's location inside the UniFi OS
+	// Server package's data.tar.xz.
+	officialSpecTarPath = "./usr/lib/unifi/webapps/ROOT/api-docs/integration.json"
+
 	// defaultDownloadTimeout caps the whole .deb download+stream when the caller
 	// injects a client without its own Timeout (or a nil client). Streaming the
 	// multi-MB .deb body is the long pole, so this is generous.
@@ -44,6 +54,11 @@ const (
 // are permitted (host == suffix or *.suffix). Loopback hosts are allowed
 // separately to keep the offline httptest seam working.
 var allowedDownloadHostSuffixes = []string{"ui.com", "ubnt.com"}
+
+// errOfficialSpecNotFound marks a UniFi OS Server package that carries no
+// integration.json (controllers predating the Official API, < 10.1.68) so
+// callers can skip the snapshot instead of failing the whole generation.
+var errOfficialSpecNotFound = errors.New("integration.json (OpenAPI spec) not found in UniFi OS Server package")
 
 // DownloadAndExtract downloads the controller .deb from downloadUrl and extracts
 // the API field-definition JSONs into outputDir. ctx bounds the network
@@ -99,7 +114,8 @@ func downloadAndExtractAtomic(ctx context.Context, client *http.Client, download
 
 	// Drop the intermediate ace.jar so only the field JSONs remain, then write the
 	// completion sentinel last so the dir renamed into place is atomically complete.
-	_ = os.Remove(jarFile)
+	// Remove via the local tmpDir (not jarFile) to keep the path off the taint path.
+	_ = os.Remove(filepath.Join(tmpDir, "ace.jar"))
 	if err = os.WriteFile(filepath.Join(tmpDir, extractCompleteSentinel), nil, 0o644); err != nil { //nolint:gosec
 		return fmt.Errorf("unable to write extraction sentinel: %w", err)
 	}
@@ -186,13 +202,28 @@ func hostAllowed(host string) bool {
 }
 
 func downloadJar(ctx context.Context, client *http.Client, downloadUrl url.URL, outputDir string) (string, error) {
+	err := withDebDataTar(ctx, client, downloadUrl, func(dataTar io.Reader) error {
+		_, err := extractAceJar(dataTar, outputDir)
+		return err
+	})
+	if err != nil {
+		return "", err
+	}
+	// Reconstruct the path from outputDir rather than threading extractAceJar's
+	// return through the closure (keeps it a clean, non-tainted path).
+	return filepath.Join(outputDir, "ace.jar"), nil
+}
+
+// withDebDataTar downloads the .deb at downloadUrl and invokes fn with a reader
+// over the decompressed data.tar.xz, keeping the response body open for the
+// duration of the call. A nil/timeout-less client gets a default-timeout client
+// or a bounded context so a hung server cannot stall the (CI) generate job.
+func withDebDataTar(ctx context.Context, client *http.Client, downloadUrl url.URL, fn func(io.Reader) error) error {
 	if client == nil {
 		// Never use http.DefaultClient (no timeout) for a multi-MB
 		// streamed download; construct one with a sane default timeout.
 		client = &http.Client{Timeout: defaultDownloadTimeout}
 	} else if client.Timeout == 0 {
-		// Injected client without a timeout: bound this request via context so a
-		// hung server cannot stall the (CI) generate job indefinitely.
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(ctx, defaultDownloadTimeout)
 		defer cancel()
@@ -200,24 +231,109 @@ func downloadJar(ctx context.Context, client *http.Client, downloadUrl url.URL, 
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, downloadUrl.String(), nil)
 	if err != nil {
-		return "", fmt.Errorf("unable to download UniFi Controller deb: %w", err)
+		return fmt.Errorf("unable to download UniFi Controller deb: %w", err)
 	}
 
 	debResp, err := client.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("unable to download UniFi Controller deb: %w", err)
+		return fmt.Errorf("unable to download UniFi Controller deb: %w", err)
 	}
 	defer debResp.Body.Close()
 	if debResp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("unable to download UniFi Controller deb: HTTP%d. Probably it does not exist under %s", debResp.StatusCode, downloadUrl.String())
+		return fmt.Errorf("unable to download UniFi Controller deb: HTTP%d. Probably it does not exist under %s", debResp.StatusCode, downloadUrl.String())
 	}
 
 	uncompressedReader, err := openDebDataTar(debResp.Body)
 	if err != nil {
-		return "", err
+		return err
+	}
+	return fn(uncompressedReader)
+}
+
+// DownloadAndExtractOfficialSpec downloads the UniFi OS Server package from
+// downloadUrl, extracts the Official-API OpenAPI spec (integration.json), and
+// writes a byte-for-byte pinned snapshot to outputPath. It reuses the internal
+// trust model: https + Ubiquiti host pinning + size cap + atomic publish.
+func DownloadAndExtractOfficialSpec(ctx context.Context, client *http.Client, downloadUrl url.URL, outputPath string) error {
+	if err := validateDownloadURL(downloadUrl); err != nil {
+		return fmt.Errorf("refusing to download UniFi OS Server package: %w", err)
 	}
 
-	return extractAceJar(uncompressedReader, outputDir)
+	var spec []byte
+	err := withDebDataTar(ctx, client, downloadUrl, func(dataTar io.Reader) error {
+		b, err := extractOfficialSpec(dataTar)
+		spec = b
+		return err
+	})
+	if err != nil {
+		return err
+	}
+	return writeOfficialSpecSnapshot(spec, outputPath)
+}
+
+// extractOfficialSpec walks the data tar for integration.json and returns its
+// raw bytes, capped against decompression bombs. Returns errOfficialSpecNotFound
+// when the package predates the Official API.
+func extractOfficialSpec(r io.Reader) ([]byte, error) {
+	tarReader := tar.NewReader(r)
+	log.Debugln("extracting integration.json (OpenAPI spec) from downloaded UniFi OS Server package")
+	for {
+		header, err := tarReader.Next()
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("in next: %w", err)
+		}
+		if header.Typeflag != tar.TypeReg || header.Name != officialSpecTarPath {
+			continue
+		}
+
+		var buf bytes.Buffer
+		if _, err = copyWithLimit(&buf, tarReader, maxOpenAPISpecSize); err != nil {
+			return nil, fmt.Errorf("unable to read integration.json: %w", err)
+		}
+		log.Debugf("integration.json extracted (%d bytes)", buf.Len())
+		return buf.Bytes(), nil
+	}
+	return nil, errOfficialSpecNotFound
+}
+
+// writeOfficialSpecSnapshot writes the spec to outputPath atomically — temp file
+// in the same dir + rename — so a partial write never publishes. A single rename
+// is atomic, so (unlike the multi-file ace.jar path) no sentinel is needed.
+func writeOfficialSpecSnapshot(spec []byte, outputPath string) error {
+	if !json.Valid(spec) {
+		return errors.New("extracted integration.json is not valid JSON")
+	}
+
+	dir := filepath.Dir(outputPath)
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return fmt.Errorf("unable to create snapshot directory %s: %w", dir, err)
+	}
+	tmp, err := os.CreateTemp(dir, filepath.Base(outputPath)+".tmp-")
+	if err != nil {
+		return fmt.Errorf("unable to create snapshot temp file: %w", err)
+	}
+	tmpName := tmp.Name()
+	defer os.Remove(tmpName) // no-op once renamed away on success
+
+	if _, err = tmp.Write(spec); err != nil {
+		_ = tmp.Close()
+		return fmt.Errorf("unable to write snapshot: %w", err)
+	}
+	if err = tmp.Close(); err != nil {
+		return fmt.Errorf("unable to close snapshot temp file: %w", err)
+	}
+	// os.CreateTemp yields 0o600; normalize to the committed-marker mode.
+	if err = os.Chmod(tmpName, 0o644); err != nil {
+		return fmt.Errorf("unable to set snapshot file mode: %w", err)
+	}
+	if err = os.Rename(tmpName, outputPath); err != nil {
+		return fmt.Errorf("unable to publish snapshot to %s: %w", outputPath, err)
+	}
+	log.Debugf("Official OpenAPI spec snapshot written to: %s", outputPath)
+	return nil
 }
 
 // openDebDataTar iterates the entries of a .deb (ar archive) and returns a reader

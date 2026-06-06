@@ -5,6 +5,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -116,6 +117,241 @@ func buildControllerDeb(t *testing.T, fields map[string]string) []byte {
 		"./usr/lib/unifi/lib/ace.jar": aceJar,
 	})
 	return buildDeb(t, map[string][]byte{"data.tar.xz": dataTarXz})
+}
+
+// buildOfficialSpecTar wraps the given spec bytes in a plain tar at the
+// integration.json path inside a UniFi OS Server package's data tar.
+func buildOfficialSpecTar(t *testing.T, spec []byte) []byte {
+	t.Helper()
+	var buf bytes.Buffer
+	tw := tar.NewWriter(&buf)
+	require.NoError(t, tw.WriteHeader(&tar.Header{Name: officialSpecTarPath, Typeflag: tar.TypeReg, Mode: 0o644, Size: int64(len(spec))}))
+	_, err := tw.Write(spec)
+	require.NoError(t, err)
+	require.NoError(t, tw.Close())
+	return buf.Bytes()
+}
+
+// buildUosDeb assembles a full ar(data.tar.xz(tar(integration.json))) fixture
+// mimicking the UniFi OS Server package.
+func buildUosDeb(t *testing.T, spec []byte) []byte {
+	t.Helper()
+	dataTarXz := buildDataTarXz(t, map[string][]byte{officialSpecTarPath: spec})
+	return buildDeb(t, map[string][]byte{"data.tar.xz": dataTarXz})
+}
+
+// TestExtractOfficialSpec_HappyPath returns the integration.json bytes verbatim.
+func TestExtractOfficialSpec_HappyPath(t *testing.T) {
+	t.Parallel()
+	r := require.New(t)
+	a := assert.New(t)
+
+	spec := []byte(`{"openapi":"3.1.0","info":{"version":"10.4.57"}}`)
+	got, err := extractOfficialSpec(bytes.NewReader(buildOfficialSpecTar(t, spec)))
+	r.NoError(err)
+	a.Equal(spec, got, "spec must be returned byte-for-byte")
+}
+
+// TestExtractOfficialSpec_NotFound returns the sentinel when the tar lacks it.
+func TestExtractOfficialSpec_NotFound(t *testing.T) {
+	t.Parallel()
+	r := require.New(t)
+
+	var buf bytes.Buffer
+	tw := tar.NewWriter(&buf)
+	r.NoError(tw.WriteHeader(&tar.Header{Name: "./usr/lib/unifi/other.json", Typeflag: tar.TypeReg, Mode: 0o644, Size: 2}))
+	_, err := tw.Write([]byte("{}"))
+	r.NoError(err)
+	r.NoError(tw.Close())
+
+	_, err = extractOfficialSpec(bytes.NewReader(buf.Bytes()))
+	r.ErrorIs(err, errOfficialSpecNotFound)
+}
+
+// TestExtractOfficialSpec_Oversize trips the decompression-bomb cap.
+func TestExtractOfficialSpec_Oversize(t *testing.T) {
+	t.Parallel()
+	r := require.New(t)
+
+	oversize := bytes.Repeat([]byte("a"), maxOpenAPISpecSize+1)
+	_, err := extractOfficialSpec(bytes.NewReader(buildOfficialSpecTar(t, oversize)))
+	r.Error(err)
+	r.ErrorContains(err, "decompression bomb")
+}
+
+// TestWriteOfficialSpecSnapshot_AtomicWrite writes the snapshot into a not-yet
+// existing nested dir and leaves no temp file behind.
+func TestWriteOfficialSpecSnapshot_AtomicWrite(t *testing.T) {
+	t.Parallel()
+	r := require.New(t)
+	a := assert.New(t)
+
+	spec := []byte(`{"openapi":"3.1.0"}`)
+	outPath := filepath.Join(t.TempDir(), "openapi", "integration-10.4.57.json")
+	r.NoError(writeOfficialSpecSnapshot(spec, outPath))
+
+	got, err := os.ReadFile(outPath)
+	r.NoError(err)
+	a.Equal(spec, got)
+
+	entries, err := os.ReadDir(filepath.Dir(outPath))
+	r.NoError(err)
+	for _, e := range entries {
+		a.NotContains(e.Name(), ".tmp-", "temp snapshot file must not be left behind")
+	}
+}
+
+// TestWriteOfficialSpecSnapshot_InvalidJSON rejects non-JSON content.
+func TestWriteOfficialSpecSnapshot_InvalidJSON(t *testing.T) {
+	t.Parallel()
+	r := require.New(t)
+
+	outPath := filepath.Join(t.TempDir(), "integration.json")
+	err := writeOfficialSpecSnapshot([]byte("not json"), outPath)
+	r.Error(err)
+	r.ErrorContains(err, "not valid JSON")
+	_, statErr := os.Stat(outPath)
+	r.ErrorIs(statErr, os.ErrNotExist, "invalid spec must not be published")
+}
+
+// TestDownloadAndExtractOfficialSpec_FullChainOffline drives the full
+// download -> ar -> xz -> tar -> integration.json -> snapshot chain offline.
+func TestDownloadAndExtractOfficialSpec_FullChainOffline(t *testing.T) {
+	t.Parallel()
+	r := require.New(t)
+	a := assert.New(t)
+
+	spec := []byte(`{"openapi":"3.1.0","info":{"version":"10.4.57"}}`)
+	deb := buildUosDeb(t, spec)
+	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
+		_, _ = rw.Write(deb)
+	}))
+	defer server.Close()
+
+	u, err := url.Parse(server.URL)
+	r.NoError(err)
+
+	outPath := filepath.Join(t.TempDir(), "openapi", "integration-10.4.57.json")
+	err = DownloadAndExtractOfficialSpec(context.Background(), server.Client(), *u, outPath)
+	r.NoError(err)
+
+	got, err := os.ReadFile(outPath)
+	r.NoError(err)
+	a.Equal(spec, got, "snapshot must be byte-for-byte deterministic")
+}
+
+// TestDownloadAndExtractOfficialSpec_NotFoundOffline surfaces the sentinel for a
+// package that carries no integration.json and writes no snapshot.
+func TestDownloadAndExtractOfficialSpec_NotFoundOffline(t *testing.T) {
+	t.Parallel()
+	r := require.New(t)
+
+	dataTarXz := buildDataTarXz(t, map[string][]byte{"./usr/lib/unifi/other.json": []byte("{}")})
+	deb := buildDeb(t, map[string][]byte{"data.tar.xz": dataTarXz})
+	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
+		_, _ = rw.Write(deb)
+	}))
+	defer server.Close()
+
+	u, err := url.Parse(server.URL)
+	r.NoError(err)
+
+	outPath := filepath.Join(t.TempDir(), "openapi", "integration-10.4.57.json")
+	err = DownloadAndExtractOfficialSpec(context.Background(), server.Client(), *u, outPath)
+	r.ErrorIs(err, errOfficialSpecNotFound)
+	_, statErr := os.Stat(outPath)
+	r.ErrorIs(statErr, os.ErrNotExist)
+}
+
+// TestDownloadAndExtractOfficialSpec_NotFoundHTTP asserts the non-200 branch.
+func TestDownloadAndExtractOfficialSpec_NotFoundHTTP(t *testing.T) {
+	t.Parallel()
+	r := require.New(t)
+
+	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
+		rw.WriteHeader(http.StatusNotFound)
+	}))
+	defer server.Close()
+
+	u, err := url.Parse(server.URL)
+	r.NoError(err)
+
+	err = DownloadAndExtractOfficialSpec(context.Background(), server.Client(), *u, filepath.Join(t.TempDir(), "integration.json"))
+	r.Error(err)
+	r.ErrorContains(err, "HTTP404")
+}
+
+// TestDownloadAndExtractOfficialSpec_RejectsBadURL trips the host/scheme guard
+// before any request and writes nothing.
+func TestDownloadAndExtractOfficialSpec_RejectsBadURL(t *testing.T) {
+	t.Parallel()
+	r := require.New(t)
+
+	u, err := url.Parse("http://dl.ui.com/unifi/x.deb") // http, not https
+	r.NoError(err)
+
+	outPath := filepath.Join(t.TempDir(), "integration.json")
+	err = DownloadAndExtractOfficialSpec(context.Background(), http.DefaultClient, *u, outPath)
+	r.Error(err)
+	r.ErrorContains(err, "must use https")
+	_, statErr := os.Stat(outPath)
+	r.ErrorIs(statErr, os.ErrNotExist)
+}
+
+// TestDownloadAndExtractOfficialSpec_ContextCancelled aborts on a pre-cancelled
+// context and leaves no snapshot.
+func TestDownloadAndExtractOfficialSpec_ContextCancelled(t *testing.T) {
+	t.Parallel()
+	r := require.New(t)
+
+	deb := buildUosDeb(t, []byte(`{"openapi":"3.1.0"}`))
+	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
+		_, _ = rw.Write(deb)
+	}))
+	defer server.Close()
+
+	u, err := url.Parse(server.URL)
+	r.NoError(err)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	outPath := filepath.Join(t.TempDir(), "integration.json")
+	err = DownloadAndExtractOfficialSpec(ctx, server.Client(), *u, outPath)
+	r.ErrorIs(err, context.Canceled)
+	_, statErr := os.Stat(outPath)
+	r.ErrorIs(statErr, os.ErrNotExist)
+}
+
+// TestDownloadAndExtractOfficialSpec_Live performs the REAL fetch+extract from
+// dl.ui.com to prove the spec source end-to-end. Gated behind -short so CI/unit
+// runs stay offline; the full quality gate (no -short) exercises it live.
+func TestDownloadAndExtractOfficialSpec_Live(t *testing.T) {
+	t.Parallel()
+	skipIfShort(t)
+	r := require.New(t)
+	a := assert.New(t)
+
+	uv, err := NewUnifiVersionProvider(defaultFirmwareUpdateApi).Latest()
+	r.NoError(err)
+	specURL, err := uv.OfficialSpecURL()
+	r.NoError(err)
+
+	outPath := filepath.Join(t.TempDir(), "openapi", "integration-"+uv.Version.String()+".json")
+	err = DownloadAndExtractOfficialSpec(context.Background(), http.DefaultClient, *specURL, outPath)
+	r.NoError(err, "live fetch of %s must succeed", specURL.String())
+
+	data, err := os.ReadFile(outPath)
+	r.NoError(err)
+	var spec struct {
+		OpenAPI string `json:"openapi"`
+		Info    struct {
+			Version string `json:"version"`
+		} `json:"info"`
+	}
+	r.NoError(json.Unmarshal(data, &spec))
+	a.Truef(strings.HasPrefix(spec.OpenAPI, "3.1"), "expected OpenAPI 3.1, got %q", spec.OpenAPI)
+	a.NotEmpty(spec.Info.Version, "spec info.version must be present")
 }
 
 // Test when the output directory already exists AND carries the completion

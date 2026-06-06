@@ -164,6 +164,29 @@ func TestNewUnifiVersion(t *testing.T) {
 	a.Equal(downloadUrl, unifiVersion.DownloadUrl)
 }
 
+func TestOfficialSpecURL(t *testing.T) {
+	t.Parallel()
+	a := assert.New(t)
+
+	v, err := version.NewVersion("10.4.57")
+	require.NoError(t, err)
+
+	got, err := NewUnifiVersion(v, nil).OfficialSpecURL()
+	require.NoError(t, err)
+	a.Equal("https://dl.ui.com/unifi/10.4.57/unifi-uos_sysvinit.deb", got.String())
+}
+
+func TestOfficialSpecSnapshotPath(t *testing.T) {
+	t.Parallel()
+	a := assert.New(t)
+
+	v, err := version.NewVersion("10.4.57+atag-extra")
+	require.NoError(t, err)
+
+	// Core() strips the build metadata so the filename pins the bare version.
+	a.Equal(filepath.Join("/base", "openapi", "integration-10.4.57.json"), officialSpecSnapshotPath("/base", v))
+}
+
 func TestLatestUnifiVersion_HttpError(t *testing.T) {
 	t.Parallel()
 
