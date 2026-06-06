@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -184,6 +185,31 @@ func TestGenerateLatest(t *testing.T) {
 	versionGo, err := os.ReadFile(filepath.Join(opts.outputDir, "version.generated.go"))
 	r.NoError(err)
 	assert.Contains(t, string(versionGo), `"`+version+`"`, "marker must match version.generated.go")
+
+	// Assert that generate() commits the Official OpenAPI spec snapshot.
+	specGlob := filepath.Join(opts.versionBaseDir, "openapi", "integration-*.json")
+	specFiles, err := filepath.Glob(specGlob)
+	r.NoError(err)
+	r.Len(specFiles, 1, "exactly one Official OpenAPI spec snapshot must be committed under %s/openapi/", opts.versionBaseDir)
+
+	specData, err := os.ReadFile(specFiles[0])
+	r.NoError(err)
+	r.True(json.Valid(specData), "snapshot must be valid JSON")
+
+	var spec struct {
+		OpenAPI string `json:"openapi"`
+		Info    struct {
+			Version string `json:"version"`
+		} `json:"info"`
+	}
+	r.NoError(json.Unmarshal(specData, &spec))
+	r.Truef(strings.HasPrefix(spec.OpenAPI, "3.1"), "expected OpenAPI 3.1.x, got %q", spec.OpenAPI)
+	r.NotEmpty(spec.Info.Version, "spec info.version must be non-empty")
+
+	// The version in the filename must match the spec's info.version.
+	base := filepath.Base(specFiles[0])
+	filenameVer := strings.TrimSuffix(strings.TrimPrefix(base, "integration-"), ".json")
+	r.Equal(filenameVer, spec.Info.Version, "spec info.version must match the snapshot filename")
 }
 
 func TestGenerateDownloadOnly(t *testing.T) {

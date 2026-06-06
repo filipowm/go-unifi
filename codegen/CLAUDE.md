@@ -56,7 +56,30 @@ ingests remote, code-influencing data. Guards in place:
 
 - `codegen/v<X.Y.Z>/` holds the JSON field defs per controller version (`v2/` = V2 API resources, rendered with `apiv2.go.tmpl`, different endpoints). It is a
   download cache (`.gitignore`d), unlike `codegen/openapi/integration-<ver>.json` which is a **committed** snapshot.
-- `.unifi-version` (repo root) and the version arg in `unifi/codegen.go` pin the supported version.
+- `.unifi-version` (repo root) and the version arg in `unifi/codegen.go` pin the supported **internal** version.
+
+### Two-version model (internal vs Official-API spec)
+
+The internal resource-gen version and the Official-API spec version are **intentionally decoupled** and may differ:
+
+| Pin | Controls | Example |
+|---|---|---|
+| `.unifi-version` / `go generate` arg | Internal `.deb` download (field JSONs → generated resources) | `9.5.21` |
+| `codegen/openapi/integration-<ver>.json` (committed) | Official OpenAPI spec snapshot consumed by downstream OpenAPI stages (#121) | `10.4.57` |
+
+**Why they diverge**: the Official API (`integration.json`) first appeared in controller 10.1.68. When the internal version pin is below that threshold, `generate()` fetches the Official spec from the **latest** release instead of the internal version. This keeps the committed snapshot current without rewriting all internal resources.
+
+**Reproducing a specific snapshot**: run with `--official-spec-version=<ver>` to pin the Official spec to an exact version regardless of the internal pin:
+```sh
+go run ./codegen/ -version-base-dir=./codegen/ -output-dir=./unifi --official-spec-version=10.4.57 9.5.21
+# → internal resources from 9.5.21 + Official spec from 10.4.57
+```
+This is how the committed `integration-10.4.57.json` was produced while `.unifi-version` remains `9.5.21`.
+
+**Auto-select logic** (`resolveOfficialSpecVersion` in `version.go`):
+- explicit `--official-spec-version` → use that version
+- internal >= 10.1.68 → reuse internal version (spec is present in that package)
+- internal < 10.1.68 → resolve `latest` (determinism rests on an explicit pin for reproducible CI snapshots)
 
 ## Workflows
 

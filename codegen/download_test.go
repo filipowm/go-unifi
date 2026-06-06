@@ -263,6 +263,37 @@ func TestDownloadAndExtractOfficialSpec_NotFoundOffline(t *testing.T) {
 	r.ErrorIs(statErr, os.ErrNotExist)
 }
 
+// TestDownloadOfficialSpecSnapshot_OldVersionSkips pins the <10.1.68 regression-safety
+// path in downloadOfficialSpecSnapshot: a UOS package without integration.json must
+// yield nil (generation continues) and write no snapshot. This tests the httptest
+// seam introduced so the non-fatal swallow-and-continue branch is fully covered.
+func TestDownloadOfficialSpecSnapshot_OldVersionSkips(t *testing.T) {
+	t.Parallel()
+	r := require.New(t)
+
+	// Build a UOS deb without integration.json, mimicking pre-10.1.68 packages.
+	dataTarXz := buildDataTarXz(t, map[string][]byte{"./usr/lib/unifi/other.json": []byte("{}")})
+	deb := buildDeb(t, map[string][]byte{"data.tar.xz": dataTarXz})
+	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
+		_, _ = rw.Write(deb)
+	}))
+	defer server.Close()
+
+	specURL, err := url.Parse(server.URL)
+	r.NoError(err)
+
+	specPath := filepath.Join(t.TempDir(), "integration-9.5.21.json")
+	logger := setupLogging(false, false)
+
+	// downloadOfficialSpecSnapshot must return nil (non-fatal skip), not propagate errOfficialSpecNotFound.
+	err = downloadOfficialSpecSnapshot(context.Background(), server.Client(), *specURL, specPath, logger)
+	r.NoError(err, "pre-Official-API package must skip without error; generation must continue")
+
+	// No snapshot file must be written for old packages.
+	_, statErr := os.Stat(specPath)
+	r.ErrorIs(statErr, os.ErrNotExist, "no snapshot must be written for packages lacking integration.json")
+}
+
 // TestDownloadAndExtractOfficialSpec_NotFoundHTTP asserts the non-200 branch.
 func TestDownloadAndExtractOfficialSpec_NotFoundHTTP(t *testing.T) {
 	t.Parallel()
