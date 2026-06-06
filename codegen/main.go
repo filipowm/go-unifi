@@ -199,9 +199,11 @@ func generate(opts options) error {
 		return fmt.Errorf("failed to write version file to %s: %w", outDir, err)
 	}
 
-	basepath := filepath.Dir(wd)
-	if err = writeVersionRepoMarkerFile(unifiVersion.Version, basepath); err != nil {
-		return fmt.Errorf("failed to write version file to %s: %w", basepath, err)
+	// Marker lives at the parent of outDir (the unifi/ package), so it tracks the
+	// generated code regardless of cwd. Deriving from wd wrote it to the wrong place.
+	markerDir := filepath.Dir(outDir)
+	if err = writeVersionRepoMarkerFile(unifiVersion.Version, markerDir); err != nil {
+		return fmt.Errorf("failed to write version file to %s: %w", markerDir, err)
 	}
 
 	logger.Infof("Generated resources in %s", outDir)
