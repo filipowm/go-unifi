@@ -14,7 +14,7 @@ var ErrNotFound = errors.New("not found")
 
 // ErrOfficialAPIUnavailable is returned when the Official UniFi OpenAPI cannot be
 // used against this controller: an old-style (classic) controller, non-API-key
-// auth, or a controller version below 10.1.68.
+// auth, or a controller version below 10.1.78.
 var ErrOfficialAPIUnavailable = errors.New("official API unavailable")
 
 // ErrOfficialAPIDisabled is returned when the Official API has been explicitly

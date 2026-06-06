@@ -53,12 +53,12 @@ const base = "/proxy/network/integration/v1"
 
 func TestGetInfo(t *testing.T) {
 	t.Parallel()
-	d := &fakeDoer{responses: map[string]any{base + "/info": Info{ApplicationVersion: "10.1.68"}}}
+	d := &fakeDoer{responses: map[string]any{base + "/info": Info{ApplicationVersion: "10.1.78"}}}
 	c := New(d, base, nil)
 
 	info, err := c.GetInfo(context.Background())
 	require.NoError(t, err)
-	assert.Equal(t, "10.1.68", info.ApplicationVersion)
+	assert.Equal(t, "10.1.78", info.ApplicationVersion)
 	assert.Equal(t, []string{base + "/info"}, d.calls)
 }
 

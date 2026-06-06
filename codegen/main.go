@@ -89,8 +89,8 @@ type options struct {
 	customizationsPath string
 	// officialSpecVersion pins the Official-API OpenAPI spec to a specific
 	// controller version. When empty, generate() auto-selects: same version as
-	// internal when internal >= 10.1.68, otherwise latest. Pass explicitly (e.g.
-	// "10.4.57") to reproduce a specific committed snapshot independently of the
+	// internal when internal >= 10.1.78, otherwise latest. Pass explicitly (e.g.
+	// "10.1.78") to reproduce a specific committed snapshot independently of the
 	// internal version pin.
 	officialSpecVersion string
 	// logger receives the pipeline's structured output. When nil, generate()
@@ -112,7 +112,7 @@ func main() {
 	versionBaseDirFlag := flag.String("version-base-dir", ".", "The base directory for version JSON files")
 	outputDirFlag := flag.String("output-dir", ".", "The output directory of the generated Go code")
 	downloadOnly := flag.Bool("download-only", false, "Only download and build the API structures JSON directory, do not generate")
-	officialSpecVersionFlag := flag.String("official-spec-version", "", "Official-API OpenAPI spec version (default: same as controller when >=10.1.68, else latest)")
+	officialSpecVersionFlag := flag.String("official-spec-version", "", "Official-API OpenAPI spec version (default: same as controller when >=10.1.78, else latest)")
 	debugFlag := flag.Bool("debug", false, "Enable debug logging")
 	traceFlag := flag.Bool("trace", false, "Enable trace logging")
 
@@ -233,7 +233,7 @@ func generate(opts options) error {
 
 // downloadGenerationInputs downloads the internal API field-definition JSONs
 // (keyed by internalVersion) and commits the Official OpenAPI spec snapshot
-// (keyed by officialVersion, which may differ when internal < 10.1.68).
+// (keyed by officialVersion, which may differ when internal < 10.1.78).
 // Both fetches share one bounded context; the .deb stream is the long pole.
 func downloadGenerationInputs(internalVersion *UnifiVersion, officialVersion *UnifiVersion, versionBaseDir string, logger Logger) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultDownloadTimeout)

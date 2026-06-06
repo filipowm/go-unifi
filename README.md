@@ -115,7 +115,7 @@ The client exposes two API surfaces:
 - **Internal** — the legacy UniFi Network API the SDK has always wrapped. Every resource method
   (`GetNetwork`, `ListUser`, …) lives here and is reachable directly on the client *or* via `c.Internal()`.
 - **Official** — the official UniFi OpenAPI (`integration/v1`), reached via `c.Official()`. It requires a
-  new-style UniFi OS controller (version `10.1.68`+) with **API-key** authentication.
+  new-style UniFi OS controller (version `10.1.78`+) with **API-key** authentication.
 
 ```go
 sites, err := c.Internal().ListSites(ctx)          // legacy API (same as c.ListSites(ctx))
@@ -127,7 +127,7 @@ In **2.0.0 the Internal surface stays the canonical default**, so existing code 
 resource method on the client is identical to calling it on `c.Internal()`. **3.0.0 is expected to flip the
 default to the Official client.** The Official client is gated: operations return
 `unifi.ErrOfficialAPIUnavailable` on a classic/old-style controller, non-API-key auth, or a controller
-below `10.1.68`, and `unifi.ErrOfficialAPIDisabled` when `ClientConfig.DisableOfficialAPI` is set. Match
+below `10.1.78`, and `unifi.ErrOfficialAPIDisabled` when `ClientConfig.DisableOfficialAPI` is set. Match
 either with `errors.Is`. Site identifiers differ between the surfaces — the Internal API uses the site
 **name** while the Official API uses a **UUID** — so `Official().ResolveSiteID` maps the familiar name to
 the UUID for you.
