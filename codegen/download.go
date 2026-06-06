@@ -56,7 +56,7 @@ const (
 var allowedDownloadHostSuffixes = []string{"ui.com", "ubnt.com"}
 
 // errOfficialSpecNotFound marks a UniFi OS Server package that carries no
-// integration.json (controllers predating the Official API, < 10.1.68) so
+// integration.json (controllers predating the Official API, < 10.1.78) so
 // callers can skip the snapshot instead of failing the whole generation.
 var errOfficialSpecNotFound = errors.New("integration.json (OpenAPI spec) not found in UniFi OS Server package")
 
@@ -266,9 +266,12 @@ func DownloadAndExtractOfficialSpec(ctx context.Context, client *http.Client, do
 		return err
 	})
 	if err != nil {
-		return err
+		return fmt.Errorf("extracting official spec: %w", err)
 	}
-	return writeOfficialSpecSnapshot(spec, outputPath)
+	if err := writeOfficialSpecSnapshot(spec, outputPath); err != nil {
+		return fmt.Errorf("writing official spec snapshot: %w", err)
+	}
+	return nil
 }
 
 // extractOfficialSpec walks the data tar for integration.json and returns its

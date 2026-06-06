@@ -168,23 +168,23 @@ func TestOfficialSpecURL(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
 
-	v, err := version.NewVersion("10.4.57")
+	v, err := version.NewVersion("10.1.78")
 	require.NoError(t, err)
 
 	got, err := NewUnifiVersion(v, nil).OfficialSpecURL()
 	require.NoError(t, err)
-	a.Equal("https://dl.ui.com/unifi/10.4.57/unifi-uos_sysvinit.deb", got.String())
+	a.Equal("https://dl.ui.com/unifi/10.1.78/unifi-uos_sysvinit.deb", got.String())
 }
 
 func TestOfficialSpecSnapshotPath(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
 
-	v, err := version.NewVersion("10.4.57+atag-extra")
+	v, err := version.NewVersion("10.1.78+atag-extra")
 	require.NoError(t, err)
 
 	// Core() strips the build metadata so the filename pins the bare version.
-	a.Equal(filepath.Join("/base", "openapi", "integration-10.4.57.json"), officialSpecSnapshotPath("/base", v))
+	a.Equal(filepath.Join("/base", "openapi", "integration-10.1.78.json"), officialSpecSnapshotPath("/base", v))
 }
 
 func TestLatestUnifiVersion_HttpError(t *testing.T) {
@@ -380,4 +380,75 @@ func TestWriteVersionRepoMarkerFile_Permissions(t *testing.T) {
 	err = writeVersionRepoMarkerFile(v, readOnlyDir)
 	require.Error(t, err)
 	require.ErrorContains(t, err, "permission denied")
+}
+
+// recordingVersionProvider records which provider methods resolveOfficialSpecVersion
+// invokes, so each branch can be asserted without hitting the network.
+type recordingVersionProvider struct {
+	latestCalled   bool
+	byMarkerCalled bool
+	byMarkerArg    string
+	latestResult   *UnifiVersion
+	byMarkerResult *UnifiVersion
+}
+
+func (p *recordingVersionProvider) Latest() (*UnifiVersion, error) {
+	p.latestCalled = true
+	return p.latestResult, nil
+}
+
+func (p *recordingVersionProvider) ByVersionMarker(marker string) (*UnifiVersion, error) {
+	p.byMarkerCalled = true
+	p.byMarkerArg = marker
+	return p.byMarkerResult, nil
+}
+
+func mustUnifiVersion(t *testing.T, v string) *UnifiVersion {
+	t.Helper()
+	ver, err := version.NewVersion(v)
+	require.NoError(t, err)
+	return NewUnifiVersion(ver, nil)
+}
+
+// An explicit marker is resolved verbatim via ByVersionMarker; Latest() is untouched.
+func TestResolveOfficialSpecVersion_ExplicitMarker(t *testing.T) {
+	t.Parallel()
+
+	want := mustUnifiVersion(t, "10.1.78")
+	p := &recordingVersionProvider{byMarkerResult: want}
+
+	got, err := resolveOfficialSpecVersion(p, mustUnifiVersion(t, "9.5.21"), "10.1.78")
+	require.NoError(t, err)
+	assert.Same(t, want, got)
+	assert.True(t, p.byMarkerCalled)
+	assert.Equal(t, "10.1.78", p.byMarkerArg)
+	assert.False(t, p.latestCalled)
+}
+
+// internal >= floor reuses the internal version as-is; neither provider call fires.
+func TestResolveOfficialSpecVersion_InternalAtFloor(t *testing.T) {
+	t.Parallel()
+
+	p := &recordingVersionProvider{}
+	internal := mustUnifiVersion(t, minOfficialSpecVersion.String())
+
+	got, err := resolveOfficialSpecVersion(p, internal, "")
+	require.NoError(t, err)
+	assert.Same(t, internal, got)
+	assert.False(t, p.byMarkerCalled)
+	assert.False(t, p.latestCalled)
+}
+
+// internal < floor falls back to Latest() (old packages predate the Official API).
+func TestResolveOfficialSpecVersion_InternalBelowFloorResolvesLatest(t *testing.T) {
+	t.Parallel()
+
+	want := mustUnifiVersion(t, "10.1.78")
+	p := &recordingVersionProvider{latestResult: want}
+
+	got, err := resolveOfficialSpecVersion(p, mustUnifiVersion(t, "9.5.21"), "")
+	require.NoError(t, err)
+	assert.Same(t, want, got)
+	assert.True(t, p.latestCalled)
+	assert.False(t, p.byMarkerCalled)
 }

@@ -10,7 +10,7 @@ import (
 
 // officialAPIMinVersion is the first controller version exposing the Official
 // UniFi OpenAPI (integration/v1).
-const officialAPIMinVersion = "10.1.68"
+const officialAPIMinVersion = "10.1.78"
 
 // Internal returns the client itself as the InternalClient (legacy UniFi Network
 // API) surface. In 2.0.0 this is the canonical client; calling it documents

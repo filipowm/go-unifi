@@ -11,7 +11,7 @@ which runs: `go run ../codegen/ -version-base-dir=../codegen/ <version>`.
    UniFi OS Server package `unifi-uos_sysvinit.deb` (same dl.ui.com path, different filename, keyed by the same version), extracts `integration.json` (the
    Official-API OpenAPI 3.1 spec) from `./usr/lib/unifi/webapps/ROOT/api-docs/integration.json` in its `data.tar.xz`, and commits a **byte-for-byte pinned
    snapshot** at `codegen/openapi/integration-<ver>.json`. The versioned filename is the pin (mirrors `.unifi-version`); the committed snapshot makes generation
-   deterministic and surfaces the spec delta in PR diffs. Packages predating the Official API (< 10.1.68, no `integration.json`) are skipped with a warning so the
+   deterministic and surfaces the spec delta in PR diffs. Packages predating the Official API (< 10.1.78, no `integration.json`) are skipped with a warning so the
    internal pipeline never regresses; downstream OpenAPI codegen stages (#121) consume the committed snapshot, not a live fetch.
 2. `resources.go` — parses each JSON into a Resource; infers Go types from the field validation regexes; snake_case → CamelCase (acronyms via `fieldReps`).
 3. `customize.go` — applies `customizations.yml` field overrides.
@@ -65,21 +65,21 @@ The internal resource-gen version and the Official-API spec version are **intent
 | Pin | Controls | Example |
 |---|---|---|
 | `.unifi-version` / `go generate` arg | Internal `.deb` download (field JSONs → generated resources) | `9.5.21` |
-| `codegen/openapi/integration-<ver>.json` (committed) | Official OpenAPI spec snapshot consumed by downstream OpenAPI stages (#121) | `10.4.57` |
+| `codegen/openapi/integration-<ver>.json` (committed) | Official OpenAPI spec snapshot consumed by downstream OpenAPI stages (#121) | `10.1.78` |
 
-**Why they diverge**: the Official API (`integration.json`) first appeared in controller 10.1.68. When the internal version pin is below that threshold, `generate()` fetches the Official spec from the **latest** release instead of the internal version. This keeps the committed snapshot current without rewriting all internal resources.
+**Why they diverge**: the Official API (`integration.json`) first appeared in controller 10.1.78. When the internal version pin is below that threshold, `generate()` fetches the Official spec from the **latest** release instead of the internal version. This keeps the committed snapshot current without rewriting all internal resources.
 
 **Reproducing a specific snapshot**: run with `--official-spec-version=<ver>` to pin the Official spec to an exact version regardless of the internal pin:
 ```sh
-go run ./codegen/ -version-base-dir=./codegen/ -output-dir=./unifi --official-spec-version=10.4.57 9.5.21
-# → internal resources from 9.5.21 + Official spec from 10.4.57
+go run ./codegen/ -version-base-dir=./codegen/ -output-dir=./unifi --official-spec-version=10.1.78 9.5.21
+# → internal resources from 9.5.21 + Official spec from 10.1.78
 ```
-This is how the committed `integration-10.4.57.json` was produced while `.unifi-version` remains `9.5.21`.
+This is how the committed `integration-10.1.78.json` was produced while `.unifi-version` remains `9.5.21`.
 
 **Auto-select logic** (`resolveOfficialSpecVersion` in `version.go`):
 - explicit `--official-spec-version` → use that version
-- internal >= 10.1.68 → reuse internal version (spec is present in that package)
-- internal < 10.1.68 → resolve `latest` (determinism rests on an explicit pin for reproducible CI snapshots)
+- internal >= 10.1.78 → reuse internal version (spec is present in that package)
+- internal < 10.1.78 → resolve `latest` (determinism rests on an explicit pin for reproducible CI snapshots)
 
 ## Workflows
 

@@ -6,7 +6,7 @@ import (
 )
 
 // Info is the controller application info from GET /v1/info. ApplicationVersion
-// feeds the capability gate (the official API exists only from 10.1.68).
+// feeds the capability gate (the official API exists only from 10.1.78).
 type Info struct {
 	ApplicationVersion string `json:"applicationVersion"`
 }

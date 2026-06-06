@@ -23,18 +23,18 @@ func infoRoute(version string) route {
 
 func TestOfficialGetInfo(t *testing.T) {
 	t.Parallel()
-	cs := newControllerServer(t, infoRoute("10.1.68"))
+	cs := newControllerServer(t, infoRoute("10.1.78"))
 	c := cs.client()
 
 	info, err := c.Official().GetInfo(context.Background())
 	require.NoError(t, err)
-	assert.Equal(t, "10.1.68", info.ApplicationVersion)
+	assert.Equal(t, "10.1.78", info.ApplicationVersion)
 }
 
 func TestOfficialResolveSiteID(t *testing.T) {
 	t.Parallel()
 	cs := newControllerServer(t,
-		infoRoute("10.1.68"),
+		infoRoute("10.1.78"),
 		route{officialSitesPath, func(w http.ResponseWriter, _ *http.Request) {
 			_, _ = w.Write([]byte(`{"offset":0,"limit":200,"count":2,"totalCount":2,"data":[` +
 				`{"id":"uuid-default","internalReference":"default","name":"Default"},` +
@@ -92,7 +92,7 @@ func TestOfficialGateDisabled(t *testing.T) {
 func TestOfficialGateProbeIsCached(t *testing.T) {
 	t.Parallel()
 	cs := newControllerServer(t,
-		infoRoute("10.1.68"),
+		infoRoute("10.1.78"),
 		route{officialSitesPath, func(w http.ResponseWriter, _ *http.Request) {
 			_, _ = w.Write([]byte(`{"offset":0,"limit":200,"count":1,"totalCount":1,"data":[` +
 				`{"id":"uuid-default","internalReference":"default","name":"Default"}]}`))

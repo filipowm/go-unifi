@@ -325,7 +325,7 @@ operation is gated. They return:
 
 - `ErrOfficialAPIDisabled` when `ClientConfig.DisableOfficialAPI` is set (fails fast, no probe).
 - `ErrOfficialAPIUnavailable` on an old-style (classic) controller, non-API-key auth, or a controller
-  version below 10.1.68.
+  version below 10.1.78.
 
 Match with `errors.Is(err, unifi.ErrOfficialAPIUnavailable)` / `errors.Is(err, unifi.ErrOfficialAPIDisabled)`.
 The Internal API is unaffected.

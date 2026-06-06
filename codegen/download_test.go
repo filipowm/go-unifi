@@ -146,7 +146,7 @@ func TestExtractOfficialSpec_HappyPath(t *testing.T) {
 	r := require.New(t)
 	a := assert.New(t)
 
-	spec := []byte(`{"openapi":"3.1.0","info":{"version":"10.4.57"}}`)
+	spec := []byte(`{"openapi":"3.1.0","info":{"version":"10.1.78"}}`)
 	got, err := extractOfficialSpec(bytes.NewReader(buildOfficialSpecTar(t, spec)))
 	r.NoError(err)
 	a.Equal(spec, got, "spec must be returned byte-for-byte")
@@ -187,7 +187,7 @@ func TestWriteOfficialSpecSnapshot_AtomicWrite(t *testing.T) {
 	a := assert.New(t)
 
 	spec := []byte(`{"openapi":"3.1.0"}`)
-	outPath := filepath.Join(t.TempDir(), "openapi", "integration-10.4.57.json")
+	outPath := filepath.Join(t.TempDir(), "openapi", "integration-10.1.78.json")
 	r.NoError(writeOfficialSpecSnapshot(spec, outPath))
 
 	got, err := os.ReadFile(outPath)
@@ -221,7 +221,7 @@ func TestDownloadAndExtractOfficialSpec_FullChainOffline(t *testing.T) {
 	r := require.New(t)
 	a := assert.New(t)
 
-	spec := []byte(`{"openapi":"3.1.0","info":{"version":"10.4.57"}}`)
+	spec := []byte(`{"openapi":"3.1.0","info":{"version":"10.1.78"}}`)
 	deb := buildUosDeb(t, spec)
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
 		_, _ = rw.Write(deb)
@@ -231,7 +231,7 @@ func TestDownloadAndExtractOfficialSpec_FullChainOffline(t *testing.T) {
 	u, err := url.Parse(server.URL)
 	r.NoError(err)
 
-	outPath := filepath.Join(t.TempDir(), "openapi", "integration-10.4.57.json")
+	outPath := filepath.Join(t.TempDir(), "openapi", "integration-10.1.78.json")
 	err = DownloadAndExtractOfficialSpec(context.Background(), server.Client(), *u, outPath)
 	r.NoError(err)
 
@@ -256,14 +256,14 @@ func TestDownloadAndExtractOfficialSpec_NotFoundOffline(t *testing.T) {
 	u, err := url.Parse(server.URL)
 	r.NoError(err)
 
-	outPath := filepath.Join(t.TempDir(), "openapi", "integration-10.4.57.json")
+	outPath := filepath.Join(t.TempDir(), "openapi", "integration-10.1.78.json")
 	err = DownloadAndExtractOfficialSpec(context.Background(), server.Client(), *u, outPath)
 	r.ErrorIs(err, errOfficialSpecNotFound)
 	_, statErr := os.Stat(outPath)
 	r.ErrorIs(statErr, os.ErrNotExist)
 }
 
-// TestDownloadOfficialSpecSnapshot_OldVersionSkips pins the <10.1.68 regression-safety
+// TestDownloadOfficialSpecSnapshot_OldVersionSkips pins the <10.1.78 regression-safety
 // path in downloadOfficialSpecSnapshot: a UOS package without integration.json must
 // yield nil (generation continues) and write no snapshot. This tests the httptest
 // seam introduced so the non-fatal swallow-and-continue branch is fully covered.
@@ -271,7 +271,7 @@ func TestDownloadOfficialSpecSnapshot_OldVersionSkips(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 
-	// Build a UOS deb without integration.json, mimicking pre-10.1.68 packages.
+	// Build a UOS deb without integration.json, mimicking pre-10.1.78 packages.
 	dataTarXz := buildDataTarXz(t, map[string][]byte{"./usr/lib/unifi/other.json": []byte("{}")})
 	deb := buildDeb(t, map[string][]byte{"data.tar.xz": dataTarXz})
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
