@@ -11,6 +11,7 @@ require (
 	github.com/goreleaser/goreleaser v1.26.2
 	github.com/hashicorp/go-version v1.9.0
 	github.com/iancoleman/strcase v0.3.0
+	github.com/oapi-codegen/runtime v1.4.1
 	github.com/sirupsen/logrus v1.9.4
 	github.com/stretchr/testify v1.11.1
 	github.com/tj/assert v0.0.3
@@ -85,6 +86,7 @@ require (
 	github.com/anchore/go-logger v0.1.0 // indirect
 	github.com/anchore/go-macholibre v0.1.0 // indirect
 	github.com/anchore/quill v0.7.1 // indirect
+	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
 	github.com/ashanbrown/forbidigo v1.6.0 // indirect
 	github.com/ashanbrown/makezero v1.2.0 // indirect
