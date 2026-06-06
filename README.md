@@ -94,15 +94,15 @@ Password: "your-password",
 ```
 
 TLS certificate verification is **on by default** (secure by default). If you are using self-signed
-certificates on your UniFi Controller, you can disable certificate verification by setting `VerifySSL`
-to a pointer to `false` (`VerifySSL` is a `*bool`; `nil` verifies). Disabling verification logs a
+certificates on your UniFi Controller, you can disable certificate verification by setting `SkipVerifySSL`
+to `true` (the zero value `false` verifies). Disabling verification logs a
 warning and makes the connection vulnerable to man-in-the-middle attacks, so prefer adding the
 controller's CA instead.
 
 ```go
 c, err := unifi.NewClient(&unifi.ClientConfig{
 ...
-VerifySSL: new(false), // disable TLS verification (self-signed cert)
+SkipVerifySSL: true, // disable TLS verification (self-signed cert)
 })
 ```
 
