@@ -6,47 +6,14 @@ package unifi
 import (
 	"context"
 	"io"
+
+	"github.com/filipowm/go-unifi/unifi/official"
 )
 
-type Client interface {
-	Logger
-
-	// BaseURL returns the base URL of the controller.
-	BaseURL() string
-
-	// Delete sends a DELETE request to the controller.
-	Delete(ctx context.Context, apiPath string, reqBody any, respBody any) error
-
-	// Do sends a request to the controller.
-	Do(ctx context.Context, method string, apiPath string, reqBody any, respBody any) error
-
-	// Get sends a GET request to the controller.
-	Get(ctx context.Context, apiPath string, reqBody any, respBody any) error
-
-	// Login logs in to the controller. Useful only for user/password authentication.
-	Login() error
-
-	// LoginContext logs in to the controller using the supplied context for cancellation/deadline. Useful only for user/password authentication.
-	LoginContext(ctx context.Context) error
-
-	// Logout logs out from the controller.
-	Logout() error
-
-	// LogoutContext logs out from the controller using the supplied context for cancellation/deadline.
-	LogoutContext(ctx context.Context) error
-
-	// Post sends a POST request to the controller.
-	Post(ctx context.Context, apiPath string, reqBody any, respBody any) error
-
-	// Put sends a PUT request to the controller.
-	Put(ctx context.Context, apiPath string, reqBody any, respBody any) error
-
-	// Version returns the version of the UniFi Controller API.
-	Version() string
-
-	// VersionContext returns the version of the UniFi Controller API using the supplied context, surfacing any fetch error instead of swallowing it.
-	VersionContext(ctx context.Context) (string, error)
-
+// InternalClient is the legacy UniFi Network ("Internal") API surface: every
+// resource CRUD method. In 2.0.0 this is the canonical client; 3.0.0 is expected
+// to flip the default to the Official OpenAPI client.
+type InternalClient interface {
 	// ==== client methods for APGroup resource ====
 
 	// CreateAPGroup creates a resource
@@ -1193,5 +1160,55 @@ type Client interface {
 	// ==== end of client methods for WLANGroup resource ====
 
 	// ==== end of client methods for WLAN resource ====
+}
 
+// Client is the top-level UniFi client. It embeds InternalClient (the legacy
+// resource API), adds transport/lifecycle methods, and exposes the Internal()
+// and Official() API-surface accessors.
+type Client interface {
+	Logger
+
+	InternalClient
+
+	// BaseURL returns the base URL of the controller.
+	BaseURL() string
+
+	// Delete sends a DELETE request to the controller.
+	Delete(ctx context.Context, apiPath string, reqBody any, respBody any) error
+
+	// Do sends a request to the controller.
+	Do(ctx context.Context, method string, apiPath string, reqBody any, respBody any) error
+
+	// Get sends a GET request to the controller.
+	Get(ctx context.Context, apiPath string, reqBody any, respBody any) error
+
+	// Login logs in to the controller. Useful only for user/password authentication.
+	Login() error
+
+	// LoginContext logs in to the controller using the supplied context for cancellation/deadline. Useful only for user/password authentication.
+	LoginContext(ctx context.Context) error
+
+	// Logout logs out from the controller.
+	Logout() error
+
+	// LogoutContext logs out from the controller using the supplied context for cancellation/deadline.
+	LogoutContext(ctx context.Context) error
+
+	// Post sends a POST request to the controller.
+	Post(ctx context.Context, apiPath string, reqBody any, respBody any) error
+
+	// Put sends a PUT request to the controller.
+	Put(ctx context.Context, apiPath string, reqBody any, respBody any) error
+
+	// Version returns the version of the UniFi Controller API.
+	Version() string
+
+	// VersionContext returns the version of the UniFi Controller API using the supplied context, surfacing any fetch error instead of swallowing it.
+	VersionContext(ctx context.Context) (string, error)
+
+	// Internal returns the legacy ("Internal") UniFi Network API client.
+	Internal() InternalClient
+
+	// Official returns the Official UniFi OpenAPI client.
+	Official() official.Client
 }

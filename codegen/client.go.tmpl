@@ -5,14 +5,18 @@ package unifi
 
 import (
 	"context"
-	{{ range $k, $v := .Imports }}"{{ $v }}"{{- end }}
+	{{- range $k, $v := .Imports }}
+	"{{ $v }}"
+	{{- end }}
+
+	"github.com/filipowm/go-unifi/unifi/official"
 )
 
-type {{ .Name }} interface {
-
-    Logger
-
-    {{- range $k, $v := .Functions }}
+// InternalClient is the legacy UniFi Network ("Internal") API surface: every
+// resource CRUD method. In 2.0.0 this is the canonical client; 3.0.0 is expected
+// to flip the default to the Official OpenAPI client.
+type InternalClient interface {
+    {{- range $k, $v := .ResourceFunctions }}
 
     {{ if $v.Comment }}// {{ $v.Comment }}{{ end }}
     {{ $v.Signature }}
@@ -20,4 +24,25 @@ type {{ .Name }} interface {
     {{- end }}
 }
 
+// {{ .Name }} is the top-level UniFi client. It embeds InternalClient (the legacy
+// resource API), adds transport/lifecycle methods, and exposes the Internal()
+// and Official() API-surface accessors.
+type {{ .Name }} interface {
 
+    Logger
+
+    InternalClient
+
+    {{- range $k, $v := .TransportFunctions }}
+
+    {{ if $v.Comment }}// {{ $v.Comment }}{{ end }}
+    {{ $v.Signature }}
+
+    {{- end }}
+
+    // Internal returns the legacy ("Internal") UniFi Network API client.
+    Internal() InternalClient
+
+    // Official returns the Official UniFi OpenAPI client.
+    Official() official.Client
+}

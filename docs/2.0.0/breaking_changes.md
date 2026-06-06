@@ -204,3 +204,46 @@ It is **not** `ErrNotFound` (`errors.Is(err, ErrNotFound) == false`), so genuine
 > Note (internal): the `codegen` tool's `DownloadAndExtract`/`downloadJar` gained a leading
 > `context.Context` parameter (ARCH-15). This is not part of the public `unifi` API surface and affects
 > only forks of the generator.
+
+## 2.0.0 — Official API seam (#119)
+
+The Official UniFi OpenAPI (`integration/v1`) lands behind a runtime seam. The `Client` interface is split
+and gains `Internal()`/`Official()` accessors; the Official surface is gated on controller capability.
+
+### 1. `Client` interface split into embedded `InternalClient` + accessors (#119)
+
+**Interface change (compile break for custom `Client` implementations).** The generated `Client` interface
+now embeds a new `InternalClient` interface (all resource CRUD) and adds two accessors:
+
+```go
+type InternalClient interface { /* GetNetwork, ListNetwork, …, all resource CRUD */ }
+
+type Client interface {
+	Logger
+	InternalClient             // embedded — every resource method, unchanged
+	// transport/lifecycle: Do/Get/Post/Put/Delete, Login*/Logout*, Version*, BaseURL
+	Internal() InternalClient  // returns the legacy ("Internal") client (self)
+	Official() official.Client // returns the Official OpenAPI client
+}
+```
+
+Existing call sites are **source-compatible**: `client.GetNetwork(...)` still works (the methods are
+embedded), and `client.Internal().GetNetwork(...)` is the new explicit form. Any third-party type that
+implements `unifi.Client` (e.g. a hand-rolled fake) must now also implement `Internal()` and `Official()`;
+the moq-generated `ClientMock` is regenerated automatically and needs no manual change. This is the
+**2.0.0-canonical-Internal** step: in 2.0.0 the embedded Internal surface stays the default so existing
+code is untouched; 3.0.0 is expected to flip the default to the Official client (the **3.0.0-flip**).
+
+### 2. Official API unavailable on classic/old-style controllers (#119)
+
+**New runtime contract (no compile break).** `client.Official()` always returns a non-nil client, but its
+operations are gated. They return:
+
+- `ErrOfficialAPIDisabled` when `ClientConfig.DisableOfficialAPI` is set (fails fast, no probe);
+- `ErrOfficialAPIUnavailable` on an old-style (classic) controller, non-API-key auth, or a controller
+  version below `10.1.68` (the first release exposing `integration/v1`).
+
+Match with `errors.Is(err, unifi.ErrOfficialAPIUnavailable)` / `…ErrOfficialAPIDisabled`. The Internal API
+is unaffected. Note that **classic/old-style controllers are unsupported for 2.0.0's API-key-only auth**
+(the Official API requires a new-style UniFi OS controller); epic #117's breaking-changes table should
+gain a *"classic/old-style controllers unsupported in 2.0.0"* row to reflect this.

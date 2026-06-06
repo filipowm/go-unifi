@@ -5,6 +5,7 @@ package unifi
 
 import (
 	"context"
+	"github.com/filipowm/go-unifi/unifi/official"
 	"io"
 	"sync"
 )
@@ -532,6 +533,9 @@ var _ Client = &ClientMock{}
 //			InfofFunc: func(format string, args ...any)  {
 //				panic("mock out the Infof method")
 //			},
+//			InternalFunc: func() InternalClient {
+//				panic("mock out the Internal method")
+//			},
 //			IsFeatureEnabledFunc: func(ctx context.Context, site string, name string) (bool, error) {
 //				panic("mock out the IsFeatureEnabled method")
 //			},
@@ -663,6 +667,9 @@ var _ Client = &ClientMock{}
 //			},
 //			LogoutContextFunc: func(ctx context.Context) error {
 //				panic("mock out the LogoutContext method")
+//			},
+//			OfficialFunc: func() official.Client {
+//				panic("mock out the Official method")
 //			},
 //			OverrideUserFingerprintFunc: func(ctx context.Context, site string, mac string, devIdOverride int) error {
 //				panic("mock out the OverrideUserFingerprint method")
@@ -1463,6 +1470,9 @@ type ClientMock struct {
 	// InfofFunc mocks the Infof method.
 	InfofFunc func(format string, args ...any)
 
+	// InternalFunc mocks the Internal method.
+	InternalFunc func() InternalClient
+
 	// IsFeatureEnabledFunc mocks the IsFeatureEnabled method.
 	IsFeatureEnabledFunc func(ctx context.Context, site string, name string) (bool, error)
 
@@ -1594,6 +1604,9 @@ type ClientMock struct {
 
 	// LogoutContextFunc mocks the LogoutContext method.
 	LogoutContextFunc func(ctx context.Context) error
+
+	// OfficialFunc mocks the Official method.
+	OfficialFunc func() official.Client
 
 	// OverrideUserFingerprintFunc mocks the OverrideUserFingerprint method.
 	OverrideUserFingerprintFunc func(ctx context.Context, site string, mac string, devIdOverride int) error
@@ -3295,6 +3308,9 @@ type ClientMock struct {
 			// Args is the args argument value.
 			Args []any
 		}
+		// Internal holds details about calls to the Internal method.
+		Internal []struct {
+		}
 		// IsFeatureEnabled holds details about calls to the IsFeatureEnabled method.
 		IsFeatureEnabled []struct {
 			// Ctx is the ctx argument value.
@@ -3592,6 +3608,9 @@ type ClientMock struct {
 		LogoutContext []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
+		}
+		// Official holds details about calls to the Official method.
+		Official []struct {
 		}
 		// OverrideUserFingerprint holds details about calls to the OverrideUserFingerprint method.
 		OverrideUserFingerprint []struct {
@@ -4592,6 +4611,7 @@ type ClientMock struct {
 	lockGetWLANGroup                     sync.RWMutex
 	lockInfo                             sync.RWMutex
 	lockInfof                            sync.RWMutex
+	lockInternal                         sync.RWMutex
 	lockIsFeatureEnabled                 sync.RWMutex
 	lockKickUserByMAC                    sync.RWMutex
 	lockListAPGroup                      sync.RWMutex
@@ -4636,6 +4656,7 @@ type ClientMock struct {
 	lockLoginContext                     sync.RWMutex
 	lockLogout                           sync.RWMutex
 	lockLogoutContext                    sync.RWMutex
+	lockOfficial                         sync.RWMutex
 	lockOverrideUserFingerprint          sync.RWMutex
 	lockPost                             sync.RWMutex
 	lockPut                              sync.RWMutex
@@ -11329,6 +11350,33 @@ func (mock *ClientMock) InfofCalls() []struct {
 	return calls
 }
 
+// Internal calls InternalFunc.
+func (mock *ClientMock) Internal() InternalClient {
+	if mock.InternalFunc == nil {
+		panic("ClientMock.InternalFunc: method is nil but Client.Internal was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockInternal.Lock()
+	mock.calls.Internal = append(mock.calls.Internal, callInfo)
+	mock.lockInternal.Unlock()
+	return mock.InternalFunc()
+}
+
+// InternalCalls gets all the calls that were made to Internal.
+// Check the length with:
+//
+//	len(mockedClient.InternalCalls())
+func (mock *ClientMock) InternalCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockInternal.RLock()
+	calls = mock.calls.Internal
+	mock.lockInternal.RUnlock()
+	return calls
+}
+
 // IsFeatureEnabled calls IsFeatureEnabledFunc.
 func (mock *ClientMock) IsFeatureEnabled(ctx context.Context, site string, name string) (bool, error) {
 	if mock.IsFeatureEnabledFunc == nil {
@@ -12888,6 +12936,33 @@ func (mock *ClientMock) LogoutContextCalls() []struct {
 	mock.lockLogoutContext.RLock()
 	calls = mock.calls.LogoutContext
 	mock.lockLogoutContext.RUnlock()
+	return calls
+}
+
+// Official calls OfficialFunc.
+func (mock *ClientMock) Official() official.Client {
+	if mock.OfficialFunc == nil {
+		panic("ClientMock.OfficialFunc: method is nil but Client.Official was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockOfficial.Lock()
+	mock.calls.Official = append(mock.calls.Official, callInfo)
+	mock.lockOfficial.Unlock()
+	return mock.OfficialFunc()
+}
+
+// OfficialCalls gets all the calls that were made to Official.
+// Check the length with:
+//
+//	len(mockedClient.OfficialCalls())
+func (mock *ClientMock) OfficialCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockOfficial.RLock()
+	calls = mock.calls.Official
+	mock.lockOfficial.RUnlock()
 	return calls
 }
 

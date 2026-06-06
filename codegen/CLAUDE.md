@@ -11,6 +11,16 @@ which runs: `go run ../codegen/ -version-base-dir=../codegen/ <version>`.
 3. `customize.go` — applies `customizations.yml` field overrides.
 4. `generator.go` — renders `api.go.tmpl` / `apiv2.go.tmpl` → `<resource>.generated.go`; writes `version.generated.go` and the repo `.unifi-version` marker.
 
+### Client interface split (`client.go.tmpl` + `clients.go`)
+
+`client.go.tmpl` renders **two** interfaces into `client.generated.go`: an embedded `InternalClient` (all
+resource CRUD — every function carrying a resource name) and the top-level `Client` (which embeds
+`InternalClient`, then lists the transport/lifecycle functions — those with an *empty* resource name — and
+the hand-written `Internal()`/`Official()` accessors). The split is driven by `ClientInfo.ResourceFunctions`
+/ `ClientInfo.TransportFunctions` in `clients.go`, keyed on `ClientFunction.ResourceName()`. The template
+always imports `unifi/official` for the `Official()` accessor return type. After changing the split,
+regenerate `client.generated.go` **and** `client_mock.generated.go` (offline moq — see `unifi/mock.go`).
+
 ## Download trust model (ARCH-15 / ARCH-16)
 
 The download pipeline (`download.go`, `version.go`) is the only point where codegen

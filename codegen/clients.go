@@ -108,6 +108,33 @@ func (c *ClientInfo) Name() string {
 	return "Client"
 }
 
+// ResourceFunctions returns the resource-bound functions (standard CRUD plus
+// custom resource methods), which make up the embedded InternalClient interface.
+// They are distinguished from transport/lifecycle functions by carrying a
+// resource name.
+func (c *ClientInfo) ResourceFunctions() []ClientFunction {
+	return filterFunctions(c.Functions, func(f ClientFunction) bool { return f.ResourceName() != "" })
+}
+
+// TransportFunctions returns the transport/lifecycle functions (Do/Get/Post/Put/
+// Delete, Login/Logout, Version, BaseURL, ...), which sit on the top-level Client
+// interface alongside the Internal()/Official() accessors. They are the functions
+// with no resource name.
+func (c *ClientInfo) TransportFunctions() []ClientFunction {
+	return filterFunctions(c.Functions, func(f ClientFunction) bool { return f.ResourceName() == "" })
+}
+
+// filterFunctions returns the subset of fns satisfying keep, preserving order.
+func filterFunctions(fns []ClientFunction, keep func(ClientFunction) bool) []ClientFunction {
+	out := make([]ClientFunction, 0, len(fns))
+	for _, f := range fns {
+		if keep(f) {
+			out = append(out, f)
+		}
+	}
+	return out
+}
+
 //go:embed client.go.tmpl
 var clientGoTemplate string
 
