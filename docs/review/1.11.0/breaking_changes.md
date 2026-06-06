@@ -22,44 +22,43 @@ in the [migration guide](../../migrating_from_upstream.md) and [client configura
 this section is the authoritative changelog entry. *(Entries 4 and 5 were added retroactively by the final
 whole-codebase review — the changes shipped in Wave 1 but were initially undocumented.)*
 
-### 1. `ClientConfig.VerifySSL` type changed: `bool` → `*bool` (ARCH-06)
+### 1. `ClientConfig.VerifySSL` renamed and inverted: `VerifySSL bool` → `SkipVerifySSL bool` (ARCH-06)
 
-**Signature change (compile break).** The field type is now `*bool`:
+**Signature change (compile break).** The field was renamed and its meaning inverted; the type stays `bool`:
 
 ```go
 // before
 VerifySSL bool
 // after
-VerifySSL *bool
+SkipVerifySSL bool
 ```
 
-Every caller that set `VerifySSL` by value no longer compiles. Migrate by taking a pointer:
+Every caller that referenced `VerifySSL` no longer compiles — this is intentional, so the behavioral
+flip below can't slip through silently. Migrate by inverting the value:
 
 ```go
 // before
-config := &unifi.ClientConfig{VerifySSL: false}
+config := &unifi.ClientConfig{VerifySSL: false} // disable verification
 // after
-config := &unifi.ClientConfig{VerifySSL: new(false)} // disable verification (self-signed cert)
+config := &unifi.ClientConfig{SkipVerifySSL: true} // disable verification (self-signed cert)
 ```
-
-Callers that never set the field are unaffected at compile time (the zero value is now `nil`), but see
-the behavioral flip below.
 
 ### 2. TLS verification is now SECURE BY DEFAULT (ARCH-06)
 
-**Behavioral flip (silent runtime break).** The default flipped from insecure to secure:
+**Behavioral flip.** The default flipped from insecure to secure, and the field name now reflects it:
 
-| | old (`bool`) | new (`*bool`) |
+| | old (`VerifySSL bool`) | new (`SkipVerifySSL bool`) |
 | --- | --- | --- |
-| field unset / zero value | `false` → `InsecureSkipVerify: true` (verification OFF) | `nil` → verification **ON** |
-| explicitly verify | `VerifySSL: true` | `VerifySSL: new(true)` or leave `nil` |
-| explicitly skip | `VerifySSL: false` | `VerifySSL: new(false)` |
+| field unset / zero value | `false` → `InsecureSkipVerify: true` (verification OFF) | `false` → verification **ON** |
+| explicitly verify | `VerifySSL: true` | leave unset (zero value) |
+| explicitly skip | `VerifySSL: false` | `SkipVerifySSL: true` |
 
-A caller that previously left `VerifySSL` unset got `InsecureSkipVerify: true` and now gets certificate
-verification ON. **This will break connections to controllers using self-signed certificates** (the most
-common UniFi deployment) at runtime, with no compile error — the call to `NewClient` succeeds and the
-first request fails on TLS handshake instead. To restore the old behavior, set
-`VerifySSL: new(false)` explicitly; disabling verification is logged at WARN level on every client build.
+A caller that previously left `VerifySSL` unset got `InsecureSkipVerify: true` (verification OFF) and now
+gets certificate verification ON. **This will break connections to controllers using self-signed
+certificates** (the most common UniFi deployment) at runtime — except the rename forces a compile error
+at every call site that touched the field, so the flip surfaces at build time rather than silently. To
+restore the old skip-verification behavior, set `SkipVerifySSL: true`; disabling verification is logged at
+WARN level on every client build.
 
 ### 3. `ClientConfig.UseLocking` is now a deprecated no-op (ARCH-04)
 

@@ -200,9 +200,9 @@ func main() {
 		// User:         "username",                                 // Uncomment and provide if using user/password authentication
 		// Password:     "password",                                 // Uncomment and provide if using user/password authentication
 		Timeout:        30 * time.Second,                                // Maximum duration to wait for a response
-		// VerifySSL controls TLS verification and is SECURE BY DEFAULT: leave it nil to verify
-		// certificates. Set it to new(false) only for self-signed controller certs (logs a warning).
-		// VerifySSL:   new(false),
+		// SkipVerifySSL controls TLS verification and is SECURE BY DEFAULT: leave it false (the
+		// zero value) to verify certificates. Set it to true only for self-signed controller certs (logs a warning).
+		// SkipVerifySSL: true,
 		Interceptors:   []unifi.ClientInterceptor{&customInterceptor{}}, // Custom interceptors for request/response manipulation
 		HttpTransportCustomizer: customTransportCustomizer,              // Function to customize the underlying HTTP transport
 		UserAgent:      "MyCustomAgent/1.0",                             // Custom User-Agent string
