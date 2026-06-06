@@ -21,6 +21,7 @@
 *.out
 *.prof
 /codegen/codegen
+/codegen/official/official
 go.work
 go.work.sum
 /vendor/

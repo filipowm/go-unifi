@@ -27,6 +27,67 @@ the hand-written `Internal()`/`Official()` accessors). The split is driven by `C
 always imports `unifi/official` for the `Official()` accessor return type. After changing the split,
 regenerate `client.generated.go` **and** `client_mock.generated.go` (offline moq — see `unifi/mock.go`).
 
+## Official-API frontend — OpenAPI models (`codegen/official/`)
+
+`codegen/official/` is a **separate Go module** (`github.com/filipowm/go-unifi/codegen/official`) that hosts the
+OpenAPI toolchain (`oapi-codegen/v2` + `kin-openapi`). It is isolated so those heavy deps never enter the root
+`go.mod`; the only root addition is `github.com/oapi-codegen/runtime` (imported by the generated models). The
+existing `.deb` pipeline stays in the root module and `go run ../codegen/` is unaffected.
+
+It reads the **committed** snapshot (`codegen/openapi/integration-<ver>.json`) — fully **offline**, no
+controller download — and writes `unifi/official/models.generated.go` (package `official`, `DO NOT EDIT`).
+Regenerate with:
+
+```sh
+cd codegen/official && go run .            # defaults: --openapi-dir ../openapi --out ../../unifi/official/models.generated.go
+```
+
+### Why a transform (the oneOf bridge)
+
+oapi-codegen's allOf+discriminator path **silently drops every variant struct**. The transform (`transform.go`,
+`naming.go`) rewrites the spec into oapi-codegen's **oneOf** path, which emits per-variant union types with full
+machinery. Steps (all on the raw JSON, deterministic, fail-loud):
+
+1. **Downconvert 3.1 → 3.0.3** — patches only the `openapi` string after asserting the spec uses **zero**
+   3.1-only constructs (type arrays, `prefixItems`, `const`, `unevaluated*`, …); the bump is lossless.
+2. **UPPER_SNAKE mapping assert** — every `discriminator.mapping` key must be the wire enum value, so the
+   generated `ValueByDiscriminator()` switch decodes real payloads.
+3. **Enum dedup** — a curated table (`sharedEnums`) hoists a value-set shared across a tri-shape family into one
+   type (e.g. `ACLRuleAction`), collapsing oapi-codegen's per-schema duplicates. Cross-family identical sets
+   (e.g. ALLOW/BLOCK on Wi-Fi, the protocol-name set across IPv4/IPv6) are left distinct on purpose.
+4. **Diamond fix** — a variant whose `allOf` extends 2+ discriminator parents would make oapi-codegen fail
+   ("cannot merge two discriminators"). Keep the first parent ref; inline the rest's properties minus their
+   discriminator (lossless — those bases contribute fields, not a second union).
+5. **oneOf synthesis** — each discriminator parent gets a `oneOf` over ALL variants, mined from BOTH allOf
+   back-references AND the `discriminator.mapping` (some variants appear only in the mapping). Member list is
+   sorted; the synthesized graph is cycle-checked.
+6. **Naming + collision recompute** — strip `Integration` prefix / `Dto` suffix, flip `Create or update X` →
+   `XCreateOrUpdate`, then oapi-codegen's own camel-casing (so our names match its output). Collisions are
+   recomputed on the POST-transform set and must resolve to unique names or generation fails. One explicit
+   override: `IP Address selector` (a variant) → `SpecificIPAddressSelector`, freeing `IPAddressSelector` for
+   its parent union.
+7. **Header normalize** — collapse oapi-codegen's `// Package …` doc to a bare `DO NOT EDIT` banner so the
+   hand-written package doc in `official.go` stays the single package godoc.
+
+### Generated public API shape
+
+Each polymorphic parent becomes a union struct: the discriminator field + an unexported `union json.RawMessage`,
+plus `AsXxx/FromXxx/MergeXxx`, `Discriminator()`, `ValueByDiscriminator()` (switching on the UPPER_SNAKE wire
+values) and generated `MarshalJSON/UnmarshalJSON`. Variants with own fields are full structs (also carrying the
+union machinery merged from the parent); **empty variants are Go type aliases of the parent** — branch on
+`Discriminator()` to tell them apart. No silent field loss on any family (management / firewall / Wi-Fi security).
+The leaf-value unmarshalers in `unifi/json.go` are unaffected — the union codec applies only to discriminated
+parents.
+
+### Hand-written collisions
+
+`package official` already hand-writes `SiteOverview` and `Info`. The transform defers to them: `Site overview`
+is excluded from generation (refs resolve to the hand-written type) and `Application info` becomes
+`type ApplicationInfo = Info`.
+
+> Stage 3 folds this frontend into `generator.go`'s second pass and adds the tri-shape wrappers + `official.Client`.
+> Until then it is a standalone runnable.
+
 ## Download trust model (ARCH-15 / ARCH-16)
 
 The download pipeline (`download.go`, `version.go`) is the only point where codegen
