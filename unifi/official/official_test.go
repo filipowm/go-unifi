@@ -1,0 +1,142 @@
+package official //nolint:testpackage
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"strings"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+// encode JSON-marshals v and unmarshals it into respBody, mimicking a transport
+// decoding a canned response.
+func encode(v, respBody any) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(b, respBody)
+}
+
+// fakeDoer is a minimal in-memory Doer. It proves the official package needs
+// nothing from the parent unifi package: the transport is a plain structural
+// interface satisfied here by a test double.
+type fakeDoer struct {
+	responses map[string]any // path (sans query) -> value JSON-marshaled into respBody
+	calls     []string
+	err       error
+}
+
+func (f *fakeDoer) Get(_ context.Context, apiPath string, _, respBody any) error {
+	f.calls = append(f.calls, apiPath)
+	if f.err != nil {
+		return f.err
+	}
+	// Match on the path before any query string so paginated calls resolve.
+	key, _, _ := strings.Cut(apiPath, "?")
+	v, ok := f.responses[key]
+	if !ok {
+		return fmt.Errorf("no canned response for %s", apiPath)
+	}
+	return encode(v, respBody)
+}
+
+func (f *fakeDoer) Post(context.Context, string, any, any) error   { return nil }
+func (f *fakeDoer) Put(context.Context, string, any, any) error    { return nil }
+func (f *fakeDoer) Delete(context.Context, string, any, any) error { return nil }
+
+const base = "/proxy/network/integration/v1"
+
+func TestGetInfo(t *testing.T) {
+	t.Parallel()
+	d := &fakeDoer{responses: map[string]any{base + "/info": Info{ApplicationVersion: "10.1.68"}}}
+	c := New(d, base, nil)
+
+	info, err := c.GetInfo(context.Background())
+	require.NoError(t, err)
+	assert.Equal(t, "10.1.68", info.ApplicationVersion)
+	assert.Equal(t, []string{base + "/info"}, d.calls)
+}
+
+func TestGateBlocksOperations(t *testing.T) {
+	t.Parallel()
+	sentinel := errors.New("blocked")
+	d := &fakeDoer{}
+	c := New(d, base, func(context.Context) error { return sentinel })
+
+	_, err := c.GetInfo(context.Background())
+	require.ErrorIs(t, err, sentinel)
+	assert.Empty(t, d.calls, "gate must short-circuit before any transport call")
+
+	_, err = c.ListSites(context.Background())
+	require.ErrorIs(t, err, sentinel)
+}
+
+// sitePage builds one {offset,limit,count,totalCount,data} envelope.
+func sitePage(offset, total int, data []SiteOverview) page[SiteOverview] {
+	return page[SiteOverview]{Offset: offset, Limit: maxPageLimit, Count: len(data), TotalCount: total, Data: data}
+}
+
+func TestListSitesAutoPaginates(t *testing.T) {
+	t.Parallel()
+	// 250 sites across two pages of <=200 — the resolver must walk both.
+	all := make([]SiteOverview, 0, 250)
+	for i := range 250 {
+		all = append(all, SiteOverview{Id: fmt.Sprintf("uuid-%d", i), InternalReference: fmt.Sprintf("site%d", i), Name: fmt.Sprintf("Site %d", i)})
+	}
+
+	calls := 0
+	d := &pagingDoer{fn: func(_ string, respBody any) error {
+		start := calls * maxPageLimit
+		calls++
+		end := min(start+maxPageLimit, len(all))
+		return encode(sitePage(start, len(all), all[start:end]), respBody)
+	}}
+	c := New(d, base, nil)
+
+	sites, err := c.ListSites(context.Background())
+	require.NoError(t, err)
+	assert.Len(t, sites, 250)
+	assert.Equal(t, 2, calls, "expected exactly two pages")
+}
+
+func TestResolveSiteIDCachesByInternalReference(t *testing.T) {
+	t.Parallel()
+	d := &fakeDoer{responses: map[string]any{
+		base + "/sites": sitePage(0, 2, []SiteOverview{
+			{Id: "uuid-default", InternalReference: "default", Name: "Default"},
+			{Id: "uuid-other", InternalReference: "other", Name: "Other"},
+		}),
+	}}
+	c := New(d, base, nil)
+
+	id, err := c.ResolveSiteID(context.Background(), "default")
+	require.NoError(t, err)
+	assert.Equal(t, "uuid-default", id)
+
+	// Second lookup is served from cache: no further transport call.
+	before := len(d.calls)
+	id2, err := c.ResolveSiteID(context.Background(), "other")
+	require.NoError(t, err)
+	assert.Equal(t, "uuid-other", id2)
+	assert.Len(t, d.calls, before, "cached lookup must not hit transport again")
+
+	_, err = c.ResolveSiteID(context.Background(), "ghost")
+	require.Error(t, err)
+}
+
+// pagingDoer drives ListSites pagination through a custom per-call function.
+type pagingDoer struct {
+	fn func(apiPath string, respBody any) error
+}
+
+func (p *pagingDoer) Get(_ context.Context, apiPath string, _, respBody any) error {
+	return p.fn(apiPath, respBody)
+}
+func (p *pagingDoer) Post(context.Context, string, any, any) error   { return nil }
+func (p *pagingDoer) Put(context.Context, string, any, any) error    { return nil }
+func (p *pagingDoer) Delete(context.Context, string, any, any) error { return nil }

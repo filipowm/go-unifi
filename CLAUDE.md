@@ -9,6 +9,7 @@ hand-written layer wraps them with a usable client.
 - To change generated output: edit `codegen/customizations.yml` (field type/name/tags/unmarshalers) and regenerate, OR add a hand-written sibling `.go` file.
   See `codegen/CLAUDE.md`.
 - Generated CRUD methods are private (`getUser`, `listUser`); public wrappers (`GetUser`, `ListUser`) live in hand-written `.go` siblings.
+- The generated `Client` interface embeds `InternalClient` (all resource CRUD) and adds transport/lifecycle methods plus `Internal()`/`Official()` accessors. The Official API (`unifi/official`) is a one-way dependency (`unifi -> official`): it imports nothing back, taking the transport as a structural `Doer`.
 
 ## Commands
 
@@ -37,7 +38,9 @@ unifi/                  Single Go package: client + all resource types
   json.go               Special unmarshalers (emptyStringInt, numberOrString, ...)
   *.generated.go        GENERATED — do not edit
   <resource>.go         Hand-written wrappers/business logic for <resource>
+  official_surface.go   Internal()/Official() accessors + the Official-API capability gate
   features/             Controller feature-flag constants
+  official/             Official UniFi OpenAPI (integration/v1) client — imports NOTHING from unifi
 codegen/                Code-generation pipeline (see codegen/CLAUDE.md)
 docs/                   Documentation
 .unifi-version          Supported controller version marker (e.g. 9.3.45)

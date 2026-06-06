@@ -12,6 +12,15 @@ import (
 
 var ErrNotFound = errors.New("not found")
 
+// ErrOfficialAPIUnavailable is returned when the Official UniFi OpenAPI cannot be
+// used against this controller: an old-style (classic) controller, non-API-key
+// auth, or a controller version below 10.1.68.
+var ErrOfficialAPIUnavailable = errors.New("official API unavailable")
+
+// ErrOfficialAPIDisabled is returned when the Official API has been explicitly
+// opted out via ClientConfig.DisableOfficialAPI.
+var ErrOfficialAPIDisabled = errors.New("official API disabled")
+
 // maxErrorBodySize caps how much of an error response body we buffer before
 // decoding, so a hostile or runaway error page (e.g. a multi-megabyte HTML
 // gateway response) can never exhaust memory while we build a ServerError.

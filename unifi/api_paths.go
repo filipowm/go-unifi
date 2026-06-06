@@ -14,6 +14,11 @@ const (
 	apiPathNew   = "/proxy/network/api"
 	apiV2PathNew = "/proxy/network/v2/api"
 
+	// integrationV1Path is the base prefix for the Official UniFi OpenAPI
+	// (integration/v1). It is a capability layered on the new-style API, not a
+	// fourth APIStyle: full leading-slash paths under it bypass APIPaths.ApiPath.
+	integrationV1Path = "/proxy/network/integration/v1"
+
 	loginPath    = "/api/login"
 	loginPathNew = "/api/auth/login"
 

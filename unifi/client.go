@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/filipowm/go-unifi/unifi/official"
 	"golang.org/x/net/publicsuffix"
 )
 
@@ -87,6 +88,10 @@ type ClientConfig struct {
 	APIStyle       APIStyle
 	ValidationMode ValidationMode
 	Logger         Logger
+	// DisableOfficialAPI opts the client out of the Official UniFi OpenAPI:
+	// Official() operations then fail fast with ErrOfficialAPIDisabled and the
+	// capability probe is skipped entirely.
+	DisableOfficialAPI bool
 }
 
 // Credentials abstracts authentication credentials.
@@ -154,6 +159,18 @@ type client struct {
 	// a non-reentrant mutex and self-deadlock.
 	sysInfoMu sync.RWMutex
 	validator *validator
+
+	// officialDisabled mirrors ClientConfig.DisableOfficialAPI: when set, the
+	// capability gate fails fast with ErrOfficialAPIDisabled and never probes.
+	officialDisabled bool
+	// officialOnce lazily builds officialClient so its site-resolver cache
+	// survives across Official() calls.
+	officialOnce   sync.Once
+	officialClient official.Client
+	// officialReadyMu guards officialReady, which caches a successful capability
+	// probe so /v1/info is fetched at most once.
+	officialReadyMu sync.Mutex
+	officialReady   bool
 }
 
 var _ Client = &client{} // Ensure that client implements the Client interface. (compile-time check)
@@ -378,15 +395,16 @@ func newClientFromConfig(config *ClientConfig, v *validator) (*client, error) {
 	errorHandler := resolveErrorHandler(&cfg, log)
 	log.Tracef("Validation mode: %d", cfg.ValidationMode)
 	return &client{
-		baseURL:        baseURL,
-		timeout:        cfg.Timeout,
-		credentials:    credentials,
-		validationMode: cfg.ValidationMode,
-		http:           httpClient,
-		interceptors:   interceptors,
-		errorHandler:   errorHandler,
-		validator:      v,
-		Logger:         log,
+		baseURL:          baseURL,
+		timeout:          cfg.Timeout,
+		credentials:      credentials,
+		validationMode:   cfg.ValidationMode,
+		http:             httpClient,
+		interceptors:     interceptors,
+		errorHandler:     errorHandler,
+		validator:        v,
+		Logger:           log,
+		officialDisabled: cfg.DisableOfficialAPI,
 	}, nil
 }
 
