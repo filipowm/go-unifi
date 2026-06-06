@@ -86,13 +86,13 @@ if err != nil {
 1. Replace the import from `github.com/paultyng/go-unifi` to `github.com/filipowm/go-unifi`
 2. Replace manual client creation with `NewClient` and appropriate `ClientConfig`
 3. TLS verification is now **on by default** (secure by default). To skip verification (e.g. self-signed
-   certs), set `VerifySSL` to a pointer to `false` — note it is now a `*bool` (`nil` verifies), and
+   certs), set `SkipVerifySSL` to `true` (the zero value `false` verifies), and
    disabling verification logs a warning:
    ```go
    client, err := unifi.NewClient(&unifi.ClientConfig{
        BaseURL: "https://unifi.localdomain",
        APIKey:  "your-api-key",
-       VerifySSL: new(false),
+       SkipVerifySSL: true,
    })
    ```
 4. Remove explicit `Login()` calls as they are now handled automatically, unless you use [bare client initialization](./getting_started.md#BareClientInitialization)

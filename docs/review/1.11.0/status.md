@@ -45,7 +45,7 @@ Implement the review findings as a phased, workflow-orchestrated effort.
 ## 4. ⚠️ Lessons learned (apply to Wave 2)
 
 - **Forbid agents from running ANY git command** (`git add/commit/rm/reset/stash`). In Wave 1 a Phase-A agent committed part of the wave *incoherently* (generated files without their source), which had to be undone and re-committed. **The orchestrator (main loop) owns ALL git.** Put this rule in every implement/remediate agent prompt.
-- **`new(false)` is valid Go 1.26** (`new(expr)` landed in 1.26; the lib requires go 1.26). The `VerifySSL *bool` docs using `new(false)` are correct — don't "fix" them.
+- **ARCH-06 TLS field is `SkipVerifySSL bool`** (secure-by-default via an inverted plain bool: zero value `false` verifies, `true` disables). An earlier iteration used `VerifySSL *bool` with `new(false)`; that was superseded — the rename/inversion is the shipped design and matches the architect's original recommendation. Do not reintroduce the `*bool`/`new(false)` form.
 - Reviewers can miss things: verify breaking-change docs cover **every** lane's breaks (the W1 remediation initially missed ARCH-08's `SetSetting`/`Dpi` breaks — caught and added in the main loop).
 - An agent may leave `.unifi-version` rewritten to `9.5.21` after regen — restore the user's `10.3.58` before committing and never include it in a commit.
 
@@ -66,7 +66,7 @@ ARCH-01 (Version deadlock), ARCH-02 (permissive `booleanishString`), ARCH-03 (3 
 
 ### Wave 1 — P1 hardening ✅ (commits `ab890eb`, `392de62`, `0dee64a`, `ba185b8`, `1329e49`, `a335ea6`, `fe8ae4a`, `be9ebc0`; HEAD=`be9ebc0`)
 ARCH-04/05/06/07/08/22 + TEST-02/03/04/05/06/07/08/09/10 + ARCH-17. See [implementation-log.md](implementation-log.md) for detail.
-- **Breaking (documented):** `VerifySSL bool→*bool` + secure-by-default; `UseLocking` no-op; `SetSetting` added to `Client`; `DpiApp`/`DpiGroup` removed; (internal) `DownloadAndExtract` signature.
+- **Breaking (documented):** `VerifySSL bool` → `SkipVerifySSL bool` (renamed + inverted) + secure-by-default; `UseLocking` no-op; `SetSetting` added to `Client`; `DpiApp`/`DpiGroup` removed; (internal) `DownloadAndExtract` signature.
 - Verify all-green; architect + test-lead reviewed (no regressions); 1 major remediated. Deferred minors logged in implementation-log.md.
 - New seams a Wave-2 author should reuse: **`ClientConfig.APIStyle` offline-construction override**, the wrapper **`testhelpers_test.go`** + `newTestClient`/RoundTripper pattern, the moq **`ClientMock`** (`unifi/client_mock.generated.go`, regen via `//go:generate` in `unifi/mock.go`), the injectable `*http.Client` in `codegen` download pipeline, and `go test -short ./codegen` offline gating.
 

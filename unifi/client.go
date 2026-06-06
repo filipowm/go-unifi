@@ -54,13 +54,13 @@ Fields:
 	Password:      The password for user/password authentication. Must be provided with User if APIKey is not used.
 	RememberMe:    If true, the session is remembered for future requests. Useful for long-running processes. Default: false. Only used for user/password authentication.
 	Timeout:       The maximum duration to wait for responses; default is no timeout.
-	VerifySSL:     Controls TLS certificate verification. SECURE BY DEFAULT: a nil value (the zero value) verifies certificates. Set it to a pointer to false (e.g. VerifySSL: new(false)) to DISABLE verification — required for the common case of a self-signed controller certificate. Disabling verification is logged at WARN level on every client build.
+	SkipVerifySSL: Controls TLS certificate verification. SECURE BY DEFAULT: the zero value (false) verifies certificates. Set it to true (SkipVerifySSL: true) to DISABLE verification — required for the common case of a self-signed controller certificate. Disabling verification is logged at WARN level on every client build.
 	Interceptors:  A slice of ClientInterceptor implementations that can modify requests and responses.
 	HttpTransportCustomizer:  An optional function to customize the HTTP transport (e.g., for custom TLS settings).
 	HttpRoundTripperProvider: A function that returns a http.RoundTripper for customizing the HTTP client. If both HttpTransportCustomizer and HttpRoundTripperProvider are provided, HttpRoundTripperProvider takes precedence.
 	UserAgent:     The User-Agent header string for outgoing HTTP requests.
 	ErrorHandler:  A custom handler for processing HTTP response errors.
-	UseLocking:    DEPRECATED and a NO-OP since 1.11.0. net/http.Client is goroutine-safe and the client no longer serializes requests; the field is retained only for source compatibility and has no effect. See ARCH-04.
+	UseLocking:    DEPRECATED and a NO-OP since 1.11.0. net/http.Client is goroutine-safe and the client no longer serializes requests; the field is retained only for source compatibility and has no effect.
 	APIStyle:      Optionally forces the controller API style (new vs old) instead of probing the controller over the network. The zero value (APIStyleAuto) keeps the auto-detection behavior. Set it to skip the network probe for offline construction.
 	ValidationMode:The mode for validating request bodies. Can be "soft", "hard", or "disable".
 */
@@ -71,16 +71,16 @@ type ClientConfig struct {
 	Password   string        `validate:"excluded_with=APIKey,required_with=User"`
 	RememberMe bool          `validate:"excluded_with=APIKey"`
 	Timeout    time.Duration // How long to wait for replies, default: forever.
-	// VerifySSL controls TLS certificate verification. nil (the zero value) verifies
-	// certificates (secure by default); a pointer to false disables verification,
-	// e.g. VerifySSL: new(false) for a self-signed controller certificate.
-	VerifySSL                *bool
+	// SkipVerifySSL controls TLS certificate verification. The zero value (false)
+	// verifies certificates (secure by default); set it to true to disable
+	// verification, e.g. SkipVerifySSL: true for a self-signed controller certificate.
+	SkipVerifySSL            bool
 	Interceptors             []ClientInterceptor
 	HttpTransportCustomizer  HttpTransportCustomizer
 	HttpRoundTripperProvider func() http.RoundTripper
 	UserAgent                string
 	ErrorHandler             ResponseErrorHandler
-	// Deprecated: UseLocking is a no-op since 1.11.0 and has no effect (ARCH-04).
+	// Deprecated: UseLocking is a no-op since 1.11.0 and has no effect.
 	// Requests are dispatched through a goroutine-safe net/http.Client and are no
 	// longer serialized. The field is retained only for source compatibility.
 	UseLocking     bool
@@ -134,7 +134,7 @@ func (u UserPassCredentials) IsRememberMe() bool { return u.Remember }
 // and are NOT serialized — they run concurrently. The only mutable shared state
 // is the cached system information (guarded by sysInfoMu) and, for user/pass
 // auth, the CSRF token (guarded inside CSRFInterceptor). No request-level lock
-// is held across the network round-trip (see ARCH-04).
+// is held across the network round-trip.
 type client struct {
 	Logger
 
@@ -151,7 +151,7 @@ type client struct {
 	// sysInfoMu guards the sysInfo cache. Reads take the read lock; the slow-path
 	// fetch happens while holding NO lock, then the result is stored under the
 	// write lock (double-checked). Holding it across the HTTP fetch would re-enter
-	// a non-reentrant mutex and self-deadlock (ARCH-01).
+	// a non-reentrant mutex and self-deadlock.
 	sysInfoMu sync.RWMutex
 	validator *validator
 }
@@ -167,7 +167,6 @@ func (c *client) BaseURL() string {
 // TYPE (reflect.TypeOf), not by value: this honors the "only one of a kind"
 // intent (a single CSRF / API-key interceptor) and is panic-safe for interceptor
 // types that are not comparable with == (e.g. structs holding a slice/map/func).
-// See ARCH-18.
 func (c *client) AddInterceptor(interceptor ClientInterceptor) {
 	if interceptor == nil {
 		return
@@ -180,7 +179,7 @@ func (c *client) AddInterceptor(interceptor ClientInterceptor) {
 // containsInterceptorType reports whether interceptors already holds one whose
 // concrete dynamic type matches the candidate's. Comparing reflect.TypeOf values
 // (which are themselves always comparable) avoids the == panic that slices.Contains
-// over potentially-non-comparable interface values would trigger (ARCH-18).
+// over potentially-non-comparable interface values would trigger.
 func containsInterceptorType(interceptors []ClientInterceptor, candidate ClientInterceptor) bool {
 	if candidate == nil {
 		return false
@@ -220,7 +219,7 @@ func (c *client) Version() string {
 // VersionContext returns the version of the UniFi Controller API using the
 // supplied context for cancellation/deadline. Unlike Version(), it surfaces the
 // fetch error rather than swallowing it. It uses the same sysInfo cache and
-// double-checked locking as Version() (ARCH-01).
+// double-checked locking as Version().
 func (c *client) VersionContext(ctx context.Context) (string, error) {
 	// Fast path: read the cache under the dedicated read lock.
 	if v, ok := c.cachedVersion(); ok {
@@ -229,7 +228,7 @@ func (c *client) VersionContext(ctx context.Context) (string, error) {
 
 	// Slow path: fetch over HTTP while holding NO lock. Holding sysInfoMu across
 	// the round-trip would block every concurrent reader for the duration of the
-	// fetch; it is taken again only to store the result below (ARCH-01).
+	// fetch; it is taken again only to store the result below.
 	i, err := c.GetSystemInformationContext(ctx)
 	if err != nil {
 		return "", err
@@ -255,9 +254,9 @@ func resolveLogger(config *ClientConfig) Logger {
 
 // tlsVerificationDisabled reports whether TLS certificate verification is
 // explicitly disabled by the caller. Verification is SECURE BY DEFAULT: only an
-// explicit VerifySSL pointer to false turns it off; a nil VerifySSL verifies.
+// explicit SkipVerifySSL set to true turns it off; the zero value verifies.
 func tlsVerificationDisabled(config *ClientConfig) bool {
-	return config.VerifySSL != nil && !*config.VerifySSL
+	return config.SkipVerifySSL
 }
 
 // buildHTTPClient constructs the *http.Client from config: it resolves the
@@ -265,8 +264,8 @@ func tlsVerificationDisabled(config *ClientConfig) bool {
 // InsecureSkipVerify and transport customizer), applies the timeout, and adds a
 // cookiejar when no API key is used.
 //
-// TLS verification is secure by default (ARCH-06): InsecureSkipVerify is only
-// set when the caller explicitly disables verification via VerifySSL, and that
+// TLS verification is secure by default: InsecureSkipVerify is only
+// set when the caller explicitly disables verification via SkipVerifySSL, and that
 // case is logged at WARN level.
 func buildHTTPClient(config *ClientConfig, log Logger) (*http.Client, error) {
 	var rt http.RoundTripper
@@ -277,9 +276,9 @@ func buildHTTPClient(config *ClientConfig, log Logger) (*http.Client, error) {
 	if rt == nil {
 		insecure := tlsVerificationDisabled(config)
 		if insecure {
-			log.Warn("TLS certificate verification is DISABLED (VerifySSL set to false); connections are vulnerable to man-in-the-middle attacks")
+			log.Warn("TLS certificate verification is DISABLED (SkipVerifySSL set to true); connections are vulnerable to man-in-the-middle attacks")
 		}
-		//nolint:gosec // InsecureSkipVerify is opt-in via ClientConfig.VerifySSL (secure by default)
+		//nolint:gosec // InsecureSkipVerify is opt-in via ClientConfig.SkipVerifySSL (secure by default)
 		transport := &http.Transport{
 			Proxy:           http.ProxyFromEnvironment,
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: insecure},
@@ -321,7 +320,7 @@ func resolveCredentials(config *ClientConfig, log Logger) (Credentials, []Client
 // buildInterceptors assembles the final interceptor chain: the provided auth
 // interceptors, the default headers interceptor (with resolved User-Agent), and
 // any user-supplied config.Interceptors. The User-Agent is resolved into a local
-// (the default when none is provided); per ARCH-09 nothing is written back
+// (the default when none is provided); nothing is written back
 // through config. User-supplied interceptors are deduplicated by concrete type
 // using the same semantics as (*client).AddInterceptor.
 func buildInterceptors(config *ClientConfig, log Logger, auth []ClientInterceptor) []ClientInterceptor {
@@ -358,7 +357,7 @@ func resolveErrorHandler(config *ClientConfig, log Logger) ResponseErrorHandler 
 func newClientFromConfig(config *ClientConfig, v *validator) (*client, error) {
 	log := resolveLogger(config)
 	log.Info("Initializing new UniFi client")
-	// ARCH-09: operate on a shallow copy so we never write back through the
+	// Operate on a shallow copy so we never write back through the
 	// caller-owned *ClientConfig. URL normalization (trailing-slash trim) and the
 	// default User-Agent are applied to this local copy only; the caller's struct
 	// is left byte-for-byte intact.
@@ -433,7 +432,7 @@ func newBareClient(config *ClientConfig) (*client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed creating unifi client: %w", err)
 	}
-	// APIStyle override (TEST-09): when the caller pins the style, skip the
+	// APIStyle override: when the caller pins the style, skip the
 	// network probe entirely so the client can be constructed fully offline.
 	if config.APIStyle != APIStyleAuto {
 		paths := apiPathsForStyle(config.APIStyle)
@@ -512,7 +511,7 @@ func (c *client) LogoutContext(ctx context.Context) error {
 
 // cachedVersion returns the cached version and whether the cache was populated.
 // It is the pure cache-decision half of VersionContext, split out from the IO so
-// the cached-vs-fetch branch is testable without timing hacks (TEST-15). The read
+// the cached-vs-fetch branch is testable without timing hacks. The read
 // is performed under the dedicated read lock.
 func (c *client) cachedVersion() (string, bool) {
 	c.sysInfoMu.RLock()

@@ -166,6 +166,7 @@ defaults** — TLS verification is OFF by default. Address the P0s and the drift
       is a breaking change, so gate it on a minor/major bump and document the migration.
     - If the field name must stay for back-compat, default it to true via a constructor/normalization step requiring explicit opt-out, and emit a Warn log whenever verification is disabled.
     - Update the doc comment and README/configuration.md to state the security implication prominently.
+- **Resolution (shipped):** Took proposal 1 — inverted to a secure-by-default plain bool, renamed `ClientConfig.VerifySSL bool` → `SkipVerifySSL bool` (zero value `false` ⇒ verification ON; `true` ⇒ disabled, logged at WARN). No deprecated alias kept; the rename forces a compile error at every call site so the secure-by-default flip surfaces at build time. Documented as a breaking change in [breaking_changes.md](breaking_changes.md).
 
 ### ARCH-07 [P1] numberOrString decodes JSON null to the literal string "null", corrupting values on round-trip ✅ *verified against source*
 
