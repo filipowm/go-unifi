@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestResourceWarningsUseInjectedLogger pins TEST-13: a Resource routes its
+// TestResourceWarningsUseInjectedLogger pins that a Resource routes its
 // dropped-field and CamelCase-collision WARNs through its INJECTED logger, not
 // the package global, so the assertions read only this test's own hook and the
 // test is fully parallel-safe. buildResourcesFromDownloadedFields wires the
@@ -469,7 +469,7 @@ func TestFieldInfoFromValidationErrors(t *testing.T) {
 	}
 }
 
-// TestFieldInfoFromMapSkipsFailingChild pins ARCH-14's nested-struct robustness:
+// TestFieldInfoFromMapSkipsFailingChild pins the nested-struct robustness:
 // a single un-inferable nested child is dropped (not the whole struct + its
 // siblings). In the default (non-strict) mode the nested struct is still
 // produced, carrying every well-formed sibling, and only the bad child is
@@ -496,7 +496,7 @@ func TestFieldInfoFromMapSkipsFailingChild(t *testing.T) {
 	a.Len(fieldInfo.Fields, 2, "only the two inferable children remain")
 }
 
-// TestStrictModeDroppedField pins ARCH-14's strict-mode opt-in: with
+// TestStrictModeDroppedField pins the strict-mode opt-in: with
 // UNIFI_CODEGEN_STRICT set, an un-inferable field is a HARD error rather than a
 // silently-dropped WARN, both at the top level (processFields via processJSON)
 // and inside a nested struct (fieldInfoFromMap). NOT parallel: mutates a process
@@ -566,7 +566,7 @@ func TestStrictModeDisabledByDefault(t *testing.T) {
 	assert.True(t, strictMode(), "true must enable strict mode")
 }
 
-// TestFieldNameCollision pins ARCH-14's collision detection: two distinct JSON
+// TestFieldNameCollision pins the collision detection: two distinct JSON
 // keys that normalize to the SAME Go field name (e.g. "id" and "ID" both ->
 // "ID") collide. In non-strict mode the deterministic key sort decides the
 // surviving winner; in strict mode it is a hard error.

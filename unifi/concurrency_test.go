@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestConcurrentRequestsCSRFReplayNoRace is the ARCH-04 concurrency regression
+// TestConcurrentRequestsCSRFReplayNoRace is the concurrency regression
 // test. It fires N goroutines doing concurrent Get/Post on a single user/pass
 // client. The CSRF token is read on every outgoing request (InterceptRequest)
 // and written from every response (InterceptResponse); with the coarse

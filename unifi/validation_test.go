@@ -126,7 +126,7 @@ func TestValidationModeValidation(t *testing.T) {
 }
 
 // TestValidationErrorUnwrap asserts that ValidationError exposes its underlying
-// validator error via Unwrap so errors.Is/errors.As can reach it (ARCH-22).
+// validator error via Unwrap so errors.Is/errors.As can reach it.
 func TestValidationErrorUnwrap(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
@@ -147,7 +147,7 @@ func TestValidationErrorUnwrap(t *testing.T) {
 }
 
 // TestValidationErrorDeterministicOutput asserts that Error() sorts field keys so
-// the message is stable across runs (ARCH-22).
+// the message is stable across runs.
 func TestValidationErrorDeterministicOutput(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
@@ -169,7 +169,7 @@ func TestValidationErrorDeterministicOutput(t *testing.T) {
 
 // TestValidateNonStructFallback asserts that Validate does not panic when the
 // validator returns a non-vd.ValidationErrors error (e.g. a nil/non-struct
-// argument); it must fall back to wrapping the raw error (ARCH-22).
+// argument); it must fall back to wrapping the raw error.
 func TestValidateNonStructFallback(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
@@ -191,14 +191,14 @@ func TestValidateNonStructFallback(t *testing.T) {
 	a.Nil(ve.Messages, "no translated messages exist for a non-struct validation failure")
 
 	// With no per-field Messages, Error() must surface the root cause rather than
-	// render an empty "validation failed: \n" body (FR-error-model-3).
+	// render an empty "validation failed: \n" body.
 	a.Contains(ve.Error(), "validation failed")
 	a.Contains(ve.Error(), ve.Root.Error(), "Error() must include the root cause when there are no per-field messages")
 	a.NotContains(ve.Error(), "validation failed: \n", "must not render an empty message body")
 }
 
-// TestNewValidatorExtraValidators pins the optional-extra-validators seam
-// (TEST-13): a one-off CustomValidator passed to newValidator is registered on
+// TestNewValidatorExtraValidators pins the optional-extra-validators seam:
+// a one-off CustomValidator passed to newValidator is registered on
 // that instance only and must NOT leak into the shared customValidators global, so
 // a freshly built plain validator does not know the throwaway tag.
 func TestNewValidatorExtraValidators(t *testing.T) {

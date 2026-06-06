@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestUserGroupCreateUpdateNotFoundContract is ARCH-13's BEHAVIORAL guard for the
+// TestUserGroupCreateUpdateNotFoundContract is the BEHAVIORAL guard for the
 // template-generated create/update path. The golden text in
 // codegen/testdata/widget_v1.golden pins the *rendered* fmt.Errorf, but nothing
 // asserted the *runtime* semantics: a successful-but-wrong-shape create/update
@@ -52,7 +52,7 @@ func TestUserGroupCreateUpdateNotFoundContract(t *testing.T) {
 		path string
 		// response is the raw JSON the mock controller returns (HTTP 200).
 		response string
-		// wantUnexpected asserts the ARCH-13 "unexpected response" error and that
+		// wantUnexpected asserts the "unexpected response" error and that
 		// the error is NOT ErrNotFound.
 		wantUnexpected bool
 		// wantNotFound asserts ErrNotFound (the get-path contract).
@@ -132,7 +132,7 @@ func TestUserGroupCreateUpdateNotFoundContract(t *testing.T) {
 			switch {
 			case tc.wantUnexpected:
 				assert.Nil(t, res.got)
-				// The whole point of ARCH-13: a wrong-count create/update is NOT
+				// The whole point: a wrong-count create/update is NOT
 				// a not-found, it is an unexpected response shape.
 				require.NotErrorIs(t, res.err, ErrNotFound)
 				require.ErrorContains(t, res.err, "unexpected response: expected 1")

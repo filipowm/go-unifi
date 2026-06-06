@@ -482,7 +482,7 @@ func (c *client) createHotspot2Conf(ctx context.Context, site string, d *Hotspot
 	// A successful create must echo back exactly the one resource it created.
 	// Anything else is an unexpected response shape, NOT a "not found" — so we
 	// return a descriptive error rather than ErrNotFound, which is reserved for
-	// the get/list-single path. See ARCH-13.
+	// the get/list-single path.
 	if len(respBody.Data) != 1 {
 		return nil, fmt.Errorf("unexpected response: expected 1 Hotspot2Conf, got %d", len(respBody.Data))
 	}
@@ -506,7 +506,7 @@ func (c *client) updateHotspot2Conf(ctx context.Context, site string, d *Hotspot
 	// A successful update must echo back exactly the one resource it updated.
 	// Anything else is an unexpected response shape, NOT a "not found" — so we
 	// return a descriptive error rather than ErrNotFound, which is reserved for
-	// the get/list-single path. See ARCH-13.
+	// the get/list-single path.
 	if len(respBody.Data) != 1 {
 		return nil, fmt.Errorf("unexpected response: expected 1 Hotspot2Conf, got %d", len(respBody.Data))
 	}

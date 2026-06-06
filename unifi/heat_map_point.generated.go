@@ -103,7 +103,7 @@ func (c *client) createHeatMapPoint(ctx context.Context, site string, d *HeatMap
 	// A successful create must echo back exactly the one resource it created.
 	// Anything else is an unexpected response shape, NOT a "not found" — so we
 	// return a descriptive error rather than ErrNotFound, which is reserved for
-	// the get/list-single path. See ARCH-13.
+	// the get/list-single path.
 	if len(respBody.Data) != 1 {
 		return nil, fmt.Errorf("unexpected response: expected 1 HeatMapPoint, got %d", len(respBody.Data))
 	}
@@ -127,7 +127,7 @@ func (c *client) updateHeatMapPoint(ctx context.Context, site string, d *HeatMap
 	// A successful update must echo back exactly the one resource it updated.
 	// Anything else is an unexpected response shape, NOT a "not found" — so we
 	// return a descriptive error rather than ErrNotFound, which is reserved for
-	// the get/list-single path. See ARCH-13.
+	// the get/list-single path.
 	if len(respBody.Data) != 1 {
 		return nil, fmt.Errorf("unexpected response: expected 1 HeatMapPoint, got %d", len(respBody.Data))
 	}

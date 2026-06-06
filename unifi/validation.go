@@ -26,7 +26,7 @@ type ValidationError struct {
 func (v *ValidationError) Error() string {
 	// With no per-field messages (e.g. the non-struct/InvalidValidationError
 	// fallback in Validate), surface the root cause instead of rendering an empty
-	// "validation failed: \n" body that drops the real error (FR-error-model-3).
+	// "validation failed: \n" body that drops the real error.
 	if len(v.Messages) == 0 {
 		if v.Root != nil {
 			return "validation failed: " + v.Root.Error()
@@ -118,7 +118,7 @@ func (v *validator) RegisterCustomValidator(cv CustomValidator) error {
 // custom validators (customValidators). Any additional one-off validators passed
 // as extra are registered on top of those — WITHOUT mutating the shared
 // customValidators global, so a test can register a throwaway validator on its own
-// instance and not leak it into every other newValidator() call (TEST-13).
+// instance and not leak it into every other newValidator() call.
 func newValidator(extra ...CustomValidator) (*validator, error) {
 	validate := vd.New(vd.WithRequiredStructEnabled())
 	enLocale := en.New()

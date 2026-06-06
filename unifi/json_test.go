@@ -9,7 +9,7 @@ import (
 )
 
 // TestBooleanishStringUnmarshal locks in the permissive decoding contract for
-// booleanishString (ARCH-02): the wired Device fields (LtePoe/LteExtAnt) now send
+// booleanishString: the wired Device fields (LtePoe/LteExtAnt) now send
 // bare JSON booleans, while older controllers sent "enabled"/"disabled". The
 // decoder must accept all of these forms — and NEVER hard-error on an unexpected
 // scalar (a single bad field must not poison the whole Device decode).
@@ -48,8 +48,8 @@ func TestBooleanishStringUnmarshal(t *testing.T) {
 	}
 }
 
-// TestNumberOrStringUnmarshal locks in the numberOrString decoding contract
-// (ARCH-07): a JSON null must decode to an empty string rather than the literal
+// TestNumberOrStringUnmarshal locks in the numberOrString decoding contract:
+// a JSON null must decode to an empty string rather than the literal
 // 4-character string "null" (which would corrupt the value on round-trip),
 // integers and floats keep their textual form, and quoted strings (e.g. "auto")
 // pass through unquoted. Non-numeric/non-string scalars are rejected rather than
@@ -90,7 +90,7 @@ func TestNumberOrStringUnmarshal(t *testing.T) {
 	}
 }
 
-// TestEmptyStringIntUnmarshal pins emptyStringInt.UnmarshalJSON (TEST-11): the
+// TestEmptyStringIntUnmarshal pins emptyStringInt.UnmarshalJSON: the
 // empty-string token decodes to 0, a quoted number is unquoted then parsed, a bare
 // number is parsed directly, and the malformed cases (non-numeric quoted string,
 // unterminated quote, bare non-numeric token) surface the Unquote/Atoi errors
@@ -134,7 +134,7 @@ func TestEmptyStringIntUnmarshal(t *testing.T) {
 	}
 }
 
-// TestEmptyStringIntMarshal pins emptyStringInt.MarshalJSON (TEST-11): nil and the
+// TestEmptyStringIntMarshal pins emptyStringInt.MarshalJSON: nil and the
 // zero value both marshal to the empty-string token "" (matching the controller's
 // wire form), while a non-zero value marshals to its bare integer.
 func TestEmptyStringIntMarshal(t *testing.T) {

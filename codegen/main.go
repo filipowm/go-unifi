@@ -17,7 +17,7 @@ import (
 // Logger is the minimal logging surface the generation pipeline depends on. It
 // is satisfied by *logrus.Logger (and *logrus.Entry), so production code can
 // inject a real logger while tests inject their own instance with a local hook,
-// asserting output in parallel without mutating shared state. See TEST-13.
+// asserting output in parallel without mutating shared state.
 type Logger interface {
 	Tracef(format string, args ...any)
 	Debugf(format string, args ...any)
@@ -31,7 +31,7 @@ type Logger interface {
 
 // log is the package-global logger used by the CLI path and as the default for
 // any pipeline component that was not given an explicit logger. Production
-// generate() calls thread an injected logger instead (TEST-13), so the global
+// generate() calls thread an injected logger instead, so the global
 // is only the CLI fallback — it is no longer the only sink, which is what made
 // the previous output-asserting tests racy and forced them to run serially.
 var log = logrus.New()
@@ -88,13 +88,13 @@ type options struct {
 	// logger receives the pipeline's structured output. When nil, generate()
 	// falls back to the package-global logger so the CLI path is unaffected.
 	// Tests inject their own instance to assert output without touching the
-	// shared global. See TEST-13.
+	// shared global.
 	logger Logger
 	// v2BaseDir is the directory holding the hand-maintained V2-API field
 	// definitions (the "codegen/v2" tree). When empty, generate() discovers it
 	// via findCodegenDir relative to the repo root, preserving the CLI default.
 	// Tests inject a fixture path to exercise generation without the real repo
-	// layout. See TEST-16.
+	// layout.
 	v2BaseDir string
 }
 
@@ -130,8 +130,7 @@ func main() {
 }
 
 // resolveV2BaseDir returns the injected V2-API field-definitions base dir, or
-// discovers codegen/v2 relative to the project root when none was injected. See
-// TEST-16.
+// discovers codegen/v2 relative to the project root when none was injected.
 func resolveV2BaseDir(injected string) (string, error) {
 	if injected != "" {
 		return injected, nil
@@ -179,7 +178,7 @@ func generate(opts options) error {
 
 	// Resolve the V2-API field-definitions base dir. Tests inject opts.v2BaseDir
 	// to avoid depending on the real repo layout; the CLI leaves it empty and we
-	// discover codegen/v2 relative to the project root. See TEST-16.
+	// discover codegen/v2 relative to the project root.
 	v2BaseDir, err := resolveV2BaseDir(opts.v2BaseDir)
 	if err != nil {
 		return err

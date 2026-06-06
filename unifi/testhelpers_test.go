@@ -105,7 +105,7 @@ func (cs *controllerServer) clientUserPass() *client {
 // error: it pins the new-style API (skipping the network probe) when the caller
 // has not chosen a style, so construction succeeds even against an unreachable URL,
 // and asserts no error via require. This replaces the old swallowed-error
-// newNewStyleClient foot-gun (TEST-14). Tests that exercise request behavior
+// newNewStyleClient foot-gun. Tests that exercise request behavior
 // against an unreachable URL still get the later request failure they rely on,
 // without silently dropping the construction error.
 func newOfflineClient(t *testing.T, cfg *ClientConfig) *client {

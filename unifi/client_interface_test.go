@@ -9,12 +9,12 @@ import (
 // *client that are intentionally NOT part of the public Client interface. Any
 // exported *client method outside this set MUST appear in Client — otherwise it
 // is unreachable through the public surface (the SetSetting-style drift the
-// codegen<->hand-written split repeatedly produces, see ARCH-08).
+// codegen<->hand-written split repeatedly produces).
 //
 // Adding a method here is a deliberate decision to keep it interface-private;
 // the default is that every exported method is exposed via Client.
 var interfacePrivateClientMethods = map[string]string{
-	// Takes a ClientInterceptor value (ARCH-18); kept off the interface so callers
+	// Takes a ClientInterceptor value; kept off the interface so callers
 	// configure interceptors only through ClientConfig at construction time.
 	"AddInterceptor": "configured via ClientConfig.Interceptors, not the public interface",
 	// Multipart upload helpers are low-level and not part of the curated surface.

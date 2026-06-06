@@ -21,7 +21,7 @@ func cancelledContext() context.Context {
 
 // TestContextVariantsAbortOnCancelledContext proves that the four ctx-accepting
 // variants thread the supplied context through to the HTTP layer: a pre-cancelled
-// context aborts the request before it completes (TEST-15). Each subtest asserts
+// context aborts the request before it completes. Each subtest asserts
 // errors.Is(err, context.Canceled) through the wrapped error chain.
 func TestContextVariantsAbortOnCancelledContext(t *testing.T) {
 	t.Parallel()
@@ -114,7 +114,7 @@ func TestVersionContextHappyPath(t *testing.T) {
 }
 
 // TestVersionContextFetchErrorSurfaces proves the NON-cancellation fetch-error
-// slow path (TEST-15): with an empty cache and a sysinfo endpoint that 500s,
+// slow path: with an empty cache and a sysinfo endpoint that 500s,
 // GetSystemInformationContext errors and VersionContext must surface the empty
 // string AND the error (unlike Version(), which swallows it). The surfaced error
 // is the *ServerError carrying the 500 status.
@@ -141,7 +141,7 @@ func TestVersionContextFetchErrorSurfaces(t *testing.T) {
 // (cachedVersion) short-circuits VersionContext: a pre-populated sysInfo cache is
 // returned without any HTTP round-trip, and importantly without consulting the
 // supplied context — so even a cancelled context yields the cached value
-// (TEST-15: cached-vs-fetch branch is testable without timing hacks).
+// (cached-vs-fetch branch is testable without timing hacks).
 func TestVersionContextCachedFastPath(t *testing.T) {
 	t.Parallel()
 

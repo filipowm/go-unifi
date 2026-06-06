@@ -19,13 +19,13 @@ const maxErrorBodySize = 1 << 20 // 1 MiB
 
 // maxResponseBodySize caps how much of a SUCCESS (2xx) response body we buffer
 // before decoding. The body is buffered once so it can be both probed for a v1
-// meta envelope (the rc:error soft-failure check, ARCH-10/O5) and decoded into
+// meta envelope (the rc:error soft-failure check) and decoded into
 // respBody without re-reading the network stream. Legitimate list endpoints can
 // be large (thousands of devices/clients), so this is far more generous than
 // maxErrorBodySize while still bounding memory against a runaway/hostile body.
 //
 // It is a var (not a const) solely so tests can temporarily lower the cap to
-// exercise the overflow path (ARCH-11) without allocating 64 MiB; the production
+// exercise the overflow path without allocating 64 MiB; the production
 // default is unchanged.
 var maxResponseBodySize = 64 << 20 // 64 MiB
 

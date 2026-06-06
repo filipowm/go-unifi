@@ -54,7 +54,7 @@ func TestCreateUser(t *testing.T) {
 			wantErr:    true,
 			wantErrMsg: "malformed group response",
 		},
-		// ARCH-10/O5: the soft (HTTP 200) meta rc:error check is now centralized in
+		// The soft (HTTP 200) meta rc:error check is now centralized in
 		// handleResponse and gated on the TOP-LEVEL meta envelope. A top-level
 		// meta.rc=="error" is surfaced as a *ServerError carrying the rc/msg.
 		"top-level Meta error is surfaced": {
@@ -62,12 +62,11 @@ func TestCreateUser(t *testing.T) {
 			wantErr:    true,
 			wantErrMsg: "api.err.Invalid",
 		},
-		// ARCH-10 (restored): the centralized top-level rc:error check does not see
+		// The centralized top-level rc:error check does not see
 		// the NESTED per-object meta (data[0].Meta). CreateUser keeps its own nested
 		// Meta.error() check, so a nested rc=="error" with empty inner data surfaces
 		// a *ServerError carrying the inner rc/msg — NOT ErrNotFound. This preserves
-		// the pre-Wave-2 behavior (eliminating the previously-documented
-		// ARCH-10-user breaking change).
+		// the pre-Wave-2 behavior.
 		"inner Meta error is surfaced as ServerError": {
 			response:      `{"meta":{"rc":"ok"},"data":[{"Meta":{"rc":"error","msg":"api.err.Invalid"},"data":[]}]}`,
 			wantErr:       true,
@@ -283,7 +282,7 @@ func TestListUserUnwrapsEnvelope(t *testing.T) {
 }
 
 // TestGetUserNotFound asserts the getUser len != 1 guard maps to ErrNotFound, and
-// that the sentinel survives the wrapper's %w wrap chain (TEST-05 guard).
+// that the sentinel survives the wrapper's %w wrap chain.
 func TestGetUserNotFound(t *testing.T) {
 	t.Parallel()
 

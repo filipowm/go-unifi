@@ -103,7 +103,7 @@ func (c *client) handleResponse(resp *http.Response, respBody any, method, apiPa
 		return err
 	}
 	// If no response body is expected, this is the only unconditional skip.
-	// ARCH-11: do NOT key the decode decision off resp.ContentLength — a server,
+	// Do NOT key the decode decision off resp.ContentLength — a server,
 	// proxy, or HTTP/2 path can deliver a non-empty JSON body while reporting
 	// ContentLength==0 (or -1 for chunked), which would silently leave respBody
 	// zero-valued. Decide on the body itself instead.
@@ -115,15 +115,15 @@ func (c *client) handleResponse(resp *http.Response, respBody any, method, apiPa
 }
 
 // decodeResponseBody buffers the response body once and decodes it into respBody.
-// It also performs the centralized v1 meta rc:error check (ARCH-10/O5) and the
-// decode-on-body / empty-body handling (ARCH-11). respBody is assumed non-nil.
+// It also performs the centralized v1 meta rc:error check and the
+// decode-on-body / empty-body handling. respBody is assumed non-nil.
 func (c *client) decodeResponseBody(resp *http.Response, respBody any, method, apiPath string) error {
 	// Buffer the body ONCE into a capped []byte so it can be both probed for a v1
-	// meta envelope (ARCH-10/O5) and decoded into respBody without re-reading the
+	// meta envelope and decoded into respBody without re-reading the
 	// network stream. The cap bounds memory against a runaway/hostile body while
 	// staying generous enough for large legitimate list responses.
 	//
-	// ARCH-11: read ONE byte past the cap so an over-cap body can be detected
+	// Read ONE byte past the cap so an over-cap body can be detected
 	// rather than silently truncated (a truncated body would otherwise surface as
 	// an opaque "unable to decode body" JSON error that hides the real cause).
 	body, err := io.ReadAll(io.LimitReader(resp.Body, int64(maxResponseBodySize)+1))
@@ -152,14 +152,14 @@ func (c *client) decodeResponseBody(resp *http.Response, respBody any, method, a
 	return nil
 }
 
-// metaEnvelopeError detects a v1 API soft failure (HTTP 200 with meta.rc=="error",
-// ARCH-10/O5). It is gated strictly on a meta block actually being present in the
+// metaEnvelopeError detects a v1 API soft failure (HTTP 200 with meta.rc=="error").
+// It is gated strictly on a meta block actually being present in the
 // body (probe.Meta != nil): a v2-style bare body carries no meta envelope and must
 // never fabricate an error. The probe uses the canonical lowercase "meta" wire tag
 // regardless of respBody's own struct tags. A body that is not valid JSON yields no
 // meta error here — the subsequent decode surfaces the real decode failure.
 //
-// ARCH-10: a soft rc:error is surfaced as a *ServerError that, on its own, carries
+// A soft rc:error is surfaced as a *ServerError that, on its own, carries
 // only the rc/msg from Meta.error(). The HTTP context (status code, request method,
 // request URL) is stamped onto that *ServerError here so ServerError.Error() renders
 // the same rich message the non-2xx HandleError path produces — instead of the lossy
@@ -214,8 +214,8 @@ func (c *client) executeRequest(ctx context.Context, method, apiPath string, bod
 	// NOTE: requests are intentionally NOT serialized here. net/http.Client is
 	// goroutine-safe and the only mutable shared state on the request path (the
 	// CSRF token) is guarded inside CSRFInterceptor. The former coarse
-	// per-request lock (gated on ClientConfig.UseLocking) was removed in 1.11.0
-	// (ARCH-04/O4): it killed HTTP concurrency and enabled the Version()
+	// per-request lock (gated on ClientConfig.UseLocking) was removed in 1.11.0:
+	// it killed HTTP concurrency and enabled the Version()
 	// re-entrant deadlock. ClientConfig.UseLocking is now a no-op.
 	if err := c.applyRequestInterceptors(req); err != nil {
 		return err
@@ -265,7 +265,7 @@ func createFormFile(w *multipart.Writer, mimeType, fieldname, filename string) (
 // buildMultipartUpload assembles a multipart/form-data body for a file upload from
 // reader. It is the pure (no filesystem, no network) heart of UploadFileFromReader,
 // extracted so the field-name defaulting, MIME detection and Content-Disposition
-// quoting can be unit-tested in isolation (TEST-12).
+// quoting can be unit-tested in isolation.
 //
 // fieldName defaults to "file" when empty. The MIME type is detected from the
 // content with mimetype.DetectReader; because DetectReader consumes the reader,

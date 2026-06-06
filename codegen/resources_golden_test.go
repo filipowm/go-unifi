@@ -94,7 +94,7 @@ func newWidgetV1(t *testing.T) *Resource {
 	// customUnmarshalType-only field: exercises the type-cast branch
 	// (dst.X = T(aux.X)). This is the exact form production Device.LtePoe emits
 	// (booleanishString alias + bool(aux.LtePoe)); pinning it here keeps
-	// ARCH-02's booleanishString render under golden protection.
+	// the booleanishString render under golden protection.
 	lte := NewFieldInfo("LtePoe", "lte_poe", "bool", "", "", false, false, "booleanishString")
 	r.BaseType().Fields["LtePoe"] = lte
 
@@ -178,7 +178,7 @@ func TestResourceGenerateCodeV1Shape(t *testing.T) {
 	a.Contains(code, "dst.Count = int(aux.Count)")
 
 	// customUnmarshalType-only alias + type-cast typecast (the production
-	// booleanishString form, ARCH-02): dst.X = T(aux.X), no func.
+	// booleanishString form): dst.X = T(aux.X), no func.
 	a.Contains(norm, "LtePoe booleanishString `json:\"lte_poe\"`")
 	a.Contains(code, "dst.LtePoe = bool(aux.LtePoe)")
 
@@ -300,7 +300,7 @@ func TestResourceGenerateCodeEndpointPaths(t *testing.T) {
 // snapshot of a resource's INFERRED Go types: for every registered type, every
 // field's Go name, Go type, json tag name, and the flags that affect the wire
 // shape (array, custom-unmarshal type/func). It deliberately captures only what
-// ARCH-14 guards — the type each field resolves to and the set of fields present
+// it guards — the type each field resolves to and the set of fields present
 // — so a controller-version regex change that flips int<->float64<->string or
 // drops a field shows up as a one-line diff, while pure template/formatting
 // churn does not. Output is fully sorted (types, then fields) so it is stable
@@ -378,7 +378,7 @@ func buildResourceFromCache(t *testing.T, structName string) *Resource {
 	return nil
 }
 
-// TestResourceTypeSignatureGolden is ARCH-14's type-flip / dropped-field guard.
+// TestResourceTypeSignatureGolden is the type-flip / dropped-field guard.
 // It snapshots the inferred Go type signature of representative resources built
 // from the committed offline 9.5.21 cache and diffs against a checked-in golden.
 // A controller-version regex change that flips a field's Go type

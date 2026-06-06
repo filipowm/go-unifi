@@ -22,7 +22,7 @@ type Generatable interface {
 // commonTemplate holds the shared template partials (the package header/imports
 // and the field / field-customUnmarshalType / typecast / header defines) that the
 // api.go.tmpl and apiv2.go.tmpl templates invoke. Factoring it here keeps the two
-// resource templates from duplicating an identical top block (see ARCH-20).
+// resource templates from duplicating an identical top block.
 //
 //go:embed common.tmpl
 var commonTemplate string
@@ -57,8 +57,8 @@ func generateCodeFromTemplate(templateName, templateContent string, toWrite any)
 // v2BaseDir is the directory holding the V2-API field definitions (the
 // "codegen/v2" tree). It is injected by the caller rather than discovered via
 // findCodegenDir at runtime, so generation is unit-testable against a fixture
-// without the real repo layout (TEST-16). logger receives all pipeline output;
-// when nil it falls back to the package-global logger (TEST-13).
+// without the real repo layout. logger receives all pipeline output;
+// when nil it falls back to the package-global logger.
 func generateCode(fieldsDir, v2BaseDir, outDir string, customizer CodeCustomizer, logger Logger) error {
 	logger = orDefaultLogger(logger)
 	customizer.logger = logger
@@ -108,7 +108,7 @@ func generateCode(fieldsDir, v2BaseDir, outDir string, customizer CodeCustomizer
 // which is the only consumer of the composed FieldProcessor. Re-applying at this
 // point was dead work — processJSON has already run, so the re-wrapped processor
 // would never be invoked again, and resourcePath would be re-set to the same
-// value. See ARCH-21.
+// value.
 func collectResourceGenerators(resources []*Resource, customizer CodeCustomizer, logger Logger) []Generatable {
 	logger = orDefaultLogger(logger)
 	cb := NewClientInfoBuilder()

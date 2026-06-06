@@ -11,7 +11,7 @@ import (
 )
 
 // capturingLogger records every Warn message so tests can assert that disabling
-// TLS verification emits a warning (ARCH-06). It embeds the noop logger so only
+// TLS verification emits a warning. It embeds the noop logger so only
 // the methods under test need overriding.
 type capturingLogger struct {
 	noopLogger
@@ -37,32 +37,20 @@ func transportInsecureSkipVerify(t *testing.T, c *http.Client) bool {
 	return tr.TLSClientConfig.InsecureSkipVerify
 }
 
-// TestBuildHTTPClientTLSDefaults is the ARCH-06 secure-by-default contract: a
-// nil VerifySSL (the zero value) MUST verify certificates; only an explicit
-// pointer-to-false disables verification, and that case MUST emit a Warn log.
+// TestBuildHTTPClientTLSDefaults is the secure-by-default contract: the
+// zero-value SkipVerifySSL (false) MUST verify certificates; only an explicit
+// SkipVerifySSL=true disables verification, and that case MUST emit a Warn log.
 func TestBuildHTTPClientTLSDefaults(t *testing.T) {
 	t.Parallel()
 
+	// SkipVerifySSL maps to the transport's InsecureSkipVerify by identity, and a
+	// disabled verification (true) is the only case that warns — so each input row
+	// fully determines both expectations.
 	cases := map[string]struct {
-		verifySSL       *bool
-		wantSkipVerify  bool
-		wantWarnEmitted bool
+		skipVerifySSL bool
 	}{
-		"nil (zero value) -> verification ON, no warn": {
-			verifySSL:       nil,
-			wantSkipVerify:  false,
-			wantWarnEmitted: false,
-		},
-		"explicit true -> verification ON, no warn": {
-			verifySSL:       new(true),
-			wantSkipVerify:  false,
-			wantWarnEmitted: false,
-		},
-		"explicit false -> verification OFF, warn emitted": {
-			verifySSL:       new(false),
-			wantSkipVerify:  true,
-			wantWarnEmitted: true,
-		},
+		"zero value (false) -> verification ON, no warn": {skipVerifySSL: false},
+		"true -> verification OFF, warn emitted":         {skipVerifySSL: true},
 	}
 
 	for name, tc := range cases {
@@ -70,16 +58,16 @@ func TestBuildHTTPClientTLSDefaults(t *testing.T) {
 			t.Parallel()
 			log := &capturingLogger{}
 			httpClient, err := buildHTTPClient(&ClientConfig{
-				URL:       testUrl,
-				APIKey:    "test-key",
-				VerifySSL: tc.verifySSL,
+				URL:           testUrl,
+				APIKey:        "test-key",
+				SkipVerifySSL: tc.skipVerifySSL,
 			}, log)
 			require.NoError(t, err)
 
-			assert.Equal(t, tc.wantSkipVerify, transportInsecureSkipVerify(t, httpClient),
-				"InsecureSkipVerify must match the secure-by-default contract")
+			assert.Equal(t, tc.skipVerifySSL, transportInsecureSkipVerify(t, httpClient),
+				"SkipVerifySSL must pass through to the transport's InsecureSkipVerify")
 
-			if tc.wantWarnEmitted {
+			if tc.skipVerifySSL {
 				require.NotEmpty(t, log.warns, "disabling verification must emit a Warn log")
 				assert.Truef(t, containsAny(log.warns, "verification is DISABLED"),
 					"warn must mention disabled verification, got: %v", log.warns)
@@ -93,9 +81,9 @@ func TestBuildHTTPClientTLSDefaults(t *testing.T) {
 // TestTLSVerificationDisabled directly pins the secure-by-default predicate.
 func TestTLSVerificationDisabled(t *testing.T) {
 	t.Parallel()
-	assert.False(t, tlsVerificationDisabled(&ClientConfig{VerifySSL: nil}), "nil verifies")
-	assert.False(t, tlsVerificationDisabled(&ClientConfig{VerifySSL: new(true)}), "true verifies")
-	assert.True(t, tlsVerificationDisabled(&ClientConfig{VerifySSL: new(false)}), "false disables")
+	assert.False(t, tlsVerificationDisabled(&ClientConfig{}), "zero value verifies")
+	assert.False(t, tlsVerificationDisabled(&ClientConfig{SkipVerifySSL: false}), "false verifies")
+	assert.True(t, tlsVerificationDisabled(&ClientConfig{SkipVerifySSL: true}), "true disables")
 }
 
 // TestBuildHTTPClientCustomRoundTripperBypassesTLS ensures that a custom
@@ -105,9 +93,9 @@ func TestBuildHTTPClientCustomRoundTripperBypassesTLS(t *testing.T) {
 	t.Parallel()
 	log := &capturingLogger{}
 	httpClient, err := buildHTTPClient(&ClientConfig{
-		URL:       testUrl,
-		APIKey:    "test-key",
-		VerifySSL: new(false), // would normally warn, but the custom RT wins
+		URL:           testUrl,
+		APIKey:        "test-key",
+		SkipVerifySSL: true, // would normally warn, but the custom RT wins
 		HttpRoundTripperProvider: func() http.RoundTripper {
 			return &http.Transport{TLSClientConfig: &tls.Config{MinVersion: tls.VersionTLS13}}
 		},

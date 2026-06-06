@@ -16,8 +16,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestEscapeQuotes is a direct unit test of the Content-Disposition quote escaper
-// (TEST-12): backslashes and double quotes must be backslash-escaped so a crafted
+// TestEscapeQuotes is a direct unit test of the Content-Disposition quote escaper:
+// backslashes and double quotes must be backslash-escaped so a crafted
 // filename/field name cannot break out of the header value.
 func TestEscapeQuotes(t *testing.T) {
 	t.Parallel()
@@ -45,7 +45,7 @@ func TestEscapeQuotes(t *testing.T) {
 }
 
 // TestBuildMultipartUploadFieldDefaulting verifies that an empty fieldName defaults
-// to "file" while an explicit field name is preserved (TEST-12). It parses the
+// to "file" while an explicit field name is preserved. It parses the
 // produced multipart body back to assert on the actual part name.
 func TestBuildMultipartUploadFieldDefaulting(t *testing.T) {
 	t.Parallel()
@@ -75,7 +75,7 @@ func TestBuildMultipartUploadFieldDefaulting(t *testing.T) {
 
 // TestBuildMultipartUploadDetectsContentType verifies that the per-part
 // Content-Type is the MIME type detected from the content itself, not assumed from
-// the filename (TEST-12). PNG magic bytes -> image/png; plain text -> text/plain.
+// the filename. PNG magic bytes -> image/png; plain text -> text/plain.
 func TestBuildMultipartUploadDetectsContentType(t *testing.T) {
 	t.Parallel()
 
@@ -148,8 +148,8 @@ func parseSingleMultipartPart(t *testing.T, body []byte, contentType string) *mu
 }
 
 // TestUploadFileFromReaderRoundTrip drives the full UploadFileFromReader path
-// against a mock controller and asserts on what actually reaches the wire
-// (TEST-12): the part name defaults to "file", the detected Content-Type, the file
+// against a mock controller and asserts on what actually reaches the wire:
+// the part name defaults to "file", the detected Content-Type, the file
 // bytes round-trip, and the mandatory X-Requested-With: XMLHttpRequest header is
 // present (dropping it makes the controller 404 — a documented UniFi bug).
 func TestUploadFileFromReaderRoundTrip(t *testing.T) {
@@ -190,7 +190,7 @@ func TestUploadFileFromReaderRoundTrip(t *testing.T) {
 
 // TestUploadFileUsesBaseName verifies that UploadFile derives the multipart
 // filename from filepath.Base of the supplied path (not the full path), and that
-// the file content reaches the controller (TEST-12).
+// the file content reaches the controller.
 func TestUploadFileUsesBaseName(t *testing.T) {
 	t.Parallel()
 
@@ -226,7 +226,7 @@ func TestUploadFileUsesBaseName(t *testing.T) {
 }
 
 // TestUploadFileOpenError verifies that a nonexistent path surfaces the wrapped
-// "unable to open file for upload" error (TEST-12).
+// "unable to open file for upload" error.
 func TestUploadFileOpenError(t *testing.T) {
 	t.Parallel()
 

@@ -9,7 +9,7 @@ import (
 )
 
 // TestBuildQueryString pins the deterministic, URL-encoded rendering of the
-// queryParams customization (ARCH-19): keys sorted, values encoded, no leading
+// queryParams customization: keys sorted, values encoded, no leading
 // "?".
 func TestBuildQueryString(t *testing.T) {
 	t.Parallel()
@@ -47,13 +47,13 @@ func TestQuerySuffix(t *testing.T) {
 	// A query value that url-encodes to contain '%' (e.g. '&' -> '%26') must have
 	// the '%' DOUBLED, because templates splice QuerySuffix into a fmt.Sprintf
 	// FORMAT-string literal; a lone '%' would be read as a (malformed) verb and
-	// trip go vet / corrupt the generated URL. See ARCH-19 / FR-codegen-templates-1.
+	// trip go vet / corrupt the generated URL.
 	enc := NewResource("Baz", "baz")
 	enc.QueryString = buildQueryString(map[string]string{"q": "a&b"}) // -> "q=a%26b"
 	assert.Equal(t, "?q=a%%26b", enc.QuerySuffix(), "percent signs must be escaped for the fmt.Sprintf format literal")
 }
 
-// TestQueryParamsAppendedAfterIDSegmentV2 is the core ARCH-19 regression: the V2
+// TestQueryParamsAppendedAfterIDSegmentV2 is the core regression: the V2
 // template must append the query string AFTER the "/%s" id segment on
 // get/update/delete URLs (and after the bare path on list/create), so the id
 // never lands behind the query string the way the old resourcePath "?" hack did.
@@ -115,7 +115,7 @@ func TestNoQueryParamsLeavesURLsUnchanged(t *testing.T) {
 	assert.Contains(t, code, `fmt.Sprintf("s/%s/rest/widget/%s", site, id)`)
 }
 
-// TestValidateResourcePathStrictRejectsRawQuery is the ARCH-19 interim guard: a
+// TestValidateResourcePathStrictRejectsRawQuery is the interim guard: a
 // raw "?" smuggled into resourcePath is a HARD error under strict mode, so nobody
 // can re-introduce the malformed-URL footgun. NOT parallel: sets a process env
 // var read by strictMode().
@@ -177,7 +177,7 @@ func TestDescribedFeatureMigratedToQueryParams(t *testing.T) {
 // TestDescribedFeatureFromV2DefsURLsWellFormed builds DescribedFeature through the
 // full offline pipeline (committed codegen/v2 defs + production customizations,
 // rendered as a V2 resource exactly like generateCode does) and asserts every
-// emitted URL is well-formed — the end-to-end ARCH-19 guarantee.
+// emitted URL is well-formed — the end-to-end guarantee.
 func TestDescribedFeatureFromV2DefsURLsWellFormed(t *testing.T) {
 	t.Parallel()
 

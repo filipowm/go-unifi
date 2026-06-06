@@ -146,7 +146,7 @@ func TestParseBaseUrl(t *testing.T) {
 
 // nonComparableInterceptor is a ClientInterceptor whose concrete type is NOT
 // comparable with == (it holds a slice). Adding it must NOT panic the
-// concrete-type dedup (ARCH-18): containsInterceptorType compares reflect.TypeOf
+// concrete-type dedup: containsInterceptorType compares reflect.TypeOf
 // values, never the interface values themselves.
 type nonComparableInterceptor struct {
 	tags []string
@@ -160,8 +160,8 @@ func TestRegisterInterceptor(t *testing.T) {
 
 	t.Run("dedup by concrete type", func(t *testing.T) {
 		t.Parallel()
-		// Two DISTINCT instances of the same concrete type collapse to one (ARCH-18:
-		// dedup is by concrete type, not by pointer identity).
+		// Two DISTINCT instances of the same concrete type collapse to one
+		// (dedup is by concrete type, not by pointer identity).
 		c := &client{interceptors: []ClientInterceptor{}}
 		c.AddInterceptor(&TestInterceptor{})
 		assert.Len(t, c.interceptors, 1)
@@ -187,7 +187,7 @@ func TestRegisterInterceptor(t *testing.T) {
 	t.Run("non-comparable type does not panic", func(t *testing.T) {
 		t.Parallel()
 		// A struct holding a slice is not comparable with ==; the old
-		// slices.Contains dedup would panic. Concrete-type dedup must not (ARCH-18).
+		// slices.Contains dedup would panic. Concrete-type dedup must not.
 		c := &client{interceptors: []ClientInterceptor{}}
 		assert.NotPanics(t, func() {
 			c.AddInterceptor(nonComparableInterceptor{tags: []string{"a"}})
@@ -259,7 +259,7 @@ func TestBuildInterceptorsDedup(t *testing.T) {
 	a.Equal(1, count, "duplicate interceptor must only be added once")
 }
 
-// TestBuildInterceptorsDefaultsUserAgentWithoutMutatingConfig is the ARCH-09
+// TestBuildInterceptorsDefaultsUserAgentWithoutMutatingConfig is the
 // non-mutation guard for the User-Agent path: buildInterceptors must default an
 // empty UserAgent into the produced DefaultHeadersInterceptor WITHOUT writing the
 // default back through the caller-owned config.
@@ -268,7 +268,7 @@ func TestBuildInterceptorsDefaultsUserAgentWithoutMutatingConfig(t *testing.T) {
 	a := assert.New(t)
 
 	// Empty UserAgent: the default lands on the headers interceptor, but the
-	// caller's config.UserAgent must stay empty (ARCH-09: no write-back).
+	// caller's config.UserAgent must stay empty (no write-back).
 	config := &ClientConfig{}
 	interceptors := buildInterceptors(config, NewDefaultLogger(InfoLevel), nil)
 	a.Empty(config.UserAgent, "config.UserAgent must not be mutated")
@@ -297,14 +297,14 @@ func headerUserAgent(t *testing.T, interceptors []ClientInterceptor) string {
 	return ""
 }
 
-// TestNewClientFromConfigTrimsURLWithoutMutatingConfig is the ARCH-09 non-mutation
+// TestNewClientFromConfigTrimsURLWithoutMutatingConfig is the non-mutation
 // guard for the URL path: newClientFromConfig must normalize the trailing slash on
 // the client's baseURL WITHOUT rewriting the caller-owned config.URL.
 func TestNewClientFromConfigTrimsURLWithoutMutatingConfig(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
 	// Trailing slashes are trimmed on the client's baseURL only; the caller's
-	// config.URL must keep its trailing slashes (ARCH-09: no write-back).
+	// config.URL must keep its trailing slashes (no write-back).
 	config := &ClientConfig{
 		URL:    testUrl + "///",
 		APIKey: "test-key",
@@ -317,7 +317,7 @@ func TestNewClientFromConfigTrimsURLWithoutMutatingConfig(t *testing.T) {
 	a.Equal(testUrl, c.BaseURL(), "client baseURL must be normalized (trailing slash trimmed)")
 }
 
-// TestVersionWithLockingNoDeadlock is a regression test for ARCH-01: Version()
+// TestVersionWithLockingNoDeadlock is a regression test: Version()
 // on a UseLocking:true client with an uncached sysInfo used to acquire c.lock and
 // then re-enter it through executeRequest, self-deadlocking the goroutine. The
 // fetch must now happen while holding no lock. A select + time.After makes a
@@ -358,11 +358,11 @@ func TestVersionWithLockingNoDeadlock(t *testing.T) {
 	case got := <-done:
 		assert.Equal(t, wantVersion, got, "Version() must return the controller version")
 	case <-time.After(2 * time.Second):
-		t.Fatal("Version() deadlocked: UseLocking:true client re-entered its own mutex (ARCH-01)")
+		t.Fatal("Version() deadlocked: UseLocking:true client re-entered its own mutex")
 	}
 }
 
-// TestVersionConcurrentCachedFetch is the load-bearing -race test for ARCH-01:
+// TestVersionConcurrentCachedFetch is the load-bearing -race test:
 // it hammers Version() from many goroutines at once so the race detector
 // actually exercises the sysInfoMu RWMutex + double-checked locking that guards
 // c.sysInfo. The single-goroutine TestVersionWithLockingNoDeadlock only proves
@@ -432,7 +432,7 @@ func TestVersionConcurrentCachedFetch(t *testing.T) {
 	assert.Equal(t, burstHits, sysInfoHits.Load(), "cached Version() must not trigger another sysInfo fetch")
 }
 
-// TestNewBareClientDoesNotMutateConfig is the end-to-end ARCH-09 guard: building a
+// TestNewBareClientDoesNotMutateConfig is the end-to-end guard: building a
 // client from a config that carries a trailing-slash URL and an empty UserAgent
 // must leave the CALLER's config byte-for-byte intact, while the constructed
 // client behaves normalized — requests land on the trimmed URL. The APIStyle
@@ -462,7 +462,7 @@ func TestNewBareClientDoesNotMutateConfig(t *testing.T) {
 	c, err := newBareClient(config)
 	require.NoError(t, err)
 
-	// ARCH-09: the caller's struct must be untouched.
+	// The caller's struct must be untouched.
 	a.Equal(origURL, config.URL, "config.URL must retain its trailing slash (no write-back)")
 	a.Empty(origUserAgent, "precondition: UserAgent started empty")
 	a.Empty(config.UserAgent, "config.UserAgent must stay empty (no default written back)")
@@ -475,7 +475,7 @@ func TestNewBareClientDoesNotMutateConfig(t *testing.T) {
 	a.Equal(apiV1Path("s/default/stat/sysinfo"), gotPath, "request must reach the normalized (trimmed) URL path")
 }
 
-// TestLogout mirrors the Login tests (TEST-11): for API-key auth Logout is a
+// TestLogout mirrors the Login tests: for API-key auth Logout is a
 // no-op that issues NO request; for user/pass auth it POSTs to the controller's
 // logout path. Both paths are exercised through the shared mock controller so the
 // client is constructed fully offline.
@@ -516,7 +516,7 @@ func TestLogout(t *testing.T) {
 	})
 }
 
-// TestVersion pins the two Version() branches (TEST-11): the cached fast path
+// TestVersion pins the two Version() branches: the cached fast path
 // returns the stored sysInfo version without any HTTP round-trip, and the
 // error path swallows a failing sysinfo fetch into an empty string.
 func TestVersion(t *testing.T) {

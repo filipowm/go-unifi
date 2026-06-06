@@ -26,7 +26,7 @@ func TestDetermineApiStyle_InvalidStatus(t *testing.T) {
 }
 
 // TestApiStyleFromStatus covers every branch of the pure decision function
-// extracted for offline testability (TEST-09): 200/302/other x apikey/userpass,
+// extracted for offline testability: 200/302/other x apikey/userpass,
 // including the 'cannot use API key with old-style API' guard.
 func TestApiStyleFromStatus(t *testing.T) {
 	t.Parallel()
@@ -91,7 +91,7 @@ func TestApiStyleFromStatus(t *testing.T) {
 }
 
 // TestApiStyleOverrideSkipsProbe proves the ClientConfig.APIStyle override (the
-// offline-construction seam, TEST-09): when set, no network probe is made, so
+// offline-construction seam): when set, no network probe is made, so
 // the client constructs against an unreachable URL without error and pins the
 // requested paths.
 func TestApiStyleOverrideSkipsProbe(t *testing.T) {
@@ -135,7 +135,7 @@ func TestApiStyleOverrideOldStyleRejectsAPIKey(t *testing.T) {
 	assert.Contains(t, err.Error(), "unable to use API key authentication with old style API")
 }
 
-// TestApiStyleSetCopiesAreIsolated pins the value-returning seam (TEST-13):
+// TestApiStyleSetCopiesAreIsolated pins the value-returning seam:
 // oldStyleAPI()/newStyleAPI() return fresh copies equal to the canonical package
 // vars, and mutating a returned copy must NOT corrupt the shared OldStyleAPI /
 // NewStyleAPI used for pointer-identity style detection.
@@ -161,7 +161,7 @@ func TestApiStyleSetCopiesAreIsolated(t *testing.T) {
 	a.Equal(loginPath, OldStyleAPI.LoginPath, "mutating a copy must not corrupt the shared OldStyleAPI")
 }
 
-// TestApiPathsForStyle pins the pinned-style->paths mapping (TEST-13): the old
+// TestApiPathsForStyle pins the pinned-style->paths mapping: the old
 // style resolves to the &OldStyleAPI identity and the new style (and the auto
 // default) resolve to &NewStyleAPI, preserving the pointer-identity contract the
 // rest of the client relies on.

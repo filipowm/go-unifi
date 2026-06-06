@@ -89,7 +89,7 @@ type {{.TypeName}} struct {
 
 // TestGenerateCode_InjectedV2BaseDir proves generateCode runs end-to-end against
 // INJECTED fieldsDir and v2BaseDir fixtures, with no dependency on the real repo
-// layout or findCodegenDir/cwd (TEST-16). Both a v1 and a v2 resource are
+// layout or findCodegenDir/cwd. Both a v1 and a v2 resource are
 // emitted as <name>.generated.go alongside the client.generated.go, and the
 // supplied logger receives the per-resource Debug lines.
 func TestGenerateCode_InjectedV2BaseDir(t *testing.T) {
@@ -239,7 +239,7 @@ func TestGenerateCodeFromFields(t *testing.T) {
 			}
 
 			// Inject an empty v2 base dir (a fresh temp dir) so generation is
-			// decoupled from the real repo layout (TEST-16) and never touches
+			// decoupled from the real repo layout and never touches
 			// findCodegenDir.
 			err := generateCode(tt.fieldsDir, t.TempDir(), tt.outDir, CodeCustomizer{}, nil)
 

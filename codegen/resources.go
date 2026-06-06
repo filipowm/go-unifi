@@ -135,7 +135,6 @@ type Resource struct {
 	// declared via customizations.yml queryParams, e.g. "includeSystemFeatures=true".
 	// It is appended AFTER the id segment on id-suffixed URLs so the id never lands
 	// behind the query string. Empty when the resource declares no query params.
-	// See ARCH-19.
 	QueryString    string
 	Types          map[string]*FieldInfo
 	FieldProcessor FieldProcessor
@@ -143,7 +142,7 @@ type Resource struct {
 	// logger receives this resource's generation diagnostics (dropped-field and
 	// collision warnings). It is injected by buildResourcesFromDownloadedFields;
 	// when nil (e.g. a Resource built directly in a test), log() falls back to
-	// the package-global logger. See TEST-13.
+	// the package-global logger.
 	logger Logger
 }
 
@@ -235,8 +234,7 @@ func (r *Resource) Name() string {
 
 // QuerySuffix returns the query string ready to splice into a URL format string:
 // "?a=1&b=2" when query params are declared, or "" otherwise. Templates append
-// this AFTER the id segment so an id never lands behind the query string. See
-// ARCH-19.
+// this AFTER the id segment so an id never lands behind the query string.
 func (r *Resource) QuerySuffix() string {
 	if r.QueryString == "" {
 		return ""
@@ -244,7 +242,7 @@ func (r *Resource) QuerySuffix() string {
 	// Templates splice this into a fmt.Sprintf FORMAT-string literal, so any '%'
 	// produced by url.Values.Encode (e.g. '&' -> '%26') must be doubled to stay a
 	// literal percent rather than a (malformed) verb. Today's only param is
-	// %-free, so this is zero-diff hardening against future queryParams. See ARCH-19.
+	// %-free, so this is zero-diff hardening against future queryParams.
 	return "?" + strings.ReplaceAll(r.QueryString, "%", "%%")
 }
 
@@ -263,12 +261,12 @@ func (r *Resource) GenerateCode() (string, error) {
 
 // log returns the resource's injected logger, or the package-global fallback
 // when none was set. Keeping access behind this accessor lets directly-built
-// Resource values (tests) log without panicking on a nil field. See TEST-13.
+// Resource values (tests) log without panicking on a nil field.
 func (r *Resource) log() Logger {
 	return orDefaultLogger(r.logger)
 }
 
-// validateResourcePath guards against the ARCH-19 footgun: a query string smuggled
+// validateResourcePath guards against the footgun: a query string smuggled
 // into ResourcePath ("described-features?includeSystemFeatures=true") makes the
 // id-suffixed get/update/delete templates emit ".../described-features?q=1/%s",
 // where the id lands AFTER the query string — a never-correct URL. The first-class
@@ -281,7 +279,7 @@ func (r *Resource) validateResourcePath() error {
 	if !strings.Contains(r.ResourcePath, "?") {
 		return nil
 	}
-	msg := fmt.Sprintf("resource %s: resourcePath %q contains a raw query string; use the queryParams customization instead so id-suffixed URLs stay well-formed (see ARCH-19)",
+	msg := fmt.Sprintf("resource %s: resourcePath %q contains a raw query string; use the queryParams customization instead so id-suffixed URLs stay well-formed",
 		r.StructName, r.ResourcePath)
 	if strictMode() {
 		return &strictViolationError{errors.New(msg)}
@@ -294,7 +292,7 @@ func (r *Resource) processFields(fields map[string]any) error {
 	t := r.Types[r.StructName]
 	// Process JSON keys in deterministic (sorted) order so collision resolution
 	// and the resulting field map are reproducible run-to-run (Go randomizes map
-	// iteration). See ARCH-14.
+	// iteration).
 	for _, name := range sortedKeys(fields) {
 		validation := fields[name]
 		fieldInfo, err := r.fieldInfoFromValidation(name, validation, false)
@@ -399,7 +397,7 @@ func (r *Resource) fieldInfoFromMap(fieldName, name string, validation map[strin
 
 	// Process nested keys in deterministic (sorted) order, mirroring
 	// processFields, so nested-struct field ordering and collision resolution are
-	// reproducible. See ARCH-14.
+	// reproducible.
 	for _, childName := range sortedKeys(validation) {
 		fv := validation[childName]
 		child, err := r.fieldInfoFromValidation(childName, fv, false)
@@ -546,7 +544,7 @@ func buildResourcesFromDownloadedFields(fieldsDir string, customizer CodeCustomi
 		customizer.ApplyToResource(resource)
 
 		// Guard against a raw query string smuggled into resourcePath, which would
-		// emit malformed id-suffixed URLs (id after the query). See ARCH-19.
+		// emit malformed id-suffixed URLs (id after the query).
 		if err = resource.validateResourcePath(); err != nil {
 			var sv *strictViolationError
 			if errors.As(err, &sv) {
@@ -559,7 +557,7 @@ func buildResourcesFromDownloadedFields(fieldsDir string, customizer CodeCustomi
 		err = resource.processJSON(b)
 		if err != nil {
 			// A strict-mode field-drop/collision must abort the whole generation,
-			// not be quietly skipped like a malformed-JSON file. See ARCH-14.
+			// not be quietly skipped like a malformed-JSON file.
 			var sv *strictViolationError
 			if errors.As(err, &sv) {
 				return nil, fmt.Errorf("strict mode: %s: %w", fieldsFile.Name(), err)
