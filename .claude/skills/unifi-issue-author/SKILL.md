@@ -71,7 +71,9 @@ Run the interview. Do not write any issue body until each item is **explicitly s
 - **Dependencies** — does any issue need another's output first (a package/seam/decision that must land
   before it can be built)? Keep the tree flat; only record a HARD dependency that forces sequencing. Every
   hard dependency you find MUST be recorded in two places: a `Depends on #N` line in the issue body (Step 3)
-  and a `dependsOn: [N]` entry in the wave handoff (Step 4). **A blocker and its dependent can never share a
+  and a `dependsOn: [N]` entry in the wave handoff (Step 4). There is no blocked label — the wave's
+  `find-candidates.sh` computes blocked-ness from the `Depends on #N` line + each dep's open/closed state, so
+  getting that line right is what makes the dependency real. **A blocker and its dependent can never share a
   parallel wave** — they run in separate, sequenced waves with the blocker merged first; the wave template
   hard-fails if you violate this, so get the deps right here.
 - **Per-issue acceptance** — what does "done" mean, concretely and testably? Every issue's acceptance always
@@ -142,8 +144,9 @@ EOF
 
 Type/scope are NOT in the title — they live in the type label (and the Step 4 handoff); the wave composes the
 conventional-commit PR title from them. GitHub has no native parent/child or "blocked-by" for issues, so both
-the epic link and any hard dependency are **body conventions**: `Part of epic #117.` and `Depends on #N`.
-After creating, confirm the URLs back to the user.
+the epic link and any hard dependency are **body conventions**: `Part of epic #117.` and `Depends on #N` — the
+wave's candidate finder parses that `Depends on` line to compute blocked-ness, so it must be exact. After
+creating, confirm the URLs back to the user.
 
 ## Step 4: Emit a wave-ready handoff
 

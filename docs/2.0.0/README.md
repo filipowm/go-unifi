@@ -31,6 +31,13 @@ issue**, and the issue body is the contract.
 **Issue metadata (required):** type label (`feat`/`fix`/`refactor`/`docs`/`chore`/`test`/`ci`), plus
 `breaking` when public API/behavior changes; milestone **2.0.0**; link to parent epic **#117**.
 
+**Dependencies:** GitHub has no native "blocked-by", so a hard dependency is a body convention — a
+`Depends on #N[, #M]` line. There is **no** dependency/blocked label: blocked-ness is *computed* from the
+`Depends on #N` lines plus each dep's open/closed state, so it can never go stale. `find-candidates.sh` (in
+the `unifi-2.0.0-wave` skill) does this in one cheap query — listing READY / BLOCKED / CLAIMED issues without
+reading any body. **Skeleton-first falls out for free:** while the scaffolding skeleton is open, everything
+that `Depends on` it computes as BLOCKED, so the skeleton is the only ready candidate.
+
 **Slicing:**
 - One feature/refactor/change = **one issue = one small PR**. Small and cohesive.
 - **Architecture-first:** the VERY FIRST work item is an architecture/scaffolding issue+PR that designs the
@@ -52,14 +59,16 @@ worktrees** for isolation.
 ```
 main
  └── feat/2.0.0                          (integration branch — base for ALL 2.0.0 work)
-      ├── feat/2.0.0-openapi-skeleton    (architecture-first; lands BEFORE fan-out)
-      ├── feat/2.0.0-openapi-dns         (off feat/2.0.0 after skeleton; own worktree)
-      ├── refactor/2.0.0-apistyle-seam   (parallel; disjoint files)
+      ├── feat/115-openapi-skeleton      (architecture-first; lands BEFORE fan-out)
+      ├── feat/123-openapi-dns           (off feat/2.0.0 after skeleton; own worktree)
+      ├── refactor/130-apistyle-seam     (parallel; disjoint files)
       └── ...                            (flat; stack ONLY on hard dependency)
 ```
 
-**Branch naming:** `<type>/2.0.0-<short-slug>` — e.g. `feat/2.0.0-openapi-generator`,
-`refactor/2.0.0-apistyle-seam`, `docs/2.0.0-breaking-changes`.
+**Branch naming:** `<type>/<issue#>-<short-slug>` — e.g. `feat/123-openapi-generator`,
+`refactor/130-apistyle-seam`, `docs/118-breaking-changes`. The leading issue number makes GitHub
+auto-link the branch to that issue's **Development** section; a grouped PR lists every member number
+(`feat/123-124-openapi-dns`).
 
 **Conventional commits** everywhere; PR title follows the same convention; reference the issue.
 
@@ -73,7 +82,7 @@ docs(2.0.0): record API-key-only auth in breaking_changes.md (#118)
 ```
 
 ```bash
-git worktree add -b feat/2.0.0-openapi-dns ../gu-2.0.0-openapi-dns feat/2.0.0   # -b <new-branch> <path (../gu-2.0.0-<slug>)> <start-point>
+git worktree add -b feat/123-openapi-dns ../gu-2.0.0-openapi-dns feat/2.0.0   # -b <type>/<issue#>-<slug> <path (../gu-2.0.0-<slug>)> <start-point>
 # …work, verify…
 gh pr create --base feat/2.0.0 --title "feat(openapi): DNS resource (#123)"   # never --base main
 ```

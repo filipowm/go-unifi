@@ -73,7 +73,9 @@ function buildUnits(issues) {
 }
 
 const wt = (u) => `../gu-2.0.0-${u.slug}`
-const branch = (u) => `${u.type}/2.0.0-${u.slug}`
+// Branch carries the issue number(s) so GitHub auto-links it to the issue's Development section — NOT "2.0.0"
+// (the worktree path keeps that namespace). Grouped units list every member number: `feat/123-124-<slug>`.
+const branch = (u) => `${u.type}/${u.numbers.join('-')}-${u.slug}`
 const tag = (u) => u.numbers.map(n => '#' + n).join(', ')
 
 const CONTRACT = `

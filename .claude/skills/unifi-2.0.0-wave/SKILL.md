@@ -34,41 +34,31 @@ Batch related questions (2–4 at a time) so it's a brisk grilling, not an inter
 rounds until there is genuinely nothing left to clarify. Only the truly mechanical (exact git command
 syntax, file formatting) needs no asking.
 
-## Step 0: Load the contract and the candidate work
+## Step 0: Find candidate work — one cheap query, NO bodies
 
-Read these before asking anything — informed questions beat blank ones:
-
-```bash
-cat docs/2.0.0/README.md                 # the process contract
-git branch --show-current                # confirm you can branch off feat/2.0.0
-gh issue view 117 --json title,body      # the epic, for context
-```
-
-Resolve the candidate issues from `$ARGUMENTS`. For each, pull the body — **the issue is the contract**
-(description, plan, acceptance criteria, edge cases):
+Don't read issue bodies to figure out what's workable — that floods context. Run the finder once; it digests
+every open milestone-2.0.0 issue into a compact table (status + unmet deps, **never** descriptions). Status is
+computed fresh from the `Depends on #N` lines + each dep's open/closed state — there's no label to trust or
+maintain:
 
 ```bash
-gh issue view <N> --json number,title,body,labels,milestone,state
+git branch --show-current                                          # confirm you can branch off feat/2.0.0
+${CLAUDE_SKILL_DIR}/references/find-candidates.sh
 ```
 
-If `$ARGUMENTS` is vague ("next batch"), list open milestone-2.0.0 issues — **excluding ones another run
-already claimed** (`in-progress`/`in-review` labels) — and bring candidates to the user:
+Columns: **READY** (eligible now), **BLOCKED** (has an unmerged `Depends on #N`, shown in `BLOCKED-BY`),
+**CLAIMED** (`in-progress`/`in-review` — owned by a running/open wave). Resolve `$ARGUMENTS` against this
+table; if it's vague ("next batch"), bring the READY rows to the user. **Do NOT pull any issue body yet** —
+you only need a body once an issue is actually picked (Step 1). That deferral is the whole point of this
+rewrite: scope from the table, read deeply only what you'll build.
 
-```bash
-gh issue list --milestone 2.0.0 --state open \
-  --search '-label:in-progress -label:in-review' --json number,title,labels
-```
+Read the contract (`docs/2.0.0/README.md`) for the rules; pull the epic (`gh issue view 117`) only if you
+genuinely need 2.0.0 context — it's not required to scope a wave.
 
-An issue carrying `in-progress` or `in-review` is owned by another wave (this run or a concurrent one) — do
-not pull it into a new wave unless the user explicitly says that claim is stale.
-
-**If nothing is ready, there is no wave — report and stop.** When the filtered list is empty, or every open
-issue is either claimed (`in-progress`/`in-review`) or blocked by a dependency that hasn't merged, do NOT
-launch. Tell the user plainly what's blocking what (e.g. "#121 is blocked by #120 (in-progress); #122 waits
-on #119 (not merged)"), and stop. Never launch the workflow on an empty/blocked set, and never strip another
-run's claim or treat an unmerged dependency as done to manufacture work. The user's options are: wait for the
-blocker/claim to clear, pick a different already-ready issue, or — only if a claim is genuinely stale —
-confirm that explicitly before reclaiming it.
+**If no issue is READY, there is no wave — report and stop.** The table already says what blocks what (e.g.
+"#121 BLOCKED by #119,#120"); relay that and stop. Never launch on an empty set, never strip a claim or treat
+an unmerged dep as done to manufacture work. The user's options: wait for the blocker/claim to clear, pick a
+READY issue, or — only if a claim is genuinely stale — confirm that explicitly before reclaiming it.
 
 ## Step 1: Grill the user (the core of this skill)
 
@@ -76,11 +66,10 @@ Now run the interview. Ask in rounds with `AskUserQuestion`; do not move to Step
 **explicitly settled by the user** (not by you). Probe at least these, and chase down anything an answer
 exposes:
 
-- **Wave membership** — exactly which issues are in this wave? (Confirm the set; don't infer it.)
-- **Skeleton precondition** — has the architecture/scaffolding skeleton already landed on `feat/2.0.0`? If
-  not, that skeleton IS the wave and must run alone first (everything else branches off it). Ask; don't
-  assume it's there. (Sanity-check by looking for the expected dirs/files the skeleton issue defined, then
-  confirm with the user.)
+- **Wave membership** — exactly which issues are in this wave? (Confirm the set from the Step 0 table; don't
+  infer it.) **Only once the set is provisional, pull bodies for those issues** — `gh issue view <N> --json
+  title,body,labels` — the body is the contract for every question below. Never pull bodies for issues you
+  won't build; that's the context bloat this rewrite kills.
 - **Per-issue scope & slicing** — is each issue genuinely one small, cohesive change? Should any be split or
   merged? Where are the boundaries?
 - **Plan completeness** — does each issue body have a real implementation plan? If not, who writes it — you
@@ -90,11 +79,11 @@ exposes:
   issue leaves implicit.
 - **Edge cases** — which of the README §1 edge cases apply per issue (version gating, dual-shape resources,
   error mapping, empty/error envelopes, backward compat)? Ask per issue. (Constants live in README §1.)
-- **Overlap & dependencies** — do any two issues touch the same files/dirs, or does one depend on another's
-  output? Read each candidate's `Depends on #N` body line (and the handoff's `dependsOn`). Two rules, both
-  enforced in Step 2: (1) a blocker and its dependent may **never** share a wave; (2) an issue may only join a
-  wave once **all** its dependencies are already **merged/closed**. Get the user's read; don't just diff plans
-  silently.
+- **Overlap & dependencies** — deps come from the Step 0 table (`BLOCKED-BY`), not from re-reading bodies; the
+  finder already excluded anything with an unmerged dep. What's left for you: do any two *selected* issues
+  touch the same files/dirs (file-level overlap the finder can't see)? Two rules, both enforced in Step 2: (1)
+  a blocker and its dependent may **never** share a wave; (2) an issue only joins a wave once **all** its deps
+  are **merged/closed** (i.e. it shows READY). Get the user's read on overlap; don't just diff plans silently.
 - **Breaking changes** — will any issue change public API/behavior? If so it needs the `breaking` label and a
   `docs/2.0.0/breaking_changes.md` entry. Confirm per issue.
 - **Codegen impact** — does any issue change generated output? Those need `go generate` + a clean golden
@@ -116,11 +105,11 @@ Present the overlap analysis and your proposed wave grouping to the user via `As
 intersects or one issue depends on another, ask whether to **sequence** them (separate single-issue waves)
 or **merge** them — do not silently pick. Only fan out a parallel wave the user has signed off on.
 
-**Dependency gate (hard):** for every candidate, check its `dependsOn`/`Depends on #N`. Exclude any issue
-whose dependencies aren't all **merged/closed** yet — confirm with `gh issue view <dep> --json state` (a dep
-that's only `in-progress`/`in-review` is NOT done). And never place a blocker and its dependent in the same
-wave. The template hard-fails on an intra-wave dependency as a backstop, but catch it here so you don't waste
-a launch. When in doubt, sequence: smaller, dependency-clean waves beat a blocked one.
+**Dependency gate (hard):** the Step 0 finder already did the heavy lifting — anything with an unmerged
+`Depends on #N` came back **BLOCKED** and is off the table. So the gate here is simply: only **READY** issues
+enter a wave, and never place a blocker and its dependent in the same wave. The template hard-fails on an
+intra-wave dependency as a backstop, but you shouldn't reach it — a BLOCKED issue never gets selected. When in
+doubt, sequence: smaller, dependency-clean waves beat a blocked one.
 
 **Bundling into one PR (optional):** default is one issue → one worktree → one PR. If two or more issues are
 so tightly coupled they belong in a SINGLE PR, give them a shared `groupSlug` in the wave array — they then
@@ -146,7 +135,7 @@ gh issue list --milestone 2.0.0 --search 'label:in-progress' --json number,title
 
 Label add is idempotent, so it *advertises* the claim but can't by itself win a truly simultaneous race —
 the **hard lock is the worktree/branch existence guard inside the workflow** (Step 3): the first run to
-create `../gu-2.0.0-<slug>` / `<type>/2.0.0-<slug>` owns that unit, and a second run that finds them existing
+create `../gu-2.0.0-<slug>` / `<type>/<issue#>-<slug>` owns that unit, and a second run that finds them existing
 returns `collision:true` and skips it instead of clobbering. Labels make the claim visible; the guard makes
 it safe. If a launch is aborted or a unit's gate stays red and no PR opens, **release the claim**:
 `gh issue edit <N> --remove-label in-progress`.
@@ -169,7 +158,7 @@ implement/review/remediate share the branch. Each unit's implement stage **guard
 the worktree path or branch already exists (a concurrent run owns it), it returns `collision:true` and skips
 that unit rather than clobbering.
 
-Every hard rule (branch `<type>/2.0.0-<slug>` off `feat/2.0.0` never `main`; no hand-edits to
+Every hard rule (branch `<type>/<issue#>-<slug>` off `feat/2.0.0` never `main`; no hand-edits to
 `*.generated.go`; the build/test/lint Verify gate + fix loop, incl. the Homebrew-Go PATH; codegen → `go
 generate` + golden diff; docs synced in-PR; breaking changes → `breaking_changes.md`; conventional commits)
 is already baked into the template's agent prompts from the README (§2–§5) — you don't re-enforce them in the
