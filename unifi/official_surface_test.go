@@ -124,6 +124,30 @@ func TestOfficialGateUnavailableEndpointAbsent(t *testing.T) {
 	require.ErrorIs(t, err, ErrOfficialAPIUnavailable)
 }
 
+// TestVersionAtLeastUnparseable asserts that an empty or garbage version is treated
+// as below the floor (fail-closed) so the gate rejects unknown controller builds.
+func TestVersionAtLeastUnparseable(t *testing.T) {
+	t.Parallel()
+	for _, v := range []string{"", "not-a-version", "???"} {
+		assert.False(t, versionAtLeast(v, officialAPIMinVersion), "unparseable %q must be below floor", v)
+	}
+}
+
+// TestOfficialGateUnavailableNewStyleUserPass asserts that a new-style controller
+// with user/password auth (no API key) returns ErrOfficialAPIUnavailable.
+func TestOfficialGateUnavailableNewStyleUserPass(t *testing.T) {
+	t.Parallel()
+	c := newOfflineClient(t, &ClientConfig{
+		URL:      testUrl,
+		User:     "u",
+		Password: "p",
+		APIStyle: APIStyleNew,
+	})
+
+	_, err := c.Official().GetInfo(context.Background())
+	require.ErrorIs(t, err, ErrOfficialAPIUnavailable)
+}
+
 // TestInternalAccessorReturnsResourceSurface proves client.Internal() exposes the
 // same resource CRUD the top-level client embeds.
 func TestInternalAccessorReturnsResourceSurface(t *testing.T) {

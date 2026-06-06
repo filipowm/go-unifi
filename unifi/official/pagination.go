@@ -21,9 +21,10 @@ type page[T any] struct {
 }
 
 // listAll fetches every page of a paginated list endpoint and appends the
-// decoded items to out. It walks offset/limit until an empty page or the
-// reported totalCount is reached; an empty page always terminates so a
-// misreported totalCount can never spin forever.
+// decoded items to out. It terminates on an empty page (definitive end-of-list)
+// or when accumulated equals totalCount (optimization to skip the trailing empty
+// probe). If the server underreports totalCount, the equal-count check is never
+// true and the loop falls through to the empty-page terminator.
 func listAll[T any](ctx context.Context, doer Doer, basePath string, out *[]T) error {
 	offset := 0
 	for {
@@ -34,7 +35,12 @@ func listAll[T any](ctx context.Context, doer Doer, basePath string, out *[]T) e
 		}
 		*out = append(*out, p.Data...)
 		offset += len(p.Data)
-		if len(p.Data) == 0 || offset >= p.TotalCount {
+		// Terminate on empty page (definitive end-of-list) or when accumulated equals
+		// totalCount (server accurately reported the total). The totalCount check is
+		// skipped when offset != totalCount — if the server underreported totalCount
+		// we'd stop before fetching all data, so we fall through to the empty-page
+		// terminator instead.
+		if len(p.Data) == 0 || offset == p.TotalCount {
 			return nil
 		}
 	}
