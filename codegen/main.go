@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
 	"path/filepath"
@@ -86,6 +87,12 @@ type options struct {
 	version            string
 	firmwareUpdateApi  string
 	customizationsPath string
+	// officialSpecVersion pins the Official-API OpenAPI spec to a specific
+	// controller version. When empty, generate() auto-selects: same version as
+	// internal when internal >= 10.1.68, otherwise latest. Pass explicitly (e.g.
+	// "10.4.57") to reproduce a specific committed snapshot independently of the
+	// internal version pin.
+	officialSpecVersion string
 	// logger receives the pipeline's structured output. When nil, generate()
 	// falls back to the package-global logger so the CLI path is unaffected.
 	// Tests inject their own instance to assert output without touching the
@@ -105,6 +112,7 @@ func main() {
 	versionBaseDirFlag := flag.String("version-base-dir", ".", "The base directory for version JSON files")
 	outputDirFlag := flag.String("output-dir", ".", "The output directory of the generated Go code")
 	downloadOnly := flag.Bool("download-only", false, "Only download and build the API structures JSON directory, do not generate")
+	officialSpecVersionFlag := flag.String("official-spec-version", "", "Official-API OpenAPI spec version (default: same as controller when >=10.1.68, else latest)")
 	debugFlag := flag.Bool("debug", false, "Enable debug logging")
 	traceFlag := flag.Bool("trace", false, "Enable trace logging")
 
@@ -116,18 +124,34 @@ func main() {
 		specifiedVersion = LatestVersionMarker // default to latest version
 	}
 	err := generate(options{
-		versionBaseDir:     *versionBaseDirFlag,
-		outputDir:          *outputDirFlag,
-		downloadOnly:       *downloadOnly,
-		version:            specifiedVersion,
-		firmwareUpdateApi:  defaultFirmwareUpdateApi,
-		customizationsPath: "customizations.yml",
-		logger:             logger,
+		versionBaseDir:      *versionBaseDirFlag,
+		outputDir:           *outputDirFlag,
+		downloadOnly:        *downloadOnly,
+		version:             specifiedVersion,
+		officialSpecVersion: *officialSpecVersionFlag,
+		firmwareUpdateApi:   defaultFirmwareUpdateApi,
+		customizationsPath:  "customizations.yml",
+		logger:              logger,
 	})
 	if err != nil {
 		logger.Error(err)
 		os.Exit(1)
 	}
+}
+
+// resolveVersions resolves both the internal controller version and the
+// Official-API spec version from opts. Extracted to keep generate()'s cyclomatic
+// complexity inside the configured budget.
+func resolveVersions(p UnifiVersionProvider, opts options) (*UnifiVersion, *UnifiVersion, error) {
+	internal, err := p.ByVersionMarker(opts.version)
+	if err != nil {
+		return nil, nil, fmt.Errorf("unable to determine version and download URL for Unifi version %s: %w", opts.version, err)
+	}
+	official, err := resolveOfficialSpecVersion(p, internal, opts.officialSpecVersion)
+	if err != nil {
+		return nil, nil, fmt.Errorf("unable to resolve Official API spec version: %w", err)
+	}
+	return internal, official, nil
 }
 
 // resolveV2BaseDir returns the injected V2-API field-definitions base dir, or
@@ -147,20 +171,21 @@ func generate(opts options) error {
 	logger := orDefaultLogger(opts.logger)
 
 	p := NewUnifiVersionProvider(opts.firmwareUpdateApi)
-	unifiVersion, err := p.ByVersionMarker(opts.version)
+	unifiVersion, officialVersion, err := resolveVersions(p, opts)
 	if err != nil {
-		return fmt.Errorf("unable to determine version and download URL for Unifi version %s: %w", opts.version, err)
+		return err
 	}
 
 	logger.Infof("UniFi Controller version: %s", unifiVersion.Version)
 	logger.Infof("UniFi Controller download URL: %s", unifiVersion.DownloadUrl.String())
+	logger.Infof("Official-API spec version: %s", officialVersion.Version)
 
 	wd, err := os.Getwd()
 	if err != nil {
 		return fmt.Errorf("unable to determine working directory: %w", err)
 	}
 	versionBaseDir := resolveDir(wd, opts.versionBaseDir)
-	structuresDir, err := downloadGenerationInputs(unifiVersion, versionBaseDir, logger)
+	structuresDir, err := downloadGenerationInputs(unifiVersion, officialVersion, versionBaseDir, logger)
 	if err != nil {
 		return err
 	}
@@ -206,40 +231,42 @@ func generate(opts options) error {
 	return nil
 }
 
-// downloadGenerationInputs downloads the internal API field-definition JSONs and
-// commits the Official OpenAPI spec snapshot, returning the structures dir. Both
-// fetches share one bounded context (the .deb stream is the long pole).
-func downloadGenerationInputs(unifiVersion *UnifiVersion, versionBaseDir string, logger Logger) (string, error) {
+// downloadGenerationInputs downloads the internal API field-definition JSONs
+// (keyed by internalVersion) and commits the Official OpenAPI spec snapshot
+// (keyed by officialVersion, which may differ when internal < 10.1.68).
+// Both fetches share one bounded context; the .deb stream is the long pole.
+func downloadGenerationInputs(internalVersion *UnifiVersion, officialVersion *UnifiVersion, versionBaseDir string, logger Logger) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultDownloadTimeout)
 	defer cancel()
 
-	structuresDir := filepath.Join(versionBaseDir, fmt.Sprintf("v%s", unifiVersion.Version))
+	structuresDir := filepath.Join(versionBaseDir, fmt.Sprintf("v%s", internalVersion.Version))
 	logger.Infoln("Downloading UniFi Controller API structures definitions...")
-	if err := DownloadAndExtract(ctx, http.DefaultClient, *unifiVersion.DownloadUrl, structuresDir); err != nil {
+	if err := DownloadAndExtract(ctx, http.DefaultClient, *internalVersion.DownloadUrl, structuresDir); err != nil {
 		return "", fmt.Errorf("unable to download and extract UniFi Controller API structures definitions: %w", err)
 	}
 	logger.Infof("Downloaded UniFi Controller API structures definitions in %s", structuresDir)
 
-	if err := downloadOfficialSpecSnapshot(ctx, unifiVersion, versionBaseDir, logger); err != nil {
+	specURL, err := officialVersion.OfficialSpecURL()
+	if err != nil {
+		return "", fmt.Errorf("unable to build Official OpenAPI spec URL for %s: %w", officialVersion.Version, err)
+	}
+	specPath := officialSpecSnapshotPath(versionBaseDir, officialVersion.Version)
+	if err = downloadOfficialSpecSnapshot(ctx, http.DefaultClient, *specURL, specPath, logger); err != nil {
 		return "", err
 	}
 	return structuresDir, nil
 }
 
-// downloadOfficialSpecSnapshot fetches the UniFi OS Server package and commits
-// the integration.json snapshot under versionBaseDir. A package predating the
-// Official API (no integration.json) is skipped with a warning so the internal
-// pipeline never regresses; any other failure is fatal.
-func downloadOfficialSpecSnapshot(ctx context.Context, unifiVersion *UnifiVersion, versionBaseDir string, logger Logger) error {
-	specURL, err := unifiVersion.OfficialSpecURL()
-	if err != nil {
-		return fmt.Errorf("unable to build Official OpenAPI spec URL: %w", err)
-	}
-	specPath := officialSpecSnapshotPath(versionBaseDir, unifiVersion.Version)
+// downloadOfficialSpecSnapshot fetches the UniFi OS Server package from specURL,
+// extracts integration.json, and writes a pinned snapshot to specPath. A package
+// predating the Official API (no integration.json) is skipped with a warning so
+// the internal pipeline never regresses; any other failure is fatal.
+// client is injectable so tests can drive this path fully offline.
+func downloadOfficialSpecSnapshot(ctx context.Context, client *http.Client, specURL url.URL, specPath string, logger Logger) error {
 	logger.Infoln("Downloading Official OpenAPI spec snapshot...")
-	if err = DownloadAndExtractOfficialSpec(ctx, http.DefaultClient, *specURL, specPath); err != nil {
+	if err := DownloadAndExtractOfficialSpec(ctx, client, specURL, specPath); err != nil {
 		if errors.Is(err, errOfficialSpecNotFound) {
-			logger.Warnf("Official OpenAPI spec not present for %s (requires controller >= 10.1.68); skipping snapshot", unifiVersion.Version)
+			logger.Warnf("Official OpenAPI spec not present at %s (package predates Official API); skipping snapshot", specURL.String())
 			return nil
 		}
 		return fmt.Errorf("unable to download and extract Official OpenAPI spec: %w", err)

@@ -29,6 +29,29 @@ const (
 	firmwareApiTimeout = 30 * time.Second
 )
 
+// minOfficialSpecVersion is the first controller that ships integration.json in
+// its UniFi OS Server package. Packages before this version are silently skipped.
+var minOfficialSpecVersion = version.Must(version.NewVersion("10.1.68"))
+
+// resolveOfficialSpecVersion resolves the version to use for the Official-API
+// OpenAPI spec snapshot, decoupled from the internal (resource-gen) version:
+//   - explicit non-empty marker: resolve exactly that version
+//   - internal >= 10.1.68: reuse the same version (spec is present in that package)
+//   - internal < 10.1.68: resolve latest (old packages predate the Official API)
+//
+// Callers pass `opts.officialSpecVersion` as the explicit marker; an empty string
+// activates the auto-detect logic above so `make generate VERSION=9.5.21` fetches
+// the Official spec from the most recent release without rewriting internal resources.
+func resolveOfficialSpecVersion(p UnifiVersionProvider, internal *UnifiVersion, explicitMarker string) (*UnifiVersion, error) {
+	if explicitMarker != "" {
+		return p.ByVersionMarker(explicitMarker)
+	}
+	if internal.Version.GreaterThanOrEqual(minOfficialSpecVersion) {
+		return internal, nil
+	}
+	return p.Latest()
+}
+
 type UnifiVersion struct {
 	Version     *version.Version
 	DownloadUrl *url.URL
