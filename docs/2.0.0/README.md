@@ -5,17 +5,13 @@
 > **not** a design doc. Plans live in GitHub issues, never in the repo. API breaks are logged in
 > [`breaking_changes.md`](breaking_changes.md).
 
-## What 2.0.0 is
+## What 2.0.0 is — read epic #117, not this
 
-Epic [#117 — *Migrate to UniFi OS Server & official OpenAPI*](https://github.com/filipowm/go-unifi/issues/117),
-milestone **2.0.0**. Retarget codegen from reverse-engineered per-resource field JSONs to Ubiquiti's
-official **OpenAPI 3.1** spec (`integration.json`, bundled in `unifi-uos_sysvinit.deb`). Keep the existing
-download/version/extract pipeline; retire fragile regex type-inference. **Hybrid transition:** the legacy
-and OpenAPI generators run side by side; migrate resource-by-resource; never delete a legacy path before
-its OpenAPI replacement is validated. `APIStyle` (in `unifi/api_paths.go`) is the seam. Runtime targets
-`/proxy/network/integration/v1/`, API-key auth only. Version floor 9.0.114; OpenAPI from 10.1.68;
-dual-shape resources (e.g. DNS) pick shape by controller version. Breaking changes are enumerated in #117
-and recorded in [`breaking_changes.md`](breaking_changes.md).
+The *what/why/scope* of 2.0.0 (OpenAPI 3.1 retarget, the hybrid legacy↔OpenAPI transition, the `APIStyle`
+seam, runtime/auth targets, version floors, and the enumerated breaking changes) lives in
+[epic #117 — *Migrate to UniFi OS Server & official OpenAPI*](https://github.com/filipowm/go-unifi/issues/117),
+milestone **2.0.0**. Read it there, don't restate it here. This README is the **process** contract only; the
+migration constants the process references are listed once below under §1 (Known edge cases).
 
 ---
 
@@ -77,7 +73,7 @@ docs(2.0.0): record API-key-only auth in breaking_changes.md (#118)
 ```
 
 ```bash
-git worktree add -b feat/2.0.0-openapi-dns ../gu-123 feat/2.0.0   # -b <new-branch> <path> <start-point>
+git worktree add -b feat/2.0.0-openapi-dns ../gu-2.0.0-openapi-dns feat/2.0.0   # -b <new-branch> <path (../gu-2.0.0-<slug>)> <start-point>
 # …work, verify…
 gh pr create --base feat/2.0.0 --title "feat(openapi): DNS resource (#123)"   # never --base main
 ```
@@ -110,9 +106,7 @@ GH issue (plan + AC + edges, linked to #117, milestone 2.0.0)
 PR → feat/2.0.0  (checklist green) → merge → close issue MANUALLY (gh issue close <n>)
 ```
 
-- The gate per wave is **Implement → Verify → Review → Remediate → re-Verify**.
 - **Verify** has its own fix loop — never leave the phase red.
-- **Review** runs two subagents concurrently: software architect ‖ test lead.
 - **Remediate is gated:** it fires only on blocker/major findings; minor/nits are logged on the issue or
   deferred to a follow-up.
 - **Issues do NOT auto-close.** `Closes #N` only auto-closes when a PR merges into the **default branch
@@ -157,18 +151,16 @@ Local `Makefile` wraps these: `build | test | test-fast | cover | lint | fmt | c
 
 ## 6. Per-PR checklist
 
-- [ ] Issue exists; links epic **#117**; on milestone **2.0.0**; body has description, plan, acceptance
-      criteria, edge cases; type label (+ `breaking` if applicable) set.
-- [ ] Branched off `feat/2.0.0`; PR targets `feat/2.0.0` (**never `main`**).
-- [ ] Change is small, cohesive, and disjoint from sibling PRs in the same wave.
-- [ ] No hand-edits to `*.generated.go`.
-- [ ] `go build ./...`, full `go test`, and `golangci-lint run` all green (tabs, ≤200 cols, ctx first, `%w`).
-- [ ] In-workflow gate completed: Implement → Verify → Review (architect ‖ test-lead) → Remediate (gated)
-      → re-Verify.
-- [ ] Docs synced in this PR: `docs/`, root README, relevant `CLAUDE.md`, `.claude/rules/`.
-- [ ] API breaking changes recorded in `docs/2.0.0/breaking_changes.md`.
-- [ ] Conventional-commit messages and PR title. After merge, close the issue manually (`gh issue close <n>`) —
-      it will NOT auto-close from a merge into `feat/2.0.0`.
+A terse index of the rules above — each links back to its authoritative section.
+
+- [ ] Issue complete (description, plan, acceptance criteria, edge cases) + metadata. *(§1)*
+- [ ] Branched off `feat/2.0.0`; PR targets `feat/2.0.0`, never `main`. *(§2)*
+- [ ] Small, cohesive, disjoint from sibling PRs in the wave. *(§1)*
+- [ ] No hand-edits to `*.generated.go`. *(§4)*
+- [ ] `go build`, full `go test`, `golangci-lint run` all green. *(§4)*
+- [ ] In-workflow gate completed. *(§3)*
+- [ ] Docs synced in this PR, incl. `breaking_changes.md` for API breaks. *(§5)*
+- [ ] Conventional commits + PR title; issue closed manually after merge. *(§2–3)*
 
 ---
 
