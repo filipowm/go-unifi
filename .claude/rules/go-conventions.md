@@ -28,3 +28,6 @@ Never edit `*.generated.go`. These rules apply to hand-written `.go` files.
 
 ## Validation
 - Use `go-playground/validator` struct tags (`validate:"omitempty,ipv4"`). Register custom regex validators via `NewCustomRegexValidator` in `validation.go`.
+
+## Comments
+- Keep comments short — max 2 lines — explaining WHY, not what. Only exceed that for genuinely complex logic that can't be made self-evident by naming/structure. Don't narrate obvious code.
