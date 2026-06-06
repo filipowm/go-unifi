@@ -14,11 +14,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// offlineCacheVersion is the controller version whose JSON field cache
-// (codegen/v<version>/) is committed to the repo and used as the offline
-// fixture source for the type-signature golden. It must match the version the
-// generator is pinned to.
-const offlineCacheVersion = "9.5.21"
+// fixtureFieldsDir holds the version-independent JSON field fixtures committed
+// under testdata/ and used as the offline source for the type-signature golden.
+// The per-version controller caches (codegen/v<version>/) are gitignored and
+// regenerated, so the golden must NOT read from them: the test pins a stable,
+// checked-in Device.json snapshot instead, decoupled from whatever controller
+// version the generator is pinned to.
+var fixtureFieldsDir = filepath.Join("testdata", "fields")
 
 // updateGolden, when set, rewrites the *.golden files under testdata/ from the
 // current generator output instead of asserting against them. Regenerate with:
@@ -353,20 +355,20 @@ func renderTypeSignature(r *Resource) string {
 	return b.String()
 }
 
-// buildResourceFromCache reconstructs a single resource through the REAL
+// buildResourceFromFixture reconstructs a single resource through the REAL
 // generation pipeline (buildResourcesFromDownloadedFields over the committed
-// offline cache + the production customizations.yml), so the snapshot reflects
-// exactly what the generator would emit — including customizations like
-// Device.LtePoe's booleanishString unmarshal. It is the offline fixture path the
-// orchestrator pins; no network is touched.
-func buildResourceFromCache(t *testing.T, structName string) *Resource {
+// testdata fixtures + the production customizations.yml), so the snapshot
+// reflects exactly what the generator would emit — including customizations like
+// Device.LtePoe's booleanishString unmarshal. It reads version-independent
+// fixtures under testdata/, never the gitignored per-version cache; no network
+// is touched.
+func buildResourceFromFixture(t *testing.T, structName string) *Resource {
 	t.Helper()
 
 	customizer, err := NewCodeCustomizer(defaultCustomizationsPath)
 	require.NoError(t, err)
 
-	cacheDir := filepath.Join("v"+offlineCacheVersion, "")
-	resources, err := buildResourcesFromDownloadedFields(cacheDir, *customizer, false, nil)
+	resources, err := buildResourcesFromDownloadedFields(fixtureFieldsDir, *customizer, false, nil)
 	require.NoError(t, err)
 
 	for _, r := range resources {
@@ -374,13 +376,14 @@ func buildResourceFromCache(t *testing.T, structName string) *Resource {
 			return r
 		}
 	}
-	t.Fatalf("resource %q not found in offline cache %s", structName, cacheDir)
+	t.Fatalf("resource %q not found in fixtures %s", structName, fixtureFieldsDir)
 	return nil
 }
 
 // TestResourceTypeSignatureGolden is the type-flip / dropped-field guard.
 // It snapshots the inferred Go type signature of representative resources built
-// from the committed offline 9.5.21 cache and diffs against a checked-in golden.
+// from the committed, version-independent testdata fixtures and diffs against a
+// checked-in golden.
 // A controller-version regex change that flips a field's Go type
 // (int<->float64<->string) or drops a field is caught here in CI before it can
 // ship via the daily auto-regen PR. Regenerate after an intentional change with:
@@ -401,7 +404,7 @@ func TestResourceTypeSignatureGolden(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			r := buildResourceFromCache(t, tc.structName)
+			r := buildResourceFromFixture(t, tc.structName)
 			sig := renderTypeSignature(r)
 			require.NotEmpty(t, sig)
 			assertGolden(t, "type_signature_"+name, sig)
