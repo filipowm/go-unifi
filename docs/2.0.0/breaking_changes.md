@@ -25,7 +25,7 @@ status, a migration note, and a provenance link.
 | 9 | [v1 `Create`/`Update` no longer return `ErrNotFound`](#9-v1-createupdate-no-longer-return-errnotfound) | Medium | **DONE** |
 | 10 | [`meta.rc=="error"` on HTTP 200 → `*ServerError`](#10-metarcerror-on-http-200--servererror) | Medium | **DONE** |
 | 11 | [Map 404 → `ErrNotFound`](#11-map-404--errnotfound) | Low | **DONE** |
-| 12 | [`UseLocking` will be a no-op](#12-uselocking-will-be-a-no-op) | Low | **DONE** |
+| 12 | [`UseLocking` is a no-op](#12-uselocking-is-a-no-op) | Low | **DONE** |
 | 13 | [Remove CSRF handling](#13-remove-csrf-handling) | Low | **PENDING** |
 
 ---
@@ -233,7 +233,7 @@ sentinel now sees them as equal.
 
 ---
 
-### 12. `UseLocking` will be a no-op
+### 12. `UseLocking` is a no-op
 
 **Status: DONE** — landed in Wave 1 (ARCH-04).
 
@@ -311,9 +311,12 @@ interface, so consumers using the `Client` interface are unaffected.
 
 ### D. `Client` interface split into `InternalClient` + `Internal()`/`Official()` accessors (#119)
 
-See [#6 — New `integration/v1` API surface](#6-new-integrationv1-api-surface) above for the full entry. The
+See [#6 — New `integration/v1` `APIStyle`](#6-new-integrationv1-apistyle) above for the full entry. The
 `InternalClient` embedded interface and the `Internal()`/`Official()` accessors are the structural
 implementation of that row.
+
+This is the **2.0.0-canonical-Internal** step: in 2.0.0 the embedded Internal surface stays the default, so
+existing code is untouched; 3.0.0 is expected to flip the default to the Official client (the **3.0.0-flip**).
 
 ### E. Official API unavailable on classic/old-style controllers (#119)
 
