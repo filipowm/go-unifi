@@ -2,8 +2,13 @@ package official
 
 import (
 	"context"
+	"errors"
 	"fmt"
 )
+
+// ErrSiteNotFound is returned by ResolveSiteID when the given legacy site name
+// has no matching Official-API UUID in the full site list.
+var ErrSiteNotFound = errors.New("site not found")
 
 // SiteOverview is one entry from GET /v1/sites. ID is the Official-API site
 // UUID; InternalReference is the legacy site name used by the Internal API
@@ -48,7 +53,7 @@ func (c *apiClient) ResolveSiteID(ctx context.Context, name string) (string, err
 	if id, ok := c.cachedSiteID(name); ok {
 		return id, nil
 	}
-	return "", fmt.Errorf("site %q not found in official API", name)
+	return "", fmt.Errorf("%w: %q", ErrSiteNotFound, name)
 }
 
 // cachedSiteID returns the cached UUID for a legacy site name, if present.

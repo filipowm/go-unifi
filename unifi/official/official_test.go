@@ -93,6 +93,10 @@ func TestListSitesAutoPaginates(t *testing.T) {
 	d := &pagingDoer{fn: func(_ string, respBody any) error {
 		start := calls * maxPageLimit
 		calls++
+		if start >= len(all) {
+			// Empty page signals end-of-list to listAll.
+			return encode(sitePage(start, len(all), nil), respBody)
+		}
 		end := min(start+maxPageLimit, len(all))
 		return encode(sitePage(start, len(all), all[start:end]), respBody)
 	}}
@@ -101,6 +105,7 @@ func TestListSitesAutoPaginates(t *testing.T) {
 	sites, err := c.ListSites(context.Background())
 	require.NoError(t, err)
 	assert.Len(t, sites, 250)
+	// Two fetches: page 1 (200 items), page 2 (50 items, offset==totalCount -> stop).
 	assert.Equal(t, 2, calls, "expected exactly two pages")
 }
 
@@ -127,6 +132,86 @@ func TestResolveSiteIDCachesByInternalReference(t *testing.T) {
 
 	_, err = c.ResolveSiteID(context.Background(), "ghost")
 	require.Error(t, err)
+}
+
+// TestResolveSiteIDNotFoundSentinel asserts that ResolveSiteID wraps ErrSiteNotFound
+// so callers can match it with errors.Is.
+func TestResolveSiteIDNotFoundSentinel(t *testing.T) {
+	t.Parallel()
+	d := &fakeDoer{responses: map[string]any{
+		base + "/sites": sitePage(0, 1, []SiteOverview{
+			{ID: "uuid-default", InternalReference: "default", Name: "Default"},
+		}),
+	}}
+	c := New(d, base, nil)
+
+	_, err := c.ResolveSiteID(context.Background(), "ghost")
+	require.ErrorIs(t, err, ErrSiteNotFound, "not-found must be matchable with errors.Is")
+}
+
+// TestGetInfoTransportError asserts the error from the Doer is wrapped and
+// propagated by GetInfo.
+func TestGetInfoTransportError(t *testing.T) {
+	t.Parallel()
+	sentinel := errors.New("dial tcp: connection refused")
+	d := &fakeDoer{err: sentinel}
+	c := New(d, base, nil)
+
+	_, err := c.GetInfo(context.Background())
+	require.ErrorIs(t, err, sentinel)
+}
+
+// TestListSitesTransportError asserts the error from the Doer is wrapped and
+// propagated by ListSites.
+func TestListSitesTransportError(t *testing.T) {
+	t.Parallel()
+	sentinel := errors.New("connection reset")
+	d := &fakeDoer{err: sentinel}
+	c := New(d, base, nil)
+
+	_, err := c.ListSites(context.Background())
+	require.ErrorIs(t, err, sentinel)
+}
+
+// TestResolveSiteIDTransportError asserts the error from the Doer is wrapped
+// and propagated by ResolveSiteID.
+func TestResolveSiteIDTransportError(t *testing.T) {
+	t.Parallel()
+	sentinel := errors.New("timeout")
+	d := &fakeDoer{err: sentinel}
+	c := New(d, base, nil)
+
+	_, err := c.ResolveSiteID(context.Background(), "default")
+	require.ErrorIs(t, err, sentinel)
+}
+
+// TestListAllTerminatesOnEmptyPageWithHighTotalCount asserts listAll stops when
+// data dries up even when the server still reports a large totalCount.
+func TestListAllTerminatesOnEmptyPageWithHighTotalCount(t *testing.T) {
+	t.Parallel()
+	const reportedTotal = 999
+	realData := []SiteOverview{
+		{ID: "uuid-a", InternalReference: "a", Name: "A"},
+		{ID: "uuid-b", InternalReference: "b", Name: "B"},
+	}
+	calls := 0
+	d := &pagingDoer{fn: func(_ string, respBody any) error {
+		calls++
+		switch calls {
+		case 1:
+			// First page: return real data but lie about totalCount.
+			return encode(sitePage(0, reportedTotal, realData), respBody)
+		default:
+			// Second page: empty data — listAll must terminate here.
+			return encode(sitePage(len(realData), reportedTotal, nil), respBody)
+		}
+	}}
+	c := New(d, base, nil)
+
+	sites, err := c.ListSites(context.Background())
+	require.NoError(t, err)
+	assert.Len(t, sites, len(realData))
+	assert.Equal(t, 2, calls, "must stop after the empty page, not spin to totalCount")
 }
 
 // pagingDoer drives ListSites pagination through a custom per-call function.
