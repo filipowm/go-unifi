@@ -86,7 +86,7 @@ func TestListSitesAutoPaginates(t *testing.T) {
 	// 250 sites across two pages of <=200 — the resolver must walk both.
 	all := make([]SiteOverview, 0, 250)
 	for i := range 250 {
-		all = append(all, SiteOverview{Id: fmt.Sprintf("uuid-%d", i), InternalReference: fmt.Sprintf("site%d", i), Name: fmt.Sprintf("Site %d", i)})
+		all = append(all, SiteOverview{ID: fmt.Sprintf("uuid-%d", i), InternalReference: fmt.Sprintf("site%d", i), Name: fmt.Sprintf("Site %d", i)})
 	}
 
 	calls := 0
@@ -108,8 +108,8 @@ func TestResolveSiteIDCachesByInternalReference(t *testing.T) {
 	t.Parallel()
 	d := &fakeDoer{responses: map[string]any{
 		base + "/sites": sitePage(0, 2, []SiteOverview{
-			{Id: "uuid-default", InternalReference: "default", Name: "Default"},
-			{Id: "uuid-other", InternalReference: "other", Name: "Other"},
+			{ID: "uuid-default", InternalReference: "default", Name: "Default"},
+			{ID: "uuid-other", InternalReference: "other", Name: "Other"},
 		}),
 	}}
 	c := New(d, base, nil)

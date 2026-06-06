@@ -5,11 +5,11 @@ import (
 	"fmt"
 )
 
-// SiteOverview is one entry from GET /v1/sites. Id is the Official-API site
+// SiteOverview is one entry from GET /v1/sites. ID is the Official-API site
 // UUID; InternalReference is the legacy site name used by the Internal API
 // (so callers keep passing the familiar name); Name is the display name.
 type SiteOverview struct {
-	Id                string `json:"id"`
+	ID                string `json:"id"`
 	InternalReference string `json:"internalReference"`
 	Name              string `json:"name"`
 }
@@ -42,7 +42,7 @@ func (c *apiClient) ResolveSiteID(ctx context.Context, name string) (string, err
 		c.siteIDs = make(map[string]string, len(sites))
 	}
 	for _, s := range sites {
-		c.siteIDs[s.InternalReference] = s.Id
+		c.siteIDs[s.InternalReference] = s.ID
 	}
 	c.mu.Unlock()
 	if id, ok := c.cachedSiteID(name); ok {
