@@ -75,7 +75,9 @@ Each polymorphic parent becomes a union struct: the discriminator field + an une
 plus `AsXxx/FromXxx/MergeXxx`, `Discriminator()`, `ValueByDiscriminator()` (switching on the UPPER_SNAKE wire
 values) and generated `MarshalJSON/UnmarshalJSON`. Variants with own fields are full structs (also carrying the
 union machinery merged from the parent); **empty variants are Go type aliases of the parent** — branch on
-`Discriminator()` to tell them apart. No silent field loss on any family (management / firewall / Wi-Fi security).
+`Discriminator()` to tell them apart. Round-trip field-survival is verified in
+`unifi/official/models_roundtrip_test.go` across the flat (firewall action), nested (Wi-Fi security), and
+diamond-inlined (IP ACL) families; the byte golden (`TestModelsMatchCommitted`) guards every other family.
 The leaf-value unmarshalers in `unifi/json.go` are unaffected — the union codec applies only to discriminated
 parents.
 

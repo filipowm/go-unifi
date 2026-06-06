@@ -46,6 +46,9 @@ func TestDownconvertRejects31Constructs(t *testing.T) {
 		"prefixItems": {"prefixItems": []any{
 			map[string]any{"type": "string"},
 		}},
+		"bare null type":           {"type": "null"},
+		"numeric exclusiveMinimum": {"type": "integer", "exclusiveMinimum": float64(0)},
+		"numeric exclusiveMaximum": {"type": "integer", "exclusiveMaximum": float64(100)},
 	}
 	for name, bad := range cases {
 		t.Run(name, func(t *testing.T) {

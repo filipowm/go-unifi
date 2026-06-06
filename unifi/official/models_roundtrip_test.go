@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	openapi_types "github.com/oapi-codegen/runtime/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -28,13 +29,19 @@ func TestFirewallPolicyActionRoundTrip(t *testing.T) {
 		require.NotNil(t, allow.AllowReturnTraffic)
 		assert.True(t, *allow.AllowReturnTraffic)
 
-		// Re-marshal/unmarshal must keep the discriminator stable.
+		// Re-marshal/unmarshal must keep the discriminator AND the variant's own
+		// field value — guarding against silent field loss across the codec.
 		b, err := json.Marshal(a)
 		require.NoError(t, err)
 		var a2 FirewallPolicyAction
 		require.NoError(t, json.Unmarshal(b, &a2))
 		d2, _ := a2.Discriminator()
 		assert.Equal(t, "ALLOW", d2)
+
+		allow2, err := a2.AsFirewallPolicyActionAllow()
+		require.NoError(t, err)
+		require.NotNil(t, allow2.AllowReturnTraffic, "variant field must survive the round-trip")
+		assert.True(t, *allow2.AllowReturnTraffic)
 	})
 
 	for _, tc := range []string{"BLOCK", "REJECT"} {
@@ -98,4 +105,40 @@ func TestWifiSecurityConfigurationNestedRoundTrip(t *testing.T) {
 	require.NoError(t, json.Unmarshal(b, &sec2))
 	d2, _ := sec2.Discriminator()
 	assert.Equal(t, "WPA2_ENTERPRISE", d2)
+}
+
+// TestIpAclRuleDiamondRoundTrip exercises the diamond-inlined family: IpAclRule
+// merges the ACL rule + ACL ruleObject bases and carries its own fields plus the
+// deduped IpAclRuleProtocolFilter enum. Construct one, round-trip it, and assert
+// the variant fields survive — the byte golden alone wouldn't catch a codec drop.
+func TestIpAclRuleDiamondRoundTrip(t *testing.T) {
+	t.Parallel()
+
+	var id openapi_types.UUID
+	require.NoError(t, json.Unmarshal([]byte(`"22222222-2222-2222-2222-222222222222"`), &id))
+	proto := []IpAclRuleProtocolFilter{TCP, UDP}
+	in := IpAclRule{
+		Action:         ACLRuleActionALLOW,
+		Enabled:        true,
+		Id:             id,
+		Index:          7,
+		Name:           "my-acl",
+		ProtocolFilter: &proto,
+		Type:           "IP",
+		Metadata:       UserDefinedOrDerivedEntityMetadata{Origin: "USER_DEFINED"},
+	}
+
+	b, err := json.Marshal(in)
+	require.NoError(t, err)
+	var out IpAclRule
+	require.NoError(t, json.Unmarshal(b, &out))
+
+	assert.Equal(t, ACLRuleActionALLOW, out.Action)
+	assert.True(t, out.Enabled)
+	assert.Equal(t, id, out.Id)
+	assert.Equal(t, int32(7), out.Index)
+	assert.Equal(t, "my-acl", out.Name)
+	assert.Equal(t, "IP", out.Type)
+	require.NotNil(t, out.ProtocolFilter, "protocolFilter must survive the round-trip")
+	assert.Equal(t, proto, *out.ProtocolFilter)
 }

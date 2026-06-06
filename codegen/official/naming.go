@@ -134,6 +134,10 @@ type sharedEnum struct {
 // Wi-Fi client filtering, or the protocol-name set across IPv4/IPv6) are left
 // distinct on purpose — one shared name there would be semantically misleading.
 var sharedEnums = []sharedEnum{
+	// ACLRule and ACLRuleObject are independent spec schemas that currently share
+	// all variants (IpAclRule/MacAclRule) and this one action enum, yet are kept as
+	// distinct generated types on purpose: aliasing them would turn a future spec
+	// divergence into a silent breaking change. Only the enum is deduped here.
 	{
 		name:   "ACLRuleAction",
 		values: []string{"ALLOW", "BLOCK"},
@@ -143,17 +147,49 @@ var sharedEnums = []sharedEnum{
 			{"ACL ruleObject", "action"},
 		},
 	},
+	// Detail vs create-or-update shapes of one resource carry byte-identical
+	// value-sets; collapse each onto the detail-shape name (unambiguous in-family).
+	{
+		name:   "FirewallPolicyConnectionStateFilter",
+		values: []string{"ESTABLISHED", "INVALID", "NEW", "RELATED"},
+		targets: []enumTarget{
+			{"Firewall policy", "connectionStateFilter"},
+			{"Create or update firewall policy", "connectionStateFilter"},
+		},
+	},
+	{
+		name:   "FirewallPolicyIpsecFilter",
+		values: []string{"MATCH_ENCRYPTED", "MATCH_NOT_ENCRYPTED"},
+		targets: []enumTarget{
+			{"Firewall policy", "ipsecFilter"},
+			{"Create or update firewall policy", "ipsecFilter"},
+		},
+	},
+	{
+		name:   "IpAclRuleProtocolFilter",
+		values: []string{"TCP", "UDP"},
+		targets: []enumTarget{
+			{"IntegrationIpAclRuleDto", "protocolFilter"},
+			{"IntegrationIpAclRuleCreateUpdateDto", "protocolFilter"},
+		},
+	},
 }
 
 // dedupeEnums hoists each shared enum into its own component and repoints the
 // target properties at it, validating the value-sets match (fail loud otherwise).
 func dedupeEnums(schemas map[string]any) error {
-	for _, se := range sharedEnums {
+	return dedupeEnumsWith(schemas, sharedEnums)
+}
+
+// dedupeEnumsWith is the table-driven core; the table is a parameter so tests can
+// exercise one entry without mutating the package-global sharedEnums.
+func dedupeEnumsWith(schemas map[string]any, table []sharedEnum) error {
+	for _, se := range table {
 		if _, exists := schemas[se.name]; exists {
 			return fmt.Errorf("shared enum %q already exists as a schema", se.name)
 		}
 		for _, t := range se.targets {
-			prop, err := enumProperty(schemas, t)
+			_, prop, err := enumProperty(schemas, t)
 			if err != nil {
 				return err
 			}
@@ -167,35 +203,76 @@ func dedupeEnums(schemas map[string]any) error {
 		}
 		schemas[se.name] = map[string]any{"type": "string", "enum": enumVals}
 		for _, t := range se.targets {
-			// Validated above by enumProperty, so the asserts are safe.
-			s, _ := schemas[t.schema].(map[string]any)
-			props, _ := s["properties"].(map[string]any)
-			props[t.property] = map[string]any{"$ref": schemaRefPrefix + se.name}
+			// Validated above by enumProperty, so the lookups are safe.
+			props, prop, _ := enumProperty(schemas, t)
+			ref := map[string]any{"$ref": schemaRefPrefix + se.name}
+			if _, isArray := enumNode(prop); isArray {
+				prop["items"] = ref // keep the array + its constraints, repoint items only
+			} else {
+				props[t.property] = ref
+			}
 		}
 	}
 	return nil
 }
 
-// enumProperty resolves a target's property schema, failing loudly if absent.
-func enumProperty(schemas map[string]any, t enumTarget) (map[string]any, error) {
+// enumProperty resolves a target's property, searching the schema's own
+// properties and any contributed via inline allOf members (e.g. IpAclRule).
+// Returns the containing properties bag and the property, failing loudly if absent.
+func enumProperty(schemas map[string]any, t enumTarget) (map[string]any, map[string]any, error) {
 	s, ok := schemas[t.schema].(map[string]any)
 	if !ok {
-		return nil, fmt.Errorf("enum dedup: schema %q not found", t.schema)
+		return nil, nil, fmt.Errorf("enum dedup: schema %q not found", t.schema)
 	}
-	props, ok := s["properties"].(map[string]any)
-	if !ok {
-		return nil, fmt.Errorf("enum dedup: schema %q has no properties", t.schema)
+	bags := propertyBags(s)
+	if len(bags) == 0 {
+		return nil, nil, fmt.Errorf("enum dedup: schema %q has no properties", t.schema)
 	}
-	prop, ok := props[t.property].(map[string]any)
-	if !ok {
-		return nil, fmt.Errorf("enum dedup: %q has no property %q", t.schema, t.property)
+	for _, props := range bags {
+		if prop, ok := props[t.property].(map[string]any); ok {
+			return props, prop, nil
+		}
 	}
-	return prop, nil
+	return nil, nil, fmt.Errorf("enum dedup: %q has no property %q", t.schema, t.property)
 }
 
-// enumValues returns a property's enum values sorted for comparison.
+// propertyBags returns every properties map reachable from a schema: its own
+// plus those contributed by inline allOf members.
+func propertyBags(s map[string]any) []map[string]any {
+	var bags []map[string]any
+	if p, ok := s["properties"].(map[string]any); ok {
+		bags = append(bags, p)
+	}
+	if allOf, ok := s["allOf"].([]any); ok {
+		for _, m := range allOf {
+			mm, ok := m.(map[string]any)
+			if !ok {
+				continue
+			}
+			if p, ok := mm["properties"].(map[string]any); ok {
+				bags = append(bags, p)
+			}
+		}
+	}
+	return bags
+}
+
+// enumNode returns the map carrying the enum keyword and whether it is an array
+// element enum: a scalar enum lives on the property, an array's on its items.
+func enumNode(prop map[string]any) (map[string]any, bool) {
+	if prop["type"] == "array" {
+		if items, ok := prop["items"].(map[string]any); ok {
+			return items, true
+		}
+	}
+	return prop, false
+}
+
+// enumValues returns a property's enum values sorted for comparison, reading
+// from items for an array-of-enum property.
 func enumValues(prop map[string]any) []string {
-	raw, _ := prop["enum"].([]any)
+	node, _ := enumNode(prop)
+	raw, _ := node["enum"].([]any)
 	out := make([]string, 0, len(raw))
 	for _, v := range raw {
 		if s, ok := v.(string); ok {

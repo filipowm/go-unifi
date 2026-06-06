@@ -106,16 +106,7 @@ func downconvert(doc map[string]any, schemas map[string]any) error {
 func scan31(path string, node any, found *[]string) {
 	switch n := node.(type) {
 	case map[string]any:
-		if t, ok := n["type"]; ok {
-			if _, isArr := t.([]any); isArr {
-				*found = append(*found, path+".type[]")
-			}
-		}
-		for _, kw := range thirtyOneOnly {
-			if _, ok := n[kw]; ok {
-				*found = append(*found, path+"."+kw)
-			}
-		}
+		scan31Node(path, n, found)
 		for k, v := range n {
 			scan31(path+"/"+k, v, found)
 		}
@@ -123,6 +114,41 @@ func scan31(path string, node any, found *[]string) {
 		for _, v := range n {
 			scan31(path, v, found)
 		}
+	}
+}
+
+// scan31Node flags 3.1-only constructs carried directly on one schema node.
+func scan31Node(path string, n map[string]any, found *[]string) {
+	if t, ok := n["type"]; ok {
+		if _, isArr := t.([]any); isArr {
+			*found = append(*found, path+".type[]")
+		}
+		if t == "null" { // bare null type is 3.1-only (3.0 has no null type)
+			*found = append(*found, path+".type=null")
+		}
+	}
+	// exclusiveMinimum/Maximum flipped from boolean (3.0) to numeric (3.1);
+	// a numeric value would be silently mis-downconverted.
+	for _, kw := range []string{"exclusiveMinimum", "exclusiveMaximum"} {
+		if v, ok := n[kw]; ok && isNumeric(v) {
+			*found = append(*found, path+"."+kw)
+		}
+	}
+	for _, kw := range thirtyOneOnly {
+		if _, ok := n[kw]; ok {
+			*found = append(*found, path+"."+kw)
+		}
+	}
+}
+
+// isNumeric reports whether v is a JSON number (float64 from encoding/json;
+// ints accepted so hand-built test schemas match the real decode path too).
+func isNumeric(v any) bool {
+	switch v.(type) {
+	case float64, float32, int, int64:
+		return true
+	default:
+		return false
 	}
 }
 

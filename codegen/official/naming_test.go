@@ -98,13 +98,56 @@ func TestDedupeEnumsCollapsesACLAction(t *testing.T) {
 		"ACL rule update": action(),
 		"ACL ruleObject":  action(),
 	}
-	require.NoError(t, dedupeEnums(schemas))
+	require.NoError(t, dedupeEnumsWith(schemas, sharedEnums[:1]))
 	require.Contains(t, schemas, "ACLRuleAction")
 	for _, n := range []string{"ACL rule", "ACL rule update", "ACL ruleObject"} {
 		props := asMap(t, asMap(t, schemas[n])["properties"])
 		prop := asMap(t, props["action"])
 		assert.Equal(t, "#/components/schemas/ACLRuleAction", prop["$ref"])
 	}
+}
+
+// TestDedupeEnumsArrayAndAllOf covers the two shapes beyond a direct scalar enum:
+// an array-of-enum (repoint items, keep the array) and a property contributed via
+// an allOf member (the IpAclRule shape).
+func TestDedupeEnumsArrayAndAllOf(t *testing.T) {
+	t.Parallel()
+	arrEnum := func() map[string]any {
+		return map[string]any{
+			"type":  "array",
+			"items": map[string]any{"type": "string", "enum": []any{"TCP", "UDP"}},
+		}
+	}
+	schemas := map[string]any{
+		// Direct array-of-enum property.
+		"Detail": map[string]any{"properties": map[string]any{"protocolFilter": arrEnum()}},
+		// Same property contributed through an inline allOf member.
+		"Create": map[string]any{"allOf": []any{
+			map[string]any{"$ref": "#/components/schemas/Base"},
+			map[string]any{"type": "object", "properties": map[string]any{"protocolFilter": arrEnum()}},
+		}},
+	}
+	table := []sharedEnum{{
+		name:   "ProtoFilter",
+		values: []string{"TCP", "UDP"},
+		targets: []enumTarget{
+			{"Detail", "protocolFilter"},
+			{"Create", "protocolFilter"},
+		},
+	}}
+
+	require.NoError(t, dedupeEnumsWith(schemas, table))
+	require.Contains(t, schemas, "ProtoFilter")
+
+	// Detail: array kept, items repointed to the shared enum.
+	detail := asMap(t, asMap(t, asMap(t, schemas["Detail"])["properties"])["protocolFilter"])
+	assert.Equal(t, "array", detail["type"])
+	assert.Equal(t, "#/components/schemas/ProtoFilter", asMap(t, detail["items"])["$ref"])
+
+	// Create: allOf-nested property's items repointed too.
+	member := asMap(t, asSlice(t, asMap(t, schemas["Create"])["allOf"])[1])
+	createProp := asMap(t, asMap(t, member["properties"])["protocolFilter"])
+	assert.Equal(t, "#/components/schemas/ProtoFilter", asMap(t, createProp["items"])["$ref"])
 }
 
 func TestDedupeEnumsRejectsValueMismatch(t *testing.T) {
@@ -114,7 +157,7 @@ func TestDedupeEnumsRejectsValueMismatch(t *testing.T) {
 		"ACL rule update": map[string]any{"properties": map[string]any{"action": map[string]any{"type": "string", "enum": []any{"ALLOW", "DENY"}}}},
 		"ACL ruleObject":  map[string]any{"properties": map[string]any{"action": map[string]any{"type": "string", "enum": []any{"ALLOW", "BLOCK"}}}},
 	}
-	err := dedupeEnums(schemas)
+	err := dedupeEnumsWith(schemas, sharedEnums[:1])
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "values")
 }
