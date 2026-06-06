@@ -63,21 +63,6 @@ linters:
           - 'interfacebloat'  # the aggregate Client interface exposes many methods by design
           - 'unused'          # generated helpers/types not referenced within this module
           - 'containedctx'    # moq's client_mock.generated.go records calls in structs that hold the ctx arg
-      # Official OpenAPI models are emitted by the third-party oapi-codegen
-      # (via codegen/official): its union/discriminator output is inherently
-      # high-complexity and uses mixed receivers / spec-derived comments that
-      # can't be made lint-clean without editing DO-NOT-EDIT code. Correctness
-      # linters (govet, staticcheck, ...) still apply.
-      - path: 'official/models\.generated\.go'
-        linters:
-          - 'cyclop'
-          - 'dupword'
-          - 'gocognit'
-          - 'gocyclo'
-          - 'godoclint'
-          - 'godot'
-          - 'iface'
-          - 'recvcheck'
       - path: 'client.generated.go'
         linters:
           - 'gofumpt'         # strict linting not needed
@@ -88,6 +73,11 @@ linters:
       - 'third_party$'
       - 'builtin$'
       - 'examples$'
+      # Official OpenAPI models are emitted verbatim by the third-party
+      # oapi-codegen (via codegen/official); its union/discriminator output
+      # can't be made lint-clean without editing DO-NOT-EDIT code, so exclude
+      # the whole file.
+      - 'official/models\.generated\.go'
 
 formatters:
   enable:
@@ -102,3 +92,5 @@ formatters:
       # moq emits gofmt-formatted output, not gofumpt; it is generated and
       # carries a DO NOT EDIT banner, so do not hold it to the formatter.
       - 'client_mock\.generated\.go'
+      # oapi-codegen output; fully excluded from linting (see linters above).
+      - 'official/models\.generated\.go'

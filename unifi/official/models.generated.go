@@ -2948,6 +2948,7 @@ func (e WirelessRadioOverviewWlanStandard) Valid() bool {
 
 // ACLRule defines model for ACLRule.
 type ACLRule struct {
+	// Action ACL rule action
 	Action ACLRuleAction `json:"action"`
 
 	// Description ACL rule description
@@ -2983,6 +2984,7 @@ type ACLRuleDeviceFilter struct {
 
 // ACLRuleObject defines model for ACLRuleObject.
 type ACLRuleObject struct {
+	// Action ACL rule action
 	Action ACLRuleAction `json:"action"`
 
 	// Description ACL rule description
@@ -3014,6 +3016,7 @@ type ACLRuleOrdering struct {
 
 // ACLRuleUpdate defines model for ACLRuleUpdate.
 type ACLRuleUpdate struct {
+	// Action ACL rule action
 	Action ACLRuleAction `json:"action"`
 
 	// Description ACL rule description
@@ -3623,7 +3626,9 @@ type FirewallPolicy struct {
 
 	// IpProtocolScope Defines rules for matching by IP version and protocol.
 	IpProtocolScope FirewallPolicyIPProtocolScope `json:"ipProtocolScope"`
-	IpsecFilter     *FirewallPolicyIpsecFilter    `json:"ipsecFilter,omitempty"`
+
+	// IpsecFilter Match on traffic encrypted, or not encrypted by IPsec. If null, matches all traffic.
+	IpsecFilter *FirewallPolicyIpsecFilter `json:"ipsecFilter,omitempty"`
 
 	// LoggingEnabled Generate syslog entries when traffic is matched. Such entries are sent to a remote syslog server.
 	LoggingEnabled bool                                       `json:"loggingEnabled"`
@@ -3683,7 +3688,9 @@ type FirewallPolicyCreateOrUpdate struct {
 
 	// IpProtocolScope Defines rules for matching by IP version and protocol.
 	IpProtocolScope FirewallPolicyIPProtocolScope `json:"ipProtocolScope"`
-	IpsecFilter     *FirewallPolicyIpsecFilter    `json:"ipsecFilter,omitempty"`
+
+	// IpsecFilter Match on traffic encrypted, or not encrypted by IPsec. If null, matches all traffic.
+	IpsecFilter *FirewallPolicyIpsecFilter `json:"ipsecFilter,omitempty"`
 
 	// LoggingEnabled Generate syslog entries when traffic is matched. Such entries are sent to a remote syslog server.
 	LoggingEnabled bool   `json:"loggingEnabled"`
@@ -4787,6 +4794,7 @@ type IotOptimizedWifiBroadcastOverview = WifiBroadcastOverview
 
 // IpAclRule defines model for IpAclRule.
 type IpAclRule struct {
+	// Action ACL rule action
 	Action ACLRuleAction `json:"action"`
 
 	// Description ACL rule description
@@ -4816,6 +4824,7 @@ type IpAclRule struct {
 
 // IpAclRuleCreateUpdate defines model for IpAclRuleCreateUpdate.
 type IpAclRuleCreateUpdate struct {
+	// Action ACL rule action
 	Action ACLRuleAction `json:"action"`
 
 	// Description ACL rule description
@@ -4999,6 +5008,7 @@ type MDNSService struct {
 
 // MacAclRule defines model for MacAclRule.
 type MacAclRule struct {
+	// Action ACL rule action
 	Action ACLRuleAction `json:"action"`
 
 	// Description ACL rule description
@@ -5028,6 +5038,7 @@ type MacAclRule struct {
 
 // MacAclRuleCreateUpdate defines model for MacAclRuleCreateUpdate.
 type MacAclRuleCreateUpdate struct {
+	// Action ACL rule action
 	Action ACLRuleAction `json:"action"`
 
 	// Description ACL rule description
