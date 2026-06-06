@@ -103,8 +103,17 @@ func TestWifiSecurityConfigurationNestedRoundTrip(t *testing.T) {
 	require.NoError(t, err)
 	var sec2 WifiSecurityConfigurationDetailObject
 	require.NoError(t, json.Unmarshal(b, &sec2))
-	d2, _ := sec2.Discriminator()
+	d2, err := sec2.Discriminator()
+	require.NoError(t, err)
 	assert.Equal(t, "WPA2_ENTERPRISE", d2)
+
+	wpa2After, err := sec2.AsWifiWpa2EnterpriseSecurityConfigurationDetail()
+	require.NoError(t, err)
+	require.NotNil(t, wpa2After.RadiusConfiguration)
+	nasAfter, err := wpa2After.RadiusConfiguration.NasId.AsWifiUserDefinedNasId()
+	require.NoError(t, err)
+	require.NotNil(t, nasAfter.Value)
+	assert.Equal(t, "my-nas", *nasAfter.Value)
 }
 
 // TestIpAclRuleDiamondRoundTrip exercises the diamond-inlined family: IpAclRule
