@@ -1,8 +1,9 @@
 // Template: a go-unifi 2.0.0 migration wave.
 //
-// One Workflow handles N non-overlapping issues. Each issue is an independent pipeline item, so the gate
-// (Implement -> Verify -> Review -> Remediate -> re-Verify) runs per-issue and a fast issue isn't blocked by
-// a slow one. The process contract is docs/2.0.0/README.md.
+// One Workflow handles N non-overlapping UNITS. A unit is what gets one worktree/branch/PR: by default one
+// issue, but issues sharing a `groupSlug` collapse into a single unit (one branch, one PR that closes all of
+// them). Each unit is an independent pipeline item, so the gate (Implement -> Verify -> Review -> Remediate
+// -> re-Verify) runs per-unit and a fast unit isn't blocked by a slow one. Contract: docs/2.0.0/README.md.
 //
 // HOW TO LAUNCH: build the issues array (see WAVE_ISSUES shape below) by reading each issue with `gh issue
 // view <N> --json number,title,body` and extracting plan / acceptance / edgeCases / the files it will touch.
@@ -10,36 +11,73 @@
 //
 // WORKTREE MODEL (important — this is why it's correct): we do NOT use framework `isolation:'worktree'`,
 // because that gives every agent a *fresh* worktree off feat/2.0.0 and the review/remediate agents would
-// never see the implementer's branch. Instead each issue owns ONE explicit worktree at a convention path
+// never see the implementer's branch. Instead each unit owns ONE explicit worktree at a convention path
 // `../gu-2.0.0-<slug>`, created by the implement stage and reused (via `git -C <path>`) by remediate and read
-// by review. Worktrees share the repo's object DB + refs, and each has its own index, so the issues run
-// concurrently without colliding — provided the wave is non-overlapping (verify before launching). The main
-// loop opens the PR from each worktree, then `git worktree remove`s it.
+// by review. Worktrees share the repo's object DB + refs, and each has its own index, so units run
+// concurrently without colliding — provided the wave is non-overlapping (verify before launching).
+//
+// PARALLEL-RUN SAFETY: claiming issues is the main loop's job (label `in-progress` before launch; see the
+// skill Step 2.5). The hard lock lives HERE: the implement stage GUARDS against an existing worktree/branch
+// and skips the unit (collision:true) instead of clobbering a concurrent run. The main loop opens the PR
+// from each green worktree, then `git worktree remove`s it.
 
+// MODEL STRATEGY (quality where it has leverage, cheaper model where volume is high + a backstop exists):
+//   Implement + Verify -> Sonnet: the biggest token bucket (code + build/test/lint fix-loop), guided by the
+//     issue contract, with a deterministic gate AND the Opus review downstream catching misses.
+//   Review (architect ‖ test-lead) -> Opus: read-only, low-volume, judgment-heavy — highest leverage/token.
+//   Remediate + re-Verify -> Sonnet: executes the EXPLICIT findings Opus already reasoned out, then re-gates.
+// Per-call `model` overrides the main-loop model. For an unusually subtle unit (e.g. the codegen/polymorphism
+// work) you may bump Implement to opus for that run; the default below is the balanced policy.
 export const meta = {
   name: 'unifi-2.0.0-wave',
-  description: 'Run a go-unifi 2.0.0 migration wave: per-issue Implement -> Verify -> Review -> Remediate -> re-Verify, PRs into feat/2.0.0',
+  description: 'Run a go-unifi 2.0.0 migration wave: per-unit Implement -> Verify -> Review -> Remediate -> re-Verify, PRs into feat/2.0.0',
   phases: [
-    { title: 'Implement', detail: 'one explicit worktree+branch per non-overlapping issue' },
-    { title: 'Review', detail: 'architect ‖ test-lead per issue (read-only on the branch)' },
-    { title: 'Remediate', detail: 'apply blocker/major findings only, then re-verify' },
+    { title: 'Implement', detail: 'one guarded worktree+branch per non-overlapping unit', model: 'sonnet' },
+    { title: 'Review', detail: 'architect ‖ test-lead per unit (read-only on the branch)', model: 'opus' },
+    { title: 'Remediate', detail: 'apply blocker/major findings only, then re-verify', model: 'sonnet' },
   ],
 }
 
-// EDIT THIS (or pass via the Workflow tool's `args`): one entry per issue. Confirm files[] are disjoint
-// across entries BEFORE launch — overlap means merge conflicts into feat/2.0.0 even with separate worktrees.
+// EDIT THIS (or pass via the Workflow tool's `args`): one entry per ISSUE. Confirm files[] are disjoint
+// across UNITS BEFORE launch — overlap means merge conflicts into feat/2.0.0 even with separate worktrees.
+// Add `groupSlug` to two+ issues to fold them into ONE worktree/branch/PR (only when genuinely cohesive).
 const WAVE_ISSUES = args && args.length ? args : [
-  // { number: 123, title: '...', slug: 'openapi-dns', type: 'feat', scope: 'openapi',
+  // { number: 123, title: 'plain summary, no prefix', slug: 'openapi-dns', type: 'feat', scope: 'openapi',
   //   plan: '...', acceptance: '...', edgeCases: '...',
   //   touchesCodegen: true,                       // -> Verify must regenerate + check golden diffs
-  //   files: ['unifi/dns.go', 'codegen/...'] },   // for the disjointness proof
+  //   files: ['unifi/dns.go', 'codegen/...'],     // for the disjointness proof
+  //   dependsOn: [],                               // issue #s that must be MERGED first; a blocker may NOT share this wave
+  //   groupSlug: 'openapi-dns' },                  // OPTIONAL: issues sharing it become one unit/PR
 ]
 
-const wt = (issue) => `../gu-2.0.0-${issue.slug}`
-const branch = (issue) => `${issue.type}/2.0.0-${issue.slug}`
+// A UNIT is what gets one worktree/branch/PR. Issues sharing a `groupSlug` collapse into one unit (the PR
+// closes all of them); an issue without a groupSlug is its own unit. Disjointness must hold ACROSS units.
+function buildUnits(issues) {
+  const by = new Map()
+  for (const it of issues) {
+    const key = it.groupSlug || it.slug
+    if (!by.has(key)) by.set(key, [])
+    by.get(key).push(it)
+  }
+  return [...by.entries()].map(([slug, members]) => ({
+    slug,
+    type: members[0].type,
+    scope: members[0].scope || '',
+    numbers: members.map(m => m.number),
+    members,
+    touchesCodegen: members.some(m => m.touchesCodegen),
+    edgeCases: members.map(m => m.edgeCases).filter(Boolean).join(' | '),
+    files: members.flatMap(m => m.files || []),
+    title: members.length === 1 ? members[0].title : `${members.map(m => '#' + m.number).join(', ')} (grouped)`,
+  }))
+}
+
+const wt = (u) => `../gu-2.0.0-${u.slug}`
+const branch = (u) => `${u.type}/2.0.0-${u.slug}`
+const tag = (u) => u.numbers.map(n => '#' + n).join(', ')
 
 const CONTRACT = `
-You are implementing ONE issue of a go-unifi 2.0.0 migration wave. The process contract is
+You are implementing ONE unit of a go-unifi 2.0.0 migration wave. The process contract is
 docs/2.0.0/README.md — read it. Hard rules:
 - Base branch is feat/2.0.0. NEVER touch main.
 - The GitHub issue body is the contract (plan, acceptance criteria, edge cases). Honor it exactly.
@@ -55,13 +93,14 @@ docs/2.0.0/README.md — read it. Hard rules:
 - Conventional commits.
 `
 
-const verifyBlock = (issue) => `
+const verifyBlock = (u) => `
 Run the full quality gate IN THE WORKTREE and fix until green (this is the fix loop — do not stop while red):
-  export PATH="/opt/homebrew/opt/go/bin:$PATH"   # golangci-lint needs Homebrew Go, not asdf's
-  git -C ${wt(issue)} ... # all work happens in this worktree
-  (cd ${wt(issue)} && go build ./... && go test -cover -coverprofile=coverage.out -covermode atomic ./... && golangci-lint run)
-${issue.touchesCodegen ? `This issue changes codegen: also run \`go generate unifi/codegen.go\` (or \`make generate\`) and confirm the golden type-diff is clean — a codegen change that doesn't regenerate is NOT done.` : ''}
-COMMIT all changes to ${branch(issue)} with conventional messages (review reads the committed branch).
+${u.touchesCodegen ? `This unit changes codegen — regenerate FIRST, before build/test/lint (stale generated files will fail the build):
+  (cd ${wt(u)} && go generate unifi/codegen.go)
+Confirm the golden type-diff is clean before the gate: \`git -C ${wt(u)} diff HEAD\` — skipping regeneration means this unit is NOT done.
+` : ''}\
+  (cd ${wt(u)} && export PATH="/opt/homebrew/opt/go/bin:$PATH" && go build ./... && go test -cover -coverprofile=coverage.out -covermode atomic ./... && golangci-lint run)
+COMMIT all changes to ${branch(u)} with conventional messages (review reads the committed branch).
 Report the final command output verbatim.
 `
 
@@ -70,6 +109,7 @@ const GATE_SCHEMA = {
   properties: {
     branch: { type: 'string' },
     worktree: { type: 'string' },
+    collision: { type: 'boolean', description: 'true if the worktree/branch already existed (another run owns this unit) — NO work was done' },
     summary: { type: 'string', description: 'what changed' },
     buildPassed: { type: 'boolean' },
     testPassed: { type: 'boolean' },
@@ -100,63 +140,104 @@ const REVIEW_SCHEMA = {
 }
 
 if (!WAVE_ISSUES.length) {
-  log('No issues supplied. Populate WAVE_ISSUES (or pass them via the Workflow `args`) and relaunch.')
+  // Nothing ready: an empty wave is the EXPECTED signal when every candidate is blocked (deps not yet
+  // merged) or already claimed (in-progress/in-review). The main loop filters those out BEFORE launch
+  // (skill Step 0 + Step 2 dependency gate), so it should simply not launch — not call this with []. If it
+  // did, bail cleanly rather than spin up agents on no work.
+  log('No issues supplied — nothing ready to work (all candidates blocked, claimed, or none selected). Not launching.')
   return { error: 'empty-wave' }
 }
 
-const results = await pipeline(
-  WAVE_ISSUES,
+const UNITS = buildUnits(WAVE_ISSUES)
 
-  // Stage 1: Implement + Verify (fix loop) in an explicit, reusable worktree; commit to the branch.
-  (issue) => agent(
-    `${CONTRACT}\n\nISSUE #${issue.number}: ${issue.title}\nPLAN:\n${issue.plan}\nACCEPTANCE:\n${issue.acceptance}\nEDGE CASES:\n${issue.edgeCases}\n\nFirst create the worktree+branch:\n  git worktree add -b ${branch(issue)} ${wt(issue)} feat/2.0.0\nDo ALL work inside ${wt(issue)}. Implement the change, keep docs in sync.\n${verifyBlock(issue)}`,
-    { label: `impl:#${issue.number}`, phase: 'Implement', schema: GATE_SCHEMA },
-  ).then(r => ({ issue, gate: r })),
+// Dependency guard (hard backstop): a dependent and its blocker must NOT share a wave — units run in
+// parallel, so a dependency chain would race and the dependent would build against an unmerged blocker.
+// Cross-wave deps (blocker already merged) are the main loop's pre-flight job (skill Step 2), not checked
+// here. This only catches the catastrophic intra-wave case deterministically.
+const slugByNumber = new Map()
+for (const u of UNITS) for (const n of u.numbers) slugByNumber.set(n, u.slug)
+const intraWaveDeps = []
+for (const u of UNITS) {
+  for (const m of u.members) {
+    for (const dep of (m.dependsOn || [])) {
+      const depSlug = slugByNumber.get(dep)
+      if (depSlug && depSlug !== u.slug) intraWaveDeps.push(`#${m.number} (unit ${u.slug}) depends on #${dep} (unit ${depSlug}) — both in this wave`)
+    }
+  }
+}
+if (intraWaveDeps.length) {
+  log(`Dependency conflict — dependents share this wave with their blockers:\n  ${intraWaveDeps.join('\n  ')}\nSequence them into separate waves: merge the blocker first, then run the dependent.`)
+  return { error: 'intra-wave-dependency', conflicts: intraWaveDeps }
+}
+
+const results = await pipeline(
+  UNITS,
+
+  // Stage 1: Implement + Verify (fix loop) in a guarded, reusable worktree; commit to the branch.
+  (u) => agent(
+    `${CONTRACT}\n\nUNIT ${tag(u)} — ${u.title}\n` +
+    u.members.map(m => `--- ISSUE #${m.number}: ${m.title}\nPLAN:\n${m.plan}\nACCEPTANCE:\n${m.acceptance}\nEDGE CASES:\n${m.edgeCases}`).join('\n\n') +
+    `\n\nFIRST, guard against a concurrent run that already owns this unit, then create the worktree+branch:\n` +
+    `  if git show-ref --verify --quiet refs/heads/${branch(u)} || [ -e ${wt(u)} ]; then\n` +
+    `    echo "COLLISION: ${branch(u)} / ${wt(u)} already exists — another run owns this unit"\n` +
+    `  else\n` +
+    `    git worktree add -b ${branch(u)} ${wt(u)} feat/2.0.0\n` +
+    `  fi\n` +
+    `If you see COLLISION: STOP. Do NOT touch the existing worktree. Return the gate with collision:true and\n` +
+    `buildPassed/testPassed/lintPassed all false. Otherwise do ALL work inside ${wt(u)}; implement every\n` +
+    `member issue above and keep docs in sync.\n${verifyBlock(u)}`,
+    { label: `impl:${tag(u)}`, phase: 'Implement', schema: GATE_SCHEMA, model: 'sonnet' },
+  ).then(r => ({ unit: u, gate: r })),
 
   // Stage 2: Review — architect ‖ test-lead, read-only on the committed branch (shared refs; no new worktree).
-  // Short-circuit: if implement never went green, reviewing a broken branch is wasted — skip to reporting.
-  ({ issue, gate }) => {
-    if (!gate || !gate.buildPassed || !gate.testPassed || !gate.lintPassed) {
-      log(`#${issue.number}: implement gate RED — skipping review/remediate.`)
-      return { issue, gate, reviews: [], skipped: 'red-implement' }
+  // Short-circuit: collision or a never-green implement means reviewing is wasted — skip to reporting.
+  ({ unit, gate }) => {
+    if (!gate || gate.collision || !gate.buildPassed || !gate.testPassed || !gate.lintPassed) {
+      const why = gate && gate.collision ? 'COLLISION (another run owns it)' : 'implement gate RED'
+      log(`${tag(unit)}: ${why} — skipping review/remediate.`)
+      return { unit, gate, reviews: [], skipped: gate && gate.collision ? 'collision' : 'red-implement' }
     }
     return parallel([
     () => agent(
-      `You are a software architect reviewing issue #${issue.number} of the go-unifi 2.0.0 migration. Read-only: inspect the diff with \`git -C ${gate ? gate.worktree : wt(issue)} diff feat/2.0.0...HEAD\` (do not modify anything). Contract: docs/2.0.0/README.md.\n\nJudge the design, not just correctness:\n- KISS, DRY, SOLID — is it the simplest thing that works, free of duplication and over-engineering?\n- Code structure & separation of concerns — does each package/type/function have one clear responsibility?\n- Maintainability & testability — is it easy to change and to test in isolation (seams, no hidden coupling)?\n- Ease of understanding — would a new contributor grok it quickly? Clear naming, low cognitive load.\n- Design patterns & clean code — appropriate (not forced) patterns; no smells.\n- Idiomatic Go — proper use of structs/interfaces/errors/zero values; small interfaces; accept-interfaces-return-structs where it fits; context first.\n- Developer experience for LIBRARY CONSUMERS — is the public API intuitive, consistent, hard to misuse, well-typed? This is a published Go library; its ergonomics matter most.\n- Comments — short (≤2 lines) and explain WHY; flag noisy/obvious comments AND missing rationale on complex bits.\nAlso: API design, the hybrid legacy/OpenAPI seam (APIStyle), version gating (floor 9.0.114, OpenAPI from 10.1.68), no hand-edited generated code, breaking-change handling.\n\nWHAT CHANGED:\n${gate ? gate.summary : '(implementation failed)'}`,
-      { label: `arch:#${issue.number}`, phase: 'Review', schema: REVIEW_SCHEMA },
+      `You are a software architect reviewing unit ${tag(unit)} of the go-unifi 2.0.0 migration. Read-only: inspect the diff with \`git -C ${gate.worktree} diff feat/2.0.0...HEAD\` (do not modify anything). Contract: docs/2.0.0/README.md.\n\nJudge the design, not just correctness:\n- KISS, DRY, SOLID — is it the simplest thing that works, free of duplication and over-engineering?\n- Code structure & separation of concerns — does each package/type/function have one clear responsibility?\n- Maintainability & testability — is it easy to change and to test in isolation (seams, no hidden coupling)?\n- Ease of understanding — would a new contributor grok it quickly? Clear naming, low cognitive load.\n- Design patterns & clean code — appropriate (not forced) patterns; no smells.\n- Idiomatic Go — proper use of structs/interfaces/errors/zero values; small interfaces; accept-interfaces-return-structs where it fits; context first.\n- Developer experience for LIBRARY CONSUMERS — is the public API intuitive, consistent, hard to misuse, well-typed? This is a published Go library; its ergonomics matter most.\n- Comments — short (≤2 lines) and explain WHY; flag noisy/obvious comments AND missing rationale on complex bits.\nAlso: API design, the hybrid legacy/OpenAPI seam (APIStyle), version gating (floor 9.0.114, OpenAPI from 10.1.68), no hand-edited generated code, breaking-change handling.\n\nWHAT CHANGED:\n${gate.summary}`,
+      { label: `arch:${tag(unit)}`, phase: 'Review', schema: REVIEW_SCHEMA, model: 'opus' },
     ),
     () => agent(
-      `You are a test lead reviewing issue #${issue.number} of the go-unifi 2.0.0 migration. Read-only: inspect the diff with \`git -C ${gate ? gate.worktree : wt(issue)} diff feat/2.0.0...HEAD\`. Focus: test coverage for the change and its edge cases (${issue.edgeCases}), that acceptance criteria are actually tested, golden type-diffs for codegen changes, no flaky/over-mocked tests, docs accuracy. Contract: docs/2.0.0/README.md and .claude/rules/testing.md.\n\nWHAT CHANGED:\n${gate ? gate.summary : '(implementation failed)'}`,
-      { label: `test:#${issue.number}`, phase: 'Review', schema: REVIEW_SCHEMA },
+      `You are a test lead reviewing unit ${tag(unit)} of the go-unifi 2.0.0 migration. Read-only: inspect the diff with \`git -C ${gate.worktree} diff feat/2.0.0...HEAD\`. Focus: test coverage for the change and its edge cases (${unit.edgeCases}), that acceptance criteria are actually tested, golden type-diffs for codegen changes, no flaky/over-mocked tests, docs accuracy. Contract: docs/2.0.0/README.md and .claude/rules/testing.md.\n\nWHAT CHANGED:\n${gate.summary}`,
+      { label: `test:${tag(unit)}`, phase: 'Review', schema: REVIEW_SCHEMA, model: 'opus' },
     ),
-    ]).then(reviews => ({ issue, gate, reviews: reviews.filter(Boolean) }))
+    ]).then(reviews => ({ unit, gate, reviews: reviews.filter(Boolean) }))
   },
 
   // Stage 3: Remediate (gated on blocker/major) in the SAME worktree, then re-Verify. Skips cleanly if none.
-  ({ issue, gate, reviews }) => {
-    if (!reviews.length) return { issue, gate, reviews, remediated: false }   // red implement or no findings upstream
+  ({ unit, gate, reviews }) => {
+    if (!reviews.length) return { unit, gate, reviews, remediated: false }   // collision, red implement, or no findings
     const actionable = reviews.flatMap(r => r.findings.filter(f => f.severity === 'blocker' || f.severity === 'major'))
-    if (!actionable.length) return { issue, gate, reviews, remediated: false }
+    if (!actionable.length) return { unit, gate, reviews, remediated: false }
     return agent(
-      `${CONTRACT}\n\nISSUE #${issue.number}. Work in the EXISTING worktree ${gate.worktree} on branch ${gate.branch} (do NOT create a new worktree). Apply ONLY these blocker/major review findings, then re-run the full gate until green. Minor/nits: leave a note, do not fix here.\n\nFINDINGS:\n${actionable.map((f, i) => `${i + 1}. [${f.severity}] ${f.issue}\n   FIX: ${f.fix}`).join('\n')}\n${verifyBlock(issue)}`,
-      { label: `remediate:#${issue.number}`, phase: 'Remediate', schema: GATE_SCHEMA },
-    ).then(g => ({ issue, gate: g || gate, reviews, remediated: true }))
+      `${CONTRACT}\n\nUNIT ${tag(unit)}. Work in the EXISTING worktree ${gate.worktree} on branch ${gate.branch} (do NOT create a new worktree). Apply ONLY these blocker/major review findings, then re-run the full gate until green. Minor/nits: leave a note, do not fix here.\n\nFINDINGS:\n${actionable.map((f, i) => `${i + 1}. [${f.severity}] ${f.issue}\n   FIX: ${f.fix}`).join('\n')}\n${verifyBlock(unit)}`,
+      { label: `remediate:${tag(unit)}`, phase: 'Remediate', schema: GATE_SCHEMA, model: 'sonnet' },
+    ).then(g => ({ unit, gate: g || gate, reviews, remediated: true }))
   },
 )
 
 const clean = results.filter(Boolean)
 return {
   wave: clean.map(r => ({
-    issue: r.issue.number,
+    issues: r.unit.numbers,
+    scope: r.unit.scope,
     branch: r.gate && r.gate.branch,
     worktree: r.gate && r.gate.worktree,
-    green: !!(r.gate && r.gate.buildPassed && r.gate.testPassed && r.gate.lintPassed),
+    collision: !!(r.gate && r.gate.collision),
+    green: !!(r.gate && !r.gate.collision && r.gate.buildPassed && r.gate.testPassed && r.gate.lintPassed),
     docsSynced: r.gate && r.gate.docsSynced,
     breakingChanges: r.gate && r.gate.breakingChanges,
     remediated: r.remediated,
     deferredFindings: r.reviews.flatMap(rv => rv.findings.filter(f => f.severity === 'minor' || f.severity === 'nit')),
   })),
-  // NEXT (main loop, only for green issues): from each worktree, `gh pr create --base feat/2.0.0` (add the
-  // `breaking` label if breakingChanges != "none"); after merge `gh issue close <N>`; then `git worktree
-  // remove <worktree>`. Auto-close does not fire for PRs into feat/2.0.0.
+  // NEXT (main loop, only for GREEN, non-collision units): from each worktree `gh pr create --base
+  // feat/2.0.0` referencing EVERY member issue (add `breaking` label if breakingChanges != "none"); on PR
+  // open swap each member's label `in-progress` -> `in-review`; after merge `gh issue edit --remove-label
+  // in-review` + `gh issue close`; then `git worktree remove`. For collision/red units, release the claim:
+  // `gh issue edit <N> --remove-label in-progress`. Auto-close does not fire for PRs into feat/2.0.0.
 }
