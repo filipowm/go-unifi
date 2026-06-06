@@ -266,82 +266,22 @@ func (e DevicePendingAdoptionState) Valid() bool {
 
 // Defines values for FirewallPolicyConnectionStateFilter.
 const (
-	FirewallPolicyConnectionStateFilterESTABLISHED FirewallPolicyConnectionStateFilter = "ESTABLISHED"
-	FirewallPolicyConnectionStateFilterINVALID     FirewallPolicyConnectionStateFilter = "INVALID"
-	FirewallPolicyConnectionStateFilterNEW         FirewallPolicyConnectionStateFilter = "NEW"
-	FirewallPolicyConnectionStateFilterRELATED     FirewallPolicyConnectionStateFilter = "RELATED"
+	ESTABLISHED FirewallPolicyConnectionStateFilter = "ESTABLISHED"
+	INVALID     FirewallPolicyConnectionStateFilter = "INVALID"
+	NEW         FirewallPolicyConnectionStateFilter = "NEW"
+	RELATED     FirewallPolicyConnectionStateFilter = "RELATED"
 )
 
 // Valid indicates whether the value is a known member of the FirewallPolicyConnectionStateFilter enum.
 func (e FirewallPolicyConnectionStateFilter) Valid() bool {
 	switch e {
-	case FirewallPolicyConnectionStateFilterESTABLISHED:
+	case ESTABLISHED:
 		return true
-	case FirewallPolicyConnectionStateFilterINVALID:
+	case INVALID:
 		return true
-	case FirewallPolicyConnectionStateFilterNEW:
+	case NEW:
 		return true
-	case FirewallPolicyConnectionStateFilterRELATED:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for FirewallPolicyIpsecFilter.
-const (
-	FirewallPolicyIpsecFilterMATCHENCRYPTED    FirewallPolicyIpsecFilter = "MATCH_ENCRYPTED"
-	FirewallPolicyIpsecFilterMATCHNOTENCRYPTED FirewallPolicyIpsecFilter = "MATCH_NOT_ENCRYPTED"
-)
-
-// Valid indicates whether the value is a known member of the FirewallPolicyIpsecFilter enum.
-func (e FirewallPolicyIpsecFilter) Valid() bool {
-	switch e {
-	case FirewallPolicyIpsecFilterMATCHENCRYPTED:
-		return true
-	case FirewallPolicyIpsecFilterMATCHNOTENCRYPTED:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for FirewallPolicyCreateOrUpdateConnectionStateFilter.
-const (
-	FirewallPolicyCreateOrUpdateConnectionStateFilterESTABLISHED FirewallPolicyCreateOrUpdateConnectionStateFilter = "ESTABLISHED"
-	FirewallPolicyCreateOrUpdateConnectionStateFilterINVALID     FirewallPolicyCreateOrUpdateConnectionStateFilter = "INVALID"
-	FirewallPolicyCreateOrUpdateConnectionStateFilterNEW         FirewallPolicyCreateOrUpdateConnectionStateFilter = "NEW"
-	FirewallPolicyCreateOrUpdateConnectionStateFilterRELATED     FirewallPolicyCreateOrUpdateConnectionStateFilter = "RELATED"
-)
-
-// Valid indicates whether the value is a known member of the FirewallPolicyCreateOrUpdateConnectionStateFilter enum.
-func (e FirewallPolicyCreateOrUpdateConnectionStateFilter) Valid() bool {
-	switch e {
-	case FirewallPolicyCreateOrUpdateConnectionStateFilterESTABLISHED:
-		return true
-	case FirewallPolicyCreateOrUpdateConnectionStateFilterINVALID:
-		return true
-	case FirewallPolicyCreateOrUpdateConnectionStateFilterNEW:
-		return true
-	case FirewallPolicyCreateOrUpdateConnectionStateFilterRELATED:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for FirewallPolicyCreateOrUpdateIpsecFilter.
-const (
-	FirewallPolicyCreateOrUpdateIpsecFilterMATCHENCRYPTED    FirewallPolicyCreateOrUpdateIpsecFilter = "MATCH_ENCRYPTED"
-	FirewallPolicyCreateOrUpdateIpsecFilterMATCHNOTENCRYPTED FirewallPolicyCreateOrUpdateIpsecFilter = "MATCH_NOT_ENCRYPTED"
-)
-
-// Valid indicates whether the value is a known member of the FirewallPolicyCreateOrUpdateIpsecFilter enum.
-func (e FirewallPolicyCreateOrUpdateIpsecFilter) Valid() bool {
-	switch e {
-	case FirewallPolicyCreateOrUpdateIpsecFilterMATCHENCRYPTED:
-		return true
-	case FirewallPolicyCreateOrUpdateIpsecFilterMATCHNOTENCRYPTED:
+	case RELATED:
 		return true
 	default:
 		return false
@@ -873,6 +813,24 @@ func (e FirewallPolicyIPv6NamedProtocolName) Valid() bool {
 	case FirewallPolicyIPv6NamedProtocolNameXnsIdp:
 		return true
 	case FirewallPolicyIPv6NamedProtocolNameXtp:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for FirewallPolicyIpsecFilter.
+const (
+	MATCHENCRYPTED    FirewallPolicyIpsecFilter = "MATCH_ENCRYPTED"
+	MATCHNOTENCRYPTED FirewallPolicyIpsecFilter = "MATCH_NOT_ENCRYPTED"
+)
+
+// Valid indicates whether the value is a known member of the FirewallPolicyIpsecFilter enum.
+func (e FirewallPolicyIpsecFilter) Valid() bool {
+	switch e {
+	case MATCHENCRYPTED:
+		return true
+	case MATCHNOTENCRYPTED:
 		return true
 	default:
 		return false
@@ -2279,34 +2237,16 @@ func (e GuestAuthorizationDetailsAuthorizationMethod) Valid() bool {
 
 // Defines values for IpAclRuleProtocolFilter.
 const (
-	IpAclRuleProtocolFilterTCP IpAclRuleProtocolFilter = "TCP"
-	IpAclRuleProtocolFilterUDP IpAclRuleProtocolFilter = "UDP"
+	TCP IpAclRuleProtocolFilter = "TCP"
+	UDP IpAclRuleProtocolFilter = "UDP"
 )
 
 // Valid indicates whether the value is a known member of the IpAclRuleProtocolFilter enum.
 func (e IpAclRuleProtocolFilter) Valid() bool {
 	switch e {
-	case IpAclRuleProtocolFilterTCP:
+	case TCP:
 		return true
-	case IpAclRuleProtocolFilterUDP:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for IpAclRuleCreateUpdateProtocolFilter.
-const (
-	IpAclRuleCreateUpdateProtocolFilterTCP IpAclRuleCreateUpdateProtocolFilter = "TCP"
-	IpAclRuleCreateUpdateProtocolFilterUDP IpAclRuleCreateUpdateProtocolFilter = "UDP"
-)
-
-// Valid indicates whether the value is a known member of the IpAclRuleCreateUpdateProtocolFilter enum.
-func (e IpAclRuleCreateUpdateProtocolFilter) Valid() bool {
-	switch e {
-	case IpAclRuleCreateUpdateProtocolFilterTCP:
-		return true
-	case IpAclRuleCreateUpdateProtocolFilterUDP:
+	case UDP:
 		return true
 	default:
 		return false
@@ -3683,9 +3623,7 @@ type FirewallPolicy struct {
 
 	// IpProtocolScope Defines rules for matching by IP version and protocol.
 	IpProtocolScope FirewallPolicyIPProtocolScope `json:"ipProtocolScope"`
-
-	// IpsecFilter Match on traffic encrypted, or not encrypted by IPsec. If null, matches all traffic.
-	IpsecFilter *FirewallPolicyIpsecFilter `json:"ipsecFilter,omitempty"`
+	IpsecFilter     *FirewallPolicyIpsecFilter    `json:"ipsecFilter,omitempty"`
 
 	// LoggingEnabled Generate syslog entries when traffic is matched. Such entries are sent to a remote syslog server.
 	LoggingEnabled bool                                       `json:"loggingEnabled"`
@@ -3696,12 +3634,6 @@ type FirewallPolicy struct {
 	Schedule *FirewallSchedule    `json:"schedule,omitempty"`
 	Source   FirewallPolicySource `json:"source"`
 }
-
-// FirewallPolicyConnectionStateFilter defines model for FirewallPolicy.ConnectionStateFilter.
-type FirewallPolicyConnectionStateFilter string
-
-// FirewallPolicyIpsecFilter Match on traffic encrypted, or not encrypted by IPsec. If null, matches all traffic.
-type FirewallPolicyIpsecFilter string
 
 // FirewallPolicyAction Defines action for matched traffic.
 type FirewallPolicyAction struct {
@@ -3735,22 +3667,23 @@ type FirewallPolicyApplicationFilter struct {
 	ApplicationIds []int32 `json:"applicationIds"`
 }
 
+// FirewallPolicyConnectionStateFilter defines model for FirewallPolicyConnectionStateFilter.
+type FirewallPolicyConnectionStateFilter string
+
 // FirewallPolicyCreateOrUpdate defines model for FirewallPolicyCreateOrUpdate.
 type FirewallPolicyCreateOrUpdate struct {
 	// Action Defines action for matched traffic.
 	Action FirewallPolicyAction `json:"action"`
 
 	// ConnectionStateFilter Match on firewall connection state. If null, matches all connection states.
-	ConnectionStateFilter *[]FirewallPolicyCreateOrUpdateConnectionStateFilter `json:"connectionStateFilter,omitempty"`
-	Description           *string                                              `json:"description,omitempty"`
-	Destination           FirewallPolicyDestination                            `json:"destination"`
-	Enabled               bool                                                 `json:"enabled"`
+	ConnectionStateFilter *[]FirewallPolicyConnectionStateFilter `json:"connectionStateFilter,omitempty"`
+	Description           *string                                `json:"description,omitempty"`
+	Destination           FirewallPolicyDestination              `json:"destination"`
+	Enabled               bool                                   `json:"enabled"`
 
 	// IpProtocolScope Defines rules for matching by IP version and protocol.
 	IpProtocolScope FirewallPolicyIPProtocolScope `json:"ipProtocolScope"`
-
-	// IpsecFilter Match on traffic encrypted, or not encrypted by IPsec. If null, matches all traffic.
-	IpsecFilter *FirewallPolicyCreateOrUpdateIpsecFilter `json:"ipsecFilter,omitempty"`
+	IpsecFilter     *FirewallPolicyIpsecFilter    `json:"ipsecFilter,omitempty"`
 
 	// LoggingEnabled Generate syslog entries when traffic is matched. Such entries are sent to a remote syslog server.
 	LoggingEnabled bool   `json:"loggingEnabled"`
@@ -3760,12 +3693,6 @@ type FirewallPolicyCreateOrUpdate struct {
 	Schedule *FirewallSchedule    `json:"schedule,omitempty"`
 	Source   FirewallPolicySource `json:"source"`
 }
-
-// FirewallPolicyCreateOrUpdateConnectionStateFilter defines model for FirewallPolicyCreateOrUpdate.ConnectionStateFilter.
-type FirewallPolicyCreateOrUpdateConnectionStateFilter string
-
-// FirewallPolicyCreateOrUpdateIpsecFilter Match on traffic encrypted, or not encrypted by IPsec. If null, matches all traffic.
-type FirewallPolicyCreateOrUpdateIpsecFilter string
 
 // FirewallPolicyDestination defines model for FirewallPolicyDestination.
 type FirewallPolicyDestination struct {
@@ -4030,6 +3957,9 @@ type FirewallPolicyIpMatchingSubnet struct {
 	Value *string `json:"value,omitempty"`
 	union json.RawMessage
 }
+
+// FirewallPolicyIpsecFilter defines model for FirewallPolicyIpsecFilter.
+type FirewallPolicyIpsecFilter string
 
 // FirewallPolicyIpv4AndIpv6NamedProtocolDefault Defines rules for matching by protocol name.
 type FirewallPolicyIpv4AndIpv6NamedProtocolDefault = FirewallPolicyIPv4AndIPv6NamedProtocol
@@ -4884,9 +4814,6 @@ type IpAclRule struct {
 	union        json.RawMessage
 }
 
-// IpAclRuleProtocolFilter defines model for IpAclRule.ProtocolFilter.
-type IpAclRuleProtocolFilter string
-
 // IpAclRuleCreateUpdate defines model for IpAclRuleCreateUpdate.
 type IpAclRuleCreateUpdate struct {
 	Action ACLRuleAction `json:"action"`
@@ -4905,14 +4832,11 @@ type IpAclRuleCreateUpdate struct {
 	Name string `json:"name"`
 
 	// ProtocolFilter Protocols this ACL rule will be applied to. When null, the rule will be applied to all protocols.
-	ProtocolFilter *[]IpAclRuleCreateUpdateProtocolFilter `json:"protocolFilter,omitempty"`
-	SourceFilter   *IPACLRuleEndpoint                     `json:"sourceFilter,omitempty"`
-	Type           string                                 `json:"type"`
+	ProtocolFilter *[]IpAclRuleProtocolFilter `json:"protocolFilter,omitempty"`
+	SourceFilter   *IPACLRuleEndpoint         `json:"sourceFilter,omitempty"`
+	Type           string                     `json:"type"`
 	union          json.RawMessage
 }
-
-// IpAclRuleCreateUpdateProtocolFilter defines model for IpAclRuleCreateUpdate.ProtocolFilter.
-type IpAclRuleCreateUpdateProtocolFilter string
 
 // IpAclRuleNetworkEndpointFilter defines model for IpAclRuleNetworkEndpointFilter.
 type IpAclRuleNetworkEndpointFilter struct {
@@ -4921,6 +4845,9 @@ type IpAclRuleNetworkEndpointFilter struct {
 	Type       string                `json:"type"`
 	union      json.RawMessage
 }
+
+// IpAclRuleProtocolFilter defines model for IpAclRuleProtocolFilter.
+type IpAclRuleProtocolFilter string
 
 // IpAclRuleSubnetEndpointFilter defines model for IpAclRuleSubnetEndpointFilter.
 type IpAclRuleSubnetEndpointFilter struct {

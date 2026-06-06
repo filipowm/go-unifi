@@ -66,6 +66,17 @@ func TestGeneratedSurface(t *testing.T) {
 	assert.NotContains(t, code, "Dto struct")
 	assert.Contains(t, code, "type ACLRuleAction string")
 	assert.NotContains(t, code, "ACLRuleObjectAction")
+	// Detail vs create-or-update enums collapsed onto the detail-shape names.
+	for _, gone := range []string{
+		"FirewallPolicyCreateOrUpdateConnectionStateFilter",
+		"FirewallPolicyCreateOrUpdateIpsecFilter",
+		"IpAclRuleCreateUpdateProtocolFilter",
+	} {
+		assert.NotContains(t, code, gone)
+	}
+	assert.Contains(t, code, "type FirewallPolicyConnectionStateFilter string")
+	assert.Contains(t, code, "type FirewallPolicyIpsecFilter string")
+	assert.Contains(t, code, "type IpAclRuleProtocolFilter string")
 	assert.Contains(t, code, "type FirewallPolicyActionBlock = FirewallPolicyAction")
 	// Hand-written collisions are deferred to the hand-written siblings.
 	assert.NotContains(t, code, "type SiteOverview struct")
