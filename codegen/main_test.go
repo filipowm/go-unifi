@@ -4,6 +4,8 @@ import (
 	"context"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/sirupsen/logrus"
@@ -159,7 +161,8 @@ func TestGenerateLatest(t *testing.T) {
 	skipIfShort(t)
 	r := require.New(t)
 
-	opts := &options{version: LatestVersionMarker}
+	root := t.TempDir()
+	opts := &options{version: LatestVersionMarker, outputDir: filepath.Join(root, "unifi")}
 
 	err := testGenerate(t, opts)
 	r.NoError(err)
@@ -171,6 +174,16 @@ func TestGenerateLatest(t *testing.T) {
 	files, err = os.ReadDir(opts.outputDir)
 	r.NoError(err)
 	assert.NotEmptyf(t, files, "output dir '%s' should not be empty", opts.outputDir)
+
+	// Marker is written beside outDir (at root), not in cwd, and matches version.generated.go.
+	marker, err := os.ReadFile(filepath.Join(root, ".unifi-version"))
+	r.NoError(err)
+	version := strings.TrimSpace(string(marker))
+	r.NotEmpty(version)
+
+	versionGo, err := os.ReadFile(filepath.Join(opts.outputDir, "version.generated.go"))
+	r.NoError(err)
+	assert.Contains(t, string(versionGo), `"`+version+`"`, "marker must match version.generated.go")
 }
 
 func TestGenerateDownloadOnly(t *testing.T) {
