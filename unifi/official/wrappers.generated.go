@@ -15,7 +15,7 @@ func (c *apiClient) AdoptDevice(ctx context.Context, siteId string, body DeviceA
 		return nil, err
 	}
 	var out AdoptedDeviceDetails
-	if err := c.doer.Post(ctx, c.path(fmt.Sprintf("/sites/%s/devices", siteId)), body, &out); err != nil {
+	if err := c.doer.Post(ctx, c.path(fmt.Sprintf("/sites/%s/devices", url.PathEscape(siteId))), body, &out); err != nil {
 		return nil, fmt.Errorf("failed AdoptDevice: %w", err)
 	}
 	return &out, nil
@@ -27,7 +27,7 @@ func (c *apiClient) CreateAclRule(ctx context.Context, siteId string, body ACLRu
 		return nil, err
 	}
 	var out ACLRule
-	if err := c.doer.Post(ctx, c.path(fmt.Sprintf("/sites/%s/acl-rules", siteId)), body, &out); err != nil {
+	if err := c.doer.Post(ctx, c.path(fmt.Sprintf("/sites/%s/acl-rules", url.PathEscape(siteId))), body, &out); err != nil {
 		return nil, fmt.Errorf("failed CreateAclRule: %w", err)
 	}
 	return &out, nil
@@ -39,7 +39,7 @@ func (c *apiClient) CreateDnsPolicy(ctx context.Context, siteId string, body DNS
 		return nil, err
 	}
 	var out DNSPolicy
-	if err := c.doer.Post(ctx, c.path(fmt.Sprintf("/sites/%s/dns/policies", siteId)), body, &out); err != nil {
+	if err := c.doer.Post(ctx, c.path(fmt.Sprintf("/sites/%s/dns/policies", url.PathEscape(siteId))), body, &out); err != nil {
 		return nil, fmt.Errorf("failed CreateDnsPolicy: %w", err)
 	}
 	return &out, nil
@@ -51,7 +51,7 @@ func (c *apiClient) CreateFirewallPolicy(ctx context.Context, siteId string, bod
 		return nil, err
 	}
 	var out FirewallPolicy
-	if err := c.doer.Post(ctx, c.path(fmt.Sprintf("/sites/%s/firewall/policies", siteId)), body, &out); err != nil {
+	if err := c.doer.Post(ctx, c.path(fmt.Sprintf("/sites/%s/firewall/policies", url.PathEscape(siteId))), body, &out); err != nil {
 		return nil, fmt.Errorf("failed CreateFirewallPolicy: %w", err)
 	}
 	return &out, nil
@@ -63,7 +63,7 @@ func (c *apiClient) CreateFirewallZone(ctx context.Context, siteId string, body 
 		return nil, err
 	}
 	var out FirewallZone
-	if err := c.doer.Post(ctx, c.path(fmt.Sprintf("/sites/%s/firewall/zones", siteId)), body, &out); err != nil {
+	if err := c.doer.Post(ctx, c.path(fmt.Sprintf("/sites/%s/firewall/zones", url.PathEscape(siteId))), body, &out); err != nil {
 		return nil, fmt.Errorf("failed CreateFirewallZone: %w", err)
 	}
 	return &out, nil
@@ -75,7 +75,7 @@ func (c *apiClient) CreateNetwork(ctx context.Context, siteId string, body Netwo
 		return nil, err
 	}
 	var out NetworkDetails
-	if err := c.doer.Post(ctx, c.path(fmt.Sprintf("/sites/%s/networks", siteId)), body, &out); err != nil {
+	if err := c.doer.Post(ctx, c.path(fmt.Sprintf("/sites/%s/networks", url.PathEscape(siteId))), body, &out); err != nil {
 		return nil, fmt.Errorf("failed CreateNetwork: %w", err)
 	}
 	return &out, nil
@@ -87,7 +87,7 @@ func (c *apiClient) CreateTrafficMatchingList(ctx context.Context, siteId string
 		return nil, err
 	}
 	var out TrafficMatchingList
-	if err := c.doer.Post(ctx, c.path(fmt.Sprintf("/sites/%s/traffic-matching-lists", siteId)), body, &out); err != nil {
+	if err := c.doer.Post(ctx, c.path(fmt.Sprintf("/sites/%s/traffic-matching-lists", url.PathEscape(siteId))), body, &out); err != nil {
 		return nil, fmt.Errorf("failed CreateTrafficMatchingList: %w", err)
 	}
 	return &out, nil
@@ -99,7 +99,7 @@ func (c *apiClient) CreateVouchers(ctx context.Context, siteId string, body Hots
 		return nil, err
 	}
 	var out VoucherCreationResult
-	if err := c.doer.Post(ctx, c.path(fmt.Sprintf("/sites/%s/hotspot/vouchers", siteId)), body, &out); err != nil {
+	if err := c.doer.Post(ctx, c.path(fmt.Sprintf("/sites/%s/hotspot/vouchers", url.PathEscape(siteId))), body, &out); err != nil {
 		return nil, fmt.Errorf("failed CreateVouchers: %w", err)
 	}
 	return &out, nil
@@ -111,7 +111,7 @@ func (c *apiClient) CreateWifiBroadcast(ctx context.Context, siteId string, body
 		return nil, err
 	}
 	var out WifiBroadcastDetails
-	if err := c.doer.Post(ctx, c.path(fmt.Sprintf("/sites/%s/wifi/broadcasts", siteId)), body, &out); err != nil {
+	if err := c.doer.Post(ctx, c.path(fmt.Sprintf("/sites/%s/wifi/broadcasts", url.PathEscape(siteId))), body, &out); err != nil {
 		return nil, fmt.Errorf("failed CreateWifiBroadcast: %w", err)
 	}
 	return &out, nil
@@ -122,7 +122,7 @@ func (c *apiClient) DeleteAclRule(ctx context.Context, siteId string, aclRuleId 
 	if err := c.check(ctx); err != nil {
 		return err
 	}
-	if err := c.doer.Delete(ctx, c.path(fmt.Sprintf("/sites/%s/acl-rules/%s", siteId, aclRuleId)), nil, nil); err != nil {
+	if err := c.doer.Delete(ctx, c.path(fmt.Sprintf("/sites/%s/acl-rules/%s", url.PathEscape(siteId), url.PathEscape(aclRuleId))), nil, nil); err != nil {
 		return fmt.Errorf("failed DeleteAclRule: %w", err)
 	}
 	return nil
@@ -133,7 +133,7 @@ func (c *apiClient) DeleteDnsPolicy(ctx context.Context, siteId string, dnsPolic
 	if err := c.check(ctx); err != nil {
 		return err
 	}
-	if err := c.doer.Delete(ctx, c.path(fmt.Sprintf("/sites/%s/dns/policies/%s", siteId, dnsPolicyId)), nil, nil); err != nil {
+	if err := c.doer.Delete(ctx, c.path(fmt.Sprintf("/sites/%s/dns/policies/%s", url.PathEscape(siteId), url.PathEscape(dnsPolicyId))), nil, nil); err != nil {
 		return fmt.Errorf("failed DeleteDnsPolicy: %w", err)
 	}
 	return nil
@@ -144,7 +144,7 @@ func (c *apiClient) DeleteFirewallPolicy(ctx context.Context, siteId string, fir
 	if err := c.check(ctx); err != nil {
 		return err
 	}
-	if err := c.doer.Delete(ctx, c.path(fmt.Sprintf("/sites/%s/firewall/policies/%s", siteId, firewallPolicyId)), nil, nil); err != nil {
+	if err := c.doer.Delete(ctx, c.path(fmt.Sprintf("/sites/%s/firewall/policies/%s", url.PathEscape(siteId), url.PathEscape(firewallPolicyId))), nil, nil); err != nil {
 		return fmt.Errorf("failed DeleteFirewallPolicy: %w", err)
 	}
 	return nil
@@ -155,7 +155,7 @@ func (c *apiClient) DeleteFirewallZone(ctx context.Context, siteId string, firew
 	if err := c.check(ctx); err != nil {
 		return err
 	}
-	if err := c.doer.Delete(ctx, c.path(fmt.Sprintf("/sites/%s/firewall/zones/%s", siteId, firewallZoneId)), nil, nil); err != nil {
+	if err := c.doer.Delete(ctx, c.path(fmt.Sprintf("/sites/%s/firewall/zones/%s", url.PathEscape(siteId), url.PathEscape(firewallZoneId))), nil, nil); err != nil {
 		return fmt.Errorf("failed DeleteFirewallZone: %w", err)
 	}
 	return nil
@@ -166,7 +166,7 @@ func (c *apiClient) DeleteNetwork(ctx context.Context, siteId string, networkId 
 	if err := c.check(ctx); err != nil {
 		return err
 	}
-	if err := c.doer.Delete(ctx, c.path(fmt.Sprintf("/sites/%s/networks/%s", siteId, networkId)), nil, nil); err != nil {
+	if err := c.doer.Delete(ctx, c.path(fmt.Sprintf("/sites/%s/networks/%s", url.PathEscape(siteId), url.PathEscape(networkId))), nil, nil); err != nil {
 		return fmt.Errorf("failed DeleteNetwork: %w", err)
 	}
 	return nil
@@ -177,7 +177,7 @@ func (c *apiClient) DeleteTrafficMatchingList(ctx context.Context, siteId string
 	if err := c.check(ctx); err != nil {
 		return err
 	}
-	if err := c.doer.Delete(ctx, c.path(fmt.Sprintf("/sites/%s/traffic-matching-lists/%s", siteId, trafficMatchingListId)), nil, nil); err != nil {
+	if err := c.doer.Delete(ctx, c.path(fmt.Sprintf("/sites/%s/traffic-matching-lists/%s", url.PathEscape(siteId), url.PathEscape(trafficMatchingListId))), nil, nil); err != nil {
 		return fmt.Errorf("failed DeleteTrafficMatchingList: %w", err)
 	}
 	return nil
@@ -189,7 +189,7 @@ func (c *apiClient) DeleteVoucher(ctx context.Context, siteId string, voucherId 
 		return nil, err
 	}
 	var out VoucherDeletionResults
-	if err := c.doer.Delete(ctx, c.path(fmt.Sprintf("/sites/%s/hotspot/vouchers/%s", siteId, voucherId)), nil, &out); err != nil {
+	if err := c.doer.Delete(ctx, c.path(fmt.Sprintf("/sites/%s/hotspot/vouchers/%s", url.PathEscape(siteId), url.PathEscape(voucherId))), nil, &out); err != nil {
 		return nil, fmt.Errorf("failed DeleteVoucher: %w", err)
 	}
 	return &out, nil
@@ -204,7 +204,7 @@ func (c *apiClient) DeleteVouchers(ctx context.Context, siteId string, filter st
 		return nil, errors.New("filter must not be empty")
 	}
 	var out VoucherDeletionResults
-	if err := c.doer.Delete(ctx, c.path(fmt.Sprintf("/sites/%s/hotspot/vouchers?filter=%s", siteId, url.QueryEscape(filter))), nil, &out); err != nil {
+	if err := c.doer.Delete(ctx, c.path(fmt.Sprintf("/sites/%s/hotspot/vouchers?filter=%s", url.PathEscape(siteId), url.QueryEscape(filter))), nil, &out); err != nil {
 		return nil, fmt.Errorf("failed DeleteVouchers: %w", err)
 	}
 	return &out, nil
@@ -215,7 +215,7 @@ func (c *apiClient) DeleteWifiBroadcast(ctx context.Context, siteId string, wifi
 	if err := c.check(ctx); err != nil {
 		return err
 	}
-	if err := c.doer.Delete(ctx, c.path(fmt.Sprintf("/sites/%s/wifi/broadcasts/%s", siteId, wifiBroadcastId)), nil, nil); err != nil {
+	if err := c.doer.Delete(ctx, c.path(fmt.Sprintf("/sites/%s/wifi/broadcasts/%s", url.PathEscape(siteId), url.PathEscape(wifiBroadcastId))), nil, nil); err != nil {
 		return fmt.Errorf("failed DeleteWifiBroadcast: %w", err)
 	}
 	return nil
@@ -226,7 +226,7 @@ func (c *apiClient) ExecuteAdoptedDeviceAction(ctx context.Context, siteId strin
 	if err := c.check(ctx); err != nil {
 		return err
 	}
-	if err := c.doer.Post(ctx, c.path(fmt.Sprintf("/sites/%s/devices/%s/actions", siteId, deviceId)), body, nil); err != nil {
+	if err := c.doer.Post(ctx, c.path(fmt.Sprintf("/sites/%s/devices/%s/actions", url.PathEscape(siteId), url.PathEscape(deviceId))), body, nil); err != nil {
 		return fmt.Errorf("failed ExecuteAdoptedDeviceAction: %w", err)
 	}
 	return nil
@@ -238,7 +238,7 @@ func (c *apiClient) ExecuteConnectedClientAction(ctx context.Context, siteId str
 		return nil, err
 	}
 	var out ClientActionResponse
-	if err := c.doer.Post(ctx, c.path(fmt.Sprintf("/sites/%s/clients/%s/actions", siteId, clientId)), body, &out); err != nil {
+	if err := c.doer.Post(ctx, c.path(fmt.Sprintf("/sites/%s/clients/%s/actions", url.PathEscape(siteId), url.PathEscape(clientId))), body, &out); err != nil {
 		return nil, fmt.Errorf("failed ExecuteConnectedClientAction: %w", err)
 	}
 	return &out, nil
@@ -249,7 +249,7 @@ func (c *apiClient) ExecutePortAction(ctx context.Context, siteId string, device
 	if err := c.check(ctx); err != nil {
 		return err
 	}
-	if err := c.doer.Post(ctx, c.path(fmt.Sprintf("/sites/%s/devices/%s/interfaces/ports/%s/actions", siteId, deviceId, portIdx)), body, nil); err != nil {
+	if err := c.doer.Post(ctx, c.path(fmt.Sprintf("/sites/%s/devices/%s/interfaces/ports/%s/actions", url.PathEscape(siteId), url.PathEscape(deviceId), url.PathEscape(portIdx))), body, nil); err != nil {
 		return fmt.Errorf("failed ExecutePortAction: %w", err)
 	}
 	return nil
@@ -261,7 +261,7 @@ func (c *apiClient) GetAclRule(ctx context.Context, siteId string, aclRuleId str
 		return nil, err
 	}
 	var out ACLRule
-	if err := c.doer.Get(ctx, c.path(fmt.Sprintf("/sites/%s/acl-rules/%s", siteId, aclRuleId)), nil, &out); err != nil {
+	if err := c.doer.Get(ctx, c.path(fmt.Sprintf("/sites/%s/acl-rules/%s", url.PathEscape(siteId), url.PathEscape(aclRuleId))), nil, &out); err != nil {
 		return nil, fmt.Errorf("failed GetAclRule: %w", err)
 	}
 	return &out, nil
@@ -273,7 +273,7 @@ func (c *apiClient) GetAclRuleOrdering(ctx context.Context, siteId string) (*ACL
 		return nil, err
 	}
 	var out ACLRuleOrdering
-	if err := c.doer.Get(ctx, c.path(fmt.Sprintf("/sites/%s/acl-rules/ordering", siteId)), nil, &out); err != nil {
+	if err := c.doer.Get(ctx, c.path(fmt.Sprintf("/sites/%s/acl-rules/ordering", url.PathEscape(siteId))), nil, &out); err != nil {
 		return nil, fmt.Errorf("failed GetAclRuleOrdering: %w", err)
 	}
 	return &out, nil
@@ -285,7 +285,7 @@ func (c *apiClient) GetAclRulePage(ctx context.Context, siteId string) ([]ACLRul
 		return nil, err
 	}
 	var out []ACLRuleObject
-	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/acl-rules", siteId)), &out); err != nil {
+	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/acl-rules", url.PathEscape(siteId))), &out); err != nil {
 		return nil, fmt.Errorf("failed GetAclRulePage: %w", err)
 	}
 	return out, nil
@@ -297,7 +297,7 @@ func (c *apiClient) GetAdoptedDeviceDetails(ctx context.Context, siteId string, 
 		return nil, err
 	}
 	var out AdoptedDeviceDetails
-	if err := c.doer.Get(ctx, c.path(fmt.Sprintf("/sites/%s/devices/%s", siteId, deviceId)), nil, &out); err != nil {
+	if err := c.doer.Get(ctx, c.path(fmt.Sprintf("/sites/%s/devices/%s", url.PathEscape(siteId), url.PathEscape(deviceId))), nil, &out); err != nil {
 		return nil, fmt.Errorf("failed GetAdoptedDeviceDetails: %w", err)
 	}
 	return &out, nil
@@ -309,7 +309,7 @@ func (c *apiClient) GetAdoptedDeviceLatestStatistics(ctx context.Context, siteId
 		return nil, err
 	}
 	var out LatestStatisticsForADevice
-	if err := c.doer.Get(ctx, c.path(fmt.Sprintf("/sites/%s/devices/%s/statistics/latest", siteId, deviceId)), nil, &out); err != nil {
+	if err := c.doer.Get(ctx, c.path(fmt.Sprintf("/sites/%s/devices/%s/statistics/latest", url.PathEscape(siteId), url.PathEscape(deviceId))), nil, &out); err != nil {
 		return nil, fmt.Errorf("failed GetAdoptedDeviceLatestStatistics: %w", err)
 	}
 	return &out, nil
@@ -321,7 +321,7 @@ func (c *apiClient) GetAdoptedDeviceOverviewPage(ctx context.Context, siteId str
 		return nil, err
 	}
 	var out []AdoptedDeviceOverview
-	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/devices", siteId)), &out); err != nil {
+	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/devices", url.PathEscape(siteId))), &out); err != nil {
 		return nil, fmt.Errorf("failed GetAdoptedDeviceOverviewPage: %w", err)
 	}
 	return out, nil
@@ -333,7 +333,7 @@ func (c *apiClient) GetConnectedClientDetails(ctx context.Context, siteId string
 		return nil, err
 	}
 	var out ClientDetails
-	if err := c.doer.Get(ctx, c.path(fmt.Sprintf("/sites/%s/clients/%s", siteId, clientId)), nil, &out); err != nil {
+	if err := c.doer.Get(ctx, c.path(fmt.Sprintf("/sites/%s/clients/%s", url.PathEscape(siteId), url.PathEscape(clientId))), nil, &out); err != nil {
 		return nil, fmt.Errorf("failed GetConnectedClientDetails: %w", err)
 	}
 	return &out, nil
@@ -345,7 +345,7 @@ func (c *apiClient) GetConnectedClientOverviewPage(ctx context.Context, siteId s
 		return nil, err
 	}
 	var out []ClientOverview
-	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/clients", siteId)), &out); err != nil {
+	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/clients", url.PathEscape(siteId))), &out); err != nil {
 		return nil, fmt.Errorf("failed GetConnectedClientOverviewPage: %w", err)
 	}
 	return out, nil
@@ -369,7 +369,7 @@ func (c *apiClient) GetDeviceTagPage(ctx context.Context, siteId string) ([]Devi
 		return nil, err
 	}
 	var out []DeviceTag
-	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/device-tags", siteId)), &out); err != nil {
+	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/device-tags", url.PathEscape(siteId))), &out); err != nil {
 		return nil, fmt.Errorf("failed GetDeviceTagPage: %w", err)
 	}
 	return out, nil
@@ -381,7 +381,7 @@ func (c *apiClient) GetDnsPolicy(ctx context.Context, siteId string, dnsPolicyId
 		return nil, err
 	}
 	var out DNSPolicy
-	if err := c.doer.Get(ctx, c.path(fmt.Sprintf("/sites/%s/dns/policies/%s", siteId, dnsPolicyId)), nil, &out); err != nil {
+	if err := c.doer.Get(ctx, c.path(fmt.Sprintf("/sites/%s/dns/policies/%s", url.PathEscape(siteId), url.PathEscape(dnsPolicyId))), nil, &out); err != nil {
 		return nil, fmt.Errorf("failed GetDnsPolicy: %w", err)
 	}
 	return &out, nil
@@ -393,7 +393,7 @@ func (c *apiClient) GetDnsPolicyPage(ctx context.Context, siteId string) ([]DNSP
 		return nil, err
 	}
 	var out []DNSPolicy
-	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/dns/policies", siteId)), &out); err != nil {
+	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/dns/policies", url.PathEscape(siteId))), &out); err != nil {
 		return nil, fmt.Errorf("failed GetDnsPolicyPage: %w", err)
 	}
 	return out, nil
@@ -429,7 +429,7 @@ func (c *apiClient) GetFirewallPolicies(ctx context.Context, siteId string) ([]F
 		return nil, err
 	}
 	var out []FirewallPolicy
-	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/firewall/policies", siteId)), &out); err != nil {
+	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/firewall/policies", url.PathEscape(siteId))), &out); err != nil {
 		return nil, fmt.Errorf("failed GetFirewallPolicies: %w", err)
 	}
 	return out, nil
@@ -441,7 +441,7 @@ func (c *apiClient) GetFirewallPolicy(ctx context.Context, siteId string, firewa
 		return nil, err
 	}
 	var out FirewallPolicy
-	if err := c.doer.Get(ctx, c.path(fmt.Sprintf("/sites/%s/firewall/policies/%s", siteId, firewallPolicyId)), nil, &out); err != nil {
+	if err := c.doer.Get(ctx, c.path(fmt.Sprintf("/sites/%s/firewall/policies/%s", url.PathEscape(siteId), url.PathEscape(firewallPolicyId))), nil, &out); err != nil {
 		return nil, fmt.Errorf("failed GetFirewallPolicy: %w", err)
 	}
 	return &out, nil
@@ -453,7 +453,7 @@ func (c *apiClient) GetFirewallPolicyOrdering(ctx context.Context, siteId string
 		return nil, err
 	}
 	var out FirewallPolicyOrdering
-	if err := c.doer.Get(ctx, c.path(fmt.Sprintf("/sites/%s/firewall/policies/ordering?sourceFirewallZoneId=%s&destinationFirewallZoneId=%s", siteId, url.QueryEscape(sourceFirewallZoneId), url.QueryEscape(destinationFirewallZoneId))), nil, &out); err != nil {
+	if err := c.doer.Get(ctx, c.path(fmt.Sprintf("/sites/%s/firewall/policies/ordering?sourceFirewallZoneId=%s&destinationFirewallZoneId=%s", url.PathEscape(siteId), url.QueryEscape(sourceFirewallZoneId), url.QueryEscape(destinationFirewallZoneId))), nil, &out); err != nil {
 		return nil, fmt.Errorf("failed GetFirewallPolicyOrdering: %w", err)
 	}
 	return &out, nil
@@ -465,7 +465,7 @@ func (c *apiClient) GetFirewallZone(ctx context.Context, siteId string, firewall
 		return nil, err
 	}
 	var out FirewallZone
-	if err := c.doer.Get(ctx, c.path(fmt.Sprintf("/sites/%s/firewall/zones/%s", siteId, firewallZoneId)), nil, &out); err != nil {
+	if err := c.doer.Get(ctx, c.path(fmt.Sprintf("/sites/%s/firewall/zones/%s", url.PathEscape(siteId), url.PathEscape(firewallZoneId))), nil, &out); err != nil {
 		return nil, fmt.Errorf("failed GetFirewallZone: %w", err)
 	}
 	return &out, nil
@@ -477,7 +477,7 @@ func (c *apiClient) GetFirewallZones(ctx context.Context, siteId string) ([]Fire
 		return nil, err
 	}
 	var out []FirewallZone
-	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/firewall/zones", siteId)), &out); err != nil {
+	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/firewall/zones", url.PathEscape(siteId))), &out); err != nil {
 		return nil, fmt.Errorf("failed GetFirewallZones: %w", err)
 	}
 	return out, nil
@@ -489,7 +489,7 @@ func (c *apiClient) GetNetworkDetails(ctx context.Context, siteId string, networ
 		return nil, err
 	}
 	var out NetworkDetails
-	if err := c.doer.Get(ctx, c.path(fmt.Sprintf("/sites/%s/networks/%s", siteId, networkId)), nil, &out); err != nil {
+	if err := c.doer.Get(ctx, c.path(fmt.Sprintf("/sites/%s/networks/%s", url.PathEscape(siteId), url.PathEscape(networkId))), nil, &out); err != nil {
 		return nil, fmt.Errorf("failed GetNetworkDetails: %w", err)
 	}
 	return &out, nil
@@ -501,7 +501,7 @@ func (c *apiClient) GetNetworkReferences(ctx context.Context, siteId string, net
 		return nil, err
 	}
 	var out NetworkReferences
-	if err := c.doer.Get(ctx, c.path(fmt.Sprintf("/sites/%s/networks/%s/references", siteId, networkId)), nil, &out); err != nil {
+	if err := c.doer.Get(ctx, c.path(fmt.Sprintf("/sites/%s/networks/%s/references", url.PathEscape(siteId), url.PathEscape(networkId))), nil, &out); err != nil {
 		return nil, fmt.Errorf("failed GetNetworkReferences: %w", err)
 	}
 	return &out, nil
@@ -513,7 +513,7 @@ func (c *apiClient) GetNetworksOverviewPage(ctx context.Context, siteId string) 
 		return nil, err
 	}
 	var out []NetworkOverview
-	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/networks", siteId)), &out); err != nil {
+	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/networks", url.PathEscape(siteId))), &out); err != nil {
 		return nil, fmt.Errorf("failed GetNetworksOverviewPage: %w", err)
 	}
 	return out, nil
@@ -537,7 +537,7 @@ func (c *apiClient) GetRadiusProfileOverviewPage(ctx context.Context, siteId str
 		return nil, err
 	}
 	var out []RadiusProfileOverview
-	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/radius/profiles", siteId)), &out); err != nil {
+	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/radius/profiles", url.PathEscape(siteId))), &out); err != nil {
 		return nil, fmt.Errorf("failed GetRadiusProfileOverviewPage: %w", err)
 	}
 	return out, nil
@@ -549,7 +549,7 @@ func (c *apiClient) GetSiteToSiteVpnTunnelPage(ctx context.Context, siteId strin
 		return nil, err
 	}
 	var out []SiteToSiteVPNTunnelOverview
-	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/vpn/site-to-site-tunnels", siteId)), &out); err != nil {
+	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/vpn/site-to-site-tunnels", url.PathEscape(siteId))), &out); err != nil {
 		return nil, fmt.Errorf("failed GetSiteToSiteVpnTunnelPage: %w", err)
 	}
 	return out, nil
@@ -561,7 +561,7 @@ func (c *apiClient) GetTrafficMatchingList(ctx context.Context, siteId string, t
 		return nil, err
 	}
 	var out TrafficMatchingList
-	if err := c.doer.Get(ctx, c.path(fmt.Sprintf("/sites/%s/traffic-matching-lists/%s", siteId, trafficMatchingListId)), nil, &out); err != nil {
+	if err := c.doer.Get(ctx, c.path(fmt.Sprintf("/sites/%s/traffic-matching-lists/%s", url.PathEscape(siteId), url.PathEscape(trafficMatchingListId))), nil, &out); err != nil {
 		return nil, fmt.Errorf("failed GetTrafficMatchingList: %w", err)
 	}
 	return &out, nil
@@ -573,7 +573,7 @@ func (c *apiClient) GetTrafficMatchingLists(ctx context.Context, siteId string) 
 		return nil, err
 	}
 	var out []TrafficMatchingList
-	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/traffic-matching-lists", siteId)), &out); err != nil {
+	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/traffic-matching-lists", url.PathEscape(siteId))), &out); err != nil {
 		return nil, fmt.Errorf("failed GetTrafficMatchingLists: %w", err)
 	}
 	return out, nil
@@ -585,7 +585,7 @@ func (c *apiClient) GetVoucher(ctx context.Context, siteId string, voucherId str
 		return nil, err
 	}
 	var out HotspotVoucherDetails
-	if err := c.doer.Get(ctx, c.path(fmt.Sprintf("/sites/%s/hotspot/vouchers/%s", siteId, voucherId)), nil, &out); err != nil {
+	if err := c.doer.Get(ctx, c.path(fmt.Sprintf("/sites/%s/hotspot/vouchers/%s", url.PathEscape(siteId), url.PathEscape(voucherId))), nil, &out); err != nil {
 		return nil, fmt.Errorf("failed GetVoucher: %w", err)
 	}
 	return &out, nil
@@ -597,7 +597,7 @@ func (c *apiClient) GetVouchers(ctx context.Context, siteId string) ([]HotspotVo
 		return nil, err
 	}
 	var out []HotspotVoucherDetails
-	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/hotspot/vouchers", siteId)), &out); err != nil {
+	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/hotspot/vouchers", url.PathEscape(siteId))), &out); err != nil {
 		return nil, fmt.Errorf("failed GetVouchers: %w", err)
 	}
 	return out, nil
@@ -609,7 +609,7 @@ func (c *apiClient) GetVpnServerPage(ctx context.Context, siteId string) ([]VPNS
 		return nil, err
 	}
 	var out []VPNServerOverview
-	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/vpn/servers", siteId)), &out); err != nil {
+	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/vpn/servers", url.PathEscape(siteId))), &out); err != nil {
 		return nil, fmt.Errorf("failed GetVpnServerPage: %w", err)
 	}
 	return out, nil
@@ -621,7 +621,7 @@ func (c *apiClient) GetWansOverviewPage(ctx context.Context, siteId string) ([]W
 		return nil, err
 	}
 	var out []WANOverview
-	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/wans", siteId)), &out); err != nil {
+	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/wans", url.PathEscape(siteId))), &out); err != nil {
 		return nil, fmt.Errorf("failed GetWansOverviewPage: %w", err)
 	}
 	return out, nil
@@ -633,7 +633,7 @@ func (c *apiClient) GetWifiBroadcastDetails(ctx context.Context, siteId string, 
 		return nil, err
 	}
 	var out WifiBroadcastDetails
-	if err := c.doer.Get(ctx, c.path(fmt.Sprintf("/sites/%s/wifi/broadcasts/%s", siteId, wifiBroadcastId)), nil, &out); err != nil {
+	if err := c.doer.Get(ctx, c.path(fmt.Sprintf("/sites/%s/wifi/broadcasts/%s", url.PathEscape(siteId), url.PathEscape(wifiBroadcastId))), nil, &out); err != nil {
 		return nil, fmt.Errorf("failed GetWifiBroadcastDetails: %w", err)
 	}
 	return &out, nil
@@ -645,7 +645,7 @@ func (c *apiClient) GetWifiBroadcastPage(ctx context.Context, siteId string) ([]
 		return nil, err
 	}
 	var out []WifiBroadcastOverview
-	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/wifi/broadcasts", siteId)), &out); err != nil {
+	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/wifi/broadcasts", url.PathEscape(siteId))), &out); err != nil {
 		return nil, fmt.Errorf("failed GetWifiBroadcastPage: %w", err)
 	}
 	return out, nil
@@ -657,7 +657,7 @@ func (c *apiClient) PatchFirewallPolicy(ctx context.Context, siteId string, fire
 		return nil, err
 	}
 	var out FirewallPolicy
-	if err := c.doer.Patch(ctx, c.path(fmt.Sprintf("/sites/%s/firewall/policies/%s", siteId, firewallPolicyId)), body, &out); err != nil {
+	if err := c.doer.Patch(ctx, c.path(fmt.Sprintf("/sites/%s/firewall/policies/%s", url.PathEscape(siteId), url.PathEscape(firewallPolicyId))), body, &out); err != nil {
 		return nil, fmt.Errorf("failed PatchFirewallPolicy: %w", err)
 	}
 	return &out, nil
@@ -668,7 +668,7 @@ func (c *apiClient) RemoveDevice(ctx context.Context, siteId string, deviceId st
 	if err := c.check(ctx); err != nil {
 		return err
 	}
-	if err := c.doer.Delete(ctx, c.path(fmt.Sprintf("/sites/%s/devices/%s", siteId, deviceId)), nil, nil); err != nil {
+	if err := c.doer.Delete(ctx, c.path(fmt.Sprintf("/sites/%s/devices/%s", url.PathEscape(siteId), url.PathEscape(deviceId))), nil, nil); err != nil {
 		return fmt.Errorf("failed RemoveDevice: %w", err)
 	}
 	return nil
@@ -680,7 +680,7 @@ func (c *apiClient) UpdateAclRule(ctx context.Context, siteId string, aclRuleId 
 		return nil, err
 	}
 	var out ACLRule
-	if err := c.doer.Put(ctx, c.path(fmt.Sprintf("/sites/%s/acl-rules/%s", siteId, aclRuleId)), body, &out); err != nil {
+	if err := c.doer.Put(ctx, c.path(fmt.Sprintf("/sites/%s/acl-rules/%s", url.PathEscape(siteId), url.PathEscape(aclRuleId))), body, &out); err != nil {
 		return nil, fmt.Errorf("failed UpdateAclRule: %w", err)
 	}
 	return &out, nil
@@ -692,7 +692,7 @@ func (c *apiClient) UpdateAclRuleOrdering(ctx context.Context, siteId string, bo
 		return nil, err
 	}
 	var out ACLRuleOrdering
-	if err := c.doer.Put(ctx, c.path(fmt.Sprintf("/sites/%s/acl-rules/ordering", siteId)), body, &out); err != nil {
+	if err := c.doer.Put(ctx, c.path(fmt.Sprintf("/sites/%s/acl-rules/ordering", url.PathEscape(siteId))), body, &out); err != nil {
 		return nil, fmt.Errorf("failed UpdateAclRuleOrdering: %w", err)
 	}
 	return &out, nil
@@ -704,7 +704,7 @@ func (c *apiClient) UpdateDnsPolicy(ctx context.Context, siteId string, dnsPolic
 		return nil, err
 	}
 	var out DNSPolicy
-	if err := c.doer.Put(ctx, c.path(fmt.Sprintf("/sites/%s/dns/policies/%s", siteId, dnsPolicyId)), body, &out); err != nil {
+	if err := c.doer.Put(ctx, c.path(fmt.Sprintf("/sites/%s/dns/policies/%s", url.PathEscape(siteId), url.PathEscape(dnsPolicyId))), body, &out); err != nil {
 		return nil, fmt.Errorf("failed UpdateDnsPolicy: %w", err)
 	}
 	return &out, nil
@@ -716,7 +716,7 @@ func (c *apiClient) UpdateFirewallPolicy(ctx context.Context, siteId string, fir
 		return nil, err
 	}
 	var out FirewallPolicy
-	if err := c.doer.Put(ctx, c.path(fmt.Sprintf("/sites/%s/firewall/policies/%s", siteId, firewallPolicyId)), body, &out); err != nil {
+	if err := c.doer.Put(ctx, c.path(fmt.Sprintf("/sites/%s/firewall/policies/%s", url.PathEscape(siteId), url.PathEscape(firewallPolicyId))), body, &out); err != nil {
 		return nil, fmt.Errorf("failed UpdateFirewallPolicy: %w", err)
 	}
 	return &out, nil
@@ -728,7 +728,7 @@ func (c *apiClient) UpdateFirewallPolicyOrdering(ctx context.Context, siteId str
 		return nil, err
 	}
 	var out FirewallPolicyOrdering
-	if err := c.doer.Put(ctx, c.path(fmt.Sprintf("/sites/%s/firewall/policies/ordering?sourceFirewallZoneId=%s&destinationFirewallZoneId=%s", siteId, url.QueryEscape(sourceFirewallZoneId), url.QueryEscape(destinationFirewallZoneId))), body, &out); err != nil {
+	if err := c.doer.Put(ctx, c.path(fmt.Sprintf("/sites/%s/firewall/policies/ordering?sourceFirewallZoneId=%s&destinationFirewallZoneId=%s", url.PathEscape(siteId), url.QueryEscape(sourceFirewallZoneId), url.QueryEscape(destinationFirewallZoneId))), body, &out); err != nil {
 		return nil, fmt.Errorf("failed UpdateFirewallPolicyOrdering: %w", err)
 	}
 	return &out, nil
@@ -740,7 +740,7 @@ func (c *apiClient) UpdateFirewallZone(ctx context.Context, siteId string, firew
 		return nil, err
 	}
 	var out FirewallZone
-	if err := c.doer.Put(ctx, c.path(fmt.Sprintf("/sites/%s/firewall/zones/%s", siteId, firewallZoneId)), body, &out); err != nil {
+	if err := c.doer.Put(ctx, c.path(fmt.Sprintf("/sites/%s/firewall/zones/%s", url.PathEscape(siteId), url.PathEscape(firewallZoneId))), body, &out); err != nil {
 		return nil, fmt.Errorf("failed UpdateFirewallZone: %w", err)
 	}
 	return &out, nil
@@ -752,7 +752,7 @@ func (c *apiClient) UpdateNetwork(ctx context.Context, siteId string, networkId 
 		return nil, err
 	}
 	var out NetworkDetails
-	if err := c.doer.Put(ctx, c.path(fmt.Sprintf("/sites/%s/networks/%s", siteId, networkId)), body, &out); err != nil {
+	if err := c.doer.Put(ctx, c.path(fmt.Sprintf("/sites/%s/networks/%s", url.PathEscape(siteId), url.PathEscape(networkId))), body, &out); err != nil {
 		return nil, fmt.Errorf("failed UpdateNetwork: %w", err)
 	}
 	return &out, nil
@@ -764,7 +764,7 @@ func (c *apiClient) UpdateTrafficMatchingList(ctx context.Context, siteId string
 		return nil, err
 	}
 	var out TrafficMatchingList
-	if err := c.doer.Put(ctx, c.path(fmt.Sprintf("/sites/%s/traffic-matching-lists/%s", siteId, trafficMatchingListId)), body, &out); err != nil {
+	if err := c.doer.Put(ctx, c.path(fmt.Sprintf("/sites/%s/traffic-matching-lists/%s", url.PathEscape(siteId), url.PathEscape(trafficMatchingListId))), body, &out); err != nil {
 		return nil, fmt.Errorf("failed UpdateTrafficMatchingList: %w", err)
 	}
 	return &out, nil
@@ -776,7 +776,7 @@ func (c *apiClient) UpdateWifiBroadcast(ctx context.Context, siteId string, wifi
 		return nil, err
 	}
 	var out WifiBroadcastDetails
-	if err := c.doer.Put(ctx, c.path(fmt.Sprintf("/sites/%s/wifi/broadcasts/%s", siteId, wifiBroadcastId)), body, &out); err != nil {
+	if err := c.doer.Put(ctx, c.path(fmt.Sprintf("/sites/%s/wifi/broadcasts/%s", url.PathEscape(siteId), url.PathEscape(wifiBroadcastId))), body, &out); err != nil {
 		return nil, fmt.Errorf("failed UpdateWifiBroadcast: %w", err)
 	}
 	return &out, nil
