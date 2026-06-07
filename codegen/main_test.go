@@ -227,7 +227,7 @@ func TestDownloadGenerationInputs_SkipsLegacyDownloadWhenSnapshotComplete(t *tes
 	r.NoError(err)
 
 	// Stage a complete frozen legacy field snapshot (JSON + sentinel).
-	frozenDir := frozenLegacyFieldsDir(baseDir, internalVer)
+	frozenDir := legacyFieldsDir(baseDir, internalVer)
 	r.NoError(os.MkdirAll(frozenDir, 0o755))
 	r.NoError(os.WriteFile(filepath.Join(frozenDir, "Device.json"), []byte(`{"k":"v"}`), 0o600))
 	r.NoError(os.WriteFile(filepath.Join(frozenDir, extractCompleteSentinel), nil, 0o600))
@@ -259,7 +259,7 @@ func TestDownloadGenerationInputs_FallsThroughToDownloadWhenNoSentinel(t *testin
 	r.NoError(err)
 
 	// Stage the dir WITHOUT the sentinel — simulate a partial/crashed prior run.
-	frozenDir := frozenLegacyFieldsDir(baseDir, internalVer)
+	frozenDir := legacyFieldsDir(baseDir, internalVer)
 	r.NoError(os.MkdirAll(frozenDir, 0o755))
 	r.NoError(os.WriteFile(filepath.Join(frozenDir, "Device.json"), []byte(`{"k":"v"}`), 0o600))
 

@@ -253,7 +253,7 @@ func downloadGenerationInputs(internalVersion *UnifiVersion, officialVersion *Un
 	ctx, cancel := context.WithTimeout(context.Background(), defaultDownloadTimeout)
 	defer cancel()
 
-	structuresDir := frozenLegacyFieldsDir(versionBaseDir, internalVersion.Version)
+	structuresDir := legacyFieldsDir(versionBaseDir, internalVersion.Version)
 	if ok, err := extractionComplete(structuresDir); err != nil {
 		return "", fmt.Errorf("checking legacy field snapshot at %s: %w", structuresDir, err)
 	} else if ok {

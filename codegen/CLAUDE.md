@@ -64,6 +64,8 @@ The Official API first shipped in 10.1.78; below that, `generate()` fetches the 
 
 The `.gitignore` carries `!/codegen/v9.5.21/` to unignore it while leaving the pattern `/codegen/v*.*.*/` in place for any other downloaded caches.
 
+The freeze only applies to the pinned version: `unifi/codegen.go` pins `go:generate` to `9.5.21`, so the daily CI `go generate` is a deterministic, offline no-op for the legacy surface. Requesting any **other** version (`make generate-resources VERSION=<other>` or `VERSION=latest`) targets a different `codegen/v<ver>/` dir and **bypasses the freeze by downloading** — intended only when refreshing the snapshot (below).
+
 **To refresh the frozen snapshot** (e.g. when bumping `.unifi-version`):
 1. Remove the old frozen snapshot dir and its gitignore exception.
 2. Run `make generate-resources VERSION=<new-ver>` once to download and extract the new field JSONs into `codegen/v<new-ver>/`.

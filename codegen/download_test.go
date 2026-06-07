@@ -1064,3 +1064,21 @@ func TestDownloadAndExtract_MidExtractFailureReExtracts(t *testing.T) {
 	r.NoError(cerr)
 	a.True(complete, "successful re-run must be marked complete")
 }
+
+// TestCommittedFrozenSnapshotIsOfflineComplete guards the #124 freeze: the
+// committed codegen/v9.5.21/ snapshot must stay self-contained and offline-ready,
+// i.e. extractionComplete reports it complete (sentinel present). If the sentinel
+// were ever dropped from the tree, generation would silently fall back to a
+// network download — this catches that regression with a fast, offline test.
+func TestCommittedFrozenSnapshotIsOfflineComplete(t *testing.T) {
+	t.Parallel()
+	r := require.New(t)
+
+	codegenDir, err := findCodegenDir()
+	r.NoError(err)
+	frozenDir := filepath.Join(codegenDir, "v9.5.21")
+
+	complete, err := extractionComplete(frozenDir)
+	r.NoError(err)
+	r.True(complete, "committed codegen/v9.5.21 snapshot must be offline-complete (sentinel present)")
+}
