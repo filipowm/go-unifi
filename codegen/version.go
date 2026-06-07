@@ -183,12 +183,9 @@ const OfficialAPIVersion = %q
 	return err
 }
 
-func writeVersionRepoMarkerFile(version *version.Version, outDir string) error {
-	versionRepoMarker := []byte(version.Core().String())
-	return os.WriteFile(filepath.Join(outDir, ".unifi-version"), versionRepoMarker, 0o644) //nolint:gosec
-}
-
-func writeOfficialVersionRepoMarkerFile(version *version.Version, outDir string) error {
-	versionRepoMarker := []byte(version.Core().String())
-	return os.WriteFile(filepath.Join(outDir, ".unifi-version-official"), versionRepoMarker, 0o644) //nolint:gosec
+// writeVersionMarker writes a plain-text version marker (core version, no
+// trailing newline) to outDir/filename — used for both .unifi-version (Internal)
+// and .unifi-version-official (Official).
+func writeVersionMarker(version *version.Version, outDir, filename string) error {
+	return os.WriteFile(filepath.Join(outDir, filename), []byte(version.Core().String()), 0o644) //nolint:gosec
 }

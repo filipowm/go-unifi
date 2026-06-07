@@ -240,10 +240,10 @@ func writeVersionArtifacts(internalVersion *UnifiVersion, officialVersion *Unifi
 		return fmt.Errorf("failed to write version file to %s: %w", outDir, err)
 	}
 	markerDir := filepath.Dir(outDir)
-	if err := writeVersionRepoMarkerFile(internalVersion.Version, markerDir); err != nil {
+	if err := writeVersionMarker(internalVersion.Version, markerDir, ".unifi-version"); err != nil {
 		return fmt.Errorf("failed to write internal version marker to %s: %w", markerDir, err)
 	}
-	if err := writeOfficialVersionRepoMarkerFile(officialVersion.Version, markerDir); err != nil {
+	if err := writeVersionMarker(officialVersion.Version, markerDir, ".unifi-version-official"); err != nil {
 		return fmt.Errorf("failed to write official version marker to %s: %w", markerDir, err)
 	}
 	return nil

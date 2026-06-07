@@ -309,7 +309,7 @@ func TestWriteVersionRepoMarkerFile(t *testing.T) {
 	v, err := version.NewVersion("7.3.83")
 	require.NoError(t, err)
 
-	err = writeVersionRepoMarkerFile(v, tmpDir)
+	err = writeVersionMarker(v, tmpDir, ".unifi-version")
 	require.NoError(t, err)
 
 	content, err := os.ReadFile(filepath.Join(tmpDir, ".unifi-version"))
@@ -344,7 +344,7 @@ func TestWriteVersionRepoMarkerFile_InvalidDir(t *testing.T) {
 	v, err := version.NewVersion("7.3.83")
 	require.NoError(t, err)
 
-	err = writeVersionRepoMarkerFile(v, "/nonexistent/directory")
+	err = writeVersionMarker(v, "/nonexistent/directory", ".unifi-version")
 	require.Error(t, err)
 	require.ErrorContains(t, err, "no such file or directory")
 }
@@ -414,7 +414,7 @@ func TestWriteVersionRepoMarkerFile_Permissions(t *testing.T) {
 	v, err := version.NewVersion("7.3.83")
 	require.NoError(t, err)
 
-	err = writeVersionRepoMarkerFile(v, readOnlyDir)
+	err = writeVersionMarker(v, readOnlyDir, ".unifi-version")
 	require.Error(t, err)
 	require.ErrorContains(t, err, "permission denied")
 }
@@ -427,7 +427,7 @@ func TestWriteOfficialVersionRepoMarkerFile(t *testing.T) {
 	v, err := version.NewVersion("10.1.78")
 	require.NoError(t, err)
 
-	err = writeOfficialVersionRepoMarkerFile(v, tmpDir)
+	err = writeVersionMarker(v, tmpDir, ".unifi-version-official")
 	require.NoError(t, err)
 
 	content, err := os.ReadFile(filepath.Join(tmpDir, ".unifi-version-official"))
@@ -441,7 +441,7 @@ func TestWriteOfficialVersionRepoMarkerFile_InvalidDir(t *testing.T) {
 	v, err := version.NewVersion("10.1.78")
 	require.NoError(t, err)
 
-	err = writeOfficialVersionRepoMarkerFile(v, "/nonexistent/directory")
+	err = writeVersionMarker(v, "/nonexistent/directory", ".unifi-version-official")
 	require.Error(t, err)
 	require.ErrorContains(t, err, "no such file or directory")
 }
@@ -461,7 +461,7 @@ func TestWriteOfficialVersionRepoMarkerFile_Permissions(t *testing.T) {
 	v, err := version.NewVersion("10.1.78")
 	require.NoError(t, err)
 
-	err = writeOfficialVersionRepoMarkerFile(v, readOnlyDir)
+	err = writeVersionMarker(v, readOnlyDir, ".unifi-version-official")
 	require.Error(t, err)
 	require.ErrorContains(t, err, "permission denied")
 }
@@ -478,8 +478,8 @@ func TestWriteVersionRepoMarkersIndependent(t *testing.T) {
 	official, err := version.NewVersion("10.1.78")
 	require.NoError(t, err)
 
-	require.NoError(t, writeVersionRepoMarkerFile(internal, tmpDir))
-	require.NoError(t, writeOfficialVersionRepoMarkerFile(official, tmpDir))
+	require.NoError(t, writeVersionMarker(internal, tmpDir, ".unifi-version"))
+	require.NoError(t, writeVersionMarker(official, tmpDir, ".unifi-version-official"))
 
 	internalContent, err := os.ReadFile(filepath.Join(tmpDir, ".unifi-version"))
 	require.NoError(t, err)
