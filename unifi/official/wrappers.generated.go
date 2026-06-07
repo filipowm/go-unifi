@@ -279,7 +279,7 @@ func (c *apiClient) GetAclRuleOrdering(ctx context.Context, siteId string) (*ACL
 	return &out, nil
 }
 
-// GetAclRulePage maps to GET /v1/sites/%s/acl-rules on the Official API.
+// GetAclRulePage maps to GET /v1/sites/%s/acl-rules on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
 func (c *apiClient) GetAclRulePage(ctx context.Context, siteId string) ([]ACLRuleObject, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
@@ -315,7 +315,7 @@ func (c *apiClient) GetAdoptedDeviceLatestStatistics(ctx context.Context, siteId
 	return &out, nil
 }
 
-// GetAdoptedDeviceOverviewPage maps to GET /v1/sites/%s/devices on the Official API.
+// GetAdoptedDeviceOverviewPage maps to GET /v1/sites/%s/devices on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
 func (c *apiClient) GetAdoptedDeviceOverviewPage(ctx context.Context, siteId string) ([]AdoptedDeviceOverview, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
@@ -339,7 +339,7 @@ func (c *apiClient) GetConnectedClientDetails(ctx context.Context, siteId string
 	return &out, nil
 }
 
-// GetConnectedClientOverviewPage maps to GET /v1/sites/%s/clients on the Official API.
+// GetConnectedClientOverviewPage maps to GET /v1/sites/%s/clients on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
 func (c *apiClient) GetConnectedClientOverviewPage(ctx context.Context, siteId string) ([]ClientOverview, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
@@ -351,7 +351,7 @@ func (c *apiClient) GetConnectedClientOverviewPage(ctx context.Context, siteId s
 	return out, nil
 }
 
-// GetCountries maps to GET /v1/countries on the Official API.
+// GetCountries maps to GET /v1/countries on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
 func (c *apiClient) GetCountries(ctx context.Context) ([]CountryDefinition, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
@@ -363,7 +363,7 @@ func (c *apiClient) GetCountries(ctx context.Context) ([]CountryDefinition, erro
 	return out, nil
 }
 
-// GetDeviceTagPage maps to GET /v1/sites/%s/device-tags on the Official API.
+// GetDeviceTagPage maps to GET /v1/sites/%s/device-tags on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
 func (c *apiClient) GetDeviceTagPage(ctx context.Context, siteId string) ([]DeviceTag, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
@@ -387,7 +387,7 @@ func (c *apiClient) GetDnsPolicy(ctx context.Context, siteId string, dnsPolicyId
 	return &out, nil
 }
 
-// GetDnsPolicyPage maps to GET /v1/sites/%s/dns/policies on the Official API.
+// GetDnsPolicyPage maps to GET /v1/sites/%s/dns/policies on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
 func (c *apiClient) GetDnsPolicyPage(ctx context.Context, siteId string) ([]DNSPolicy, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
@@ -399,7 +399,7 @@ func (c *apiClient) GetDnsPolicyPage(ctx context.Context, siteId string) ([]DNSP
 	return out, nil
 }
 
-// GetDpiApplicationCategories maps to GET /v1/dpi/categories on the Official API.
+// GetDpiApplicationCategories maps to GET /v1/dpi/categories on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
 func (c *apiClient) GetDpiApplicationCategories(ctx context.Context) ([]DPICategory, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
@@ -411,7 +411,7 @@ func (c *apiClient) GetDpiApplicationCategories(ctx context.Context) ([]DPICateg
 	return out, nil
 }
 
-// GetDpiApplications maps to GET /v1/dpi/applications on the Official API.
+// GetDpiApplications maps to GET /v1/dpi/applications on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
 func (c *apiClient) GetDpiApplications(ctx context.Context) ([]DPIApplication, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
@@ -423,7 +423,7 @@ func (c *apiClient) GetDpiApplications(ctx context.Context) ([]DPIApplication, e
 	return out, nil
 }
 
-// GetFirewallPolicies maps to GET /v1/sites/%s/firewall/policies on the Official API.
+// GetFirewallPolicies maps to GET /v1/sites/%s/firewall/policies on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
 func (c *apiClient) GetFirewallPolicies(ctx context.Context, siteId string) ([]FirewallPolicy, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
@@ -471,7 +471,7 @@ func (c *apiClient) GetFirewallZone(ctx context.Context, siteId string, firewall
 	return &out, nil
 }
 
-// GetFirewallZones maps to GET /v1/sites/%s/firewall/zones on the Official API.
+// GetFirewallZones maps to GET /v1/sites/%s/firewall/zones on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
 func (c *apiClient) GetFirewallZones(ctx context.Context, siteId string) ([]FirewallZone, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
@@ -507,7 +507,7 @@ func (c *apiClient) GetNetworkReferences(ctx context.Context, siteId string, net
 	return &out, nil
 }
 
-// GetNetworksOverviewPage maps to GET /v1/sites/%s/networks on the Official API.
+// GetNetworksOverviewPage maps to GET /v1/sites/%s/networks on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
 func (c *apiClient) GetNetworksOverviewPage(ctx context.Context, siteId string) ([]NetworkOverview, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
@@ -519,7 +519,7 @@ func (c *apiClient) GetNetworksOverviewPage(ctx context.Context, siteId string) 
 	return out, nil
 }
 
-// GetPendingDevicePage maps to GET /v1/pending-devices on the Official API.
+// GetPendingDevicePage maps to GET /v1/pending-devices on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
 func (c *apiClient) GetPendingDevicePage(ctx context.Context) ([]DevicePendingAdoption, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
@@ -531,7 +531,7 @@ func (c *apiClient) GetPendingDevicePage(ctx context.Context) ([]DevicePendingAd
 	return out, nil
 }
 
-// GetRadiusProfileOverviewPage maps to GET /v1/sites/%s/radius/profiles on the Official API.
+// GetRadiusProfileOverviewPage maps to GET /v1/sites/%s/radius/profiles on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
 func (c *apiClient) GetRadiusProfileOverviewPage(ctx context.Context, siteId string) ([]RadiusProfileOverview, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
@@ -543,7 +543,7 @@ func (c *apiClient) GetRadiusProfileOverviewPage(ctx context.Context, siteId str
 	return out, nil
 }
 
-// GetSiteToSiteVpnTunnelPage maps to GET /v1/sites/%s/vpn/site-to-site-tunnels on the Official API.
+// GetSiteToSiteVpnTunnelPage maps to GET /v1/sites/%s/vpn/site-to-site-tunnels on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
 func (c *apiClient) GetSiteToSiteVpnTunnelPage(ctx context.Context, siteId string) ([]SiteToSiteVPNTunnelOverview, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
@@ -567,7 +567,7 @@ func (c *apiClient) GetTrafficMatchingList(ctx context.Context, siteId string, t
 	return &out, nil
 }
 
-// GetTrafficMatchingLists maps to GET /v1/sites/%s/traffic-matching-lists on the Official API.
+// GetTrafficMatchingLists maps to GET /v1/sites/%s/traffic-matching-lists on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
 func (c *apiClient) GetTrafficMatchingLists(ctx context.Context, siteId string) ([]TrafficMatchingList, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
@@ -591,7 +591,7 @@ func (c *apiClient) GetVoucher(ctx context.Context, siteId string, voucherId str
 	return &out, nil
 }
 
-// GetVouchers maps to GET /v1/sites/%s/hotspot/vouchers on the Official API.
+// GetVouchers maps to GET /v1/sites/%s/hotspot/vouchers on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
 func (c *apiClient) GetVouchers(ctx context.Context, siteId string) ([]HotspotVoucherDetails, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
@@ -603,7 +603,7 @@ func (c *apiClient) GetVouchers(ctx context.Context, siteId string) ([]HotspotVo
 	return out, nil
 }
 
-// GetVpnServerPage maps to GET /v1/sites/%s/vpn/servers on the Official API.
+// GetVpnServerPage maps to GET /v1/sites/%s/vpn/servers on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
 func (c *apiClient) GetVpnServerPage(ctx context.Context, siteId string) ([]VPNServerOverview, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
@@ -615,7 +615,7 @@ func (c *apiClient) GetVpnServerPage(ctx context.Context, siteId string) ([]VPNS
 	return out, nil
 }
 
-// GetWansOverviewPage maps to GET /v1/sites/%s/wans on the Official API.
+// GetWansOverviewPage maps to GET /v1/sites/%s/wans on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
 func (c *apiClient) GetWansOverviewPage(ctx context.Context, siteId string) ([]WANOverview, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
@@ -639,7 +639,7 @@ func (c *apiClient) GetWifiBroadcastDetails(ctx context.Context, siteId string, 
 	return &out, nil
 }
 
-// GetWifiBroadcastPage maps to GET /v1/sites/%s/wifi/broadcasts on the Official API.
+// GetWifiBroadcastPage maps to GET /v1/sites/%s/wifi/broadcasts on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
 func (c *apiClient) GetWifiBroadcastPage(ctx context.Context, siteId string) ([]WifiBroadcastOverview, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err

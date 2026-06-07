@@ -79,8 +79,13 @@ func methodFor(op operation) method {
 }
 
 // docFor builds the godoc body for an operation method.
+// List shapes append an auto-pagination notice so callers see the cost at the call site.
 func docFor(op operation) string {
-	return fmt.Sprintf("maps to %s /v1%s on the Official API.", op.HTTPMethod, op.SubPath)
+	base := fmt.Sprintf("maps to %s /v1%s on the Official API.", op.HTTPMethod, op.SubPath)
+	if op.IsList() {
+		return base + " Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items."
+	}
+	return base
 }
 
 // valueReturn reports whether the method returns a value alongside its error
