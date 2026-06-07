@@ -1,0 +1,13 @@
+{
+  "custom_servers": [
+    {
+      "enabled": "true|false",
+      "sdns_stamp": "",
+      "server_name": ""
+    }
+  ],
+  "server_names": [
+    ""
+  ],
+  "state": "off|auto|manual|custom"
+}

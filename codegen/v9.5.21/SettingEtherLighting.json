@@ -1,0 +1,14 @@
+{
+  "network_overrides": [
+    {
+      "key": "",
+      "raw_color_hex": "[0-9A-Fa-f]{6}"
+    }
+  ],
+  "speed_overrides": [
+    {
+      "key": "FE|GbE|2.5GbE|5GbE|10GbE|25GbE|40GbE|100GbE",
+      "raw_color_hex": "[0-9A-Fa-f]{6}"
+    }
+  ]
+}

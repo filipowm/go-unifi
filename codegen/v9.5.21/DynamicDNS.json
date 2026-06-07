@@ -1,0 +1,10 @@
+{
+    "interface": "wan[2-9]?",
+    "service": "afraid|changeip|cloudflare|cloudxns|ddnss|dhis|dnsexit|dnsomatic|dnspark|dnspod|dslreports|dtdns|duckdns|duiadns|dyn|dyndns|dynv6|easydns|freemyip|googledomains|loopia|namecheap|noip|nsupdate|ovh|sitelutions|spdyn|strato|tunnelbroker|zoneedit|cloudflare|custom",
+    "custom_service": "^[^\"' ]+$",
+    "host_name": "^[^\"' ]+$",
+    "login": "^[^\"' ]+$",
+    "x_password": "^[^\"' ]+$",
+    "server": "^[^\"' ]+$|^$",
+    "options": ["^[^\"' ]+$"]
+}

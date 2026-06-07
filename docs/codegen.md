@@ -31,6 +31,10 @@ This command will:
 - Apply the templates to generate updated models and REST methods
 - Overwrite the generated files with the latest code
 
+> **Offline by default:** the legacy field inputs are read from the committed
+> `codegen/v9.5.21/` snapshot (no network download) when present. See
+> `codegen/CLAUDE.md` for the frozen-snapshot rationale and the refresh procedure.
+
 ### 2. Running the Generator Directly with `go run`
 
 Alternatively, you can run the code generator directly using the `go run` command. This approach bypasses `go generate` 

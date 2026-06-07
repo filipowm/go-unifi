@@ -187,6 +187,17 @@ func TestOfficialSpecSnapshotPath(t *testing.T) {
 	a.Equal(filepath.Join("/base", "openapi", "integration-10.1.78.json"), officialSpecSnapshotPath("/base", v))
 }
 
+func TestLegacyFieldsDir(t *testing.T) {
+	t.Parallel()
+	a := assert.New(t)
+
+	v, err := version.NewVersion("9.5.21+atag-extra")
+	require.NoError(t, err)
+
+	// Core() strips the build metadata so the directory name pins the bare version.
+	a.Equal(filepath.Join("/base", "v9.5.21"), legacyFieldsDir("/base", v))
+}
+
 func TestLatestUnifiVersion_HttpError(t *testing.T) {
 	t.Parallel()
 

@@ -1,0 +1,6 @@
+{
+  "enabled_allowed_traffic": "true|false",
+  "gateway_dns_enabled": "true|false",
+  "unifi_device_management_enabled": "true|false",
+  "unifi_services_enabled": "true|false"
+}

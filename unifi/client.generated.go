@@ -1184,6 +1184,9 @@ type Client interface {
 	// Get sends a GET request to the controller.
 	Get(ctx context.Context, apiPath string, reqBody any, respBody any) error
 
+	// Patch sends a PATCH request to the controller.
+	Patch(ctx context.Context, apiPath string, reqBody any, respBody any) error
+
 	// Post sends a POST request to the controller.
 	Post(ctx context.Context, apiPath string, reqBody any, respBody any) error
 

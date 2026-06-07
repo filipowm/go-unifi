@@ -814,3 +814,29 @@ func TestMarshalRequestValid(t *testing.T) {
 	require.NoError(t, err)
 	assert.JSONEq(t, `{"key":"value"}`, string(data))
 }
+
+// TestPatchWrapperSendsPatch asserts the public Client.Patch wrapper issues an
+// HTTP PATCH to the expected path and round-trips the response — closing the
+// gap left when Patch joined the curated public surface (mirrors the Get/Put pattern).
+func TestPatchWrapperSendsPatch(t *testing.T) {
+	t.Parallel()
+	a := assert.New(t)
+
+	var gotMethod string
+	cs := newControllerServer(t, route{
+		path: apiV1Path("test"),
+		fn: func(w http.ResponseWriter, r *http.Request) {
+			gotMethod = r.Method
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(TestData{Data: "patched"})
+		},
+	})
+	c := cs.client()
+
+	var data TestData
+	err := c.Patch(context.Background(), "test", TestData{Data: "request"}, &data)
+
+	require.NoError(t, err)
+	a.Equal(http.MethodPatch, gotMethod, "Patch wrapper must send an HTTP PATCH")
+	a.Equal("patched", data.Data)
+}

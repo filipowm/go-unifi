@@ -1,0 +1,14 @@
+{
+  "6e_channel_size": "20|40|80|160",
+  "6e_tx_power": "[0-9]|[1-4][0-9]",
+  "6e_tx_power_mode": "auto|medium|high|low|custom",
+  "ap_exclusions": [
+    "^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$"
+  ],
+  "na_channel_size": "20|40|80|160",
+  "na_tx_power": "[0-9]|[1-4][0-9]",
+  "na_tx_power_mode": "auto|medium|high|low|custom",
+  "ng_channel_size": "20|40",
+  "ng_tx_power": "[0-9]|[1-4][0-9]",
+  "ng_tx_power_mode": "auto|medium|high|low|custom"
+}

@@ -156,6 +156,13 @@ func officialSpecSnapshotPath(baseDir string, version *version.Version) string {
 	return filepath.Join(baseDir, "openapi", fmt.Sprintf("integration-%s.json", version.Core()))
 }
 
+// legacyFieldsDir returns the field-JSON directory for ver inside baseDir:
+// <baseDir>/v<ver>. This is just the path; whether it is read from the committed
+// frozen snapshot or downloaded is decided by the caller via extractionComplete.
+func legacyFieldsDir(baseDir string, ver *version.Version) string {
+	return filepath.Join(baseDir, fmt.Sprintf("v%s", ver.Core()))
+}
+
 func writeVersionFile(version *version.Version, outDir string) error {
 	versionGo := fmt.Appendf(nil, `
 // Generated code. DO NOT EDIT.

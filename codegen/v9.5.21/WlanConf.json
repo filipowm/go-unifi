@@ -1,0 +1,204 @@
+{
+    "name": ".{1,32}",
+    "name_combine_enabled": "true|false",
+    "name_combine_suffix": ".{0,8}",
+    "enabled": "true|false",
+    "setting_preference": "auto|manual",
+    "enhanced_iot": "true|false",
+    "iapp_enabled": "true|false",
+    "x_iapp_key": "[0-9A-Fa-f]{32}",
+    "security": "open|wpapsk|wep|wpaeap|osen",
+    "x_passphrase": "[\\x20-\\x7E]{8,255}|[0-9a-fA-F]{64}",
+    "x_wep": "",
+    "wep_idx": "[1-4]",
+    "radiusprofile_id": "",
+    "hide_ssid": "false|true",
+    "priority": "medium|high|low",
+    "vlan_enabled": "false|true",
+    "vlan": "[2-9]|[1-9][0-9]{1,2}|[1-3][0-9]{3}|40[0-8][0-9]|409[0-5]|^$",
+    "is_guest": "false|true",
+    "usergroup_id": "",
+    "networkconf_id": "",
+    "roam_cluster_id": "[0-9]|[1-2][0-9]|[3][0-1]|^$",
+    "wpa_mode": "auto|wpa1|wpa2",
+    "wpa_enc": "auto|ccmp|gcmp|ccmp-256|gcmp-256",
+    "p2p" : "true|false",
+    "p2p_cross_connect": "true|false",
+    "proxy_arp" : "true|false",
+    "l2_isolation" : "true|false",
+    "tdls_prohibit": "true|false",
+    "bss_transition": "true|false",
+    "auth_cache": "true|false",
+    "group_rekey": "^(0|[6-9][0-9]|[1-9][0-9]{2,3}|[1-7][0-9]{4}|8[0-5][0-9]{3}|86[0-3][0-9][0-9]|86400)$",
+    "uapsd_enabled": "false|true",
+    "dpi_enabled": "false|true",
+    "dpigroup_id": "[\\d\\w]+|^$",
+    "schedule_enabled": "false|true",
+    "schedule_reversed": "false|true",
+    "schedule": [
+        "(sun|mon|tue|wed|thu|fri|sat)(\\-(sun|mon|tue|wed|thu|fri|sat))?\\|([0-2][0-9][0-5][0-9])\\-([0-2][0-9][0-5][0-9])"
+    ],
+    "schedule_with_duration": [
+        {
+            "start_days_of_week": [
+                "^(sun|mon|tue|wed|thu|fri|sat)$"
+            ],
+            "start_hour": "^(1?[0-9])|(2[0-3])$",
+            "start_minute": "^[0-5]?[0-9]$",
+            "duration_minutes": "^[1-9][0-9]*$",
+            "name": ".*"
+        }
+    ],
+    "optimize_iot_wifi_connectivity": "true|false",
+    "dtim_mode": "default|custom",
+    "dtim_ng": "^([1-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$",
+    "dtim_na": "^([1-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$",
+    "dtim_6e": "^([1-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^$",
+    "minrate_setting_preference": "auto|manual",
+    "minrate_ng_enabled": "true|false",
+    "minrate_ng_data_rate_kbps": "^[0-9]*$",
+    "minrate_ng_advertising_rates": "true|false",
+    "minrate_na_enabled": "true|false",
+    "minrate_na_data_rate_kbps": "^[0-9]*$",
+    "minrate_na_advertising_rates": "true|false",
+    "mac_filter_enabled": "true|false",
+    "mac_filter_policy": "allow|deny",
+    "mac_filter_list": ["^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$"],
+    "bc_filter_enabled": "true|false",
+    "bc_filter_list": ["^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$"],
+    "hotspot2conf_enabled": "true|false",
+    "hotspot2": {
+        "venue_name": [
+            {
+                "language": "[a-z]{0,3}",
+                "name": "",
+                "url": ""
+            }
+        ],
+        "venue_group": "0|1|2|3|4|5|6|7|8|9|10|11",
+        "venue_type": "0|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15",
+        "network_type": "0|1|2|3|4|5|14|15",
+        "ipaddr_type_avail_v4": "0|1|2|3|4|5|6|7",
+        "ipaddr_type_avail_v6": "0|1|2",
+        "nai_realm_list": [
+            {
+                "name": ".{1,128}",
+                "status": "true|false",
+                "encoding": "0|1",
+                "eap_method": "13|21|18|23|50",
+                "auth_ids": ["0|1|2|3|4|5"],
+                "auth_vals": ["0|1|2|3|4|5|6|7|8|9|10"]
+            }
+        ],
+        "domain_name_list": [".{1,128}"],
+        "roaming_consortium_list": [
+            {
+                "name": ".{1,128}",
+                "oid": ".{1,128}"
+            }
+        ],
+        "cellular_network_list": [
+            {
+                "name": ".{1,128}",
+                "country_code": "[1-9]{1}[0-9]{0,3}",
+                "mcc": "[0-9]{3}",
+                "mnc": "[0-9]{2,3}"
+            }
+        ],
+        "friendly_name" : [
+            {
+                "language": "[a-z]{3}",
+                "text": ".{1,128}"
+            }
+        ],
+        "metrics_status" : "true|false",
+        "metrics_info_link_status" : "up|down|test",
+        "metrics_info_symmetric" : "true|false",
+        "metrics_info_at_capacity" : "true|false",
+        "metrics_downlink_speed_set": "true|false",
+        "metrics_downlink_speed": "[0-9]{1,10}",
+        "metrics_uplink_speed_set": "true|false",
+        "metrics_uplink_speed": "[0-9]{1,10}",
+        "metrics_downlink_load_set": "true|false",
+        "metrics_downlink_load": "[0-9]{1,3}",
+        "metrics_uplink_load_set": "true|false",
+        "metrics_uplink_load": "[0-9]{1,3}",
+        "metrics_measurement_set": "true|false",
+        "metrics_measurement": "[0-9]{1,5}",
+        "capab" : [
+            {
+                "protocol" : "icmp|tcp_udp|tcp|udp|esp",
+                "port": "^(0|[1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])|$",
+                "status" : "closed|open|unknown"
+            }
+        ]
+    },
+    "fast_roaming_enabled": "true|false",
+    "wpa3_fast_roaming": "true|false",
+    "rrm_enabled":"true|false",
+    "radius_das_enabled": "true|false",
+    "radius_mac_auth_enabled": "true|false",
+    "radius_macacl_format": "none_lower|hyphen_lower|colon_lower|none_upper|hyphen_upper|colon_upper",
+    "radius_macacl_empty_password": "true|false",
+    "mcastenhance_enabled": "true|false",
+    "mlo_enabled": "true|false",
+    "no2ghz_oui": "true|false",
+    "pmf_mode": "disabled|optional|required",
+    "pmf_cipher": "auto|aes-128-cmac|bip-gmac-256",
+    "wpa3_transition": "true|false",
+    "wpa3_support": "true|false",
+    "wpa3_enhanced_192": "true|false",
+    "sae_psk":  [
+      {
+          "psk": "[\\x20-\\x7E]{8,255}",
+          "mac": "^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$",
+          "vlan": "[0-9]|[1-9][0-9]{1,2}|[1-3][0-9]{3}|40[0-8][0-9]|409[0-5]|^$",
+          "id": ".{0,128}"
+      }
+    ],
+    "sae_psk_vlan_required": "false|true",
+    "sae_anti_clogging": "^[0-9]{0,5}$",
+    "sae_sync": "^[0-9]{0,5}$",
+    "sae_groups": ["[0-9]{0,5}$"],
+    "log_level": "",
+    "element_adopt": "true|false",
+    "country_beacon": "true|false",
+    "b_supported": "true|false",
+    "wlan_band": "2g|5g|both",
+    "wlan_bands": ["2g|5g|6g"],
+    "ap_group_mode": "all|groups|devices",
+    "ap_group_ids": [""],
+    "uid_workspace_url": "",
+    "wpa_psk_radius": "disabled|optional|required",
+    "private_preshared_keys_enabled": "true|false",
+    "private_preshared_keys": [
+      {
+          "networkconf_id": "",
+          "password": "[\\x20-\\x7E]{8,255}"
+      }
+    ],
+    "nas_identifier_type": "ap_name|ap_mac|bssid|site_name|custom",
+    "nas_identifier": ".{0,48}",
+    "mdns_proxy_mode": "off|auto|custom",
+    "mdns_proxy_custom": [
+        {
+            "networkconf_ids": [""],
+            "ap_scope_mode": "all|specific|group",
+            "ap_macs": ["^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$"],
+            "ap_group_ids": [""],
+            "isolation_enabled": "true|false",
+            "services_mode": "all|specific|none",
+            "predefined_services": [
+                {
+                    "code": "amazon_devices|android_tv_remote|apple_airDrop|apple_airPlay|apple_file_sharing|apple_iChat|apple_iTunes|aqara|bose|dns_service_discovery|ftp_servers|google_chromecast|homeKit|matter_network|philips_hue|printers|roku|scanners|sonos|spotify_connect|ssh_servers|time_capsule|web_servers|windows_file_sharing_samba"
+                }
+            ],
+            "custom_services": [
+                {
+                    "name": "",
+                    "address": "^_[a-zA-Z0-9._-]+\\._(tcp|udp)(\\.local)?$"
+                }
+            ]
+        }
+    ]
+}

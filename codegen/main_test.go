@@ -3,12 +3,14 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/hashicorp/go-version"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -210,6 +212,65 @@ func TestGenerateLatest(t *testing.T) {
 	base := filepath.Base(specFiles[0])
 	filenameVer := strings.TrimSuffix(strings.TrimPrefix(base, "integration-"), ".json")
 	r.Equal(filenameVer, spec.Info.Version, "spec info.version must match the snapshot filename")
+}
+
+// TestDownloadGenerationInputs_SkipsLegacyDownloadWhenSnapshotComplete is the
+// primary regression guard for #124: when the committed frozen snapshot is
+// complete (sentinel present), downloadGenerationInputs must return the snapshot
+// dir immediately without attempting any network download.
+func TestDownloadGenerationInputs_SkipsLegacyDownloadWhenSnapshotComplete(t *testing.T) {
+	t.Parallel()
+	r := require.New(t)
+
+	baseDir := t.TempDir()
+	internalVer, err := version.NewVersion("9.5.21")
+	r.NoError(err)
+
+	// Stage a complete frozen legacy field snapshot (JSON + sentinel).
+	frozenDir := legacyFieldsDir(baseDir, internalVer)
+	r.NoError(os.MkdirAll(frozenDir, 0o755))
+	r.NoError(os.WriteFile(filepath.Join(frozenDir, "Device.json"), []byte(`{"k":"v"}`), 0o600))
+	r.NoError(os.WriteFile(filepath.Join(frozenDir, extractCompleteSentinel), nil, 0o600))
+
+	// Stage the Official spec snapshot so the official download is also skipped.
+	specPath := officialSpecSnapshotPath(baseDir, internalVer)
+	r.NoError(os.MkdirAll(filepath.Dir(specPath), 0o755))
+	r.NoError(os.WriteFile(specPath, []byte(`{"openapi":"3.1.0"}`), 0o600))
+
+	// A URL that the host guard rejects — proves no legacy download was attempted.
+	badURL, _ := url.Parse("https://evil.example.com/bad.deb")
+	internalVersion := NewUnifiVersion(internalVer, badURL)
+	officialVersion := NewUnifiVersion(internalVer, badURL)
+
+	got, err := downloadGenerationInputs(internalVersion, officialVersion, baseDir, setupLogging(false, false))
+	r.NoError(err, "must skip download when frozen snapshot is complete")
+	r.Equal(frozenDir, got, "must return the frozen snapshot dir")
+}
+
+// TestDownloadGenerationInputs_FallsThroughToDownloadWhenNoSentinel covers the
+// inverse: a frozen dir missing the extraction sentinel is not accepted as
+// complete, and the download branch is entered. The host-guard error proves it.
+func TestDownloadGenerationInputs_FallsThroughToDownloadWhenNoSentinel(t *testing.T) {
+	t.Parallel()
+	r := require.New(t)
+
+	baseDir := t.TempDir()
+	internalVer, err := version.NewVersion("9.5.21")
+	r.NoError(err)
+
+	// Stage the dir WITHOUT the sentinel — simulate a partial/crashed prior run.
+	frozenDir := legacyFieldsDir(baseDir, internalVer)
+	r.NoError(os.MkdirAll(frozenDir, 0o755))
+	r.NoError(os.WriteFile(filepath.Join(frozenDir, "Device.json"), []byte(`{"k":"v"}`), 0o600))
+
+	// A URL that the host guard rejects — trips immediately, proving the branch was entered.
+	badURL, _ := url.Parse("https://evil.example.com/bad.deb")
+	internalVersion := NewUnifiVersion(internalVer, badURL)
+	officialVersion := NewUnifiVersion(internalVer, badURL)
+
+	_, err = downloadGenerationInputs(internalVersion, officialVersion, baseDir, setupLogging(false, false))
+	r.Error(err, "must attempt download when sentinel is absent")
+	r.ErrorContains(err, "not an allowed Ubiquiti host")
 }
 
 func TestGenerateDownloadOnly(t *testing.T) {
