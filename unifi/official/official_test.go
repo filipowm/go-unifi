@@ -47,6 +47,7 @@ func (f *fakeDoer) Get(_ context.Context, apiPath string, _, respBody any) error
 
 func (f *fakeDoer) Post(context.Context, string, any, any) error   { return nil }
 func (f *fakeDoer) Put(context.Context, string, any, any) error    { return nil }
+func (f *fakeDoer) Patch(context.Context, string, any, any) error  { return nil }
 func (f *fakeDoer) Delete(context.Context, string, any, any) error { return nil }
 
 const base = "/proxy/network/integration/v1"
@@ -224,4 +225,5 @@ func (p *pagingDoer) Get(_ context.Context, apiPath string, _, respBody any) err
 }
 func (p *pagingDoer) Post(context.Context, string, any, any) error   { return nil }
 func (p *pagingDoer) Put(context.Context, string, any, any) error    { return nil }
+func (p *pagingDoer) Patch(context.Context, string, any, any) error  { return nil }
 func (p *pagingDoer) Delete(context.Context, string, any, any) error { return nil }

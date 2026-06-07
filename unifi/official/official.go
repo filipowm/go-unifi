@@ -20,6 +20,7 @@ type Doer interface {
 	Get(ctx context.Context, apiPath string, reqBody, respBody any) error
 	Post(ctx context.Context, apiPath string, reqBody, respBody any) error
 	Put(ctx context.Context, apiPath string, reqBody, respBody any) error
+	Patch(ctx context.Context, apiPath string, reqBody, respBody any) error
 	Delete(ctx context.Context, apiPath string, reqBody, respBody any) error
 }
 
@@ -27,16 +28,8 @@ type Doer interface {
 // every operation and its error (unavailable/disabled) is returned verbatim.
 type Gate func(ctx context.Context) error
 
-// Client is the Official UniFi OpenAPI surface.
-type Client interface {
-	// GetInfo returns the controller application info (GET /v1/info).
-	GetInfo(ctx context.Context) (*Info, error)
-	// ListSites returns all local sites, auto-paginating the list envelope.
-	ListSites(ctx context.Context) ([]SiteOverview, error)
-	// ResolveSiteID maps a legacy site name (the Internal-API identifier) to its
-	// Official-API site UUID, caching the lookup.
-	ResolveSiteID(ctx context.Context, name string) (string, error)
-}
+// Client is the Official UniFi OpenAPI surface; its interface and mock are
+// generated in client.generated.go / client_mock.generated.go from the spec.
 
 // apiClient is the default Client implementation bound to an injected Doer.
 type apiClient struct {

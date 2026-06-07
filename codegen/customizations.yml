@@ -116,6 +116,19 @@ customizations:
             type: "any"
         returns:
           - "error"
+      - name: "Patch"
+        comment: "Patch sends a PATCH request to the controller."
+        params:
+          - name: "ctx"
+            type: "context.Context"
+          - name: "apiPath"
+            type: "string"
+          - name: "reqBody"
+            type: "any"
+          - name: "respBody"
+            type: "any"
+        returns:
+          - "error"
 
 
       - name: "AdoptDevice"
