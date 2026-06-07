@@ -43,15 +43,13 @@ func TestNewBareClient(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
 	c, err := newBareClient(&ClientConfig{
-		URL:      localUrl,
-		User:     "admin",
-		Password: "password",
+		URL:    localUrl,
+		APIKey: "test-key",
 	})
 	require.Error(t, err)
 	a.Equal(localUrl, c.BaseURL())
 	a.Contains(err.Error(), "connection refused", "an invalid destination should produce a connection error.")
-	verifyInterceptorPresence(a, c, []any{&CSRFInterceptor{}, &DefaultHeadersInterceptor{}}, true)
-	verifyInterceptorPresence(a, c, []any{&APIKeyAuthInterceptor{}}, false)
+	verifyInterceptorPresence(a, c, []any{&APIKeyAuthInterceptor{}, &DefaultHeadersInterceptor{}}, true)
 }
 
 func TestNewClientWithApiKey(t *testing.T) {
@@ -68,7 +66,6 @@ func TestNewClientWithApiKey(t *testing.T) {
 	a.Equal(localUrl, c.BaseURL())
 	a.Contains(err.Error(), "connection refused", "an invalid destination should produce a connection error.")
 	verifyInterceptorPresence(a, c, []any{&APIKeyAuthInterceptor{}, &DefaultHeadersInterceptor{}}, true)
-	verifyInterceptorPresence(a, c, []any{&CSRFInterceptor{}}, false)
 }
 
 func TestCustomizeHttpClient(t *testing.T) {
@@ -90,27 +87,6 @@ func TestCustomizeHttpClient(t *testing.T) {
 	// then
 	require.Error(t, err)
 	a.True(called, "http customizer not called")
-}
-
-func TestUnifiIntegrationUserPassInjected(t *testing.T) {
-	t.Parallel()
-	a := assert.New(t)
-	// given
-	cs := newControllerServer(t, route{
-		path: NewStyleAPI.LoginPath,
-		fn:   func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) },
-	})
-	c := cs.clientUserPass()
-	interceptor := NewTestInterceptor()
-	c.AddInterceptor(interceptor)
-
-	// when
-	err := c.Login()
-
-	// then
-	require.NoError(t, err, "user/pass login must not produce an error")
-	a.Equal(http.MethodPost, interceptor.Method())
-	a.Equal(http.StatusOK, interceptor.response.StatusCode)
 }
 
 func TestClientConfigValidationExecutedOnNewClient(t *testing.T) {
@@ -173,7 +149,7 @@ func TestRegisterInterceptor(t *testing.T) {
 		t.Parallel()
 		c := &client{interceptors: []ClientInterceptor{}}
 		c.AddInterceptor(&TestInterceptor{})
-		c.AddInterceptor(&CSRFInterceptor{})
+		c.AddInterceptor(&APIKeyAuthInterceptor{})
 		assert.Len(t, c.interceptors, 2, "distinct concrete types must both be kept")
 	})
 
@@ -197,46 +173,14 @@ func TestRegisterInterceptor(t *testing.T) {
 	})
 }
 
-func TestLoginWithAPIKeyDirect(t *testing.T) {
+func TestResolveAuthInterceptors(t *testing.T) {
 	t.Parallel()
-	// Create a client manually with the APIKey set.
-
-	c, err := newBareClient(&ClientConfig{
-		APIKey: "abc",
-		URL:    testUrl,
-	})
-	require.Error(t, err)
-	err = c.Login()
-	require.NoError(t, err)
-}
-
-func TestResolveCredentials(t *testing.T) {
-	t.Parallel()
-
-	t.Run("api key", func(t *testing.T) {
-		t.Parallel()
-		a := assert.New(t)
-		creds, auth := resolveCredentials(&ClientConfig{APIKey: "abc"}, NewDefaultLogger(InfoLevel))
-		a.True(creds.IsAPIKey())
-		a.Equal("abc", creds.GetAPIKey())
-		require.Len(t, auth, 1)
-		apiKeyInterceptor, ok := auth[0].(*APIKeyAuthInterceptor)
-		require.True(t, ok, "expected APIKeyAuthInterceptor")
-		a.Equal("abc", apiKeyInterceptor.apiKey)
-	})
-
-	t.Run("user pass", func(t *testing.T) {
-		t.Parallel()
-		a := assert.New(t)
-		creds, auth := resolveCredentials(&ClientConfig{User: "u", Password: "p", RememberMe: true}, NewDefaultLogger(InfoLevel))
-		a.False(creds.IsAPIKey())
-		a.Equal("u", creds.GetUser())
-		a.Equal("p", creds.GetPass())
-		a.True(creds.IsRememberMe())
-		require.Len(t, auth, 1)
-		_, ok := auth[0].(*CSRFInterceptor)
-		require.True(t, ok, "expected CSRFInterceptor")
-	})
+	a := assert.New(t)
+	auth := resolveAuthInterceptors(&ClientConfig{APIKey: "abc"}, NewDefaultLogger(InfoLevel))
+	require.Len(t, auth, 1)
+	apiKeyInterceptor, ok := auth[0].(*APIKeyAuthInterceptor)
+	require.True(t, ok, "expected APIKeyAuthInterceptor")
+	a.Equal("abc", apiKeyInterceptor.apiKey)
 }
 
 func TestBuildInterceptorsDedup(t *testing.T) {
@@ -247,7 +191,7 @@ func TestBuildInterceptorsDedup(t *testing.T) {
 	config := &ClientConfig{
 		Interceptors: []ClientInterceptor{dup, dup},
 	}
-	auth := []ClientInterceptor{&CSRFInterceptor{}}
+	auth := []ClientInterceptor{&APIKeyAuthInterceptor{apiKey: "test"}}
 	interceptors := buildInterceptors(config, NewDefaultLogger(InfoLevel), auth)
 
 	count := 0
@@ -473,47 +417,6 @@ func TestNewBareClientDoesNotMutateConfig(t *testing.T) {
 	_, err = c.GetSystemInformation()
 	require.NoError(t, err)
 	a.Equal(apiV1Path("s/default/stat/sysinfo"), gotPath, "request must reach the normalized (trimmed) URL path")
-}
-
-// TestLogout mirrors the Login tests: for API-key auth Logout is a
-// no-op that issues NO request; for user/pass auth it POSTs to the controller's
-// logout path. Both paths are exercised through the shared mock controller so the
-// client is constructed fully offline.
-func TestLogout(t *testing.T) {
-	t.Parallel()
-
-	t.Run("api key issues no request", func(t *testing.T) {
-		t.Parallel()
-		cs := newControllerServer(t)
-		c := cs.client() // APIStyleNew + APIKey: API-key credentials
-		require.NoError(t, c.Logout())
-		assert.Zero(t, cs.requestCount(), "API-key Logout must not issue any HTTP request")
-	})
-
-	t.Run("user pass posts to logout path", func(t *testing.T) {
-		t.Parallel()
-		var hits int
-		cs := newControllerServer(t, route{
-			path: NewStyleAPI.LogoutPath,
-			fn: func(w http.ResponseWriter, _ *http.Request) {
-				hits++
-				w.WriteHeader(http.StatusOK)
-			},
-		})
-		c, err := newBareClient(&ClientConfig{
-			URL:      cs.srv.URL,
-			User:     "test-user",
-			Password: "test-pass",
-			APIStyle: APIStyleNew,
-		})
-		require.NoError(t, err)
-
-		require.NoError(t, c.Logout())
-		require.Equal(t, 1, hits, "user/pass Logout must POST exactly once to the logout path")
-		last := cs.lastRequest()
-		assert.Equal(t, http.MethodPost, last.Method)
-		assert.Equal(t, NewStyleAPI.LogoutPath, last.Path)
-	})
 }
 
 // TestVersion pins the two Version() branches: the cached fast path

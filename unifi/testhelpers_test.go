@@ -63,7 +63,6 @@ func newControllerServer(t *testing.T, routes ...route) *controllerServer {
 		cs.mu.Unlock()
 		// Restore the body so the matched handler can decode it.
 		r.Body = io.NopCloser(bytes.NewReader(body))
-		w.Header().Set(CsrfHeader, "csrf-token")
 		mux.ServeHTTP(w, r)
 	}))
 	t.Cleanup(cs.srv.Close)
@@ -85,20 +84,6 @@ func (cs *controllerServer) client() *client {
 	})
 	require.NoError(cs.t, err)
 	return c
-}
-
-// clientUserPass builds a new-style user/pass client pointed at the mock server,
-// constructed fully offline via the APIStyle override. User/pass auth (rather than
-// the API key used by client()) is required so Login/Logout actually perform a
-// round-trip instead of short-circuiting for API-key auth.
-func (cs *controllerServer) clientUserPass() *client {
-	cs.t.Helper()
-	return newOfflineClient(cs.t, &ClientConfig{
-		URL:      cs.srv.URL,
-		User:     "test-user",
-		Password: "test-pass",
-		APIStyle: APIStyleNew,
-	})
 }
 
 // newOfflineClient builds a *client from cfg WITHOUT a swallowed construction

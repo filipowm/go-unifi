@@ -59,17 +59,15 @@ func TestOfficialGateUnavailableBelowVersionFloor(t *testing.T) {
 
 func TestOfficialGateUnavailableOldStyle(t *testing.T) {
 	t.Parallel()
-	// Old-style controllers are unsupported for the Official API; user/pass auth
-	// is required there since API-key + old-style is rejected at construction.
-	c := newOfflineClient(t, &ClientConfig{
+	// Old-style (classic) controllers are unsupported since 2.0.0; construction
+	// must fail immediately rather than letting a client reach Official().
+	_, err := newBareClient(&ClientConfig{
 		URL:      testUrl,
-		User:     "u",
-		Password: "p",
+		APIKey:   "test-key",
 		APIStyle: APIStyleOld,
 	})
-
-	_, err := c.Official().GetInfo(context.Background())
-	require.ErrorIs(t, err, ErrOfficialAPIUnavailable)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "old-style (classic) controllers are unsupported")
 }
 
 func TestOfficialGateDisabled(t *testing.T) {
@@ -131,21 +129,6 @@ func TestVersionAtLeastUnparseable(t *testing.T) {
 	for _, v := range []string{"", "not-a-version", "???"} {
 		assert.False(t, versionAtLeast(v, officialAPIMinVersion), "unparseable %q must be below floor", v)
 	}
-}
-
-// TestOfficialGateUnavailableNewStyleUserPass asserts that a new-style controller
-// with user/password auth (no API key) returns ErrOfficialAPIUnavailable.
-func TestOfficialGateUnavailableNewStyleUserPass(t *testing.T) {
-	t.Parallel()
-	c := newOfflineClient(t, &ClientConfig{
-		URL:      testUrl,
-		User:     "u",
-		Password: "p",
-		APIStyle: APIStyleNew,
-	})
-
-	_, err := c.Official().GetInfo(context.Background())
-	require.ErrorIs(t, err, ErrOfficialAPIUnavailable)
 }
 
 // TestInternalAccessorReturnsResourceSurface proves client.Internal() exposes the

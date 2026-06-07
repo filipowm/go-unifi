@@ -14,6 +14,7 @@ import (
 // resource CRUD method. In 2.0.0 this is the canonical client; 3.0.0 is expected
 // to flip the default to the Official OpenAPI client.
 type InternalClient interface {
+
 	// ==== client methods for APGroup resource ====
 
 	// CreateAPGroup creates a resource
@@ -1160,6 +1161,7 @@ type InternalClient interface {
 	// ==== end of client methods for WLANGroup resource ====
 
 	// ==== end of client methods for WLAN resource ====
+
 }
 
 // Client is the top-level UniFi client. It embeds InternalClient (the legacy
@@ -1181,18 +1183,6 @@ type Client interface {
 
 	// Get sends a GET request to the controller.
 	Get(ctx context.Context, apiPath string, reqBody any, respBody any) error
-
-	// Login logs in to the controller. Useful only for user/password authentication.
-	Login() error
-
-	// LoginContext logs in to the controller using the supplied context for cancellation/deadline. Useful only for user/password authentication.
-	LoginContext(ctx context.Context) error
-
-	// Logout logs out from the controller.
-	Logout() error
-
-	// LogoutContext logs out from the controller using the supplied context for cancellation/deadline.
-	LogoutContext(ctx context.Context) error
 
 	// Post sends a POST request to the controller.
 	Post(ctx context.Context, apiPath string, reqBody any, respBody any) error

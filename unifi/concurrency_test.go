@@ -12,45 +12,33 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestConcurrentRequestsCSRFReplayNoRace is the concurrency regression
-// test. It fires N goroutines doing concurrent Get/Post on a single user/pass
-// client. The CSRF token is read on every outgoing request (InterceptRequest)
-// and written from every response (InterceptResponse); with the coarse
-// per-request lock removed (O4) these now run truly concurrently, so the token
-// must be guarded inside CSRFInterceptor. Run with -race for the data race on
-// the token to bite.
-//
-// It also asserts correct CSRF replay: once the server has handed out a token,
-// every subsequent request carries it back in the X-Csrf-Token header.
-func TestConcurrentRequestsCSRFReplayNoRace(t *testing.T) {
+// TestConcurrentRequestsAPIKeyReplayNoRace fires N goroutines doing concurrent
+// Get/Post on a single API-key client. The API key is set on every outgoing
+// request (InterceptRequest); with truly concurrent requests the interceptor must
+// be race-free. Run with -race.
+func TestConcurrentRequestsAPIKeyReplayNoRace(t *testing.T) {
 	t.Parallel()
 
 	const (
 		goroutines = 40
-		csrfToken  = "concurrent-csrf-token" //nolint:gosec // not a credential; a CSRF test token
+		wantKey    = "test-api-key"
 	)
 
 	var (
-		// replays counts requests that arrived carrying the CSRF token back.
-		replays atomic.Int64
+		// authenticated counts requests that arrived carrying the API key.
+		authenticated atomic.Int64
 		// total counts data-endpoint requests (excludes the style-probe at "/").
 		total atomic.Int64
 	)
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Always hand out the CSRF token on the response so the interceptor
-		// captures it; the controller does this on every reply.
-		w.Header().Set(CsrfHeader, csrfToken)
-
 		if r.URL.Path == "/" {
-			// 200 at the root selects the new-style API during probing.
 			w.WriteHeader(http.StatusOK)
 			return
 		}
-
 		total.Add(1)
-		if r.Header.Get(CsrfHeader) == csrfToken {
-			replays.Add(1)
+		if r.Header.Get(ApiKeyHeader) == wantKey {
+			authenticated.Add(1)
 		}
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(`{"data":"ok"}`))
@@ -58,15 +46,10 @@ func TestConcurrentRequestsCSRFReplayNoRace(t *testing.T) {
 	defer ts.Close()
 
 	c, err := NewBareClient(&ClientConfig{
-		URL:      ts.URL,
-		User:     "test-user",
-		Password: "test-pass",
+		URL:    ts.URL,
+		APIKey: wantKey,
 	})
 	require.NoError(t, err)
-
-	// Prime the token with one request so the replay assertion is meaningful:
-	// after this, the interceptor has captured the CSRF token.
-	require.NoError(t, c.Get(context.Background(), "prime", nil, nil))
 
 	start := make(chan struct{})
 	var wg sync.WaitGroup
@@ -74,7 +57,7 @@ func TestConcurrentRequestsCSRFReplayNoRace(t *testing.T) {
 	for i := range goroutines {
 		go func(idx int) {
 			defer wg.Done()
-			<-start // release together to maximize contention on the token
+			<-start // release together to maximize contention
 			var err error
 			if idx%2 == 0 {
 				err = c.Get(context.Background(), "resource", nil, nil)
@@ -87,45 +70,32 @@ func TestConcurrentRequestsCSRFReplayNoRace(t *testing.T) {
 	close(start)
 	wg.Wait()
 
-	// The prime request (the first one) ran before any token was captured, so it
-	// does NOT replay; every one of the goroutines+1 requests reaches the server,
-	// and all goroutines fired after priming must replay the captured token.
-	assert.Equal(t, int64(goroutines+1), total.Load(), "all data requests should reach the server")
-	assert.Equal(t, int64(goroutines), replays.Load(), "every post-prime request must replay the captured CSRF token")
+	assert.Equal(t, int64(goroutines), total.Load(), "all data requests should reach the server")
+	assert.Equal(t, int64(goroutines), authenticated.Load(), "every request must carry the API key header")
 }
 
-// TestCSRFInterceptorConcurrentAccess directly hammers the CSRFInterceptor's
-// read/write pair from many goroutines, isolating the token-guard data race
+// TestAPIKeyAuthInterceptorConcurrentAccess directly hammers the
+// APIKeyAuthInterceptor from many goroutines, isolating the header-set path
 // independent of the HTTP layer. Run with -race.
-func TestCSRFInterceptorConcurrentAccess(t *testing.T) {
+func TestAPIKeyAuthInterceptorConcurrentAccess(t *testing.T) {
 	t.Parallel()
 
-	interceptor := &CSRFInterceptor{}
+	interceptor := &APIKeyAuthInterceptor{apiKey: "test-key"}
 	const goroutines = 50
 
 	start := make(chan struct{})
 	var wg sync.WaitGroup
-	wg.Add(goroutines * 2)
+	wg.Add(goroutines)
 
 	for range goroutines {
-		// Writers: store a token via InterceptResponse.
-		go func() {
-			defer wg.Done()
-			<-start
-			resp := &http.Response{Header: http.Header{}}
-			resp.Header.Set(CsrfHeader, "tok")
-			assert.NoError(t, interceptor.InterceptResponse(resp))
-		}()
-		// Readers: read the token via InterceptRequest.
 		go func() {
 			defer wg.Done()
 			<-start
 			req, _ := http.NewRequestWithContext(context.Background(), http.MethodGet, "http://example.invalid", nil)
 			assert.NoError(t, interceptor.InterceptRequest(req))
+			assert.Equal(t, "test-key", req.Header.Get(ApiKeyHeader))
 		}()
 	}
 	close(start)
 	wg.Wait()
-
-	assert.Equal(t, "tok", interceptor.CSRFToken(), "token must be set after concurrent writes")
 }

@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"net/http/cookiejar"
 	"net/url"
 	"reflect"
 	"strings"
@@ -14,7 +13,6 @@ import (
 	"time"
 
 	"github.com/filipowm/go-unifi/unifi/official"
-	"golang.org/x/net/publicsuffix"
 )
 
 // ValidationMode represents the mode for request validation.
@@ -50,10 +48,7 @@ goroutines (requests run concurrently; see the Client concurrency contract).
 Fields:
 
 	URL:           The base URL of the UniFi controller. Must be a valid URL and should not include the `/api` suffix.
-	APIKey:        An API key used for authentication. Provide this if user/password credentials are not used.
-	User:          The username for user/password authentication. Must be provided with Password if APIKey is not used.
-	Password:      The password for user/password authentication. Must be provided with User if APIKey is not used.
-	RememberMe:    If true, the session is remembered for future requests. Useful for long-running processes. Default: false. Only used for user/password authentication.
+	APIKey:        API key for authentication. Required. Obtain one from the UniFi Network controller.
 	Timeout:       The maximum duration to wait for responses; default is no timeout.
 	SkipVerifySSL: Controls TLS certificate verification. SECURE BY DEFAULT: the zero value (false) verifies certificates. Set it to true (SkipVerifySSL: true) to DISABLE verification — required for the common case of a self-signed controller certificate. Disabling verification is logged at WARN level on every client build.
 	Interceptors:  A slice of ClientInterceptor implementations that can modify requests and responses.
@@ -66,12 +61,10 @@ Fields:
 	ValidationMode:The mode for validating request bodies. Can be "soft", "hard", or "disable".
 */
 type ClientConfig struct {
-	URL        string        `validate:"required,http_url"`
-	APIKey     string        `validate:"required_without_all=User Password"`
-	User       string        `validate:"excluded_with=APIKey,required_with=Password"`
-	Password   string        `validate:"excluded_with=APIKey,required_with=User"`
-	RememberMe bool          `validate:"excluded_with=APIKey"`
-	Timeout    time.Duration // How long to wait for replies, default: forever.
+	URL    string `validate:"required,http_url"`
+	APIKey string `validate:"required"`
+
+	Timeout time.Duration // How long to wait for replies, default: forever.
 	// SkipVerifySSL controls TLS certificate verification. The zero value (false)
 	// verifies certificates (secure by default); set it to true to disable
 	// verification, e.g. SkipVerifySSL: true for a self-signed controller certificate.
@@ -95,17 +88,12 @@ type ClientConfig struct {
 }
 
 // Credentials abstracts authentication credentials.
-// It defines methods to determine the type of credentials and retrieve the associated values.
+// Only API-key authentication is supported as of 2.0.0.
 type Credentials interface {
-	// IsAPIKey returns true if the credentials represent an API key.
+	// IsAPIKey always returns true; kept for interface completeness.
 	IsAPIKey() bool
-	// GetAPIKey returns the API key; returns an empty string if not applicable.
+	// GetAPIKey returns the API key.
 	GetAPIKey() string
-	// GetUser returns the username for authentication; returns an empty string if not applicable.
-	GetUser() string
-	// GetPass returns the password for authentication; returns an empty string if not applicable.
-	GetPass() string
-	IsRememberMe() bool
 }
 
 // APIKeyCredentials holds API key authentication details.
@@ -113,32 +101,15 @@ type APIKeyCredentials struct {
 	APIKey string
 }
 
-func (a APIKeyCredentials) IsAPIKey() bool     { return true }
-func (a APIKeyCredentials) GetAPIKey() string  { return a.APIKey }
-func (a APIKeyCredentials) GetUser() string    { return "" }
-func (a APIKeyCredentials) GetPass() string    { return "" }
-func (a APIKeyCredentials) IsRememberMe() bool { return false }
-
-// UserPassCredentials holds user/password authentication.
-type UserPassCredentials struct {
-	User     string
-	Password string
-	Remember bool
-}
-
-func (u UserPassCredentials) IsAPIKey() bool     { return false }
-func (u UserPassCredentials) GetAPIKey() string  { return "" }
-func (u UserPassCredentials) GetUser() string    { return u.User }
-func (u UserPassCredentials) GetPass() string    { return u.Password }
-func (u UserPassCredentials) IsRememberMe() bool { return u.Remember }
+func (a APIKeyCredentials) IsAPIKey() bool    { return true }
+func (a APIKeyCredentials) GetAPIKey() string { return a.APIKey }
 
 // client represents a UniFi client.
 //
 // Concurrency contract: a *client is safe for concurrent use by multiple
 // goroutines. Requests are dispatched through a goroutine-safe net/http.Client
 // and are NOT serialized — they run concurrently. The only mutable shared state
-// is the cached system information (guarded by sysInfoMu) and, for user/pass
-// auth, the CSRF token (guarded inside CSRFInterceptor). No request-level lock
+// is the cached system information (guarded by sysInfoMu). No request-level lock
 // is held across the network round-trip.
 type client struct {
 	Logger
@@ -147,7 +118,6 @@ type client struct {
 	sysInfo        *SysInfo
 	apiPaths       *APIPaths
 	timeout        time.Duration
-	credentials    Credentials
 	validationMode ValidationMode
 
 	http         *http.Client
@@ -182,8 +152,8 @@ func (c *client) BaseURL() string {
 // AddInterceptor adds a ClientInterceptor to the client's interceptor list if no
 // interceptor of the same concrete type is already present. Dedup is BY CONCRETE
 // TYPE (reflect.TypeOf), not by value: this honors the "only one of a kind"
-// intent (a single CSRF / API-key interceptor) and is panic-safe for interceptor
-// types that are not comparable with == (e.g. structs holding a slice/map/func).
+// intent and is panic-safe for interceptor types that are not comparable with ==
+// (e.g. structs holding a slice/map/func).
 func (c *client) AddInterceptor(interceptor ClientInterceptor) {
 	if interceptor == nil {
 		return
@@ -278,8 +248,7 @@ func tlsVerificationDisabled(config *ClientConfig) bool {
 
 // buildHTTPClient constructs the *http.Client from config: it resolves the
 // round-tripper (custom provider or a default transport with optional
-// InsecureSkipVerify and transport customizer), applies the timeout, and adds a
-// cookiejar when no API key is used.
+// InsecureSkipVerify and transport customizer), and applies the timeout.
 //
 // TLS verification is secure by default: InsecureSkipVerify is only
 // set when the caller explicitly disables verification via SkipVerifySSL, and that
@@ -309,29 +278,16 @@ func buildHTTPClient(config *ClientConfig, log Logger) (*http.Client, error) {
 		}
 		rt = transport
 	}
-	httpClient := &http.Client{
+	return &http.Client{
 		Timeout:   config.Timeout,
 		Transport: rt,
-	}
-	if config.APIKey == "" {
-		jar, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
-		if err != nil {
-			return nil, fmt.Errorf("failed creating cookiejar: %w", err)
-		}
-		httpClient.Jar = jar
-	}
-	return httpClient, nil
+	}, nil
 }
 
-// resolveCredentials selects API-key or user/pass credentials based on config and
-// returns them together with the matching authentication interceptor.
-func resolveCredentials(config *ClientConfig, log Logger) (Credentials, []ClientInterceptor) {
-	if config.APIKey != "" {
-		log.Debug("Using API key authentication")
-		return APIKeyCredentials{APIKey: config.APIKey}, []ClientInterceptor{&APIKeyAuthInterceptor{apiKey: config.APIKey}}
-	}
-	log.Debug("Using user/pass authentication")
-	return UserPassCredentials{User: config.User, Password: config.Password, Remember: config.RememberMe}, []ClientInterceptor{&CSRFInterceptor{}}
+// resolveAuthInterceptors returns the auth interceptor chain for the config.
+func resolveAuthInterceptors(config *ClientConfig, log Logger) []ClientInterceptor {
+	log.Debug("Using API key authentication")
+	return []ClientInterceptor{&APIKeyAuthInterceptor{apiKey: config.APIKey}}
 }
 
 // buildInterceptors assembles the final interceptor chain: the provided auth
@@ -390,14 +346,13 @@ func newClientFromConfig(config *ClientConfig, v *validator) (*client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed parsing base URL: %w", err)
 	}
-	credentials, auth := resolveCredentials(&cfg, log)
+	auth := resolveAuthInterceptors(&cfg, log)
 	interceptors := buildInterceptors(&cfg, log, auth)
 	errorHandler := resolveErrorHandler(&cfg, log)
 	log.Tracef("Validation mode: %d", cfg.ValidationMode)
 	return &client{
 		baseURL:          baseURL,
 		timeout:          cfg.Timeout,
-		credentials:      credentials,
 		validationMode:   cfg.ValidationMode,
 		http:             httpClient,
 		interceptors:     interceptors,
@@ -409,16 +364,12 @@ func newClientFromConfig(config *ClientConfig, v *validator) (*client, error) {
 }
 
 // NewClient creates and initializes a new UniFi client based on the provided ClientConfig.
-// It validates the configuration, determines the API style, performs login if necessary,
-// and retrieves system information from the UniFi controller.
-// On success, it returns a pointer to a client; otherwise, it returns an error.
+// It validates the configuration, determines the API style, and retrieves system information from the
+// UniFi controller. On success, it returns a pointer to a client; otherwise, it returns an error.
 func NewClient(config *ClientConfig) (Client, error) { //nolint: ireturn
 	c, err := newBareClient(config)
 	if err != nil {
 		return c, err
-	}
-	if err = c.Login(); err != nil {
-		return c, fmt.Errorf("failed logging in: %w", err)
 	}
 	if sysInfo, err := c.GetSystemInformation(); err != nil {
 		return c, fmt.Errorf("failed getting server info: %w", err)
@@ -431,8 +382,7 @@ func NewClient(config *ClientConfig) (Client, error) { //nolint: ireturn
 	return c, nil
 }
 
-// NewBareClient creates a new UniFi client without performing login or system information retrieval.
-// When user/pass authentication is used, you must call Login before making requests.
+// NewBareClient creates a new UniFi client without performing system information retrieval.
 // It validates the configuration, determines the API style, and returns a pointer to the client on success.
 func NewBareClient(config *ClientConfig) (Client, error) { //nolint: ireturn
 	return newBareClient(config)
@@ -454,8 +404,8 @@ func newBareClient(config *ClientConfig) (*client, error) {
 	// network probe entirely so the client can be constructed fully offline.
 	if config.APIStyle != APIStyleAuto {
 		paths := apiPathsForStyle(config.APIStyle)
-		if paths == &OldStyleAPI && c.credentials.IsAPIKey() {
-			return c, errors.New("unable to use API key authentication with old style API. Switch to user/pass authentication or update controller to latest version")
+		if paths == &OldStyleAPI {
+			return c, errors.New("old-style (classic) controllers are unsupported; update to a controller version that supports API-key authentication")
 		}
 		c.Debugf("Using explicitly configured API style (skipping probe): %d", config.APIStyle)
 		c.apiPaths = paths
@@ -465,66 +415,6 @@ func newBareClient(config *ClientConfig) (*client, error) {
 		return c, fmt.Errorf("failed determining API style: %w", err)
 	}
 	return c, nil
-}
-
-// Login authenticates the client using user/pass credentials.
-// For API key authentication, Login does nothing.
-// It returns an error if the authentication process fails.
-// It derives a fresh request context honoring the client-wide timeout and
-// delegates to LoginContext.
-func (c *client) Login() error {
-	ctx, cancel := c.newRequestContext()
-	defer cancel()
-	return c.LoginContext(ctx)
-}
-
-// LoginContext authenticates the client using user/pass credentials, using the
-// supplied context for cancellation/deadline. For API key authentication it does
-// nothing. The passed ctx is threaded through to the underlying HTTP call so a
-// cancelled or expired context aborts the request.
-func (c *client) LoginContext(ctx context.Context) error {
-	if c.credentials.IsAPIKey() {
-		c.Trace("API key authentication; skipping login")
-		return nil
-	}
-	c.Trace("Logging in with user/pass credentials")
-
-	err := c.Post(ctx, c.apiPaths.LoginPath, &struct {
-		Username string `json:"username"`
-		Password string `json:"password"`
-		Remember bool   `json:"remember"`
-	}{
-		Username: c.credentials.GetUser(),
-		Password: c.credentials.GetPass(),
-		Remember: c.credentials.IsRememberMe(),
-	}, nil)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// Logout terminates the client's session for user/pass authentication.
-// For API key authentication, Logout does nothing.
-// It returns an error if the logout process fails.
-// It derives a fresh request context honoring the client-wide timeout and
-// delegates to LogoutContext.
-func (c *client) Logout() error {
-	ctx, cancel := c.newRequestContext()
-	defer cancel()
-	return c.LogoutContext(ctx)
-}
-
-// LogoutContext terminates the client's session for user/pass authentication,
-// using the supplied context for cancellation/deadline. For API key
-// authentication it does nothing. The passed ctx is threaded through to the
-// underlying HTTP call so a cancelled or expired context aborts the request.
-func (c *client) LogoutContext(ctx context.Context) error {
-	if c.credentials.IsAPIKey() {
-		return nil
-	}
-
-	return c.Post(ctx, c.apiPaths.LogoutPath, nil, nil)
 }
 
 // cachedVersion returns the cached version and whether the cache was populated.

@@ -25,59 +25,39 @@ func TestDetermineApiStyle_InvalidStatus(t *testing.T) {
 	assert.Contains(t, err.Error(), "expected 200 or 302 status code")
 }
 
-// TestApiStyleFromStatus covers every branch of the pure decision function
-// extracted for offline testability: 200/302/other x apikey/userpass,
-// including the 'cannot use API key with old-style API' guard.
+// TestApiStyleFromStatus covers every branch of the pure decision function:
+// 200 maps to the new-style API; 302 (classic/old-style) is rejected as
+// unsupported; any other status is an error.
 func TestApiStyleFromStatus(t *testing.T) {
 	t.Parallel()
 
 	cases := map[string]struct {
 		status    int
-		isAPIKey  bool
 		wantPaths *APIPaths
 		wantErr   string
 	}{
-		"200 user/pass -> new style": {
+		"200 -> new style": {
 			status:    http.StatusOK,
-			isAPIKey:  false,
 			wantPaths: &NewStyleAPI,
 		},
-		"200 api key -> new style": {
-			status:    http.StatusOK,
-			isAPIKey:  true,
-			wantPaths: &NewStyleAPI,
+		"302 -> old-style unsupported": {
+			status:  http.StatusFound,
+			wantErr: "old-style (classic) controllers are unsupported",
 		},
-		"302 user/pass -> old style": {
-			status:    http.StatusFound,
-			isAPIKey:  false,
-			wantPaths: &OldStyleAPI,
+		"500 -> error": {
+			status:  http.StatusInternalServerError,
+			wantErr: "expected 200 or 302 status code, but got: 500",
 		},
-		"302 api key -> rejected": {
-			status:   http.StatusFound,
-			isAPIKey: true,
-			wantErr:  "unable to use API key authentication with old style API",
-		},
-		"500 user/pass -> error": {
-			status:   http.StatusInternalServerError,
-			isAPIKey: false,
-			wantErr:  "expected 200 or 302 status code, but got: 500",
-		},
-		"500 api key -> error": {
-			status:   http.StatusInternalServerError,
-			isAPIKey: true,
-			wantErr:  "expected 200 or 302 status code, but got: 500",
-		},
-		"401 user/pass -> error": {
-			status:   http.StatusUnauthorized,
-			isAPIKey: false,
-			wantErr:  "expected 200 or 302 status code, but got: 401",
+		"401 -> error": {
+			status:  http.StatusUnauthorized,
+			wantErr: "expected 200 or 302 status code, but got: 401",
 		},
 	}
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			paths, err := apiStyleFromStatus(tc.status, tc.isAPIKey)
+			paths, err := apiStyleFromStatus(tc.status)
 			if tc.wantErr != "" {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), tc.wantErr)
@@ -91,40 +71,25 @@ func TestApiStyleFromStatus(t *testing.T) {
 }
 
 // TestApiStyleOverrideSkipsProbe proves the ClientConfig.APIStyle override (the
-// offline-construction seam): when set, no network probe is made, so
-// the client constructs against an unreachable URL without error and pins the
+// offline-construction seam): when APIStyleNew is set, no network probe is made,
+// so the client constructs against an unreachable URL without error and pins the
 // requested paths.
 func TestApiStyleOverrideSkipsProbe(t *testing.T) {
 	t.Parallel()
-
-	cases := map[string]struct {
-		style     APIStyle
-		wantPaths *APIPaths
-	}{
-		"new style override": {style: APIStyleNew, wantPaths: &NewStyleAPI},
-		"old style override": {style: APIStyleOld, wantPaths: &OldStyleAPI},
-	}
-
-	for name, tc := range cases {
-		t.Run(name, func(t *testing.T) {
-			t.Parallel()
-			// localUrl points at an unreachable port: if the probe ran, construction
-			// would fail with a connection error. APIStyle skips it entirely.
-			c, err := newBareClient(&ClientConfig{
-				URL:      localUrl,
-				User:     "admin",
-				Password: "password",
-				APIStyle: tc.style,
-			})
-			require.NoError(t, err)
-			assert.Same(t, tc.wantPaths, c.apiPaths)
-		})
-	}
+	// localUrl points at an unreachable port: if the probe ran, construction
+	// would fail with a connection error. APIStyle skips it entirely.
+	c, err := newBareClient(&ClientConfig{
+		URL:      localUrl,
+		APIKey:   "test-key",
+		APIStyle: APIStyleNew,
+	})
+	require.NoError(t, err)
+	assert.Same(t, &NewStyleAPI, c.apiPaths)
 }
 
-// TestApiStyleOverrideOldStyleRejectsAPIKey ensures the API-key-vs-old-style
-// guard still applies when the style is pinned offline rather than probed.
-func TestApiStyleOverrideOldStyleRejectsAPIKey(t *testing.T) {
+// TestApiStyleOverrideOldStyleIsUnsupported ensures that pinning APIStyleOld
+// fails immediately — classic controllers are unsupported after API-key-only auth.
+func TestApiStyleOverrideOldStyleIsUnsupported(t *testing.T) {
 	t.Parallel()
 	_, err := newBareClient(&ClientConfig{
 		URL:      localUrl,
@@ -132,7 +97,7 @@ func TestApiStyleOverrideOldStyleRejectsAPIKey(t *testing.T) {
 		APIStyle: APIStyleOld,
 	})
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "unable to use API key authentication with old style API")
+	assert.Contains(t, err.Error(), "old-style (classic) controllers are unsupported")
 }
 
 // TestApiStyleSetCopiesAreIsolated pins the value-returning seam:
@@ -157,8 +122,8 @@ func TestApiStyleSetCopiesAreIsolated(t *testing.T) {
 	a.Equal(apiPathNew, newStyleAPI().ApiPath, "each call returns a pristine copy")
 
 	cpOld := oldStyleAPI()
-	cpOld.LoginPath = "/corrupted"
-	a.Equal(loginPath, OldStyleAPI.LoginPath, "mutating a copy must not corrupt the shared OldStyleAPI")
+	cpOld.ApiPath = "/corrupted"
+	a.Equal(apiPath, OldStyleAPI.ApiPath, "mutating a copy must not corrupt the shared OldStyleAPI")
 }
 
 // TestApiPathsForStyle pins the pinned-style->paths mapping: the old
@@ -174,10 +139,10 @@ func TestApiPathsForStyle(t *testing.T) {
 	a.Same(&NewStyleAPI, apiPathsForStyle(APIStyleAuto), "auto defaults to the new style set")
 }
 
-// TestDetermineApiStyle_OldStyle exercises the 302 -> old-style branch end to
-// end against an httptest server that redirects at the root, proving the probe
-// (now routed through a clone of c.http) does NOT follow the redirect.
-func TestDetermineApiStyle_OldStyle(t *testing.T) {
+// TestDetermineApiStyle_OldStyleIsUnsupported exercises the 302 -> unsupported
+// branch end to end against an httptest server that redirects at the root. The
+// probe must NOT follow the redirect and must return an error.
+func TestDetermineApiStyle_OldStyleIsUnsupported(t *testing.T) {
 	t.Parallel()
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {
@@ -188,11 +153,10 @@ func TestDetermineApiStyle_OldStyle(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c, err := newBareClient(&ClientConfig{
-		URL:      ts.URL,
-		User:     "admin",
-		Password: "password",
+	_, err := newBareClient(&ClientConfig{
+		URL:    ts.URL,
+		APIKey: "test-key",
 	})
-	require.NoError(t, err)
-	assert.Same(t, &OldStyleAPI, c.apiPaths)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "old-style (classic) controllers are unsupported")
 }
