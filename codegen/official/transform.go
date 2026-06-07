@@ -56,7 +56,7 @@ func Transform(doc map[string]any) ([]string, error) {
 	// Hand-written collisions: package official already declares these models, so
 	// alias / suppress generation of the spec twins (Stage 3 reconciles).
 	if info, ok := schemas[appInfoTypeFinal].(map[string]any); ok {
-		info[extGoType] = handWrittenInfo
+		info[extGoType] = customInfo
 	}
 	return []string{siteOverviewFinal}, nil
 }
