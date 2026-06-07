@@ -11,8 +11,8 @@ type Info struct {
 	ApplicationVersion string `json:"applicationVersion"`
 }
 
-// GetInfo returns the controller application info.
-func (c *apiClient) GetInfo(ctx context.Context) (*Info, error) {
+// Get returns the controller application info.
+func (c infoClient) Get(ctx context.Context) (*Info, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
 	}

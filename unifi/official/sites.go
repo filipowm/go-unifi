@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-// ErrSiteNotFound is returned by ResolveSiteID when the given legacy site name
+// ErrSiteNotFound is returned by ResolveID when the given legacy site name
 // has no matching Official-API UUID in the full site list.
 var ErrSiteNotFound = errors.New("site not found")
 
@@ -19,8 +19,8 @@ type SiteOverview struct {
 	Name              string `json:"name"`
 }
 
-// ListSites returns all local sites, auto-paginating the list envelope.
-func (c *apiClient) ListSites(ctx context.Context) ([]SiteOverview, error) {
+// List returns all local sites, auto-paginating the list envelope.
+func (c sitesClient) List(ctx context.Context) ([]SiteOverview, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
 	}
@@ -31,14 +31,14 @@ func (c *apiClient) ListSites(ctx context.Context) ([]SiteOverview, error) {
 	return sites, nil
 }
 
-// ResolveSiteID maps a legacy site name (the Internal-API identifier, carried as
+// ResolveID maps a legacy site name (the Internal-API identifier, carried as
 // internalReference) to its Official-API site UUID. The full site list is cached
 // on first miss so repeated lookups avoid a round-trip.
-func (c *apiClient) ResolveSiteID(ctx context.Context, name string) (string, error) {
+func (c sitesClient) ResolveID(ctx context.Context, name string) (string, error) {
 	if id, ok := c.cachedSiteID(name); ok {
 		return id, nil
 	}
-	sites, err := c.ListSites(ctx)
+	sites, err := c.List(ctx)
 	if err != nil {
 		return "", err
 	}

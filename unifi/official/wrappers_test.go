@@ -55,7 +55,7 @@ func TestGeneratedGetWrapper(t *testing.T) {
 	}}
 	c := New(d, base, nil)
 
-	net, err := c.GetNetworkDetails(context.Background(), "s1", "n1")
+	net, err := c.Networks().GetDetails(context.Background(), "s1", "n1")
 	require.NoError(t, err)
 	assert.Equal(t, "lan", net.Name)
 	assert.Equal(t, []string{"GET " + base + "/sites/s1/networks/n1"}, d.calls)
@@ -72,7 +72,7 @@ func TestGeneratedListWrapperPaginates(t *testing.T) {
 	}}
 	c := New(d, base, nil)
 
-	nets, err := c.GetNetworksOverviewPage(context.Background(), "s1")
+	nets, err := c.Networks().GetOverviewPage(context.Background(), "s1")
 	require.NoError(t, err)
 	require.Len(t, nets, 2)
 	assert.Equal(t, "a", nets[0].Name)
@@ -86,7 +86,7 @@ func TestGeneratedPatchWrapper(t *testing.T) {
 	}}
 	c := New(d, base, nil)
 
-	_, err := c.PatchFirewallPolicy(context.Background(), "s1", "p1", PatchFirewallPolicy{})
+	_, err := c.Firewall().PatchPolicy(context.Background(), "s1", "p1", PatchFirewallPolicy{})
 	require.NoError(t, err)
 	assert.Equal(t, []string{"PATCH " + base + "/sites/s1/firewall/policies/p1"}, d.calls)
 }
@@ -98,23 +98,39 @@ func TestDeleteVouchersGuardsEmptyFilter(t *testing.T) {
 	d := &cannedDoer{}
 	c := New(d, base, nil)
 
-	_, err := c.DeleteVouchers(context.Background(), "s1", "")
+	_, err := c.Hotspot().DeleteVouchers(context.Background(), "s1", "")
 	require.Error(t, err)
 	assert.Empty(t, d.calls, "empty filter must short-circuit before transport")
 
-	_, err = c.DeleteVouchers(context.Background(), "s1", "expired")
+	_, err = c.Hotspot().DeleteVouchers(context.Background(), "s1", "expired")
 	require.NoError(t, err)
 	require.Len(t, d.calls, 1)
 	assert.Contains(t, d.calls[0], "filter=expired")
 }
 
-// TestClientMockSatisfiesInterface wires a stub through the generated mock.
+// TestClientMockSatisfiesInterface wires a stub through the parent mock and its
+// per-group mock: c.Info() returns the group mock, whose Get is stubbed.
 func TestClientMockSatisfiesInterface(t *testing.T) {
 	t.Parallel()
-	var c Client = &ClientMock{
-		GetInfoFunc: func(context.Context) (*Info, error) { return &Info{ApplicationVersion: "10.1.78"}, nil },
+	info := &InfoClientMock{
+		GetFunc: func(context.Context) (*Info, error) { return &Info{ApplicationVersion: "10.1.78"}, nil },
 	}
-	info, err := c.GetInfo(context.Background())
+	var c Client = &ClientMock{InfoFunc: func() InfoClient { return info }}
+	got, err := c.Info().Get(context.Background())
 	require.NoError(t, err)
-	assert.Equal(t, "10.1.78", info.ApplicationVersion)
+	assert.Equal(t, "10.1.78", got.ApplicationVersion)
+}
+
+// TestGroupMockStandalone exercises a per-group mock directly, without the parent
+// Client — each group mock is independently usable in tests.
+func TestGroupMockStandalone(t *testing.T) {
+	t.Parallel()
+	var fw FirewallClient = &FirewallClientMock{
+		GetPolicyFunc: func(_ context.Context, _, _ string) (*FirewallPolicy, error) {
+			return &FirewallPolicy{Name: "allow-all"}, nil
+		},
+	}
+	p, err := fw.GetPolicy(context.Background(), "s1", "p1")
+	require.NoError(t, err)
+	assert.Equal(t, "allow-all", p.Name)
 }

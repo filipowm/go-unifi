@@ -2,144 +2,100 @@
 
 package official
 
-import "context"
-
-// Client is the Official UniFi OpenAPI (integration/v1) surface.
+// Client is the Official UniFi OpenAPI (integration/v1) surface, exposed as one
+// fluent accessor per resource group (e.g. Firewall().CreatePolicy(ctx, ...)).
 type Client interface {
-	// AdoptDevice maps to POST /v1/sites/%s/devices on the Official API.
-	AdoptDevice(ctx context.Context, siteId string, body DeviceAdoptionRequest) (*AdoptedDeviceDetails, error)
-	// CreateAclRule maps to POST /v1/sites/%s/acl-rules on the Official API.
-	CreateAclRule(ctx context.Context, siteId string, body ACLRuleUpdate) (*ACLRule, error)
-	// CreateDnsPolicy maps to POST /v1/sites/%s/dns/policies on the Official API.
-	CreateDnsPolicy(ctx context.Context, siteId string, body DNSPolicyCreateOrUpdate) (*DNSPolicy, error)
-	// CreateFirewallPolicy maps to POST /v1/sites/%s/firewall/policies on the Official API.
-	CreateFirewallPolicy(ctx context.Context, siteId string, body FirewallPolicyCreateOrUpdate) (*FirewallPolicy, error)
-	// CreateFirewallZone maps to POST /v1/sites/%s/firewall/zones on the Official API.
-	CreateFirewallZone(ctx context.Context, siteId string, body FirewallZoneCreateOrUpdate) (*FirewallZone, error)
-	// CreateNetwork maps to POST /v1/sites/%s/networks on the Official API.
-	CreateNetwork(ctx context.Context, siteId string, body NetworkCreateOrUpdate) (*NetworkDetails, error)
-	// CreateTrafficMatchingList maps to POST /v1/sites/%s/traffic-matching-lists on the Official API.
-	CreateTrafficMatchingList(ctx context.Context, siteId string, body TrafficMatchingListCreateOrUpdate) (*TrafficMatchingList, error)
-	// CreateVouchers maps to POST /v1/sites/%s/hotspot/vouchers on the Official API.
-	CreateVouchers(ctx context.Context, siteId string, body HotspotVoucherCreationRequest) (*VoucherCreationResult, error)
-	// CreateWifiBroadcast maps to POST /v1/sites/%s/wifi/broadcasts on the Official API.
-	CreateWifiBroadcast(ctx context.Context, siteId string, body WifiBroadcastCreateOrUpdate) (*WifiBroadcastDetails, error)
-	// DeleteAclRule maps to DELETE /v1/sites/%s/acl-rules/%s on the Official API.
-	DeleteAclRule(ctx context.Context, siteId string, aclRuleId string) error
-	// DeleteDnsPolicy maps to DELETE /v1/sites/%s/dns/policies/%s on the Official API.
-	DeleteDnsPolicy(ctx context.Context, siteId string, dnsPolicyId string) error
-	// DeleteFirewallPolicy maps to DELETE /v1/sites/%s/firewall/policies/%s on the Official API.
-	DeleteFirewallPolicy(ctx context.Context, siteId string, firewallPolicyId string) error
-	// DeleteFirewallZone maps to DELETE /v1/sites/%s/firewall/zones/%s on the Official API.
-	DeleteFirewallZone(ctx context.Context, siteId string, firewallZoneId string) error
-	// DeleteNetwork maps to DELETE /v1/sites/%s/networks/%s on the Official API.
-	DeleteNetwork(ctx context.Context, siteId string, networkId string) error
-	// DeleteTrafficMatchingList maps to DELETE /v1/sites/%s/traffic-matching-lists/%s on the Official API.
-	DeleteTrafficMatchingList(ctx context.Context, siteId string, trafficMatchingListId string) error
-	// DeleteVoucher maps to DELETE /v1/sites/%s/hotspot/vouchers/%s on the Official API.
-	DeleteVoucher(ctx context.Context, siteId string, voucherId string) (*VoucherDeletionResults, error)
-	// DeleteVouchers maps to DELETE /v1/sites/%s/hotspot/vouchers on the Official API.
-	DeleteVouchers(ctx context.Context, siteId string, filter string) (*VoucherDeletionResults, error)
-	// DeleteWifiBroadcast maps to DELETE /v1/sites/%s/wifi/broadcasts/%s on the Official API.
-	DeleteWifiBroadcast(ctx context.Context, siteId string, wifiBroadcastId string) error
-	// ExecuteAdoptedDeviceAction maps to POST /v1/sites/%s/devices/%s/actions on the Official API.
-	ExecuteAdoptedDeviceAction(ctx context.Context, siteId string, deviceId string, body DeviceActionRequest) error
-	// ExecuteConnectedClientAction maps to POST /v1/sites/%s/clients/%s/actions on the Official API.
-	ExecuteConnectedClientAction(ctx context.Context, siteId string, clientId string, body ClientActionRequest) (*ClientActionResponse, error)
-	// ExecutePortAction maps to POST /v1/sites/%s/devices/%s/interfaces/ports/%s/actions on the Official API.
-	ExecutePortAction(ctx context.Context, siteId string, deviceId string, portIdx string, body PortActionRequest) error
-	// GetAclRule maps to GET /v1/sites/%s/acl-rules/%s on the Official API.
-	GetAclRule(ctx context.Context, siteId string, aclRuleId string) (*ACLRule, error)
-	// GetAclRuleOrdering maps to GET /v1/sites/%s/acl-rules/ordering on the Official API.
-	GetAclRuleOrdering(ctx context.Context, siteId string) (*ACLRuleOrdering, error)
-	// GetAclRulePage maps to GET /v1/sites/%s/acl-rules on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
-	GetAclRulePage(ctx context.Context, siteId string) ([]ACLRuleObject, error)
-	// GetAdoptedDeviceDetails maps to GET /v1/sites/%s/devices/%s on the Official API.
-	GetAdoptedDeviceDetails(ctx context.Context, siteId string, deviceId string) (*AdoptedDeviceDetails, error)
-	// GetAdoptedDeviceLatestStatistics maps to GET /v1/sites/%s/devices/%s/statistics/latest on the Official API.
-	GetAdoptedDeviceLatestStatistics(ctx context.Context, siteId string, deviceId string) (*LatestStatisticsForADevice, error)
-	// GetAdoptedDeviceOverviewPage maps to GET /v1/sites/%s/devices on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
-	GetAdoptedDeviceOverviewPage(ctx context.Context, siteId string) ([]AdoptedDeviceOverview, error)
-	// GetConnectedClientDetails maps to GET /v1/sites/%s/clients/%s on the Official API.
-	GetConnectedClientDetails(ctx context.Context, siteId string, clientId string) (*ClientDetails, error)
-	// GetConnectedClientOverviewPage maps to GET /v1/sites/%s/clients on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
-	GetConnectedClientOverviewPage(ctx context.Context, siteId string) ([]ClientOverview, error)
-	// GetCountries maps to GET /v1/countries on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
-	GetCountries(ctx context.Context) ([]CountryDefinition, error)
-	// GetDeviceTagPage maps to GET /v1/sites/%s/device-tags on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
-	GetDeviceTagPage(ctx context.Context, siteId string) ([]DeviceTag, error)
-	// GetDnsPolicy maps to GET /v1/sites/%s/dns/policies/%s on the Official API.
-	GetDnsPolicy(ctx context.Context, siteId string, dnsPolicyId string) (*DNSPolicy, error)
-	// GetDnsPolicyPage maps to GET /v1/sites/%s/dns/policies on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
-	GetDnsPolicyPage(ctx context.Context, siteId string) ([]DNSPolicy, error)
-	// GetDpiApplicationCategories maps to GET /v1/dpi/categories on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
-	GetDpiApplicationCategories(ctx context.Context) ([]DPICategory, error)
-	// GetDpiApplications maps to GET /v1/dpi/applications on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
-	GetDpiApplications(ctx context.Context) ([]DPIApplication, error)
-	// GetFirewallPolicies maps to GET /v1/sites/%s/firewall/policies on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
-	GetFirewallPolicies(ctx context.Context, siteId string) ([]FirewallPolicy, error)
-	// GetFirewallPolicy maps to GET /v1/sites/%s/firewall/policies/%s on the Official API.
-	GetFirewallPolicy(ctx context.Context, siteId string, firewallPolicyId string) (*FirewallPolicy, error)
-	// GetFirewallPolicyOrdering maps to GET /v1/sites/%s/firewall/policies/ordering on the Official API.
-	GetFirewallPolicyOrdering(ctx context.Context, siteId string, sourceFirewallZoneId string, destinationFirewallZoneId string) (*FirewallPolicyOrdering, error)
-	// GetFirewallZone maps to GET /v1/sites/%s/firewall/zones/%s on the Official API.
-	GetFirewallZone(ctx context.Context, siteId string, firewallZoneId string) (*FirewallZone, error)
-	// GetFirewallZones maps to GET /v1/sites/%s/firewall/zones on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
-	GetFirewallZones(ctx context.Context, siteId string) ([]FirewallZone, error)
-	// GetInfo returns the controller application info (GET /v1/info).
-	GetInfo(ctx context.Context) (*Info, error)
-	// GetNetworkDetails maps to GET /v1/sites/%s/networks/%s on the Official API.
-	GetNetworkDetails(ctx context.Context, siteId string, networkId string) (*NetworkDetails, error)
-	// GetNetworkReferences maps to GET /v1/sites/%s/networks/%s/references on the Official API.
-	GetNetworkReferences(ctx context.Context, siteId string, networkId string) (*NetworkReferences, error)
-	// GetNetworksOverviewPage maps to GET /v1/sites/%s/networks on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
-	GetNetworksOverviewPage(ctx context.Context, siteId string) ([]NetworkOverview, error)
-	// GetPendingDevicePage maps to GET /v1/pending-devices on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
-	GetPendingDevicePage(ctx context.Context) ([]DevicePendingAdoption, error)
-	// GetRadiusProfileOverviewPage maps to GET /v1/sites/%s/radius/profiles on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
-	GetRadiusProfileOverviewPage(ctx context.Context, siteId string) ([]RadiusProfileOverview, error)
-	// GetSiteToSiteVpnTunnelPage maps to GET /v1/sites/%s/vpn/site-to-site-tunnels on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
-	GetSiteToSiteVpnTunnelPage(ctx context.Context, siteId string) ([]SiteToSiteVPNTunnelOverview, error)
-	// GetTrafficMatchingList maps to GET /v1/sites/%s/traffic-matching-lists/%s on the Official API.
-	GetTrafficMatchingList(ctx context.Context, siteId string, trafficMatchingListId string) (*TrafficMatchingList, error)
-	// GetTrafficMatchingLists maps to GET /v1/sites/%s/traffic-matching-lists on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
-	GetTrafficMatchingLists(ctx context.Context, siteId string) ([]TrafficMatchingList, error)
-	// GetVoucher maps to GET /v1/sites/%s/hotspot/vouchers/%s on the Official API.
-	GetVoucher(ctx context.Context, siteId string, voucherId string) (*HotspotVoucherDetails, error)
-	// GetVouchers maps to GET /v1/sites/%s/hotspot/vouchers on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
-	GetVouchers(ctx context.Context, siteId string) ([]HotspotVoucherDetails, error)
-	// GetVpnServerPage maps to GET /v1/sites/%s/vpn/servers on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
-	GetVpnServerPage(ctx context.Context, siteId string) ([]VPNServerOverview, error)
-	// GetWansOverviewPage maps to GET /v1/sites/%s/wans on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
-	GetWansOverviewPage(ctx context.Context, siteId string) ([]WANOverview, error)
-	// GetWifiBroadcastDetails maps to GET /v1/sites/%s/wifi/broadcasts/%s on the Official API.
-	GetWifiBroadcastDetails(ctx context.Context, siteId string, wifiBroadcastId string) (*WifiBroadcastDetails, error)
-	// GetWifiBroadcastPage maps to GET /v1/sites/%s/wifi/broadcasts on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
-	GetWifiBroadcastPage(ctx context.Context, siteId string) ([]WifiBroadcastOverview, error)
-	// ListSites returns all local sites, auto-paginating the list envelope.
-	ListSites(ctx context.Context) ([]SiteOverview, error)
-	// PatchFirewallPolicy maps to PATCH /v1/sites/%s/firewall/policies/%s on the Official API.
-	PatchFirewallPolicy(ctx context.Context, siteId string, firewallPolicyId string, body PatchFirewallPolicy) (*FirewallPolicy, error)
-	// RemoveDevice maps to DELETE /v1/sites/%s/devices/%s on the Official API.
-	RemoveDevice(ctx context.Context, siteId string, deviceId string) error
-	// ResolveSiteID maps a legacy site name to its Official-API site UUID, caching the lookup.
-	ResolveSiteID(ctx context.Context, name string) (string, error)
-	// UpdateAclRule maps to PUT /v1/sites/%s/acl-rules/%s on the Official API.
-	UpdateAclRule(ctx context.Context, siteId string, aclRuleId string, body ACLRuleUpdate) (*ACLRule, error)
-	// UpdateAclRuleOrdering maps to PUT /v1/sites/%s/acl-rules/ordering on the Official API.
-	UpdateAclRuleOrdering(ctx context.Context, siteId string, body ACLRuleOrdering) (*ACLRuleOrdering, error)
-	// UpdateDnsPolicy maps to PUT /v1/sites/%s/dns/policies/%s on the Official API.
-	UpdateDnsPolicy(ctx context.Context, siteId string, dnsPolicyId string, body DNSPolicyCreateOrUpdate) (*DNSPolicy, error)
-	// UpdateFirewallPolicy maps to PUT /v1/sites/%s/firewall/policies/%s on the Official API.
-	UpdateFirewallPolicy(ctx context.Context, siteId string, firewallPolicyId string, body FirewallPolicyCreateOrUpdate) (*FirewallPolicy, error)
-	// UpdateFirewallPolicyOrdering maps to PUT /v1/sites/%s/firewall/policies/ordering on the Official API.
-	UpdateFirewallPolicyOrdering(ctx context.Context, siteId string, sourceFirewallZoneId string, destinationFirewallZoneId string, body FirewallPolicyOrdering) (*FirewallPolicyOrdering, error)
-	// UpdateFirewallZone maps to PUT /v1/sites/%s/firewall/zones/%s on the Official API.
-	UpdateFirewallZone(ctx context.Context, siteId string, firewallZoneId string, body FirewallZoneCreateOrUpdate) (*FirewallZone, error)
-	// UpdateNetwork maps to PUT /v1/sites/%s/networks/%s on the Official API.
-	UpdateNetwork(ctx context.Context, siteId string, networkId string, body NetworkCreateOrUpdate) (*NetworkDetails, error)
-	// UpdateTrafficMatchingList maps to PUT /v1/sites/%s/traffic-matching-lists/%s on the Official API.
-	UpdateTrafficMatchingList(ctx context.Context, siteId string, trafficMatchingListId string, body TrafficMatchingListCreateOrUpdate) (*TrafficMatchingList, error)
-	// UpdateWifiBroadcast maps to PUT /v1/sites/%s/wifi/broadcasts/%s on the Official API.
-	UpdateWifiBroadcast(ctx context.Context, siteId string, wifiBroadcastId string, body WifiBroadcastCreateOrUpdate) (*WifiBroadcastDetails, error)
+	// ACLs returns the ACLs resource group.
+	ACLs() ACLsClient
+	// Clients returns the Clients resource group.
+	Clients() ClientsClient
+	// DNSPolicies returns the DNSPolicies resource group.
+	DNSPolicies() DNSPoliciesClient
+	// Devices returns the Devices resource group.
+	Devices() DevicesClient
+	// Firewall returns the Firewall resource group.
+	Firewall() FirewallClient
+	// Hotspot returns the Hotspot resource group.
+	Hotspot() HotspotClient
+	// Info returns the Info resource group.
+	Info() InfoClient
+	// Networks returns the Networks resource group.
+	Networks() NetworksClient
+	// Sites returns the Sites resource group.
+	Sites() SitesClient
+	// Supporting returns the Supporting resource group.
+	Supporting() SupportingClient
+	// TrafficMatchingLists returns the TrafficMatchingLists resource group.
+	TrafficMatchingLists() TrafficMatchingListsClient
+	// WifiBroadcasts returns the WifiBroadcasts resource group.
+	WifiBroadcasts() WifiBroadcastsClient
+}
+
+var _ Client = (*apiClient)(nil)
+
+// ClientMock is a func-field test double implementing Client; each accessor
+// returns a per-group mock. A nil field panics on call.
+type ClientMock struct {
+	ACLsFunc                 func() ACLsClient
+	ClientsFunc              func() ClientsClient
+	DNSPoliciesFunc          func() DNSPoliciesClient
+	DevicesFunc              func() DevicesClient
+	FirewallFunc             func() FirewallClient
+	HotspotFunc              func() HotspotClient
+	InfoFunc                 func() InfoClient
+	NetworksFunc             func() NetworksClient
+	SitesFunc                func() SitesClient
+	SupportingFunc           func() SupportingClient
+	TrafficMatchingListsFunc func() TrafficMatchingListsClient
+	WifiBroadcastsFunc       func() WifiBroadcastsClient
+}
+
+var _ Client = (*ClientMock)(nil)
+
+func (m *ClientMock) ACLs() ACLsClient {
+	return m.ACLsFunc()
+}
+
+func (m *ClientMock) Clients() ClientsClient {
+	return m.ClientsFunc()
+}
+
+func (m *ClientMock) DNSPolicies() DNSPoliciesClient {
+	return m.DNSPoliciesFunc()
+}
+
+func (m *ClientMock) Devices() DevicesClient {
+	return m.DevicesFunc()
+}
+
+func (m *ClientMock) Firewall() FirewallClient {
+	return m.FirewallFunc()
+}
+
+func (m *ClientMock) Hotspot() HotspotClient {
+	return m.HotspotFunc()
+}
+
+func (m *ClientMock) Info() InfoClient {
+	return m.InfoFunc()
+}
+
+func (m *ClientMock) Networks() NetworksClient {
+	return m.NetworksFunc()
+}
+
+func (m *ClientMock) Sites() SitesClient {
+	return m.SitesFunc()
+}
+
+func (m *ClientMock) Supporting() SupportingClient {
+	return m.SupportingFunc()
+}
+
+func (m *ClientMock) TrafficMatchingLists() TrafficMatchingListsClient {
+	return m.TrafficMatchingListsFunc()
+}
+
+func (m *ClientMock) WifiBroadcasts() WifiBroadcastsClient {
+	return m.WifiBroadcastsFunc()
 }

@@ -16,13 +16,14 @@ var doerMethods = map[string]string{
 	"GET": "Get", "POST": "Post", "PUT": "Put", "DELETE": "Delete", "PATCH": "Patch",
 }
 
-// customMethods are the surface methods implemented by hand (info.go,
-// sites.go). They carry no generated wrapper body but MUST appear in the Client
-// interface and its mock, so the generated surface is the single source of truth.
+// customMethods are the surface methods implemented by hand (info.go, sites.go),
+// re-homed onto their resource groups. They carry no generated wrapper body but
+// MUST appear in the group interface and its mock, so the generated surface stays
+// the single source of truth; the generator never clobbers the hand-written body.
 var customMethods = []method{
-	{Name: "GetInfo", Doc: "returns the controller application info (GET /v1/info).", Params: []arg{ctxArg}, Returns: []string{"*Info", "error"}},
-	{Name: "ListSites", Doc: "returns all local sites, auto-paginating the list envelope.", Params: []arg{ctxArg}, Returns: []string{"[]SiteOverview", "error"}},
-	{Name: "ResolveSiteID", Doc: "maps a legacy site name to its Official-API site UUID, caching the lookup.", Params: []arg{ctxArg, {Name: "name", Type: "string"}}, Returns: []string{"string", "error"}},
+	{Group: "Info", Name: "Get", Doc: "returns the controller application info (GET /v1/info).", Params: []arg{ctxArg}, Returns: []string{"*Info", "error"}},
+	{Group: "Sites", Name: "List", Doc: "returns all local sites, auto-paginating the list envelope.", Params: []arg{ctxArg}, Returns: []string{"[]SiteOverview", "error"}},
+	{Group: "Sites", Name: "ResolveID", Doc: "maps a legacy site name to its Official-API site UUID, caching the lookup.", Params: []arg{ctxArg, {Name: "name", Type: "string"}}, Returns: []string{"string", "error"}},
 }
 
 // ctxArg is the leading context argument shared by every surface method.
@@ -35,28 +36,66 @@ type arg struct{ Name, Type string }
 // entry are all rendered from, so the three stay in lockstep.
 type method struct {
 	Name    string
+	Group   string // PascalCase group name; selects the accessor it lives under
 	Doc     string // godoc body; the rendered comment is "// <Name> <Doc>"
 	Params  []arg
 	Returns []string   // Go return types, terminal element is always "error"
 	op      *operation // nil for hand-written methods (interface/mock only)
 }
 
-// methods returns the full surface — generated operations plus the hand-written
-// methods — sorted by name for deterministic output.
-func methods(ops []operation) []method {
-	all := make([]method, 0, len(ops)+len(customMethods))
-	all = append(all, customMethods...)
-	for i := range ops {
-		all = append(all, methodFor(ops[i]))
-	}
-	sort.Slice(all, func(i, j int) bool { return all[i].Name < all[j].Name })
-	return all
+// group is one per-tag surface: its accessor/type name plus the methods it carries.
+type group struct {
+	Name    string
+	Methods []method
 }
 
-// methodFor lifts an operation into the unified method view.
+// iface, impl, mock and file derive the Go identifiers and filename for a group.
+func (g group) iface() string { return g.Name + "Client" }
+func (g group) impl() string  { return lowerFirst(g.Name) + "Client" }
+func (g group) mock() string  { return g.Name + "ClientMock" }
+func (g group) file() string  { return strings.ToLower(g.Name) + ".generated.go" }
+
+// buildGroups partitions generated operations and hand-written custom methods into
+// per-tag groups, sorted for determinism. A stripped method name colliding within
+// a group fails loud (mirrors the rename-map collision guard in naming.go).
+func buildGroups(ops []operation) ([]group, error) {
+	byName := map[string][]method{}
+	for _, m := range customMethods {
+		byName[m.Group] = append(byName[m.Group], m)
+	}
+	for i := range ops {
+		m := methodFor(ops[i])
+		byName[m.Group] = append(byName[m.Group], m)
+	}
+	groups := make([]group, 0, len(byName))
+	for name, ms := range byName {
+		if err := assertNoCollision(name, ms); err != nil {
+			return nil, err
+		}
+		sort.Slice(ms, func(i, j int) bool { return ms[i].Name < ms[j].Name })
+		groups = append(groups, group{Name: name, Methods: ms})
+	}
+	sort.Slice(groups, func(i, j int) bool { return groups[i].Name < groups[j].Name })
+	return groups, nil
+}
+
+// assertNoCollision fails loud when two operations strip to the same method name.
+func assertNoCollision(group string, ms []method) error {
+	seen := map[string]bool{}
+	for _, m := range ms {
+		if seen[m.Name] {
+			return fmt.Errorf("group %s: duplicate method name %q after prefix stripping", group, m.Name)
+		}
+		seen[m.Name] = true
+	}
+	return nil
+}
+
+// methodFor lifts an operation into the unified method view, stripping the group
+// prefix from the operationId so the name reads cleanly under its accessor.
 func methodFor(op operation) method {
 	o := op
-	m := method{Name: op.Name, Doc: docFor(op), op: &o}
+	m := method{Name: methodName(op.Group, op.Name), Group: op.Group, Doc: docFor(op), op: &o}
 	m.Params = append(m.Params, ctxArg)
 	for _, p := range op.PathArgs {
 		m.Params = append(m.Params, arg{Name: p.Name, Type: "string"})
@@ -120,46 +159,88 @@ func banner() string {
 	return fmt.Sprintf("// Code generated by %s version %s DO NOT EDIT.", modulePath, generatorVersion)
 }
 
-// generateWrappers renders the tri-shape wrapper methods on *apiClient.
-func generateWrappers(ops []operation, pkg string) (string, error) {
-	usesURL, usesErrors := false, false
-	for i := range ops {
-		// Both path and query args are URL-escaped, so either pulls in net/url.
-		if len(ops[i].QueryArgs) > 0 || len(ops[i].PathArgs) > 0 {
-			usesURL = true
-		}
-		if ops[i].RequiredFilter() != "" {
-			usesErrors = true
-		}
-	}
+// generateGroupFile renders one group's file: its interface, the *apiClient
+// accessor + impl type, the generated wrapper bodies, and the per-group mock.
+// Hand-written methods (op == nil) appear in the interface and mock, but their
+// bodies live in the hand-written sibling, so they are skipped here.
+func generateGroupFile(g group, pkg string) (string, error) {
 	var b strings.Builder
 	b.WriteString(banner())
-	b.WriteString("\n\npackage " + pkg + "\n\nimport (\n\t\"context\"\n")
-	if usesErrors {
-		b.WriteString("\t\"errors\"\n")
-	}
-	b.WriteString("\t\"fmt\"\n")
-	if usesURL {
-		b.WriteString("\t\"net/url\"\n")
-	}
-	b.WriteString(")\n")
+	b.WriteString("\n\npackage " + pkg + "\n\n")
+	b.WriteString(groupImports(g))
 
-	sorted := append([]operation(nil), ops...)
-	sort.Slice(sorted, func(i, j int) bool { return sorted[i].Name < sorted[j].Name })
-	for i := range sorted {
-		b.WriteString("\n")
-		b.WriteString(wrapperBody(methodFor(sorted[i])))
+	fmt.Fprintf(&b, "// %s is the %s resource group of the Official UniFi OpenAPI surface.\n", g.iface(), g.Name)
+	fmt.Fprintf(&b, "type %s interface {\n", g.iface())
+	for _, m := range g.Methods {
+		fmt.Fprintf(&b, "\t// %s %s\n\t%s\n", m.Name, m.Doc, m.signature())
 	}
+	b.WriteString("}\n\n")
+
+	fmt.Fprintf(&b, "// %s wraps the shared apiClient so transport, gate and site cache stay single-sourced.\n", g.impl())
+	fmt.Fprintf(&b, "type %s struct{ *apiClient }\n\n", g.impl())
+	fmt.Fprintf(&b, "var _ %s = %s{}\n\n", g.iface(), g.impl())
+	fmt.Fprintf(&b, "// %s returns the %s resource group.\n", g.Name, g.Name)
+	fmt.Fprintf(&b, "func (c *apiClient) %s() %s {\n\treturn %s{c}\n}\n", g.Name, g.iface(), g.impl())
+
+	for _, m := range g.Methods {
+		if m.op == nil {
+			continue
+		}
+		b.WriteString("\n")
+		b.WriteString(wrapperBody(g, m))
+	}
+	b.WriteString("\n")
+	b.WriteString(groupMock(g))
 	return formatGo(b.String())
 }
 
-// wrapperBody renders one wrapper method, dispatching on its shape.
-func wrapperBody(m method) string {
+// groupImports renders the import block a group file needs: context always, plus
+// fmt/net/url/errors only when a generated wrapper body in the group uses them.
+func groupImports(g group) string {
+	use := groupImportUse(g)
+	imports := []string{`"context"`}
+	if use["errors"] {
+		imports = append(imports, `"errors"`)
+	}
+	if use["fmt"] {
+		imports = append(imports, `"fmt"`)
+	}
+	if use["net/url"] {
+		imports = append(imports, `"net/url"`)
+	}
+	if len(imports) == 1 {
+		return "import " + imports[0] + "\n\n" // context only (hand-written-only group)
+	}
+	return "import (\n\t" + strings.Join(imports, "\n\t") + "\n)\n\n"
+}
+
+// groupImportUse reports which std-lib imports the group's generated wrapper
+// bodies need; hand-written-only groups (no ops) need none beyond context.
+func groupImportUse(g group) map[string]bool {
+	use := map[string]bool{}
+	for _, m := range g.Methods {
+		if m.op == nil {
+			continue
+		}
+		use["fmt"] = true // every wrapper body wraps its error with fmt.
+		if len(m.op.QueryArgs) > 0 || len(m.op.PathArgs) > 0 {
+			use["net/url"] = true
+		}
+		if m.op.RequiredFilter() != "" {
+			use["errors"] = true
+		}
+	}
+	return use
+}
+
+// wrapperBody renders one wrapper method on the group's impl type, dispatching on
+// its shape.
+func wrapperBody(g group, m method) string {
 	op := m.op
 	zero := m.zeroPrefix()
 	var b strings.Builder
 	fmt.Fprintf(&b, "// %s %s\n", m.Name, m.Doc)
-	fmt.Fprintf(&b, "func (c *apiClient) %s {\n", m.signature())
+	fmt.Fprintf(&b, "func (c %s) %s {\n", g.impl(), m.signature())
 	fmt.Fprintf(&b, "\tif err := c.check(ctx); err != nil {\n\t\treturn %serr\n\t}\n", zero)
 	if f := op.RequiredFilter(); f != "" {
 		fmt.Fprintf(&b, "\tif %s == \"\" {\n\t\treturn %serrors.New(%q)\n\t}\n", f, zero, f+" must not be empty")
@@ -217,39 +298,52 @@ func pathExpr(op operation) string {
 	return fmt.Sprintf("fmt.Sprintf(%q, %s)", format.String(), strings.Join(args, ", "))
 }
 
-// generateClient renders the Client interface over the full surface.
-func generateClient(ops []operation, pkg string) (string, error) {
+// generateClient renders the parent Client interface and its mock: one accessor
+// per group, each returning that group's interface. The interface stays the seam
+// unifi.Client.Official() returns, so the parent-package wiring is unchanged.
+func generateClient(groups []group, pkg string) (string, error) {
 	var b strings.Builder
 	b.WriteString(banner())
-	b.WriteString("\n\npackage " + pkg + "\n\nimport \"context\"\n\n")
-	b.WriteString("// Client is the Official UniFi OpenAPI (integration/v1) surface.\n")
+	b.WriteString("\n\npackage " + pkg + "\n\n")
+	b.WriteString("// Client is the Official UniFi OpenAPI (integration/v1) surface, exposed as one\n")
+	b.WriteString("// fluent accessor per resource group (e.g. Firewall().CreatePolicy(ctx, ...)).\n")
 	b.WriteString("type Client interface {\n")
-	for _, m := range methods(ops) {
-		fmt.Fprintf(&b, "\t// %s %s\n\t%s\n", m.Name, m.Doc, m.signature())
+	for _, g := range groups {
+		fmt.Fprintf(&b, "\t// %s returns the %s resource group.\n\t%s() %s\n", g.Name, g.Name, g.Name, g.iface())
 	}
-	b.WriteString("}\n")
-	return formatGo(b.String())
-}
+	b.WriteString("}\n\n")
+	b.WriteString("var _ Client = (*apiClient)(nil)\n\n")
 
-// generateMock renders a hand-rolled func-field mock of Client. A bare double
-// (no moq dependency) keeps the isolated module's dep graph minimal.
-func generateMock(ops []operation, pkg string) (string, error) {
-	all := methods(ops)
-	var b strings.Builder
-	b.WriteString(banner())
-	b.WriteString("\n\npackage " + pkg + "\n\nimport \"context\"\n\n")
-	b.WriteString("// ClientMock is a func-field test double implementing Client. A nil field\n")
-	b.WriteString("// panics on call, surfacing an un-stubbed method in tests.\n")
+	b.WriteString("// ClientMock is a func-field test double implementing Client; each accessor\n")
+	b.WriteString("// returns a per-group mock. A nil field panics on call.\n")
 	b.WriteString("type ClientMock struct {\n")
-	for _, m := range all {
-		fmt.Fprintf(&b, "\t%sFunc func(%s) %s\n", m.Name, mockParams(m), mockReturns(m))
+	for _, g := range groups {
+		fmt.Fprintf(&b, "\t%sFunc func() %s\n", g.Name, g.iface())
 	}
 	b.WriteString("}\n\n")
 	b.WriteString("var _ Client = (*ClientMock)(nil)\n")
-	for _, m := range all {
-		fmt.Fprintf(&b, "\nfunc (m *ClientMock) %s {\n\treturn m.%sFunc(%s)\n}\n", m.signature(), m.Name, callArgs(m))
+	for _, g := range groups {
+		fmt.Fprintf(&b, "\nfunc (m *ClientMock) %s() %s {\n\treturn m.%sFunc()\n}\n", g.Name, g.iface(), g.Name)
 	}
 	return formatGo(b.String())
+}
+
+// groupMock renders a hand-rolled func-field mock of one group interface. A bare
+// double (no moq dependency) keeps the isolated module's dep graph minimal.
+func groupMock(g group) string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "// %s is a func-field test double implementing %s. A nil field\n", g.mock(), g.iface())
+	b.WriteString("// panics on call, surfacing an un-stubbed method in tests.\n")
+	fmt.Fprintf(&b, "type %s struct {\n", g.mock())
+	for _, m := range g.Methods {
+		fmt.Fprintf(&b, "\t%sFunc func(%s) %s\n", m.Name, mockParams(m), mockReturns(m))
+	}
+	b.WriteString("}\n\n")
+	fmt.Fprintf(&b, "var _ %s = (*%s)(nil)\n", g.iface(), g.mock())
+	for _, m := range g.Methods {
+		fmt.Fprintf(&b, "\nfunc (m *%s) %s {\n\treturn m.%sFunc(%s)\n}\n", g.mock(), m.signature(), m.Name, callArgs(m))
+	}
+	return b.String()
 }
 
 // mockParams renders the func-field parameter types (no names).

@@ -116,17 +116,20 @@ The client exposes two API surfaces:
 - **Internal** — the legacy UniFi Network API the SDK has always wrapped. Every resource method
   (`GetNetwork`, `ListUser`, …) lives here and is reachable directly on the client *or* via `c.Internal()`.
 - **Official** — the official UniFi OpenAPI (`integration/v1`), reached via `c.Official()`. It requires a
-  new-style UniFi OS controller (version `10.1.78`+) with **API-key** authentication. Its resource methods
-  are **generated** from the committed OpenAPI snapshot in a tri-shape per resource — `List…` (returns the
+  new-style UniFi OS controller (version `10.1.78`+) with **API-key** authentication. The surface is
+  **fluent**: one accessor per resource group (`Firewall()`, `Networks()`, `Devices()`, …, derived from the
+  OpenAPI tags), each returning an independently mockable per-group interface. Methods are **generated** from
+  the committed OpenAPI snapshot in a tri-shape per resource — `…OverviewPage`/`GetPolicies…` (returns the
   `…Overview` slice, auto-paginating the offset/limit envelope), `Get…` (`…Details`), and
-  `Create/Update/Patch…` (taking the `…CreateOrUpdate` body) — alongside the hand-written `GetInfo`,
-  `ListSites` and `ResolveSiteID`.
+  `Create/Update/Patch…` (taking the `…CreateOrUpdate` body) — alongside the hand-written `Info().Get`,
+  `Sites().List` and `Sites().ResolveID`.
 
 ```go
-sites, err := c.Internal().ListSites(ctx)          // legacy API (same as c.ListSites(ctx))
-info, err := c.Official().GetInfo(ctx)             // official OpenAPI
-id, err := c.Official().ResolveSiteID(ctx, "default") // map a legacy site name to its official UUID
-nets, err := c.Official().GetNetworksOverviewPage(ctx, id) // generated, auto-paginated list wrapper
+sites, err := c.Internal().ListSites(ctx)                     // legacy API (same as c.ListSites(ctx))
+info, err := c.Official().Info().Get(ctx)                     // official OpenAPI
+id, err := c.Official().Sites().ResolveID(ctx, "default")     // map a legacy site name to its official UUID
+nets, err := c.Official().Networks().GetOverviewPage(ctx, id) // generated, auto-paginated list wrapper
+pol, err := c.Official().Firewall().CreatePolicy(ctx, id, body) // fluent, per-group accessor
 ```
 
 In **2.0.0 the Internal surface stays the canonical default**, so existing code is untouched — calling a
@@ -135,8 +138,8 @@ default to the Official client.** The Official client is gated: operations retur
 `unifi.ErrOfficialAPIUnavailable` on a classic/old-style controller, non-API-key auth, or a controller
 below `10.1.78`, and `unifi.ErrOfficialAPIDisabled` when `ClientConfig.DisableOfficialAPI` is set. Match
 either with `errors.Is`. Site identifiers differ between the surfaces — the Internal API uses the site
-**name** while the Official API uses a **UUID** — so `Official().ResolveSiteID` maps the familiar name to
-the UUID for you.
+**name** while the Official API uses a **UUID** — so `Official().Sites().ResolveID` maps the familiar name
+to the UUID for you.
 
 ### Customizing HTTP Client
 

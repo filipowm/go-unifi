@@ -26,7 +26,7 @@ func TestOfficialGetInfo(t *testing.T) {
 	cs := newControllerServer(t, infoRoute("10.1.78"))
 	c := cs.client()
 
-	info, err := c.Official().GetInfo(context.Background())
+	info, err := c.Official().Info().Get(context.Background())
 	require.NoError(t, err)
 	assert.Equal(t, "10.1.78", info.ApplicationVersion)
 }
@@ -43,7 +43,7 @@ func TestOfficialResolveSiteID(t *testing.T) {
 	)
 	c := cs.client()
 
-	id, err := c.Official().ResolveSiteID(context.Background(), "lab")
+	id, err := c.Official().Sites().ResolveID(context.Background(), "lab")
 	require.NoError(t, err)
 	assert.Equal(t, "uuid-lab", id)
 }
@@ -53,7 +53,7 @@ func TestOfficialGateUnavailableBelowVersionFloor(t *testing.T) {
 	cs := newControllerServer(t, infoRoute("10.1.67"))
 	c := cs.client()
 
-	_, err := c.Official().GetInfo(context.Background())
+	_, err := c.Official().Info().Get(context.Background())
 	require.ErrorIs(t, err, ErrOfficialAPIUnavailable)
 }
 
@@ -79,7 +79,7 @@ func TestOfficialGateDisabled(t *testing.T) {
 		DisableOfficialAPI: true,
 	})
 
-	_, err := c.Official().GetInfo(context.Background())
+	_, err := c.Official().Info().Get(context.Background())
 	require.ErrorIs(t, err, ErrOfficialAPIDisabled)
 }
 
@@ -99,12 +99,12 @@ func TestOfficialGateProbeIsCached(t *testing.T) {
 	c := cs.client()
 
 	// First operation: gate probe + real GetInfo both hit /v1/info (two total).
-	_, err := c.Official().GetInfo(context.Background())
+	_, err := c.Official().Info().Get(context.Background())
 	require.NoError(t, err)
 	assert.Equal(t, 2, cs.countRequestsTo(officialInfoPath), "cold GetInfo: probe + real call = 2 hits on /v1/info")
 
 	// Second operation: gate must short-circuit (officialReady=true), no new probe.
-	_, err = c.Official().ResolveSiteID(context.Background(), "default")
+	_, err = c.Official().Sites().ResolveID(context.Background(), "default")
 	require.NoError(t, err)
 	assert.Equal(t, 2, cs.countRequestsTo(officialInfoPath), "subsequent op must not re-probe /v1/info")
 }
@@ -118,7 +118,7 @@ func TestOfficialGateUnavailableEndpointAbsent(t *testing.T) {
 	cs := newControllerServer(t)
 	c := cs.client()
 
-	_, err := c.Official().GetInfo(context.Background())
+	_, err := c.Official().Info().Get(context.Background())
 	require.ErrorIs(t, err, ErrOfficialAPIUnavailable)
 }
 
