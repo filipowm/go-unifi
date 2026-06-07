@@ -115,12 +115,17 @@ The client exposes two API surfaces:
 - **Internal** — the legacy UniFi Network API the SDK has always wrapped. Every resource method
   (`GetNetwork`, `ListUser`, …) lives here and is reachable directly on the client *or* via `c.Internal()`.
 - **Official** — the official UniFi OpenAPI (`integration/v1`), reached via `c.Official()`. It requires a
-  new-style UniFi OS controller (version `10.1.78`+) with **API-key** authentication.
+  new-style UniFi OS controller (version `10.1.78`+) with **API-key** authentication. Its resource methods
+  are **generated** from the committed OpenAPI snapshot in a tri-shape per resource — `List…` (returns the
+  `…Overview` slice, auto-paginating the offset/limit envelope), `Get…` (`…Details`), and
+  `Create/Update/Patch…` (taking the `…CreateOrUpdate` body) — alongside the hand-written `GetInfo`,
+  `ListSites` and `ResolveSiteID`.
 
 ```go
 sites, err := c.Internal().ListSites(ctx)          // legacy API (same as c.ListSites(ctx))
 info, err := c.Official().GetInfo(ctx)             // official OpenAPI
 id, err := c.Official().ResolveSiteID(ctx, "default") // map a legacy site name to its official UUID
+nets, err := c.Official().GetNetworksOverviewPage(ctx, id) // generated, auto-paginated list wrapper
 ```
 
 In **2.0.0 the Internal surface stays the canonical default**, so existing code is untouched — calling a
