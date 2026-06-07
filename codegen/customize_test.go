@@ -523,3 +523,112 @@ func TestMatchesExcludePattern(t *testing.T) {
 		assert.True(t, matchesExcludePattern("**", "Anything"))
 	})
 }
+
+func TestIsExcludedFromGeneration(t *testing.T) {
+	t.Parallel()
+
+	yamlContent := `
+customizations:
+  client:
+    excludeGeneration: ["Dpi*", "FirewallZoneMatrix"]
+`
+	tempFile := createTempCustomizationsYaml(t, yamlContent)
+	cc, err := NewCodeCustomizer(tempFile)
+	require.NoError(t, err)
+
+	cases := map[string]struct {
+		name string
+		want bool
+	}{
+		"glob prefix match DpiApp":      {name: "DpiApp", want: true},
+		"glob prefix match DpiGroup":    {name: "DpiGroup", want: true},
+		"exact match FirewallZoneMatrix": {name: "FirewallZoneMatrix", want: true},
+		"non-match Network":             {name: "Network", want: false},
+		"non-match Device":              {name: "Device", want: false},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			assert.Equal(t, tc.want, cc.IsExcludedFromGeneration(tc.name))
+		})
+	}
+}
+
+func TestIsExcludedFromGeneration_NilSafe(t *testing.T) {
+	t.Parallel()
+	// An empty customizer (no client config) must not panic.
+	cc := &CodeCustomizer{Customizations: Customizations{}}
+	assert.False(t, cc.IsExcludedFromGeneration("DpiApp"))
+}
+
+func TestIsExcludedFromClient(t *testing.T) {
+	t.Parallel()
+
+	yamlContent := `
+customizations:
+  client:
+    excludeResources: ["DescribedFeature", "FirewallZoneMatrix"]
+`
+	tempFile := createTempCustomizationsYaml(t, yamlContent)
+	cc, err := NewCodeCustomizer(tempFile)
+	require.NoError(t, err)
+
+	cases := map[string]struct {
+		name string
+		want bool
+	}{
+		"exact match DescribedFeature":  {name: "DescribedFeature", want: true},
+		"exact match FirewallZoneMatrix": {name: "FirewallZoneMatrix", want: true},
+		"non-match Network":             {name: "Network", want: false},
+		"non-match Device":              {name: "Device", want: false},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			assert.Equal(t, tc.want, cc.IsExcludedFromClient(tc.name))
+		})
+	}
+}
+
+func TestIsExcludedFromClient_NilSafe(t *testing.T) {
+	t.Parallel()
+	cc := &CodeCustomizer{Customizations: Customizations{}}
+	assert.False(t, cc.IsExcludedFromClient("DescribedFeature"))
+}
+
+// TestCollectResourceGenerators_SkipsExcludedFromGeneration asserts that a
+// resource listed in excludeGeneration never appears in the generator slice,
+// while a resource listed in excludeResources only (but not excludeGeneration)
+// still gets a generated file — it is just absent from the Client interface.
+func TestCollectResourceGenerators_SkipsExcludedFromGeneration(t *testing.T) {
+	t.Parallel()
+
+	yamlContent := `
+customizations:
+  client:
+    excludeGeneration: ["SkipMe"]
+    excludeResources: ["ClientOnly"]
+`
+	tempFile := createTempCustomizationsYaml(t, yamlContent)
+	cc, err := NewCodeCustomizer(tempFile)
+	require.NoError(t, err)
+
+	skipMe := &Resource{StructName: "SkipMe", ResourcePath: "skip-me"}
+	clientOnly := &Resource{StructName: "ClientOnly", ResourcePath: "client-only"}
+	included := &Resource{StructName: "Included", ResourcePath: "included"}
+
+	gens := collectResourceGenerators([]*Resource{skipMe, clientOnly, included}, *cc, nil)
+
+	// The last entry is always the ClientInfo (the generated Client interface).
+	// Extract only the Resource generators for easier inspection.
+	var resourceNames []string
+	for _, g := range gens {
+		if r, ok := g.(*Resource); ok {
+			resourceNames = append(resourceNames, r.StructName)
+		}
+	}
+
+	assert.NotContains(t, resourceNames, "SkipMe", "excludeGeneration resource must not appear in generators")
+	assert.Contains(t, resourceNames, "ClientOnly", "excludeResources-only resource must still be generated")
+	assert.Contains(t, resourceNames, "Included", "unexcluded resource must be generated")
+}
