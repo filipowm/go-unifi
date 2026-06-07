@@ -662,6 +662,9 @@ var _ Client = &ClientMock{}
 //			OverrideUserFingerprintFunc: func(ctx context.Context, site string, mac string, devIdOverride int) error {
 //				panic("mock out the OverrideUserFingerprint method")
 //			},
+//			PatchFunc: func(ctx context.Context, apiPath string, reqBody any, respBody any) error {
+//				panic("mock out the Patch method")
+//			},
 //			PostFunc: func(ctx context.Context, apiPath string, reqBody any, respBody any) error {
 //				panic("mock out the Post method")
 //			},
@@ -1586,6 +1589,9 @@ type ClientMock struct {
 
 	// OverrideUserFingerprintFunc mocks the OverrideUserFingerprint method.
 	OverrideUserFingerprintFunc func(ctx context.Context, site string, mac string, devIdOverride int) error
+
+	// PatchFunc mocks the Patch method.
+	PatchFunc func(ctx context.Context, apiPath string, reqBody any, respBody any) error
 
 	// PostFunc mocks the Post method.
 	PostFunc func(ctx context.Context, apiPath string, reqBody any, respBody any) error
@@ -3583,6 +3589,17 @@ type ClientMock struct {
 			// DevIdOverride is the devIdOverride argument value.
 			DevIdOverride int
 		}
+		// Patch holds details about calls to the Patch method.
+		Patch []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// ApiPath is the apiPath argument value.
+			ApiPath string
+			// ReqBody is the reqBody argument value.
+			ReqBody any
+			// RespBody is the respBody argument value.
+			RespBody any
+		}
 		// Post holds details about calls to the Post method.
 		Post []struct {
 			// Ctx is the ctx argument value.
@@ -4614,6 +4631,7 @@ type ClientMock struct {
 	lockListWLANGroup                    sync.RWMutex
 	lockOfficial                         sync.RWMutex
 	lockOverrideUserFingerprint          sync.RWMutex
+	lockPatch                            sync.RWMutex
 	lockPost                             sync.RWMutex
 	lockPut                              sync.RWMutex
 	lockReorderFirewallPolicies          sync.RWMutex
@@ -12845,6 +12863,50 @@ func (mock *ClientMock) OverrideUserFingerprintCalls() []struct {
 	mock.lockOverrideUserFingerprint.RLock()
 	calls = mock.calls.OverrideUserFingerprint
 	mock.lockOverrideUserFingerprint.RUnlock()
+	return calls
+}
+
+// Patch calls PatchFunc.
+func (mock *ClientMock) Patch(ctx context.Context, apiPath string, reqBody any, respBody any) error {
+	if mock.PatchFunc == nil {
+		panic("ClientMock.PatchFunc: method is nil but Client.Patch was just called")
+	}
+	callInfo := struct {
+		Ctx      context.Context
+		ApiPath  string
+		ReqBody  any
+		RespBody any
+	}{
+		Ctx:      ctx,
+		ApiPath:  apiPath,
+		ReqBody:  reqBody,
+		RespBody: respBody,
+	}
+	mock.lockPatch.Lock()
+	mock.calls.Patch = append(mock.calls.Patch, callInfo)
+	mock.lockPatch.Unlock()
+	return mock.PatchFunc(ctx, apiPath, reqBody, respBody)
+}
+
+// PatchCalls gets all the calls that were made to Patch.
+// Check the length with:
+//
+//	len(mockedClient.PatchCalls())
+func (mock *ClientMock) PatchCalls() []struct {
+	Ctx      context.Context
+	ApiPath  string
+	ReqBody  any
+	RespBody any
+} {
+	var calls []struct {
+		Ctx      context.Context
+		ApiPath  string
+		ReqBody  any
+		RespBody any
+	}
+	mock.lockPatch.RLock()
+	calls = mock.calls.Patch
+	mock.lockPatch.RUnlock()
 	return calls
 }
 

@@ -21,22 +21,67 @@ const (
 	generatorVersion = "(devel)"
 )
 
-// Generate reads the committed OpenAPI snapshot at specPath, applies the
-// oneOf-synthesis transform, and writes deterministic oapi-codegen models to
-// outPath. Fully offline: it never contacts the controller.
-func Generate(specPath, outPath, pkgName string) error {
+// surfaceFile names a generated file alongside its rendered source.
+type surfaceFile struct {
+	name string
+	code string
+}
+
+// GenerateAll reads the committed OpenAPI snapshot at specPath and writes the
+// full Official surface into outDir: the oapi-codegen models plus the tri-shape
+// wrappers, the Client interface, and its mock. Fully offline.
+func GenerateAll(specPath, outDir, pkgName string) error {
 	raw, err := os.ReadFile(specPath)
 	if err != nil {
 		return fmt.Errorf("reading spec %s: %w", specPath, err)
 	}
-	code, err := GenerateModels(raw, pkgName)
+	files, err := GenerateSurfaceFiles(raw, pkgName)
 	if err != nil {
 		return err
 	}
-	if err := os.WriteFile(outPath, []byte(code), 0o644); err != nil { //nolint:gosec
-		return fmt.Errorf("writing %s: %w", outPath, err)
+	for _, f := range files {
+		out := filepath.Join(outDir, f.name)
+		if err := os.WriteFile(out, []byte(f.code), 0o644); err != nil { //nolint:gosec
+			return fmt.Errorf("writing %s: %w", out, err)
+		}
 	}
 	return nil
+}
+
+// GenerateSurfaceFiles renders every Official-surface file from raw spec bytes:
+// models (oapi-codegen) + wrappers + client interface + mock. Disk-free so tests
+// can assert determinism in-process.
+func GenerateSurfaceFiles(raw []byte, pkgName string) ([]surfaceFile, error) {
+	models, err := GenerateModels(raw, pkgName)
+	if err != nil {
+		return nil, err
+	}
+	var doc map[string]any
+	if err := json.Unmarshal(raw, &doc); err != nil {
+		return nil, fmt.Errorf("parsing spec JSON: %w", err)
+	}
+	ops, err := buildOperations(doc)
+	if err != nil {
+		return nil, fmt.Errorf("building operations: %w", err)
+	}
+	wrappers, err := generateWrappers(ops, pkgName)
+	if err != nil {
+		return nil, err
+	}
+	client, err := generateClient(ops, pkgName)
+	if err != nil {
+		return nil, err
+	}
+	mock, err := generateMock(ops, pkgName)
+	if err != nil {
+		return nil, err
+	}
+	return []surfaceFile{
+		{"models.generated.go", models},
+		{"wrappers.generated.go", wrappers},
+		{"client.generated.go", client},
+		{"client_mock.generated.go", mock},
+	}, nil
 }
 
 // GenerateModels runs the transform and oapi-codegen against raw spec bytes,
