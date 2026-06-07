@@ -19,6 +19,9 @@ jobs:
         with:
           go-version-file: "go.mod"
 
+      # One pass regenerates BOTH surfaces: it refreshes the committed Official
+      # OpenAPI snapshot (codegen/openapi/integration-<ver>.json) and the Internal
+      # resources, then folds in the Official models + wrappers + interface + mock.
       - name: "Generate new client structures"
         run: 'go generate unifi/codegen.go'
 
@@ -29,9 +32,22 @@ jobs:
           path: "./.unifi-version"
           trim: "true"
 
+      # Surface the committed Official OpenAPI snapshot version (its filename) so
+      # the PR body shows which spec the Official surface was regenerated from.
+      - name: "Read Official OpenAPI snapshot version"
+        id: "openapi_version"
+        run: 'echo "version=$(ls codegen/openapi/integration-*.json | sed -E "s|.*/integration-(.*)\.json|\1|")" >> "$GITHUB_OUTPUT"'
+
       # TODO: Automatically merge the PR if tests pass.
       - uses: "peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1"  # v8.1.1
         with:
           delete-branch: true
           title: "feat: update to the controller version ${{ steps.unifi_version.outputs.content }}"
           commit-message: "feat: update to the controller version ${{ steps.unifi_version.outputs.content }}"
+          body: |
+            Automated regeneration via `go generate unifi/codegen.go`.
+
+            - Internal resources → controller `${{ steps.unifi_version.outputs.content }}`
+            - Official OpenAPI surface (models + wrappers + interface + mock) → spec `${{ steps.openapi_version.outputs.version }}`
+
+            Review the `codegen/openapi/integration-*.json` diff for the spec delta.
