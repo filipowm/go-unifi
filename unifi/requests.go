@@ -372,6 +372,13 @@ func (c *client) Put(ctx context.Context, apiPath string, reqBody any, respBody 
 	return c.Do(ctx, http.MethodPut, apiPath, reqBody, respBody)
 }
 
+// Patch sends an HTTP PATCH request to the specified API path with the provided request body,
+// and decodes the HTTP response into respBody.
+// It is a convenience wrapper around Do.
+func (c *client) Patch(ctx context.Context, apiPath string, reqBody any, respBody any) error {
+	return c.Do(ctx, http.MethodPatch, apiPath, reqBody, respBody)
+}
+
 // Delete sends an HTTP DELETE request to the specified API path with the provided request body,
 // and decodes the HTTP response into respBody.
 // It is a convenience wrapper around Do.

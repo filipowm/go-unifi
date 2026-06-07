@@ -215,19 +215,33 @@ func generate(opts options) error {
 		return fmt.Errorf("unable to generate resources code: %w", err)
 	}
 
-	logger.Infof("Writing version file...")
-	if err = writeVersionFile(unifiVersion.Version, outDir); err != nil {
-		return fmt.Errorf("failed to write version file to %s: %w", outDir, err)
+	// Second pass: fold in the Official-API frontend so one `go generate` emits
+	// both the Internal resources and the Official models + wrappers + interface
+	// + mock. The frontend reads the committed spec snapshot offline.
+	if err = runOfficialPass(versionBaseDir, outDir, logger); err != nil {
+		return err
 	}
 
-	// Marker lives at the parent of outDir (the unifi/ package), so it tracks the
-	// generated code regardless of cwd. Deriving from wd wrote it to the wrong place.
-	markerDir := filepath.Dir(outDir)
-	if err = writeVersionRepoMarkerFile(unifiVersion.Version, markerDir); err != nil {
-		return fmt.Errorf("failed to write version file to %s: %w", markerDir, err)
+	if err = writeVersionArtifacts(unifiVersion, outDir, logger); err != nil {
+		return err
 	}
 
 	logger.Infof("Generated resources in %s", outDir)
+	return nil
+}
+
+// writeVersionArtifacts writes version.generated.go beside the resources and the
+// .unifi-version marker at the parent of outDir (the unifi/ package), so the
+// marker tracks the generated code regardless of cwd.
+func writeVersionArtifacts(unifiVersion *UnifiVersion, outDir string, logger Logger) error {
+	logger.Infof("Writing version file...")
+	if err := writeVersionFile(unifiVersion.Version, outDir); err != nil {
+		return fmt.Errorf("failed to write version file to %s: %w", outDir, err)
+	}
+	markerDir := filepath.Dir(outDir)
+	if err := writeVersionRepoMarkerFile(unifiVersion.Version, markerDir); err != nil {
+		return fmt.Errorf("failed to write version file to %s: %w", markerDir, err)
+	}
 	return nil
 }
 

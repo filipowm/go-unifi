@@ -12,8 +12,8 @@ import (
 
 func main() {
 	openapiDir := flag.String("openapi-dir", "../openapi", "directory holding the committed integration-<ver>.json snapshot")
-	out := flag.String("out", "../../unifi/official/models.generated.go", "output path for the generated models")
-	pkg := flag.String("package", defaultPackageName, "package name for the generated models")
+	outDir := flag.String("out-dir", "../../unifi/official", "output directory for the generated Official surface files")
+	pkg := flag.String("package", defaultPackageName, "package name for the generated code")
 	flag.Parse()
 
 	spec, err := ResolveSnapshot(*openapiDir)
@@ -21,7 +21,7 @@ func main() {
 		fmt.Fprintln(os.Stderr, "error:", err)
 		os.Exit(1)
 	}
-	if err := Generate(spec, *out, *pkg); err != nil {
+	if err := GenerateAll(spec, *outDir, *pkg); err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
 		os.Exit(1)
 	}
