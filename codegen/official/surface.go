@@ -23,7 +23,7 @@ var doerMethods = map[string]string{
 var customMethods = []method{
 	{Group: "Info", Name: "Get", Doc: "returns the controller application info (GET /v1/info).", Params: []arg{ctxArg}, Returns: []string{"*Info", "error"}},
 	{Group: "Sites", Name: "ListPage", Doc: "returns one page of local sites; nil opts fetches the first page at the default size.", Params: []arg{ctxArg, listOptionsArg}, Returns: []string{"Page[SiteOverview]", "error"}},
-	{Group: "Sites", Name: "ListAll", Doc: "lazily drains every local site across pages.", Params: []arg{ctxArg}, Returns: []string{"iter.Seq2[SiteOverview, error]"}},
+	{Group: "Sites", Name: "ListAll", Doc: "lazily drains every local site across pages; pass \"\" to drain unfiltered.", Params: []arg{ctxArg, {Name: "filter", Type: "string"}}, Returns: []string{"iter.Seq2[SiteOverview, error]"}},
 	{Group: "Sites", Name: "ResolveID", Doc: "maps a legacy site name to its Official-API site UUID, caching the lookup.", Params: []arg{ctxArg, {Name: "name", Type: "string"}}, Returns: []string{"string", "error"}},
 }
 
@@ -160,11 +160,12 @@ func listPageMethod(op operation) method {
 	return m
 }
 
-// listAllMethod builds the lazy ListXxxAll iterator method: drains every item.
+// listAllMethod builds the lazy ListXxxAll iterator method: drains every item with
+// an optional server-side filter (empty string = unfiltered).
 func listAllMethod(op operation) method {
 	o := op
 	m := method{Name: methodName(op) + "All", Group: op.Group, Doc: allDoc(op), op: &o, kind: kindListAll}
-	m.Params = baseParams(op)
+	m.Params = append(baseParams(op), arg{Name: "filter", Type: "string"})
 	m.Returns = []string{"iter.Seq2[" + op.ItemType + ", error]"}
 	return m
 }
@@ -180,7 +181,7 @@ func pageDoc(op operation) string {
 }
 
 func allDoc(op operation) string {
-	return fmt.Sprintf("lazily drains every item from %s /v1%s, paging on demand; range it and break to stop early.", op.HTTPMethod, op.SubPath)
+	return fmt.Sprintf("lazily drains every item from %s /v1%s, paging on demand; pass \"\" filter to drain unfiltered; range it and break to stop early.", op.HTTPMethod, op.SubPath)
 }
 
 // valueReturn reports whether the method returns a value alongside its error
@@ -365,14 +366,14 @@ func listPageBody(g group, m method) string {
 }
 
 // listAllBody renders the lazy ListXxxAll wrapper: it returns the iterator, which
-// runs the gate check and pages on demand when ranged.
+// runs the gate check and pages on demand when ranged, forwarding filter on every request.
 func listAllBody(g group, m method) string {
 	item := m.op.ItemType
 	path := pathExpr(*m.op)
 	var b strings.Builder
 	fmt.Fprintf(&b, "// %s %s\n", m.Name, m.Doc)
 	fmt.Fprintf(&b, "func (c %s) %s {\n", g.impl(), m.signature())
-	fmt.Fprintf(&b, "\treturn listSeq[%s](ctx, c.apiClient, c.path(%s), \"\")\n}\n", item, path)
+	fmt.Fprintf(&b, "\treturn listSeq[%s](ctx, c.apiClient, c.path(%s), filter)\n}\n", item, path)
 	return b.String()
 }
 

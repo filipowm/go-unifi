@@ -17,8 +17,8 @@ type DNSPoliciesClient interface {
 	Delete(ctx context.Context, siteId string, dnsPolicyId string) error
 	// Get maps to GET /v1/sites/%s/dns/policies/%s on the Official API.
 	Get(ctx context.Context, siteId string, dnsPolicyId string) (*DNSPolicy, error)
-	// ListAll lazily drains every item from GET /v1/sites/%s/dns/policies, paging on demand; range it and break to stop early.
-	ListAll(ctx context.Context, siteId string) iter.Seq2[DNSPolicy, error]
+	// ListAll lazily drains every item from GET /v1/sites/%s/dns/policies, paging on demand; pass "" filter to drain unfiltered; range it and break to stop early.
+	ListAll(ctx context.Context, siteId string, filter string) iter.Seq2[DNSPolicy, error]
 	// ListPage returns one page from GET /v1/sites/%s/dns/policies; nil opts fetches the first page at the default size.
 	ListPage(ctx context.Context, siteId string, opts *ListOptions) (Page[DNSPolicy], error)
 	// Update maps to PUT /v1/sites/%s/dns/policies/%s on the Official API.
@@ -70,9 +70,9 @@ func (c dNSPoliciesClient) Get(ctx context.Context, siteId string, dnsPolicyId s
 	return &out, nil
 }
 
-// ListAll lazily drains every item from GET /v1/sites/%s/dns/policies, paging on demand; range it and break to stop early.
-func (c dNSPoliciesClient) ListAll(ctx context.Context, siteId string) iter.Seq2[DNSPolicy, error] {
-	return listSeq[DNSPolicy](ctx, c.apiClient, c.path(fmt.Sprintf("/sites/%s/dns/policies", url.PathEscape(siteId))), "")
+// ListAll lazily drains every item from GET /v1/sites/%s/dns/policies, paging on demand; pass "" filter to drain unfiltered; range it and break to stop early.
+func (c dNSPoliciesClient) ListAll(ctx context.Context, siteId string, filter string) iter.Seq2[DNSPolicy, error] {
+	return listSeq[DNSPolicy](ctx, c.apiClient, c.path(fmt.Sprintf("/sites/%s/dns/policies", url.PathEscape(siteId))), filter)
 }
 
 // ListPage returns one page from GET /v1/sites/%s/dns/policies; nil opts fetches the first page at the default size.
@@ -105,7 +105,7 @@ type DNSPoliciesClientMock struct {
 	CreateFunc   func(context.Context, string, DNSPolicyCreateOrUpdate) (*DNSPolicy, error)
 	DeleteFunc   func(context.Context, string, string) error
 	GetFunc      func(context.Context, string, string) (*DNSPolicy, error)
-	ListAllFunc  func(context.Context, string) iter.Seq2[DNSPolicy, error]
+	ListAllFunc  func(context.Context, string, string) iter.Seq2[DNSPolicy, error]
 	ListPageFunc func(context.Context, string, *ListOptions) (Page[DNSPolicy], error)
 	UpdateFunc   func(context.Context, string, string, DNSPolicyCreateOrUpdate) (*DNSPolicy, error)
 }
@@ -124,8 +124,8 @@ func (m *DNSPoliciesClientMock) Get(ctx context.Context, siteId string, dnsPolic
 	return m.GetFunc(ctx, siteId, dnsPolicyId)
 }
 
-func (m *DNSPoliciesClientMock) ListAll(ctx context.Context, siteId string) iter.Seq2[DNSPolicy, error] {
-	return m.ListAllFunc(ctx, siteId)
+func (m *DNSPoliciesClientMock) ListAll(ctx context.Context, siteId string, filter string) iter.Seq2[DNSPolicy, error] {
+	return m.ListAllFunc(ctx, siteId, filter)
 }
 
 func (m *DNSPoliciesClientMock) ListPage(ctx context.Context, siteId string, opts *ListOptions) (Page[DNSPolicy], error) {

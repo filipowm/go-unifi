@@ -19,8 +19,8 @@ type ACLsClient interface {
 	GetRule(ctx context.Context, siteId string, aclRuleId string) (*ACLRule, error)
 	// GetRuleOrdering maps to GET /v1/sites/%s/acl-rules/ordering on the Official API.
 	GetRuleOrdering(ctx context.Context, siteId string) (*ACLRuleOrdering, error)
-	// ListRuleAll lazily drains every item from GET /v1/sites/%s/acl-rules, paging on demand; range it and break to stop early.
-	ListRuleAll(ctx context.Context, siteId string) iter.Seq2[ACLRuleObject, error]
+	// ListRuleAll lazily drains every item from GET /v1/sites/%s/acl-rules, paging on demand; pass "" filter to drain unfiltered; range it and break to stop early.
+	ListRuleAll(ctx context.Context, siteId string, filter string) iter.Seq2[ACLRuleObject, error]
 	// ListRulePage returns one page from GET /v1/sites/%s/acl-rules; nil opts fetches the first page at the default size.
 	ListRulePage(ctx context.Context, siteId string, opts *ListOptions) (Page[ACLRuleObject], error)
 	// UpdateRule maps to PUT /v1/sites/%s/acl-rules/%s on the Official API.
@@ -86,9 +86,9 @@ func (c aCLsClient) GetRuleOrdering(ctx context.Context, siteId string) (*ACLRul
 	return &out, nil
 }
 
-// ListRuleAll lazily drains every item from GET /v1/sites/%s/acl-rules, paging on demand; range it and break to stop early.
-func (c aCLsClient) ListRuleAll(ctx context.Context, siteId string) iter.Seq2[ACLRuleObject, error] {
-	return listSeq[ACLRuleObject](ctx, c.apiClient, c.path(fmt.Sprintf("/sites/%s/acl-rules", url.PathEscape(siteId))), "")
+// ListRuleAll lazily drains every item from GET /v1/sites/%s/acl-rules, paging on demand; pass "" filter to drain unfiltered; range it and break to stop early.
+func (c aCLsClient) ListRuleAll(ctx context.Context, siteId string, filter string) iter.Seq2[ACLRuleObject, error] {
+	return listSeq[ACLRuleObject](ctx, c.apiClient, c.path(fmt.Sprintf("/sites/%s/acl-rules", url.PathEscape(siteId))), filter)
 }
 
 // ListRulePage returns one page from GET /v1/sites/%s/acl-rules; nil opts fetches the first page at the default size.
@@ -134,7 +134,7 @@ type ACLsClientMock struct {
 	DeleteRuleFunc         func(context.Context, string, string) error
 	GetRuleFunc            func(context.Context, string, string) (*ACLRule, error)
 	GetRuleOrderingFunc    func(context.Context, string) (*ACLRuleOrdering, error)
-	ListRuleAllFunc        func(context.Context, string) iter.Seq2[ACLRuleObject, error]
+	ListRuleAllFunc        func(context.Context, string, string) iter.Seq2[ACLRuleObject, error]
 	ListRulePageFunc       func(context.Context, string, *ListOptions) (Page[ACLRuleObject], error)
 	UpdateRuleFunc         func(context.Context, string, string, ACLRuleUpdate) (*ACLRule, error)
 	UpdateRuleOrderingFunc func(context.Context, string, ACLRuleOrdering) (*ACLRuleOrdering, error)
@@ -158,8 +158,8 @@ func (m *ACLsClientMock) GetRuleOrdering(ctx context.Context, siteId string) (*A
 	return m.GetRuleOrderingFunc(ctx, siteId)
 }
 
-func (m *ACLsClientMock) ListRuleAll(ctx context.Context, siteId string) iter.Seq2[ACLRuleObject, error] {
-	return m.ListRuleAllFunc(ctx, siteId)
+func (m *ACLsClientMock) ListRuleAll(ctx context.Context, siteId string, filter string) iter.Seq2[ACLRuleObject, error] {
+	return m.ListRuleAllFunc(ctx, siteId, filter)
 }
 
 func (m *ACLsClientMock) ListRulePage(ctx context.Context, siteId string, opts *ListOptions) (Page[ACLRuleObject], error) {

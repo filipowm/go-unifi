@@ -19,8 +19,8 @@ type NetworksClient interface {
 	Get(ctx context.Context, siteId string, networkId string) (*NetworkDetails, error)
 	// GetReferences maps to GET /v1/sites/%s/networks/%s/references on the Official API.
 	GetReferences(ctx context.Context, siteId string, networkId string) (*NetworkReferences, error)
-	// ListAll lazily drains every item from GET /v1/sites/%s/networks, paging on demand; range it and break to stop early.
-	ListAll(ctx context.Context, siteId string) iter.Seq2[NetworkOverview, error]
+	// ListAll lazily drains every item from GET /v1/sites/%s/networks, paging on demand; pass "" filter to drain unfiltered; range it and break to stop early.
+	ListAll(ctx context.Context, siteId string, filter string) iter.Seq2[NetworkOverview, error]
 	// ListPage returns one page from GET /v1/sites/%s/networks; nil opts fetches the first page at the default size.
 	ListPage(ctx context.Context, siteId string, opts *ListOptions) (Page[NetworkOverview], error)
 	// Update maps to PUT /v1/sites/%s/networks/%s on the Official API.
@@ -84,9 +84,9 @@ func (c networksClient) GetReferences(ctx context.Context, siteId string, networ
 	return &out, nil
 }
 
-// ListAll lazily drains every item from GET /v1/sites/%s/networks, paging on demand; range it and break to stop early.
-func (c networksClient) ListAll(ctx context.Context, siteId string) iter.Seq2[NetworkOverview, error] {
-	return listSeq[NetworkOverview](ctx, c.apiClient, c.path(fmt.Sprintf("/sites/%s/networks", url.PathEscape(siteId))), "")
+// ListAll lazily drains every item from GET /v1/sites/%s/networks, paging on demand; pass "" filter to drain unfiltered; range it and break to stop early.
+func (c networksClient) ListAll(ctx context.Context, siteId string, filter string) iter.Seq2[NetworkOverview, error] {
+	return listSeq[NetworkOverview](ctx, c.apiClient, c.path(fmt.Sprintf("/sites/%s/networks", url.PathEscape(siteId))), filter)
 }
 
 // ListPage returns one page from GET /v1/sites/%s/networks; nil opts fetches the first page at the default size.
@@ -120,7 +120,7 @@ type NetworksClientMock struct {
 	DeleteFunc        func(context.Context, string, string) error
 	GetFunc           func(context.Context, string, string) (*NetworkDetails, error)
 	GetReferencesFunc func(context.Context, string, string) (*NetworkReferences, error)
-	ListAllFunc       func(context.Context, string) iter.Seq2[NetworkOverview, error]
+	ListAllFunc       func(context.Context, string, string) iter.Seq2[NetworkOverview, error]
 	ListPageFunc      func(context.Context, string, *ListOptions) (Page[NetworkOverview], error)
 	UpdateFunc        func(context.Context, string, string, NetworkCreateOrUpdate) (*NetworkDetails, error)
 }
@@ -143,8 +143,8 @@ func (m *NetworksClientMock) GetReferences(ctx context.Context, siteId string, n
 	return m.GetReferencesFunc(ctx, siteId, networkId)
 }
 
-func (m *NetworksClientMock) ListAll(ctx context.Context, siteId string) iter.Seq2[NetworkOverview, error] {
-	return m.ListAllFunc(ctx, siteId)
+func (m *NetworksClientMock) ListAll(ctx context.Context, siteId string, filter string) iter.Seq2[NetworkOverview, error] {
+	return m.ListAllFunc(ctx, siteId, filter)
 }
 
 func (m *NetworksClientMock) ListPage(ctx context.Context, siteId string, opts *ListOptions) (Page[NetworkOverview], error) {

@@ -17,8 +17,8 @@ type WifiBroadcastsClient interface {
 	Delete(ctx context.Context, siteId string, wifiBroadcastId string) error
 	// Get maps to GET /v1/sites/%s/wifi/broadcasts/%s on the Official API.
 	Get(ctx context.Context, siteId string, wifiBroadcastId string) (*WifiBroadcastDetails, error)
-	// ListAll lazily drains every item from GET /v1/sites/%s/wifi/broadcasts, paging on demand; range it and break to stop early.
-	ListAll(ctx context.Context, siteId string) iter.Seq2[WifiBroadcastOverview, error]
+	// ListAll lazily drains every item from GET /v1/sites/%s/wifi/broadcasts, paging on demand; pass "" filter to drain unfiltered; range it and break to stop early.
+	ListAll(ctx context.Context, siteId string, filter string) iter.Seq2[WifiBroadcastOverview, error]
 	// ListPage returns one page from GET /v1/sites/%s/wifi/broadcasts; nil opts fetches the first page at the default size.
 	ListPage(ctx context.Context, siteId string, opts *ListOptions) (Page[WifiBroadcastOverview], error)
 	// Update maps to PUT /v1/sites/%s/wifi/broadcasts/%s on the Official API.
@@ -70,9 +70,9 @@ func (c wifiBroadcastsClient) Get(ctx context.Context, siteId string, wifiBroadc
 	return &out, nil
 }
 
-// ListAll lazily drains every item from GET /v1/sites/%s/wifi/broadcasts, paging on demand; range it and break to stop early.
-func (c wifiBroadcastsClient) ListAll(ctx context.Context, siteId string) iter.Seq2[WifiBroadcastOverview, error] {
-	return listSeq[WifiBroadcastOverview](ctx, c.apiClient, c.path(fmt.Sprintf("/sites/%s/wifi/broadcasts", url.PathEscape(siteId))), "")
+// ListAll lazily drains every item from GET /v1/sites/%s/wifi/broadcasts, paging on demand; pass "" filter to drain unfiltered; range it and break to stop early.
+func (c wifiBroadcastsClient) ListAll(ctx context.Context, siteId string, filter string) iter.Seq2[WifiBroadcastOverview, error] {
+	return listSeq[WifiBroadcastOverview](ctx, c.apiClient, c.path(fmt.Sprintf("/sites/%s/wifi/broadcasts", url.PathEscape(siteId))), filter)
 }
 
 // ListPage returns one page from GET /v1/sites/%s/wifi/broadcasts; nil opts fetches the first page at the default size.
@@ -105,7 +105,7 @@ type WifiBroadcastsClientMock struct {
 	CreateFunc   func(context.Context, string, WifiBroadcastCreateOrUpdate) (*WifiBroadcastDetails, error)
 	DeleteFunc   func(context.Context, string, string) error
 	GetFunc      func(context.Context, string, string) (*WifiBroadcastDetails, error)
-	ListAllFunc  func(context.Context, string) iter.Seq2[WifiBroadcastOverview, error]
+	ListAllFunc  func(context.Context, string, string) iter.Seq2[WifiBroadcastOverview, error]
 	ListPageFunc func(context.Context, string, *ListOptions) (Page[WifiBroadcastOverview], error)
 	UpdateFunc   func(context.Context, string, string, WifiBroadcastCreateOrUpdate) (*WifiBroadcastDetails, error)
 }
@@ -124,8 +124,8 @@ func (m *WifiBroadcastsClientMock) Get(ctx context.Context, siteId string, wifiB
 	return m.GetFunc(ctx, siteId, wifiBroadcastId)
 }
 
-func (m *WifiBroadcastsClientMock) ListAll(ctx context.Context, siteId string) iter.Seq2[WifiBroadcastOverview, error] {
-	return m.ListAllFunc(ctx, siteId)
+func (m *WifiBroadcastsClientMock) ListAll(ctx context.Context, siteId string, filter string) iter.Seq2[WifiBroadcastOverview, error] {
+	return m.ListAllFunc(ctx, siteId, filter)
 }
 
 func (m *WifiBroadcastsClientMock) ListPage(ctx context.Context, siteId string, opts *ListOptions) (Page[WifiBroadcastOverview], error) {

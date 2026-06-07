@@ -33,9 +33,9 @@ func (c sitesClient) ListPage(ctx context.Context, opts *ListOptions) (Page[Site
 	return p, nil
 }
 
-// ListAll lazily drains every local site across pages.
-func (c sitesClient) ListAll(ctx context.Context) iter.Seq2[SiteOverview, error] {
-	return listSeq[SiteOverview](ctx, c.apiClient, c.path("/sites"), "")
+// ListAll lazily drains every local site across pages; pass "" filter to drain unfiltered.
+func (c sitesClient) ListAll(ctx context.Context, filter string) iter.Seq2[SiteOverview, error] {
+	return listSeq[SiteOverview](ctx, c.apiClient, c.path("/sites"), filter)
 }
 
 // ResolveID maps a legacy site name (the Internal-API identifier, carried as
@@ -45,7 +45,7 @@ func (c sitesClient) ResolveID(ctx context.Context, name string) (string, error)
 	if id, ok := c.cachedSiteID(name); ok {
 		return id, nil
 	}
-	sites, err := Collect(c.ListAll(ctx))
+	sites, err := Collect(c.ListAll(ctx, ""))
 	if err != nil {
 		return "", err
 	}

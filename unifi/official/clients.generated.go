@@ -15,8 +15,8 @@ type ClientsClient interface {
 	ExecuteConnectedAction(ctx context.Context, siteId string, clientId string, body ClientActionRequest) (*ClientActionResponse, error)
 	// GetConnected maps to GET /v1/sites/%s/clients/%s on the Official API.
 	GetConnected(ctx context.Context, siteId string, clientId string) (*ClientDetails, error)
-	// ListConnectedAll lazily drains every item from GET /v1/sites/%s/clients, paging on demand; range it and break to stop early.
-	ListConnectedAll(ctx context.Context, siteId string) iter.Seq2[ClientOverview, error]
+	// ListConnectedAll lazily drains every item from GET /v1/sites/%s/clients, paging on demand; pass "" filter to drain unfiltered; range it and break to stop early.
+	ListConnectedAll(ctx context.Context, siteId string, filter string) iter.Seq2[ClientOverview, error]
 	// ListConnectedPage returns one page from GET /v1/sites/%s/clients; nil opts fetches the first page at the default size.
 	ListConnectedPage(ctx context.Context, siteId string, opts *ListOptions) (Page[ClientOverview], error)
 }
@@ -55,9 +55,9 @@ func (c clientsClient) GetConnected(ctx context.Context, siteId string, clientId
 	return &out, nil
 }
 
-// ListConnectedAll lazily drains every item from GET /v1/sites/%s/clients, paging on demand; range it and break to stop early.
-func (c clientsClient) ListConnectedAll(ctx context.Context, siteId string) iter.Seq2[ClientOverview, error] {
-	return listSeq[ClientOverview](ctx, c.apiClient, c.path(fmt.Sprintf("/sites/%s/clients", url.PathEscape(siteId))), "")
+// ListConnectedAll lazily drains every item from GET /v1/sites/%s/clients, paging on demand; pass "" filter to drain unfiltered; range it and break to stop early.
+func (c clientsClient) ListConnectedAll(ctx context.Context, siteId string, filter string) iter.Seq2[ClientOverview, error] {
+	return listSeq[ClientOverview](ctx, c.apiClient, c.path(fmt.Sprintf("/sites/%s/clients", url.PathEscape(siteId))), filter)
 }
 
 // ListConnectedPage returns one page from GET /v1/sites/%s/clients; nil opts fetches the first page at the default size.
@@ -77,7 +77,7 @@ func (c clientsClient) ListConnectedPage(ctx context.Context, siteId string, opt
 type ClientsClientMock struct {
 	ExecuteConnectedActionFunc func(context.Context, string, string, ClientActionRequest) (*ClientActionResponse, error)
 	GetConnectedFunc           func(context.Context, string, string) (*ClientDetails, error)
-	ListConnectedAllFunc       func(context.Context, string) iter.Seq2[ClientOverview, error]
+	ListConnectedAllFunc       func(context.Context, string, string) iter.Seq2[ClientOverview, error]
 	ListConnectedPageFunc      func(context.Context, string, *ListOptions) (Page[ClientOverview], error)
 }
 
@@ -91,8 +91,8 @@ func (m *ClientsClientMock) GetConnected(ctx context.Context, siteId string, cli
 	return m.GetConnectedFunc(ctx, siteId, clientId)
 }
 
-func (m *ClientsClientMock) ListConnectedAll(ctx context.Context, siteId string) iter.Seq2[ClientOverview, error] {
-	return m.ListConnectedAllFunc(ctx, siteId)
+func (m *ClientsClientMock) ListConnectedAll(ctx context.Context, siteId string, filter string) iter.Seq2[ClientOverview, error] {
+	return m.ListConnectedAllFunc(ctx, siteId, filter)
 }
 
 func (m *ClientsClientMock) ListConnectedPage(ctx context.Context, siteId string, opts *ListOptions) (Page[ClientOverview], error) {

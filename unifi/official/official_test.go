@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -78,7 +79,7 @@ func TestGateBlocksOperations(t *testing.T) {
 
 	// ListAll runs the gate before paging and surfaces failure as the first
 	// yielded error — no transport call is made.
-	_, err = Collect(c.Sites().ListAll(context.Background()))
+	_, err = Collect(c.Sites().ListAll(context.Background(), ""))
 	require.ErrorIs(t, err, sentinel)
 	assert.Empty(t, d.calls, "gate must short-circuit the iterator before any transport call")
 }
@@ -96,10 +97,13 @@ func TestListAllDrainsAcrossPages(t *testing.T) {
 		all = append(all, SiteOverview{ID: fmt.Sprintf("uuid-%d", i), InternalReference: fmt.Sprintf("site%d", i), Name: fmt.Sprintf("Site %d", i)})
 	}
 
-	calls := 0
-	d := &pagingDoer{fn: func(_ string, respBody any) error {
-		start := calls * maxPageLimit
-		calls++
+	var urls []string
+	d := &pagingDoer{fn: func(apiPath string, respBody any) error {
+		urls = append(urls, apiPath)
+		// Drive the page slice from the offset in the URL, not a call counter,
+		// so a regressed listSeq that sends offset=0 twice returns duplicate items
+		// and breaks the assertion below rather than silently passing.
+		start := parseOffset(apiPath)
 		if start >= len(all) {
 			return encode(sitePage(start, len(all), nil), respBody)
 		}
@@ -108,11 +112,13 @@ func TestListAllDrainsAcrossPages(t *testing.T) {
 	}}
 	c := New(d, base, nil)
 
-	sites, err := Collect(c.Sites().ListAll(context.Background()))
+	sites, err := Collect(c.Sites().ListAll(context.Background(), ""))
 	require.NoError(t, err)
 	assert.Len(t, sites, 250)
 	// Two fetches: page 1 (200 items), page 2 (50 items, offset==totalCount -> stop).
-	assert.Equal(t, 2, calls, "expected exactly two pages")
+	require.Len(t, urls, 2, "expected exactly two page requests")
+	assert.Contains(t, urls[0], "offset=0", "first page must start at offset 0")
+	assert.Contains(t, urls[1], "offset=200", "second page must advance to offset 200 (len of first page)")
 }
 
 // TestListAllBreakStopsFetching asserts a consumer break aborts the iterator
@@ -124,7 +130,7 @@ func TestListAllBreakStopsFetching(t *testing.T) {
 		all = append(all, SiteOverview{ID: fmt.Sprintf("u%d", i), InternalReference: fmt.Sprintf("r%d", i), Name: "n"})
 	}
 	calls := 0
-	d := &pagingDoer{fn: func(_ string, respBody any) error {
+	d := &pagingDoer{fn: func(apiPath string, respBody any) error {
 		start := calls * maxPageLimit
 		calls++
 		end := min(start+maxPageLimit, len(all))
@@ -133,7 +139,7 @@ func TestListAllBreakStopsFetching(t *testing.T) {
 	c := New(d, base, nil)
 
 	seen := 0
-	for _, err := range c.Sites().ListAll(context.Background()) {
+	for _, err := range c.Sites().ListAll(context.Background(), "") {
 		require.NoError(t, err)
 		seen++
 		if seen == 5 {
@@ -198,7 +204,7 @@ func TestListEmptyDataYieldsEmptyResult(t *testing.T) {
 	require.NoError(t, err)
 	assert.Empty(t, page.Items)
 
-	sites, err := Collect(c.Sites().ListAll(context.Background()))
+	sites, err := Collect(c.Sites().ListAll(context.Background(), ""))
 	require.NoError(t, err)
 	assert.Empty(t, sites)
 }
@@ -267,7 +273,7 @@ func TestListTransportError(t *testing.T) {
 	_, err := c.Sites().ListPage(context.Background(), nil)
 	require.ErrorIs(t, err, sentinel)
 
-	_, err = Collect(c.Sites().ListAll(context.Background()))
+	_, err = Collect(c.Sites().ListAll(context.Background(), ""))
 	require.ErrorIs(t, err, sentinel)
 }
 
@@ -306,42 +312,60 @@ func TestListAllTerminatesOnEmptyPageWithHighTotalCount(t *testing.T) {
 	}}
 	c := New(d, base, nil)
 
-	sites, err := Collect(c.Sites().ListAll(context.Background()))
+	sites, err := Collect(c.Sites().ListAll(context.Background(), ""))
 	require.NoError(t, err)
 	assert.Len(t, sites, len(realData))
 	assert.Equal(t, 2, calls, "must stop after the empty page, not spin to totalCount")
 }
 
-// TestListSeqForwardsFilterAcrossPages asserts the iterator re-sends the filter
-// on EVERY page request, not just the first — exercised via listSeq, since the
-// public ListXxxAll drains unfiltered.
-func TestListSeqForwardsFilterAcrossPages(t *testing.T) {
+// TestListAllForwardsFilterAcrossPages asserts ListXxxAll re-sends the filter on
+// EVERY page request and advances the offset correctly. The mock derives its
+// response slice from the URL's offset param so a regression where listSeq sends
+// offset=0 twice would return duplicates rather than 250 distinct items.
+func TestListAllForwardsFilterAcrossPages(t *testing.T) {
 	t.Parallel()
-	// 250 sites across two pages of <=200 so the filter is asserted on more than
-	// one request — a single full page would never exercise the "across pages" path.
+	// 250 sites across two pages of <=200 so both filter AND offset are asserted
+	// on more than one request.
 	all := make([]SiteOverview, 0, 250)
 	for i := range 250 {
 		all = append(all, SiteOverview{ID: fmt.Sprintf("u%d", i), InternalReference: fmt.Sprintf("r%d", i), Name: "n"})
 	}
 
 	var urls []string
-	calls := 0
 	d := &pagingDoer{fn: func(apiPath string, respBody any) error {
 		urls = append(urls, apiPath)
-		start := calls * maxPageLimit
-		calls++
+		start := parseOffset(apiPath)
 		end := min(start+maxPageLimit, len(all))
 		return encode(sitePage(start, len(all), all[start:end]), respBody)
 	}}
-	ac := &apiClient{doer: d, basePath: base}
+	c := New(d, base, nil)
 
-	sites, err := Collect(listSeq[SiteOverview](context.Background(), ac, ac.path("/sites"), "name.eq('n')"))
+	sites, err := Collect(c.Sites().ListAll(context.Background(), "name.eq('n')"))
 	require.NoError(t, err)
 	require.Len(t, sites, 250)
 	require.Len(t, urls, 2, "expected the filter to be forwarded across both pages")
 	for _, u := range urls {
-		assert.Contains(t, u, "filter=name.eq")
+		assert.Contains(t, u, "filter=name.eq", "filter must appear on every page request")
 	}
+	assert.Contains(t, urls[0], "offset=0", "first page must start at offset 0")
+	assert.Contains(t, urls[1], "offset=200", "second page must advance to offset 200")
+}
+
+// parseOffset extracts the offset query param from an API path, returning 0 if
+// absent or malformed — used by mock helpers to derive response slices from the URL.
+func parseOffset(apiPath string) int {
+	_, qs, _ := strings.Cut(apiPath, "?")
+	vals, err := url.ParseQuery(qs)
+	if err != nil {
+		return 0
+	}
+	v := vals.Get("offset")
+	if v == "" {
+		return 0
+	}
+	n := 0
+	_, _ = fmt.Sscan(v, &n)
+	return n
 }
 
 // TestListPagePropagatesTransportError asserts ListPage wraps and propagates the

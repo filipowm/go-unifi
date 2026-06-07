@@ -73,7 +73,7 @@ func TestGeneratedListAllWrapperDrains(t *testing.T) {
 	}}
 	c := New(d, base, nil)
 
-	nets, err := Collect(c.Networks().ListAll(context.Background(), "s1"))
+	nets, err := Collect(c.Networks().ListAll(context.Background(), "s1", ""))
 	require.NoError(t, err)
 	require.Len(t, nets, 2)
 	assert.Equal(t, "a", nets[0].Name)

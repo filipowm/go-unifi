@@ -17,8 +17,8 @@ type TrafficMatchingListsClient interface {
 	Delete(ctx context.Context, siteId string, trafficMatchingListId string) error
 	// Get maps to GET /v1/sites/%s/traffic-matching-lists/%s on the Official API.
 	Get(ctx context.Context, siteId string, trafficMatchingListId string) (*TrafficMatchingList, error)
-	// ListAll lazily drains every item from GET /v1/sites/%s/traffic-matching-lists, paging on demand; range it and break to stop early.
-	ListAll(ctx context.Context, siteId string) iter.Seq2[TrafficMatchingList, error]
+	// ListAll lazily drains every item from GET /v1/sites/%s/traffic-matching-lists, paging on demand; pass "" filter to drain unfiltered; range it and break to stop early.
+	ListAll(ctx context.Context, siteId string, filter string) iter.Seq2[TrafficMatchingList, error]
 	// ListPage returns one page from GET /v1/sites/%s/traffic-matching-lists; nil opts fetches the first page at the default size.
 	ListPage(ctx context.Context, siteId string, opts *ListOptions) (Page[TrafficMatchingList], error)
 	// Update maps to PUT /v1/sites/%s/traffic-matching-lists/%s on the Official API.
@@ -70,9 +70,9 @@ func (c trafficMatchingListsClient) Get(ctx context.Context, siteId string, traf
 	return &out, nil
 }
 
-// ListAll lazily drains every item from GET /v1/sites/%s/traffic-matching-lists, paging on demand; range it and break to stop early.
-func (c trafficMatchingListsClient) ListAll(ctx context.Context, siteId string) iter.Seq2[TrafficMatchingList, error] {
-	return listSeq[TrafficMatchingList](ctx, c.apiClient, c.path(fmt.Sprintf("/sites/%s/traffic-matching-lists", url.PathEscape(siteId))), "")
+// ListAll lazily drains every item from GET /v1/sites/%s/traffic-matching-lists, paging on demand; pass "" filter to drain unfiltered; range it and break to stop early.
+func (c trafficMatchingListsClient) ListAll(ctx context.Context, siteId string, filter string) iter.Seq2[TrafficMatchingList, error] {
+	return listSeq[TrafficMatchingList](ctx, c.apiClient, c.path(fmt.Sprintf("/sites/%s/traffic-matching-lists", url.PathEscape(siteId))), filter)
 }
 
 // ListPage returns one page from GET /v1/sites/%s/traffic-matching-lists; nil opts fetches the first page at the default size.
@@ -105,7 +105,7 @@ type TrafficMatchingListsClientMock struct {
 	CreateFunc   func(context.Context, string, TrafficMatchingListCreateOrUpdate) (*TrafficMatchingList, error)
 	DeleteFunc   func(context.Context, string, string) error
 	GetFunc      func(context.Context, string, string) (*TrafficMatchingList, error)
-	ListAllFunc  func(context.Context, string) iter.Seq2[TrafficMatchingList, error]
+	ListAllFunc  func(context.Context, string, string) iter.Seq2[TrafficMatchingList, error]
 	ListPageFunc func(context.Context, string, *ListOptions) (Page[TrafficMatchingList], error)
 	UpdateFunc   func(context.Context, string, string, TrafficMatchingListCreateOrUpdate) (*TrafficMatchingList, error)
 }
@@ -124,8 +124,8 @@ func (m *TrafficMatchingListsClientMock) Get(ctx context.Context, siteId string,
 	return m.GetFunc(ctx, siteId, trafficMatchingListId)
 }
 
-func (m *TrafficMatchingListsClientMock) ListAll(ctx context.Context, siteId string) iter.Seq2[TrafficMatchingList, error] {
-	return m.ListAllFunc(ctx, siteId)
+func (m *TrafficMatchingListsClientMock) ListAll(ctx context.Context, siteId string, filter string) iter.Seq2[TrafficMatchingList, error] {
+	return m.ListAllFunc(ctx, siteId, filter)
 }
 
 func (m *TrafficMatchingListsClientMock) ListPage(ctx context.Context, siteId string, opts *ListOptions) (Page[TrafficMatchingList], error) {
