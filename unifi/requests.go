@@ -212,11 +212,10 @@ func (c *client) executeRequest(ctx context.Context, method, apiPath string, bod
 	}
 
 	// NOTE: requests are intentionally NOT serialized here. net/http.Client is
-	// goroutine-safe and the only mutable shared state on the request path (the
-	// CSRF token) is guarded inside CSRFInterceptor. The former coarse
-	// per-request lock (gated on ClientConfig.UseLocking) was removed in 1.11.0:
-	// it killed HTTP concurrency and enabled the Version()
-	// re-entrant deadlock. ClientConfig.UseLocking is now a no-op.
+	// goroutine-safe. The former coarse per-request lock (gated on
+	// ClientConfig.UseLocking) was removed in 1.11.0: it killed HTTP concurrency
+	// and enabled the Version() re-entrant deadlock. ClientConfig.UseLocking is
+	// now a no-op.
 	if err := c.applyRequestInterceptors(req); err != nil {
 		return err
 	}

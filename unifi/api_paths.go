@@ -19,21 +19,15 @@ const (
 	// fourth APIStyle: full leading-slash paths under it bypass APIPaths.ApiPath.
 	integrationV1Path = "/proxy/network/integration/v1"
 
-	loginPath    = "/api/login"
-	loginPathNew = "/api/auth/login"
-
 	statusPath    = "/status"
 	statusPathNew = "/proxy/network/status"
 
 	uploadPath    = "/upload"
 	uploadPathNew = "/proxy/network/upload"
 
-	logoutPath = "/api/logout"
-
 	defaultUserAgent = "go-unifi/0.0.1"
 
 	ApiKeyHeader      = "X-Api-Key" //nolint:gosec
-	CsrfHeader        = "X-Csrf-Token"
 	UserAgentHeader   = "User-Agent"
 	AcceptHeader      = "Accept"
 	ContentTypeHeader = "Content-Type"
@@ -43,9 +37,7 @@ const (
 type APIPaths struct {
 	ApiPath    string
 	ApiV2Path  string
-	LoginPath  string
 	StatusPath string
-	LogoutPath string
 	UploadPath string
 }
 
@@ -71,9 +63,7 @@ func oldStyleAPI() APIPaths {
 	return APIPaths{
 		ApiPath:    apiPath,
 		ApiV2Path:  apiV2Path,
-		LoginPath:  loginPath,
 		StatusPath: statusPath,
-		LogoutPath: logoutPath,
 		UploadPath: uploadPath,
 	}
 }
@@ -84,9 +74,7 @@ func newStyleAPI() APIPaths {
 	return APIPaths{
 		ApiPath:    apiPathNew,
 		ApiV2Path:  apiV2PathNew,
-		LoginPath:  loginPathNew,
 		StatusPath: statusPathNew,
-		LogoutPath: logoutPath,
 		UploadPath: uploadPathNew,
 	}
 }
@@ -110,26 +98,18 @@ const (
 )
 
 // apiStyleFromStatus is the pure decision function behind determineApiStyle: it
-// maps the controller's probe HTTP status (and whether API-key auth is in use)
-// to the matching APIPaths, with zero network I/O so it can be unit-tested in
-// isolation. A 200 means the new style; a 302 means the old style; anything else
-// is an error. API-key auth is rejected against the old style because the
-// classic controller does not support it.
-func apiStyleFromStatus(status int, isAPIKey bool) (*APIPaths, error) {
-	var paths *APIPaths
+// maps the controller's probe HTTP status to the matching APIPaths, with zero
+// network I/O so it can be unit-tested in isolation. A 200 means the new style;
+// a 302 indicates a classic (old-style) controller which is no longer supported.
+func apiStyleFromStatus(status int) (*APIPaths, error) {
 	switch status {
 	case http.StatusOK:
-		paths = &NewStyleAPI
+		return &NewStyleAPI, nil
 	case http.StatusFound:
-		paths = &OldStyleAPI
+		return nil, errors.New("old-style (classic) controllers are unsupported; update to a controller version that supports API-key authentication")
 	default:
 		return nil, fmt.Errorf("expected 200 or 302 status code, but got: %d", status)
 	}
-
-	if paths == &OldStyleAPI && isAPIKey {
-		return nil, errors.New("unable to use API key authentication with old style API. Switch to user/pass authentication or update controller to latest version")
-	}
-	return paths, nil
 }
 
 // apiPathsForStyle returns the explicit APIPaths for a pinned (non-auto) style.
@@ -171,7 +151,7 @@ func (c *client) determineApiStyle() error {
 	// Discard response body to avoid leaks
 	_, _ = io.Copy(io.Discard, resp.Body)
 
-	paths, err := apiStyleFromStatus(resp.StatusCode, c.credentials.IsAPIKey())
+	paths, err := apiStyleFromStatus(resp.StatusCode)
 	if err != nil {
 		return err
 	}

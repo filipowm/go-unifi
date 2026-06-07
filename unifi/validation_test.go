@@ -15,30 +15,22 @@ import (
 func TestAuthConfigurationValidation(t *testing.T) {
 	t.Parallel()
 	testCases := []struct {
-		User, Pass, APIKey string
-		shouldFail         bool
+		APIKey     string
+		shouldFail bool
 	}{
-		{"", "", "", true},
-		{"", "", "test", false},
-		{"", "test", "", true},
-		{"", "test", "test", true},
-		{"test", "", "", true},
-		{"test", "", "test", true},
-		{"test", "test", "", false},
-		{"test", "test", "test", true},
+		{"", true},
+		{"test", false},
 	}
 
 	v, err := newValidator()
 	require.NoError(t, err)
 	for _, tc := range testCases {
-		t.Run(fmt.Sprintf("user:%s-pass:%s-apikey:%s", tc.User, tc.Pass, tc.APIKey), func(t *testing.T) {
+		t.Run("apikey:"+tc.APIKey, func(t *testing.T) {
 			t.Parallel()
 			// given
 			cc := &ClientConfig{
-				URL:      testUrl,
-				User:     tc.User,
-				Password: tc.Pass,
-				APIKey:   tc.APIKey,
+				URL:    testUrl,
+				APIKey: tc.APIKey,
 			}
 
 			// when

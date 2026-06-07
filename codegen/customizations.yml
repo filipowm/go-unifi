@@ -11,28 +11,6 @@ customizations:
     #   Dpi* (DpiApp/DpiGroup) -> unsupported, no wrapper; would be dead code.
     excludeGeneration: ["Dpi*"]
     functions:
-      - name: "Login"
-        comment: "Login logs in to the controller. Useful only for user/password authentication."
-        returns:
-          - "error"
-      - name: "LoginContext"
-        comment: "LoginContext logs in to the controller using the supplied context for cancellation/deadline. Useful only for user/password authentication."
-        params:
-          - name: "ctx"
-            type: "context.Context"
-        returns:
-          - "error"
-      - name: "Logout"
-        comment: "Logout logs out from the controller."
-        returns:
-          - "error"
-      - name: "LogoutContext"
-        comment: "LogoutContext logs out from the controller using the supplied context for cancellation/deadline."
-        params:
-          - name: "ctx"
-            type: "context.Context"
-        returns:
-          - "error"
       - name: "BaseURL"
         comment: "BaseURL returns the base URL of the controller."
         returns:

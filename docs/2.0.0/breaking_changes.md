@@ -14,7 +14,7 @@ status, a migration note, and a provenance link.
 
 | # | Change | Impact | Status |
 |---|--------|--------|--------|
-| 1 | [API-key authentication only](#1-api-key-authentication-only) | High | **PENDING** |
+| 1 | [API-key authentication only](#1-api-key-authentication-only) | High | **DONE** |
 | 2 | [TLS verify-by-default](#2-tls-verify-by-default) | High | **DONE** |
 | 3 | [Go version bump to 1.26](#3-go-version-bump-to-126) | Medium | **DONE** |
 | 4 | [OpenAPI-shaped structs](#4-openapi-shaped-structs) | Medium | **PENDING** |
@@ -26,16 +26,19 @@ status, a migration note, and a provenance link.
 | 10 | [`meta.rc=="error"` on HTTP 200 → `*ServerError`](#10-metarcerror-on-http-200--servererror) | Medium | **DONE** |
 | 11 | [Map 404 → `ErrNotFound`](#11-map-404--errnotfound) | Low | **DONE** |
 | 12 | [`UseLocking` is a no-op](#12-uselocking-is-a-no-op) | Low | **DONE** |
-| 13 | [Remove CSRF handling](#13-remove-csrf-handling) | Low | **PENDING** |
+| 13 | [Remove CSRF handling](#13-remove-csrf-handling) | Low | **DONE** |
 
 ---
 
 ### 1. API-key authentication only
 
-**Status: PENDING** — user/password auth is still present; retirement issues are tracked under #125.
+**Status: DONE** — landed in issue #125 (API-key-only auth).
 
-**Behavioral change (runtime break).** Username/password authentication (`ClientConfig.User`/`Password`) will
-be retired. Every consumer must authenticate with an API key via `ClientConfig.APIKey`.
+**Behavioral change + signature change (compile break).** Username/password authentication
+(`ClientConfig.User`/`Password`/`RememberMe`) is retired. Every consumer must authenticate with an API key
+via `ClientConfig.APIKey`. The `Login`/`LoginContext`/`Logout`/`LogoutContext` methods are removed from
+the `Client` interface. Old-style (classic) controllers, which only supported user/pass auth, are
+no longer reachable and construction fails immediately with an explicit error.
 
 ```go
 // before
@@ -44,9 +47,9 @@ cfg := &unifi.ClientConfig{User: "admin", Password: "secret"}
 cfg := &unifi.ClientConfig{APIKey: "your-api-key"}
 ```
 
-Every consumer, including the Terraform provider, must migrate to API-key auth before upgrading to 2.0.0.
-Once landed, the `User`, `Password`, `RememberMe` fields will be removed from `ClientConfig`; setting them
-will be a compile error.
+Compile breaks: `ClientConfig.User`, `.Password`, `.RememberMe` removed; `UserPassCredentials` type removed;
+`Login`/`LoginContext`/`Logout`/`LogoutContext` methods removed from `Client` interface;
+`CsrfHeader` constant removed; `APIPaths.LoginPath`/`.LogoutPath` fields removed.
 
 **Provenance:** epic #117, issue #125 (API-key auth retirement).
 
@@ -156,23 +159,21 @@ type that implements `unifi.Client` must add this method; the moq `ClientMock` i
 
 ### 8. `Client` gains `*Context` variants
 
-**Status: DONE** — landed in Wave 2 (TEST-15).
+**Status: DONE** — landed in Wave 2 (TEST-15); `Login`/`Logout` ctx variants superseded by #125.
 
-**Interface addition (compile break for custom `Client` implementations).** Four context-first lifecycle
-methods are now part of the `Client` interface:
+**Interface addition (compile break for custom `Client` implementations).** Two context-first lifecycle
+methods are part of the `Client` interface:
 
 ```go
-LoginContext(ctx context.Context) error
-LogoutContext(ctx context.Context) error
 VersionContext(ctx context.Context) (string, error)
 GetSystemInformationContext(ctx context.Context) (*SysInfo, error)
 ```
 
-The original no-ctx methods (`Login`/`Logout`/`Version`/`GetSystemInformation`) are unchanged and remain
-source-compatible; they delegate to the ctx variants internally. Any third-party type implementing
-`unifi.Client` must add these four methods; the moq `ClientMock` is regenerated automatically.
+`LoginContext`/`LogoutContext` were added in Wave 2 but removed in issue #125 (API-key-only auth, row #1).
+The no-ctx `Version`/`GetSystemInformation` remain source-compatible. Any third-party type implementing
+`unifi.Client` must add these two methods; the moq `ClientMock` is regenerated automatically.
 
-**Provenance:** TEST-15, Wave 2.
+**Provenance:** TEST-15, Wave 2; #125 for Login/Logout removal.
 
 ---
 
@@ -248,16 +249,15 @@ config.
 
 ### 13. Remove CSRF handling
 
-**Status: PENDING** — CSRF interceptor still active; retirement lands with issue #125 (API-key-only auth).
+**Status: DONE** — landed in issue #125 (API-key-only auth).
 
-**Type/behavior removal.** With username/password auth retired (#1), the `CSRFInterceptor` and its
-token-management logic become dead code and will be removed. The `CSRFInterceptor` exported type will
-disappear; any code referencing it directly will fail to compile.
+**Type removal (compile break for direct users).** With username/password auth retired (#1), the
+`CSRFInterceptor` and its token-management logic are removed. The `CsrfHeader` constant is also removed.
 
-Migration: remove any direct use of `CSRFInterceptor`; the token is managed transparently for user/pass auth
-today and is irrelevant after API-key-only auth lands.
+Migration: remove any direct use of `CSRFInterceptor` or `CsrfHeader`; neither is relevant with API-key
+authentication.
 
-**Provenance:** epic #117, dependent on #1 (API-key-only auth).
+**Provenance:** epic #117, issue #125 (API-key-only auth).
 
 ---
 
@@ -266,23 +266,11 @@ today and is irrelevant after API-key-only auth lands.
 Changes already documented in earlier waves that complement the 13-row table. Nothing here is new;
 entries are relocated from the prior wave-by-wave structure for traceability.
 
-### A. `CSRFInterceptor.CSRFToken`: exported field → accessor method (ARCH-04, Wave 1)
+### A. `CSRFInterceptor.CSRFToken`: exported field → accessor method (ARCH-04, Wave 1) — superseded by #125
 
-**Signature change (compile break).** The previously-exported, directly-settable `CSRFToken string` field
-became an unexported field with a read-only accessor:
-
-```go
-// before
-type CSRFInterceptor struct { CSRFToken string }
-csrf.CSRFToken = "tok"  // settable
-tok := csrf.CSRFToken   // field read
-// after
-type CSRFInterceptor struct { csrfToken string /* guarded by sync.RWMutex */ }
-tok := csrf.CSRFToken() // accessor method; no setter
-```
-
-The token is managed internally and captured automatically from controller responses (race-safe). Any code
-that read or set the field, or used a composite literal with `CSRFToken:`, no longer compiles.
+**Superseded by row [#13](#13-remove-csrf-handling).** `CSRFInterceptor` is now entirely removed. This Wave 1
+intermediate step (field → accessor) is moot; the type is gone. Any code referencing `CSRFInterceptor` in
+any form fails to compile.
 
 ### B. `DpiApp`/`DpiGroup` types removed (ARCH-08, Wave 1)
 

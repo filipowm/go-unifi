@@ -37,8 +37,8 @@ func (c *client) officialAvailable(ctx context.Context) error {
 	if c.officialDisabled {
 		return ErrOfficialAPIDisabled
 	}
-	if c.apiPaths != &NewStyleAPI || !c.credentials.IsAPIKey() {
-		return fmt.Errorf("%w: requires a new-style controller with API-key authentication", ErrOfficialAPIUnavailable)
+	if c.apiPaths != &NewStyleAPI {
+		return fmt.Errorf("%w: requires a new-style controller", ErrOfficialAPIUnavailable)
 	}
 
 	c.officialReadyMu.Lock()

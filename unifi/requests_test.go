@@ -667,34 +667,6 @@ func TestResponseDataHandling(t *testing.T) {
 	a.Equal("test", data.Data)
 }
 
-func TestCsrfHandling(t *testing.T) {
-	t.Parallel()
-	a := assert.New(t)
-	// given: a mock controller with no data routes — the GET to the bare ApiPath is
-	// unrouted (404), but newControllerServer sets the CSRF header on EVERY reply
-	// (including the 404), so the response interceptor still captures the token and
-	// replays it on the next request.
-	cs := newControllerServer(t)
-	c := cs.clientUserPass()
-	interceptor := NewTestInterceptor()
-	c.AddInterceptor(interceptor)
-
-	// when
-	err := c.Get(context.Background(), "", nil, nil)
-
-	// then
-	require.Error(t, err)
-	a.Empty(interceptor.RequestHeader(CsrfHeader))
-	a.Equal("csrf-token", interceptor.ResponseHeader(CsrfHeader))
-
-	// when
-	err = c.Get(context.Background(), "", nil, nil)
-
-	// then: the captured token is now replayed on the outgoing request.
-	require.Error(t, err)
-	a.Equal("csrf-token", interceptor.RequestHeader(CsrfHeader))
-}
-
 func TestOverrideUserAgent(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)

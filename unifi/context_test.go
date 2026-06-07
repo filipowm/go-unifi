@@ -19,7 +19,7 @@ func cancelledContext() context.Context {
 	return ctx
 }
 
-// TestContextVariantsAbortOnCancelledContext proves that the four ctx-accepting
+// TestContextVariantsAbortOnCancelledContext proves that the ctx-accepting
 // variants thread the supplied context through to the HTTP layer: a pre-cancelled
 // context aborts the request before it completes. Each subtest asserts
 // errors.Is(err, context.Canceled) through the wrapped error chain.
@@ -37,32 +37,17 @@ func TestContextVariantsAbortOnCancelledContext(t *testing.T) {
 		// call exercises one ctx-accepting variant with the supplied context and
 		// returns only the error (value results are irrelevant for the abort path).
 		call func(c *client, ctx context.Context) error
-		// apiKey selects API-key auth; user/pass auth is needed so Login/Logout do
-		// not short-circuit before the round-trip.
-		apiKey bool
 	}{
 		"VersionContext": {
 			call: func(c *client, ctx context.Context) error {
 				_, err := c.VersionContext(ctx)
 				return err
 			},
-			apiKey: true,
 		},
 		"GetSystemInformationContext": {
 			call: func(c *client, ctx context.Context) error {
 				_, err := c.GetSystemInformationContext(ctx)
 				return err
-			},
-			apiKey: true,
-		},
-		"LoginContext": {
-			call: func(c *client, ctx context.Context) error {
-				return c.LoginContext(ctx)
-			},
-		},
-		"LogoutContext": {
-			call: func(c *client, ctx context.Context) error {
-				return c.LogoutContext(ctx)
 			},
 		},
 	}
@@ -76,16 +61,8 @@ func TestContextVariantsAbortOnCancelledContext(t *testing.T) {
 			// it must not be shared across concurrently-running subtests.
 			cs := newControllerServer(t,
 				route{path: apiV1Path("s/default/stat/sysinfo"), fn: okHandler},
-				route{path: NewStyleAPI.LoginPath, fn: okHandler},
-				route{path: NewStyleAPI.LogoutPath, fn: okHandler},
 			)
-
-			var c *client
-			if tc.apiKey {
-				c = cs.client()
-			} else {
-				c = cs.clientUserPass()
-			}
+			c := cs.client()
 
 			err := tc.call(c, cancelledContext())
 			require.Error(t, err, "a pre-cancelled context must abort the request")
@@ -191,52 +168,4 @@ func TestGetSystemInformationContextHappyPath(t *testing.T) {
 	require.NotNil(t, info)
 	assert.Equal(t, "9.5.21-test", info.Version)
 	assert.Equal(t, "Dream Machine", info.Name)
-}
-
-// TestLoginContextHappyPath proves LoginContext performs the user/pass login POST
-// successfully with a valid context.
-func TestLoginContextHappyPath(t *testing.T) {
-	t.Parallel()
-
-	cs := newControllerServer(t,
-		route{path: NewStyleAPI.LoginPath, fn: func(w http.ResponseWriter, r *http.Request) {
-			assert.Equal(t, http.MethodPost, r.Method)
-			w.WriteHeader(http.StatusOK)
-		}},
-	)
-	c := cs.clientUserPass()
-
-	require.NoError(t, c.LoginContext(context.Background()))
-	assert.Equal(t, NewStyleAPI.LoginPath, cs.lastRequest().Path)
-}
-
-// TestLogoutContextHappyPath proves LogoutContext performs the user/pass logout
-// POST successfully with a valid context.
-func TestLogoutContextHappyPath(t *testing.T) {
-	t.Parallel()
-
-	cs := newControllerServer(t,
-		route{path: NewStyleAPI.LogoutPath, fn: func(w http.ResponseWriter, r *http.Request) {
-			assert.Equal(t, http.MethodPost, r.Method)
-			w.WriteHeader(http.StatusOK)
-		}},
-	)
-	c := cs.clientUserPass()
-
-	require.NoError(t, c.LogoutContext(context.Background()))
-	assert.Equal(t, NewStyleAPI.LogoutPath, cs.lastRequest().Path)
-}
-
-// TestLoginLogoutContextAPIKeyShortCircuit proves the ctx variants skip the
-// round-trip entirely for API-key auth (mirroring the legacy Login/Logout), so a
-// cancelled context is irrelevant when there is nothing to send.
-func TestLoginLogoutContextAPIKeyShortCircuit(t *testing.T) {
-	t.Parallel()
-
-	cs := newControllerServer(t)
-	c := cs.client() // API-key auth
-
-	require.NoError(t, c.LoginContext(cancelledContext()), "API-key LoginContext must short-circuit")
-	require.NoError(t, c.LogoutContext(cancelledContext()), "API-key LogoutContext must short-circuit")
-	assert.Zero(t, cs.requestCount(), "API-key auth must perform no login/logout round-trip")
 }
