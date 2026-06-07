@@ -11,14 +11,28 @@ import (
 // a new tag auto-yields a group; this table only tidies the awkward ones. Tags
 // not listed normalize verbatim ("Firewall", "Networks", "Clients", "Sites",
 // "Hotspot").
+//
+// Naming convention (mirrors go-github / k8s / Stripe SDK idioms):
+//   - PLURAL for true resource collections (DNSPolicies, ACLs, TrafficMatchingLists)
+//   - SINGULAR for feature-area groups (Firewall, Hotspot, Supporting, Info)
 var groupOverrides = map[string]string{
 	"UniFi Devices":              "Devices",
-	"DNS Policies":               "DNSPolicy",
-	"Access Control (ACL Rules)": "ACL",
-	"Traffic Matching Lists":     "TrafficMatching",
+	"DNS Policies":               "DNSPolicies",
+	"Access Control (ACL Rules)": "ACLs",
+	"Traffic Matching Lists":     "TrafficMatchingLists",
 	"WiFi Broadcasts":            "WifiBroadcasts",
 	"Supporting Resources":       "Supporting",
 	"Application Info":           "Info",
+}
+
+// stemOverrides maps a group name to the explicit token list used by methodName
+// when tokenize(group) would not produce the correct strip set — e.g. because
+// the group name is pluralised ("DNSPolicies", "ACLs") but the operationId
+// contains the singular resource form ("DnsPolicy", "Acl", "TrafficMatchingList").
+var stemOverrides = map[string][]string{
+	"ACLs":                 {"ACL"},
+	"DNSPolicies":          {"DNS", "Policy"},
+	"TrafficMatchingLists": {"Traffic", "Matching", "List"},
 }
 
 // operationGroup resolves an operation's group from its primary (first) tag.
@@ -60,9 +74,13 @@ func defaultGroupName(tag string) string {
 // methodName strips the group's resource word(s) from a PascalCase operation name
 // so it reads cleanly under the accessor (createFirewallPolicy under Firewall ->
 // CreatePolicy). The leading verb is never stripped; a word matches a stem
-// case-insensitively, singular or plural.
+// case-insensitively. For pluralised group names where the operationId contains
+// the singular resource form, stemOverrides provides the correct token set.
 func methodName(group, opName string) string {
-	stem := tokenize(group)
+	stem, ok := stemOverrides[group]
+	if !ok {
+		stem = tokenize(group)
+	}
 	tokens := tokenize(opName)
 	out := make([]string, 0, len(tokens))
 	for i, tok := range tokens {
@@ -75,10 +93,14 @@ func methodName(group, opName string) string {
 }
 
 // matchesStem reports whether a token matches any stem word, comparing
-// case-insensitively and ignoring a single trailing plural "s".
+// case-insensitively. The stem word is also checked in its singular form (so a
+// plural stem "Broadcasts" matches token "Broadcast"). The token itself is never
+// singularised: that would cause "Lists" to match a singular stem "List", making
+// the pluralised list-endpoint operationId indistinguishable from the single-item
+// one and producing a within-group method-name collision.
 func matchesStem(token string, stem []string) bool {
 	for _, s := range stem {
-		if strings.EqualFold(token, s) || strings.EqualFold(singular(token), singular(s)) {
+		if strings.EqualFold(token, s) || strings.EqualFold(token, singular(s)) {
 			return true
 		}
 	}

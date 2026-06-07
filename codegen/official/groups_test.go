@@ -16,9 +16,9 @@ func TestGroupName(t *testing.T) {
 		"Sites":                      "Sites",     // as-is
 		"Hotspot":                    "Hotspot",   // as-is
 		"UniFi Devices":              "Devices",   // override
-		"DNS Policies":               "DNSPolicy", // override
-		"Access Control (ACL Rules)": "ACL",       // override
-		"Traffic Matching Lists":     "TrafficMatching",
+		"DNS Policies":               "DNSPolicies",      // override: plural collection
+		"Access Control (ACL Rules)": "ACLs",            // override: plural collection
+		"Traffic Matching Lists":     "TrafficMatchingLists", // override: plural collection
 		"WiFi Broadcasts":            "WifiBroadcasts",
 		"Supporting Resources":       "Supporting",
 		"Application Info":           "Info",
@@ -40,9 +40,15 @@ func TestMethodName(t *testing.T) {
 		{"Devices", "GetAdoptedDeviceOverviewPage", "GetAdoptedOverviewPage"},
 		{"Devices", "ExecutePortAction", "ExecutePortAction"}, // no Device token
 		{"Networks", "GetNetworksOverviewPage", "GetOverviewPage"},
-		{"DNSPolicy", "GetDnsPolicyPage", "GetPage"},
-		{"ACL", "GetAclRulePage", "GetRulePage"},
-		{"TrafficMatching", "GetTrafficMatchingLists", "GetLists"},
+		{"DNSPolicies", "CreateDnsPolicy", "Create"},
+		{"DNSPolicies", "GetDnsPolicy", "Get"},
+		{"DNSPolicies", "GetDnsPolicyPage", "GetPage"},
+		{"ACLs", "CreateAclRule", "CreateRule"},
+		{"ACLs", "GetAclRulePage", "GetRulePage"},
+		{"ACLs", "GetAclRuleOrdering", "GetRuleOrdering"},
+		{"TrafficMatchingLists", "CreateTrafficMatchingList", "Create"},
+		{"TrafficMatchingLists", "GetTrafficMatchingList", "Get"},
+		{"TrafficMatchingLists", "GetTrafficMatchingLists", "GetLists"},
 		{"WifiBroadcasts", "GetWifiBroadcastPage", "GetPage"},
 		{"Hotspot", "GetVouchers", "GetVouchers"},              // no stem token
 		{"Supporting", "GetDeviceTagPage", "GetDeviceTagPage"}, // "Device" kept: not Supporting's stem
@@ -65,7 +71,7 @@ func TestBuildGroupsFromSpec(t *testing.T) {
 		byName[g.Name] = g
 	}
 	// Docs-only tags (zero ops) never appear; hand-written-only groups do.
-	for _, want := range []string{"Firewall", "Devices", "ACL", "DNSPolicy", "Info", "Sites"} {
+	for _, want := range []string{"Firewall", "Devices", "ACLs", "DNSPolicies", "Info", "Sites"} {
 		_, ok := byName[want]
 		assert.Truef(t, ok, "expected group %q", want)
 	}

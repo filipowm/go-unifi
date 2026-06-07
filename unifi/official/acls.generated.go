@@ -8,8 +8,8 @@ import (
 	"net/url"
 )
 
-// ACLClient is the ACL resource group of the Official UniFi OpenAPI surface.
-type ACLClient interface {
+// ACLsClient is the ACLs resource group of the Official UniFi OpenAPI surface.
+type ACLsClient interface {
 	// CreateRule maps to POST /v1/sites/%s/acl-rules on the Official API.
 	CreateRule(ctx context.Context, siteId string, body ACLRuleUpdate) (*ACLRule, error)
 	// DeleteRule maps to DELETE /v1/sites/%s/acl-rules/%s on the Official API.
@@ -26,18 +26,18 @@ type ACLClient interface {
 	UpdateRuleOrdering(ctx context.Context, siteId string, body ACLRuleOrdering) (*ACLRuleOrdering, error)
 }
 
-// aCLClient wraps the shared apiClient so transport, gate and site cache stay single-sourced.
-type aCLClient struct{ *apiClient }
+// aCLsClient wraps the shared apiClient so transport, gate and site cache stay single-sourced.
+type aCLsClient struct{ *apiClient }
 
-var _ ACLClient = aCLClient{}
+var _ ACLsClient = aCLsClient{}
 
-// ACL returns the ACL resource group.
-func (c *apiClient) ACL() ACLClient {
-	return aCLClient{c}
+// ACLs returns the ACLs resource group.
+func (c *apiClient) ACLs() ACLsClient {
+	return aCLsClient{c}
 }
 
 // CreateRule maps to POST /v1/sites/%s/acl-rules on the Official API.
-func (c aCLClient) CreateRule(ctx context.Context, siteId string, body ACLRuleUpdate) (*ACLRule, error) {
+func (c aCLsClient) CreateRule(ctx context.Context, siteId string, body ACLRuleUpdate) (*ACLRule, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
 	}
@@ -49,7 +49,7 @@ func (c aCLClient) CreateRule(ctx context.Context, siteId string, body ACLRuleUp
 }
 
 // DeleteRule maps to DELETE /v1/sites/%s/acl-rules/%s on the Official API.
-func (c aCLClient) DeleteRule(ctx context.Context, siteId string, aclRuleId string) error {
+func (c aCLsClient) DeleteRule(ctx context.Context, siteId string, aclRuleId string) error {
 	if err := c.check(ctx); err != nil {
 		return err
 	}
@@ -60,7 +60,7 @@ func (c aCLClient) DeleteRule(ctx context.Context, siteId string, aclRuleId stri
 }
 
 // GetRule maps to GET /v1/sites/%s/acl-rules/%s on the Official API.
-func (c aCLClient) GetRule(ctx context.Context, siteId string, aclRuleId string) (*ACLRule, error) {
+func (c aCLsClient) GetRule(ctx context.Context, siteId string, aclRuleId string) (*ACLRule, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
 	}
@@ -72,7 +72,7 @@ func (c aCLClient) GetRule(ctx context.Context, siteId string, aclRuleId string)
 }
 
 // GetRuleOrdering maps to GET /v1/sites/%s/acl-rules/ordering on the Official API.
-func (c aCLClient) GetRuleOrdering(ctx context.Context, siteId string) (*ACLRuleOrdering, error) {
+func (c aCLsClient) GetRuleOrdering(ctx context.Context, siteId string) (*ACLRuleOrdering, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func (c aCLClient) GetRuleOrdering(ctx context.Context, siteId string) (*ACLRule
 }
 
 // GetRulePage maps to GET /v1/sites/%s/acl-rules on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
-func (c aCLClient) GetRulePage(ctx context.Context, siteId string) ([]ACLRuleObject, error) {
+func (c aCLsClient) GetRulePage(ctx context.Context, siteId string) ([]ACLRuleObject, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
 	}
@@ -96,7 +96,7 @@ func (c aCLClient) GetRulePage(ctx context.Context, siteId string) ([]ACLRuleObj
 }
 
 // UpdateRule maps to PUT /v1/sites/%s/acl-rules/%s on the Official API.
-func (c aCLClient) UpdateRule(ctx context.Context, siteId string, aclRuleId string, body ACLRuleUpdate) (*ACLRule, error) {
+func (c aCLsClient) UpdateRule(ctx context.Context, siteId string, aclRuleId string, body ACLRuleUpdate) (*ACLRule, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
 	}
@@ -108,7 +108,7 @@ func (c aCLClient) UpdateRule(ctx context.Context, siteId string, aclRuleId stri
 }
 
 // UpdateRuleOrdering maps to PUT /v1/sites/%s/acl-rules/ordering on the Official API.
-func (c aCLClient) UpdateRuleOrdering(ctx context.Context, siteId string, body ACLRuleOrdering) (*ACLRuleOrdering, error) {
+func (c aCLsClient) UpdateRuleOrdering(ctx context.Context, siteId string, body ACLRuleOrdering) (*ACLRuleOrdering, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
 	}
@@ -119,9 +119,9 @@ func (c aCLClient) UpdateRuleOrdering(ctx context.Context, siteId string, body A
 	return &out, nil
 }
 
-// ACLClientMock is a func-field test double implementing ACLClient. A nil field
+// ACLsClientMock is a func-field test double implementing ACLsClient. A nil field
 // panics on call, surfacing an un-stubbed method in tests.
-type ACLClientMock struct {
+type ACLsClientMock struct {
 	CreateRuleFunc         func(context.Context, string, ACLRuleUpdate) (*ACLRule, error)
 	DeleteRuleFunc         func(context.Context, string, string) error
 	GetRuleFunc            func(context.Context, string, string) (*ACLRule, error)
@@ -131,32 +131,32 @@ type ACLClientMock struct {
 	UpdateRuleOrderingFunc func(context.Context, string, ACLRuleOrdering) (*ACLRuleOrdering, error)
 }
 
-var _ ACLClient = (*ACLClientMock)(nil)
+var _ ACLsClient = (*ACLsClientMock)(nil)
 
-func (m *ACLClientMock) CreateRule(ctx context.Context, siteId string, body ACLRuleUpdate) (*ACLRule, error) {
+func (m *ACLsClientMock) CreateRule(ctx context.Context, siteId string, body ACLRuleUpdate) (*ACLRule, error) {
 	return m.CreateRuleFunc(ctx, siteId, body)
 }
 
-func (m *ACLClientMock) DeleteRule(ctx context.Context, siteId string, aclRuleId string) error {
+func (m *ACLsClientMock) DeleteRule(ctx context.Context, siteId string, aclRuleId string) error {
 	return m.DeleteRuleFunc(ctx, siteId, aclRuleId)
 }
 
-func (m *ACLClientMock) GetRule(ctx context.Context, siteId string, aclRuleId string) (*ACLRule, error) {
+func (m *ACLsClientMock) GetRule(ctx context.Context, siteId string, aclRuleId string) (*ACLRule, error) {
 	return m.GetRuleFunc(ctx, siteId, aclRuleId)
 }
 
-func (m *ACLClientMock) GetRuleOrdering(ctx context.Context, siteId string) (*ACLRuleOrdering, error) {
+func (m *ACLsClientMock) GetRuleOrdering(ctx context.Context, siteId string) (*ACLRuleOrdering, error) {
 	return m.GetRuleOrderingFunc(ctx, siteId)
 }
 
-func (m *ACLClientMock) GetRulePage(ctx context.Context, siteId string) ([]ACLRuleObject, error) {
+func (m *ACLsClientMock) GetRulePage(ctx context.Context, siteId string) ([]ACLRuleObject, error) {
 	return m.GetRulePageFunc(ctx, siteId)
 }
 
-func (m *ACLClientMock) UpdateRule(ctx context.Context, siteId string, aclRuleId string, body ACLRuleUpdate) (*ACLRule, error) {
+func (m *ACLsClientMock) UpdateRule(ctx context.Context, siteId string, aclRuleId string, body ACLRuleUpdate) (*ACLRule, error) {
 	return m.UpdateRuleFunc(ctx, siteId, aclRuleId, body)
 }
 
-func (m *ACLClientMock) UpdateRuleOrdering(ctx context.Context, siteId string, body ACLRuleOrdering) (*ACLRuleOrdering, error) {
+func (m *ACLsClientMock) UpdateRuleOrdering(ctx context.Context, siteId string, body ACLRuleOrdering) (*ACLRuleOrdering, error) {
 	return m.UpdateRuleOrderingFunc(ctx, siteId, body)
 }

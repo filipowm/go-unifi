@@ -5,12 +5,12 @@ package official
 // Client is the Official UniFi OpenAPI (integration/v1) surface, exposed as one
 // fluent accessor per resource group (e.g. Firewall().CreatePolicy(ctx, ...)).
 type Client interface {
-	// ACL returns the ACL resource group.
-	ACL() ACLClient
+	// ACLs returns the ACLs resource group.
+	ACLs() ACLsClient
 	// Clients returns the Clients resource group.
 	Clients() ClientsClient
-	// DNSPolicy returns the DNSPolicy resource group.
-	DNSPolicy() DNSPolicyClient
+	// DNSPolicies returns the DNSPolicies resource group.
+	DNSPolicies() DNSPoliciesClient
 	// Devices returns the Devices resource group.
 	Devices() DevicesClient
 	// Firewall returns the Firewall resource group.
@@ -25,8 +25,8 @@ type Client interface {
 	Sites() SitesClient
 	// Supporting returns the Supporting resource group.
 	Supporting() SupportingClient
-	// TrafficMatching returns the TrafficMatching resource group.
-	TrafficMatching() TrafficMatchingClient
+	// TrafficMatchingLists returns the TrafficMatchingLists resource group.
+	TrafficMatchingLists() TrafficMatchingListsClient
 	// WifiBroadcasts returns the WifiBroadcasts resource group.
 	WifiBroadcasts() WifiBroadcastsClient
 }
@@ -36,32 +36,32 @@ var _ Client = (*apiClient)(nil)
 // ClientMock is a func-field test double implementing Client; each accessor
 // returns a per-group mock. A nil field panics on call.
 type ClientMock struct {
-	ACLFunc             func() ACLClient
-	ClientsFunc         func() ClientsClient
-	DNSPolicyFunc       func() DNSPolicyClient
-	DevicesFunc         func() DevicesClient
-	FirewallFunc        func() FirewallClient
-	HotspotFunc         func() HotspotClient
-	InfoFunc            func() InfoClient
-	NetworksFunc        func() NetworksClient
-	SitesFunc           func() SitesClient
-	SupportingFunc      func() SupportingClient
-	TrafficMatchingFunc func() TrafficMatchingClient
-	WifiBroadcastsFunc  func() WifiBroadcastsClient
+	ACLsFunc                 func() ACLsClient
+	ClientsFunc              func() ClientsClient
+	DNSPoliciesFunc          func() DNSPoliciesClient
+	DevicesFunc              func() DevicesClient
+	FirewallFunc             func() FirewallClient
+	HotspotFunc              func() HotspotClient
+	InfoFunc                 func() InfoClient
+	NetworksFunc             func() NetworksClient
+	SitesFunc                func() SitesClient
+	SupportingFunc           func() SupportingClient
+	TrafficMatchingListsFunc func() TrafficMatchingListsClient
+	WifiBroadcastsFunc       func() WifiBroadcastsClient
 }
 
 var _ Client = (*ClientMock)(nil)
 
-func (m *ClientMock) ACL() ACLClient {
-	return m.ACLFunc()
+func (m *ClientMock) ACLs() ACLsClient {
+	return m.ACLsFunc()
 }
 
 func (m *ClientMock) Clients() ClientsClient {
 	return m.ClientsFunc()
 }
 
-func (m *ClientMock) DNSPolicy() DNSPolicyClient {
-	return m.DNSPolicyFunc()
+func (m *ClientMock) DNSPolicies() DNSPoliciesClient {
+	return m.DNSPoliciesFunc()
 }
 
 func (m *ClientMock) Devices() DevicesClient {
@@ -92,8 +92,8 @@ func (m *ClientMock) Supporting() SupportingClient {
 	return m.SupportingFunc()
 }
 
-func (m *ClientMock) TrafficMatching() TrafficMatchingClient {
-	return m.TrafficMatchingFunc()
+func (m *ClientMock) TrafficMatchingLists() TrafficMatchingListsClient {
+	return m.TrafficMatchingListsFunc()
 }
 
 func (m *ClientMock) WifiBroadcasts() WifiBroadcastsClient {
