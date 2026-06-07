@@ -263,6 +263,32 @@ func TestDownloadAndExtractOfficialSpec_NotFoundOffline(t *testing.T) {
 	r.ErrorIs(statErr, os.ErrNotExist)
 }
 
+// TestDownloadOfficialSpecSnapshot_SkipsIfSnapshotExists verifies that
+// downloadOfficialSpecSnapshot skips the network download entirely when the
+// committed snapshot file is already present, making `go generate` fully offline
+// when both the legacy fields and the Official spec snapshots are committed.
+func TestDownloadOfficialSpecSnapshot_SkipsIfSnapshotExists(t *testing.T) {
+	t.Parallel()
+	r := require.New(t)
+
+	// Write a pre-existing snapshot file so downloadOfficialSpecSnapshot finds it.
+	specPath := filepath.Join(t.TempDir(), "integration-10.1.78.json")
+	r.NoError(os.WriteFile(specPath, []byte(`{"openapi":"3.1.0"}`), 0o600))
+
+	// Use a URL that would be rejected by the host guard — if the function
+	// mistakenly tried to download, it would return an error here.
+	badURL, _ := url.Parse("https://evil.example.com/bad.deb")
+	logger := setupLogging(false, false)
+
+	err := downloadOfficialSpecSnapshot(context.Background(), http.DefaultClient, *badURL, specPath, logger)
+	r.NoError(err, "must skip download when snapshot already exists")
+
+	// The pre-existing file must be intact (not overwritten).
+	data, readErr := os.ReadFile(specPath)
+	r.NoError(readErr)
+	r.JSONEq(`{"openapi":"3.1.0"}`, string(data), "existing snapshot must not be overwritten")
+}
+
 // TestDownloadOfficialSpecSnapshot_OldVersionSkips pins the <10.1.78 regression-safety
 // path in downloadOfficialSpecSnapshot: a UOS package without integration.json must
 // yield nil (generation continues) and write no snapshot. This tests the httptest

@@ -245,20 +245,26 @@ func writeVersionArtifacts(unifiVersion *UnifiVersion, outDir string, logger Log
 	return nil
 }
 
-// downloadGenerationInputs downloads the internal API field-definition JSONs
-// (keyed by internalVersion) and commits the Official OpenAPI spec snapshot
-// (keyed by officialVersion, which may differ when internal < 10.1.78).
-// Both fetches share one bounded context; the .deb stream is the long pole.
+// downloadGenerationInputs resolves the internal API field-definition JSONs
+// (from the committed frozen snapshot when present, otherwise downloading) and
+// commits/refreshes the Official OpenAPI spec snapshot.
+// Both network paths share one bounded context; the .deb stream is the long pole.
 func downloadGenerationInputs(internalVersion *UnifiVersion, officialVersion *UnifiVersion, versionBaseDir string, logger Logger) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultDownloadTimeout)
 	defer cancel()
 
-	structuresDir := filepath.Join(versionBaseDir, fmt.Sprintf("v%s", internalVersion.Version))
-	logger.Infoln("Downloading UniFi Controller API structures definitions...")
-	if err := DownloadAndExtract(ctx, http.DefaultClient, *internalVersion.DownloadUrl, structuresDir); err != nil {
-		return "", fmt.Errorf("unable to download and extract UniFi Controller API structures definitions: %w", err)
+	structuresDir := frozenLegacyFieldsDir(versionBaseDir, internalVersion.Version)
+	if ok, err := extractionComplete(structuresDir); err != nil {
+		return "", fmt.Errorf("checking legacy field snapshot at %s: %w", structuresDir, err)
+	} else if ok {
+		logger.Infof("Using frozen legacy field snapshot at %s (no download)", structuresDir)
+	} else {
+		logger.Infoln("Downloading UniFi Controller API structures definitions...")
+		if err = DownloadAndExtract(ctx, http.DefaultClient, *internalVersion.DownloadUrl, structuresDir); err != nil {
+			return "", fmt.Errorf("unable to download and extract UniFi Controller API structures definitions: %w", err)
+		}
+		logger.Infof("Downloaded UniFi Controller API structures definitions in %s", structuresDir)
 	}
-	logger.Infof("Downloaded UniFi Controller API structures definitions in %s", structuresDir)
 
 	specURL, err := officialVersion.OfficialSpecURL()
 	if err != nil {
@@ -272,11 +278,16 @@ func downloadGenerationInputs(internalVersion *UnifiVersion, officialVersion *Un
 }
 
 // downloadOfficialSpecSnapshot fetches the UniFi OS Server package from specURL,
-// extracts integration.json, and writes a pinned snapshot to specPath. A package
-// predating the Official API (no integration.json) is skipped with a warning so
-// the internal pipeline never regresses; any other failure is fatal.
+// extracts integration.json, and writes a pinned snapshot to specPath. If the
+// snapshot already exists (committed) the download is skipped. A package predating
+// the Official API (no integration.json) is skipped with a warning so the
+// internal pipeline never regresses; any other failure is fatal.
 // client is injectable so tests can drive this path fully offline.
 func downloadOfficialSpecSnapshot(ctx context.Context, client *http.Client, specURL url.URL, specPath string, logger Logger) error {
+	if _, err := os.Stat(specPath); err == nil {
+		logger.Infof("Using committed Official OpenAPI spec snapshot at %s (no download)", specPath)
+		return nil
+	}
 	logger.Infoln("Downloading Official OpenAPI spec snapshot...")
 	if err := DownloadAndExtractOfficialSpec(ctx, client, specURL, specPath); err != nil {
 		if errors.Is(err, errOfficialSpecNotFound) {

@@ -1,0 +1,19 @@
+{
+    "mac": "^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$",
+    "name": "",
+    "note": "",
+    "blocked": "",
+    "hostname": "",
+    "last_seen": "",
+    "usergroup_id": "",
+    "use_fixedip": "false|true",
+    "network_id": "",
+    "fixed_ip": "",
+    "fixed_ap_enabled": "false|true",
+    "fixed_ap_mac": "^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$",
+    "local_dns_record_enabled": "false|true",
+    "local_dns_record": "",
+    "virtual_network_override_id": "",
+    "virtual_network_override_enabled": "false|true",
+    "network_members_group_ids": [""]
+}

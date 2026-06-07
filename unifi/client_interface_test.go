@@ -20,8 +20,6 @@ var interfacePrivateClientMethods = map[string]string{
 	// Multipart upload helpers are low-level and not part of the curated surface.
 	"UploadFile":           "low-level multipart helper; not part of the curated public surface",
 	"UploadFileFromReader": "low-level multipart helper; not part of the curated public surface",
-	// Raw HTTP transport methods used by official.Doer; not resource-level operations.
-	"Patch": "satisfies official.Doer for the Official API layer; not a resource-level InternalClient operation",
 }
 
 // TestClientImplementsAllExportedMethods is the reflection drift guard: it walks

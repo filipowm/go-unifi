@@ -4,7 +4,7 @@ Generates `../unifi/*.generated.go` from the controller's own API definitions. R
 
 ## Pipeline
 
-1. `download.go` — fetch controller `.deb` from dl.ui.com; extract `data.tar.xz`→`ace.jar`→ field JSONs (`api/fields/*.json`; `Setting.json` split per-setting). Also fetches `unifi-uos_sysvinit.deb`, extracts the Official OpenAPI 3.1 spec (`integration.json`) and commits a pinned snapshot `codegen/openapi/integration-<ver>.json` (controllers < 10.1.78 lack it → skipped with a warning).
+1. `download.go` — provides legacy field inputs. When the **frozen snapshot** (`codegen/v9.5.21/`) is present (sentinel `.extract-complete`), field JSONs are read directly — **no network download**. Otherwise, fetches controller `.deb` from dl.ui.com; extracts `data.tar.xz`→`ace.jar`→ field JSONs (`api/fields/*.json`; `Setting.json` split per-setting). Also provides the Official OpenAPI 3.1 spec: reads `codegen/openapi/integration-<ver>.json` if committed, else downloads `unifi-uos_sysvinit.deb` and extracts `integration.json` (controllers < 10.1.78 lack it → skipped with a warning).
 2. `resources.go` — JSON → Resource; infer Go types from validation regexes; snake_case→CamelCase (`fieldReps`).
 3. `customize.go` — apply `customizations.yml` overrides.
 4. `generator.go` — render `api.go.tmpl`/`apiv2.go.tmpl` → `<resource>.generated.go`; write `version.generated.go` + `.unifi-version`.
@@ -56,11 +56,24 @@ The internal resource-gen version and the Official-spec version are intentionall
 
 The Official API first shipped in 10.1.78; below that, `generate()` fetches the spec from `latest`. Pin exactly with `--official-spec-version=<ver>` (how `integration-10.1.78.json` was produced while `.unifi-version` stays `9.5.21`). Resolution (`resolveOfficialSpecVersion`): explicit flag → internal if ≥ 10.1.78 → else `latest`.
 
-`codegen/v<X.Y.Z>/` is a `.gitignore`d download cache (`v2/` = V2 API, `apiv2.go.tmpl`); the `openapi/` snapshot is committed.
+`codegen/v2/` = V2 API hand-maintained definitions (`apiv2.go.tmpl`). Other `codegen/v<X.Y.Z>/` dirs are downloaded-on-demand caches (gitignored), **except the pinned frozen legacy snapshot** (see below).
+
+## Frozen legacy field snapshot (`codegen/v9.5.21/`)
+
+`codegen/v9.5.21/` is a **committed** snapshot of the controller field-definition JSONs extracted from the `unifi_sysvinit_all.deb` for version 9.5.21. It includes the `.extract-complete` sentinel so `generate()` reads it directly without any network download (legacy fields are now permanently frozen at this version for the 2.0.0 release).
+
+The `.gitignore` carries `!/codegen/v9.5.21/` to unignore it while leaving the pattern `/codegen/v*.*.*/` in place for any other downloaded caches.
+
+**To refresh the frozen snapshot** (e.g. when bumping `.unifi-version`):
+1. Remove the old frozen snapshot dir and its gitignore exception.
+2. Run `make generate-resources VERSION=<new-ver>` once to download and extract the new field JSONs into `codegen/v<new-ver>/`.
+3. Add `!/codegen/v<new-ver>/` to `.gitignore` and commit the new `codegen/v<new-ver>/` tree.
+4. Update the `go:generate` arg in `unifi/codegen.go` to the new version.
+5. Regenerate and verify the golden diff is empty (or contains only the intended type changes).
 
 ## Workflows
 
-- **Bump version** — edit the arg in `unifi/codegen.go` + `.unifi-version`, `go generate unifi/codegen.go`, test, commit all generated changes.
+- **Bump version** — see "Refresh the frozen snapshot" above; also update `.unifi-version` and commit all generated changes.
 - **Override a field** — edit `customizations.yml` (`fieldType`, `omitEmpty`, `customUnmarshalType`, `jsonPath`, `ifFieldType`), regenerate; new unmarshalers go in `../unifi/json.go`.
 - **Add query params** — use the `queryParams` map under the resource in `customizations.yml`, NOT a `?…` suffix on `resourcePath` (rejected under `UNIFI_CODEGEN_STRICT`). See ARCH-19.
 - **Fix bad output** — NEVER edit `*.generated.go`; fix the source (`customizations.yml`, version JSON, `*.tmpl`) and regenerate. For behavior, add a sibling `../unifi/<resource>.go`.

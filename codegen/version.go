@@ -156,6 +156,13 @@ func officialSpecSnapshotPath(baseDir string, version *version.Version) string {
 	return filepath.Join(baseDir, "openapi", fmt.Sprintf("integration-%s.json", version.Core()))
 }
 
+// frozenLegacyFieldsDir returns the path of the committed field-JSON snapshot
+// for ver inside baseDir: <baseDir>/v<ver>. When the snapshot is present and
+// complete (sentinel exists) legacy generation reads it directly — no network download.
+func frozenLegacyFieldsDir(baseDir string, ver *version.Version) string {
+	return filepath.Join(baseDir, fmt.Sprintf("v%s", ver.Core()))
+}
+
 func writeVersionFile(version *version.Version, outDir string) error {
 	versionGo := fmt.Appendf(nil, `
 // Generated code. DO NOT EDIT.
