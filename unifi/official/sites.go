@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-// ErrSiteNotFound is returned by ResolveSiteID when the given legacy site name
+// ErrSiteNotFound is returned by ResolveID when the given legacy site name
 // has no matching Official-API UUID in the full site list.
 var ErrSiteNotFound = errors.New("site not found")
 
