@@ -14,7 +14,7 @@ const (
 	// Hand-written models in package official that the spec twins must defer to.
 	appInfoTypeFinal  = "ApplicationInfo"
 	siteOverviewFinal = "SiteOverview"
-	handWrittenInfo   = "Info"
+	customInfo   = "Info"
 )
 
 // nameOverrides force a specific Go type name where the default normalization
