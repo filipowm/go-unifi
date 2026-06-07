@@ -9,10 +9,10 @@ type Client interface {
 	ACL() ACLClient
 	// Clients returns the Clients resource group.
 	Clients() ClientsClient
+	// DNSPolicy returns the DNSPolicy resource group.
+	DNSPolicy() DNSPolicyClient
 	// Devices returns the Devices resource group.
 	Devices() DevicesClient
-	// DnsPolicy returns the DnsPolicy resource group.
-	DnsPolicy() DnsPolicyClient
 	// Firewall returns the Firewall resource group.
 	Firewall() FirewallClient
 	// Hotspot returns the Hotspot resource group.
@@ -38,8 +38,8 @@ var _ Client = (*apiClient)(nil)
 type ClientMock struct {
 	ACLFunc             func() ACLClient
 	ClientsFunc         func() ClientsClient
+	DNSPolicyFunc       func() DNSPolicyClient
 	DevicesFunc         func() DevicesClient
-	DnsPolicyFunc       func() DnsPolicyClient
 	FirewallFunc        func() FirewallClient
 	HotspotFunc         func() HotspotClient
 	InfoFunc            func() InfoClient
@@ -60,12 +60,12 @@ func (m *ClientMock) Clients() ClientsClient {
 	return m.ClientsFunc()
 }
 
-func (m *ClientMock) Devices() DevicesClient {
-	return m.DevicesFunc()
+func (m *ClientMock) DNSPolicy() DNSPolicyClient {
+	return m.DNSPolicyFunc()
 }
 
-func (m *ClientMock) DnsPolicy() DnsPolicyClient {
-	return m.DnsPolicyFunc()
+func (m *ClientMock) Devices() DevicesClient {
+	return m.DevicesFunc()
 }
 
 func (m *ClientMock) Firewall() FirewallClient {

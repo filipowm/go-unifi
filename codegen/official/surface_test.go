@@ -36,10 +36,41 @@ func findOp(t *testing.T, ops []operation, name string) operation {
 }
 
 // TestSurfaceMatchesCommitted byte-guards every generated surface file against
-// the committed copy — the in-repo mirror of the determinism gate.
+// the committed copy — the in-repo mirror of the determinism gate. It also
+// asserts the committed *.generated.go set equals the generated set so orphan
+// or stale files from renamed/removed tags are caught loud.
 func TestSurfaceMatchesCommitted(t *testing.T) {
 	files, err := generateFiles(loadSnapshot(t), defaultPackageName)
 	require.NoError(t, err)
+
+	// Build the expected set from generator output.
+	generatedNames := make(map[string]bool, len(files))
+	for _, f := range files {
+		generatedNames[f.name] = true
+	}
+
+	// Build the committed set from disk.
+	committed, err := filepath.Glob(filepath.Join(committedDir, "*.generated.go"))
+	require.NoError(t, err)
+	committedNames := make(map[string]bool, len(committed))
+	for _, p := range committed {
+		committedNames[filepath.Base(p)] = true
+	}
+
+	// Assert committed ⊆ generated (orphan/stale file guard).
+	for name := range committedNames {
+		if !generatedNames[name] {
+			t.Errorf("committed %s has no corresponding generator output (orphan/stale file — delete or regenerate)", name)
+		}
+	}
+	// Assert generated ⊆ committed (missing file guard).
+	for name := range generatedNames {
+		if !committedNames[name] {
+			t.Errorf("generator produces %s but it is missing from the committed dir; re-run `go run .` in codegen/official", name)
+		}
+	}
+
+	// Content guard: every generated file must be byte-identical to its committed copy.
 	for _, f := range files {
 		want, err := os.ReadFile(filepath.Join(committedDir, f.name))
 		require.NoError(t, err)

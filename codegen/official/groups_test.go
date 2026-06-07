@@ -16,7 +16,7 @@ func TestGroupName(t *testing.T) {
 		"Sites":                      "Sites",     // as-is
 		"Hotspot":                    "Hotspot",   // as-is
 		"UniFi Devices":              "Devices",   // override
-		"DNS Policies":               "DnsPolicy", // override
+		"DNS Policies":               "DNSPolicy", // override
 		"Access Control (ACL Rules)": "ACL",       // override
 		"Traffic Matching Lists":     "TrafficMatching",
 		"WiFi Broadcasts":            "WifiBroadcasts",
@@ -40,7 +40,7 @@ func TestMethodName(t *testing.T) {
 		{"Devices", "GetAdoptedDeviceOverviewPage", "GetAdoptedOverviewPage"},
 		{"Devices", "ExecutePortAction", "ExecutePortAction"}, // no Device token
 		{"Networks", "GetNetworksOverviewPage", "GetOverviewPage"},
-		{"DnsPolicy", "GetDnsPolicyPage", "GetPage"},
+		{"DNSPolicy", "GetDnsPolicyPage", "GetPage"},
 		{"ACL", "GetAclRulePage", "GetRulePage"},
 		{"TrafficMatching", "GetTrafficMatchingLists", "GetLists"},
 		{"WifiBroadcasts", "GetWifiBroadcastPage", "GetPage"},
@@ -65,7 +65,7 @@ func TestBuildGroupsFromSpec(t *testing.T) {
 		byName[g.Name] = g
 	}
 	// Docs-only tags (zero ops) never appear; hand-written-only groups do.
-	for _, want := range []string{"Firewall", "Devices", "ACL", "DnsPolicy", "Info", "Sites"} {
+	for _, want := range []string{"Firewall", "Devices", "ACL", "DNSPolicy", "Info", "Sites"} {
 		_, ok := byName[want]
 		assert.Truef(t, ok, "expected group %q", want)
 	}

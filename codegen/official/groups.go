@@ -13,7 +13,7 @@ import (
 // "Hotspot").
 var groupOverrides = map[string]string{
 	"UniFi Devices":              "Devices",
-	"DNS Policies":               "DnsPolicy",
+	"DNS Policies":               "DNSPolicy",
 	"Access Control (ACL Rules)": "ACL",
 	"Traffic Matching Lists":     "TrafficMatching",
 	"WiFi Broadcasts":            "WifiBroadcasts",
@@ -93,20 +93,31 @@ func singular(s string) string {
 	return s
 }
 
-// tokenize splits a camelCase/PascalCase identifier into words at each
-// lowercase/digit-to-uppercase boundary. The operationIds carry no consecutive
-// capitals, so this is exact.
+// tokenize splits a camelCase/PascalCase/ACRONYM identifier into words. For
+// plain camelCase the split is at each lower-to-upper boundary; for acronyms
+// (consecutive uppercase), the split also fires at the acronym-to-word boundary
+// so that "DNSPolicy" -> ["DNS","Policy"] and "ACL" stays ["ACL"].
 func tokenize(s string) []string {
+	runes := []rune(s)
+	n := len(runes)
 	var tokens []string
 	start := 0
-	for i, r := range s {
-		if i > start && unicode.IsUpper(r) && !unicode.IsUpper(rune(s[i-1])) {
-			tokens = append(tokens, s[start:i])
-			start = i
+	for i := 1; i < n; i++ {
+		if unicode.IsUpper(runes[i]) {
+			switch {
+			case !unicode.IsUpper(runes[i-1]):
+				// lower-to-upper: "WifiBroadcasts" -> "Wifi" / "Broadcasts"
+				tokens = append(tokens, string(runes[start:i]))
+				start = i
+			case i+1 < n && !unicode.IsUpper(runes[i+1]):
+				// upper-run before a lowercase word: "DNSPolicy" -> "DNS" / "Policy"
+				tokens = append(tokens, string(runes[start:i]))
+				start = i
+			}
 		}
 	}
-	if start < len(s) {
-		tokens = append(tokens, s[start:])
+	if start < n {
+		tokens = append(tokens, string(runes[start:]))
 	}
 	return tokens
 }

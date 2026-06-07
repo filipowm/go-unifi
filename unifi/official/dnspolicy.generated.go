@@ -8,8 +8,8 @@ import (
 	"net/url"
 )
 
-// DnsPolicyClient is the DnsPolicy resource group of the Official UniFi OpenAPI surface.
-type DnsPolicyClient interface {
+// DNSPolicyClient is the DNSPolicy resource group of the Official UniFi OpenAPI surface.
+type DNSPolicyClient interface {
 	// Create maps to POST /v1/sites/%s/dns/policies on the Official API.
 	Create(ctx context.Context, siteId string, body DNSPolicyCreateOrUpdate) (*DNSPolicy, error)
 	// Delete maps to DELETE /v1/sites/%s/dns/policies/%s on the Official API.
@@ -22,18 +22,18 @@ type DnsPolicyClient interface {
 	Update(ctx context.Context, siteId string, dnsPolicyId string, body DNSPolicyCreateOrUpdate) (*DNSPolicy, error)
 }
 
-// dnsPolicyClient wraps the shared apiClient so transport, gate and site cache stay single-sourced.
-type dnsPolicyClient struct{ *apiClient }
+// dNSPolicyClient wraps the shared apiClient so transport, gate and site cache stay single-sourced.
+type dNSPolicyClient struct{ *apiClient }
 
-var _ DnsPolicyClient = dnsPolicyClient{}
+var _ DNSPolicyClient = dNSPolicyClient{}
 
-// DnsPolicy returns the DnsPolicy resource group.
-func (c *apiClient) DnsPolicy() DnsPolicyClient {
-	return dnsPolicyClient{c}
+// DNSPolicy returns the DNSPolicy resource group.
+func (c *apiClient) DNSPolicy() DNSPolicyClient {
+	return dNSPolicyClient{c}
 }
 
 // Create maps to POST /v1/sites/%s/dns/policies on the Official API.
-func (c dnsPolicyClient) Create(ctx context.Context, siteId string, body DNSPolicyCreateOrUpdate) (*DNSPolicy, error) {
+func (c dNSPolicyClient) Create(ctx context.Context, siteId string, body DNSPolicyCreateOrUpdate) (*DNSPolicy, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
 	}
@@ -45,7 +45,7 @@ func (c dnsPolicyClient) Create(ctx context.Context, siteId string, body DNSPoli
 }
 
 // Delete maps to DELETE /v1/sites/%s/dns/policies/%s on the Official API.
-func (c dnsPolicyClient) Delete(ctx context.Context, siteId string, dnsPolicyId string) error {
+func (c dNSPolicyClient) Delete(ctx context.Context, siteId string, dnsPolicyId string) error {
 	if err := c.check(ctx); err != nil {
 		return err
 	}
@@ -56,7 +56,7 @@ func (c dnsPolicyClient) Delete(ctx context.Context, siteId string, dnsPolicyId 
 }
 
 // Get maps to GET /v1/sites/%s/dns/policies/%s on the Official API.
-func (c dnsPolicyClient) Get(ctx context.Context, siteId string, dnsPolicyId string) (*DNSPolicy, error) {
+func (c dNSPolicyClient) Get(ctx context.Context, siteId string, dnsPolicyId string) (*DNSPolicy, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func (c dnsPolicyClient) Get(ctx context.Context, siteId string, dnsPolicyId str
 }
 
 // GetPage maps to GET /v1/sites/%s/dns/policies on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
-func (c dnsPolicyClient) GetPage(ctx context.Context, siteId string) ([]DNSPolicy, error) {
+func (c dNSPolicyClient) GetPage(ctx context.Context, siteId string) ([]DNSPolicy, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
 	}
@@ -80,7 +80,7 @@ func (c dnsPolicyClient) GetPage(ctx context.Context, siteId string) ([]DNSPolic
 }
 
 // Update maps to PUT /v1/sites/%s/dns/policies/%s on the Official API.
-func (c dnsPolicyClient) Update(ctx context.Context, siteId string, dnsPolicyId string, body DNSPolicyCreateOrUpdate) (*DNSPolicy, error) {
+func (c dNSPolicyClient) Update(ctx context.Context, siteId string, dnsPolicyId string, body DNSPolicyCreateOrUpdate) (*DNSPolicy, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
 	}
@@ -91,9 +91,9 @@ func (c dnsPolicyClient) Update(ctx context.Context, siteId string, dnsPolicyId 
 	return &out, nil
 }
 
-// DnsPolicyClientMock is a func-field test double implementing DnsPolicyClient. A nil field
+// DNSPolicyClientMock is a func-field test double implementing DNSPolicyClient. A nil field
 // panics on call, surfacing an un-stubbed method in tests.
-type DnsPolicyClientMock struct {
+type DNSPolicyClientMock struct {
 	CreateFunc  func(context.Context, string, DNSPolicyCreateOrUpdate) (*DNSPolicy, error)
 	DeleteFunc  func(context.Context, string, string) error
 	GetFunc     func(context.Context, string, string) (*DNSPolicy, error)
@@ -101,24 +101,24 @@ type DnsPolicyClientMock struct {
 	UpdateFunc  func(context.Context, string, string, DNSPolicyCreateOrUpdate) (*DNSPolicy, error)
 }
 
-var _ DnsPolicyClient = (*DnsPolicyClientMock)(nil)
+var _ DNSPolicyClient = (*DNSPolicyClientMock)(nil)
 
-func (m *DnsPolicyClientMock) Create(ctx context.Context, siteId string, body DNSPolicyCreateOrUpdate) (*DNSPolicy, error) {
+func (m *DNSPolicyClientMock) Create(ctx context.Context, siteId string, body DNSPolicyCreateOrUpdate) (*DNSPolicy, error) {
 	return m.CreateFunc(ctx, siteId, body)
 }
 
-func (m *DnsPolicyClientMock) Delete(ctx context.Context, siteId string, dnsPolicyId string) error {
+func (m *DNSPolicyClientMock) Delete(ctx context.Context, siteId string, dnsPolicyId string) error {
 	return m.DeleteFunc(ctx, siteId, dnsPolicyId)
 }
 
-func (m *DnsPolicyClientMock) Get(ctx context.Context, siteId string, dnsPolicyId string) (*DNSPolicy, error) {
+func (m *DNSPolicyClientMock) Get(ctx context.Context, siteId string, dnsPolicyId string) (*DNSPolicy, error) {
 	return m.GetFunc(ctx, siteId, dnsPolicyId)
 }
 
-func (m *DnsPolicyClientMock) GetPage(ctx context.Context, siteId string) ([]DNSPolicy, error) {
+func (m *DNSPolicyClientMock) GetPage(ctx context.Context, siteId string) ([]DNSPolicy, error) {
 	return m.GetPageFunc(ctx, siteId)
 }
 
-func (m *DnsPolicyClientMock) Update(ctx context.Context, siteId string, dnsPolicyId string, body DNSPolicyCreateOrUpdate) (*DNSPolicy, error) {
+func (m *DNSPolicyClientMock) Update(ctx context.Context, siteId string, dnsPolicyId string, body DNSPolicyCreateOrUpdate) (*DNSPolicy, error) {
 	return m.UpdateFunc(ctx, siteId, dnsPolicyId, body)
 }
