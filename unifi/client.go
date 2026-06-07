@@ -3,7 +3,6 @@ package unifi
 import (
 	"context"
 	"crypto/tls"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -383,19 +382,20 @@ func newBareClient(config *ClientConfig) (*client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed creating unifi client: %w", err)
 	}
-	// APIStyle override: when the caller pins the style, skip the
-	// network probe entirely so the client can be constructed fully offline.
-	if config.APIStyle != APIStyleAuto {
-		paths := apiPathsForStyle(config.APIStyle)
-		if paths == &OldStyleAPI {
-			return c, errors.New("old-style (classic) controllers are unsupported; update to a controller version that supports API-key authentication")
+	// A pinned (non-auto) style skips the network probe so the client can be
+	// constructed fully offline; APIStyleAuto probes the controller.
+	switch config.APIStyle {
+	case APIStyleAuto:
+		if err = c.determineApiStyle(); err != nil {
+			return c, fmt.Errorf("failed determining API style: %w", err)
 		}
+	case APIStyleNew:
+		c.apiPaths = &NewStyleAPI
 		c.Debugf("Using explicitly configured API style (skipping probe): %d", config.APIStyle)
-		c.apiPaths = paths
-		return c, nil
-	}
-	if err = c.determineApiStyle(); err != nil {
-		return c, fmt.Errorf("failed determining API style: %w", err)
+	case APIStyleOld:
+		return c, ErrOldStyleUnsupported
+	default:
+		return c, fmt.Errorf("unsupported API style: %d", config.APIStyle)
 	}
 	return c, nil
 }

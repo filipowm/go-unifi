@@ -43,8 +43,8 @@ type APIPaths struct {
 
 // OldStyleAPI and NewStyleAPI are the canonical path sets for the two controller
 // API styles. They are compared by POINTER IDENTITY on the package-level addresses
-// (&OldStyleAPI / &NewStyleAPI) by apiStyleFromStatus, apiPathsForStyle and
-// determineApiStyle, so a *client's apiPaths can be identified back to a style.
+// (&OldStyleAPI / &NewStyleAPI) by apiStyleFromStatus and determineApiStyle, so a
+// *client's apiPaths can be identified back to a style.
 //
 // IMMUTABLE: treat these as read-only. Mutating a field of either corrupts every
 // client and every parallel test that shares the pointer. Code (and tests) that
@@ -97,6 +97,12 @@ const (
 	APIStyleOld
 )
 
+// ErrOldStyleUnsupported is returned when a client targets an old-style (classic)
+// controller. API-key authentication — the only supported auth as of 2.0.0 —
+// requires a controller new enough to expose the new-style API (UniFi Network
+// 9.0.114 or newer). Callers can match it with errors.Is.
+var ErrOldStyleUnsupported = errors.New("old-style (classic) controllers are unsupported; API-key authentication requires UniFi Network 9.0.114 or newer")
+
 // apiStyleFromStatus is the pure decision function behind determineApiStyle: it
 // maps the controller's probe HTTP status to the matching APIPaths, with zero
 // network I/O so it can be unit-tested in isolation. A 200 means the new style;
@@ -106,18 +112,10 @@ func apiStyleFromStatus(status int) (*APIPaths, error) {
 	case http.StatusOK:
 		return &NewStyleAPI, nil
 	case http.StatusFound:
-		return nil, errors.New("old-style (classic) controllers are unsupported; update to a controller version that supports API-key authentication")
+		return nil, ErrOldStyleUnsupported
 	default:
 		return nil, fmt.Errorf("expected 200 or 302 status code, but got: %d", status)
 	}
-}
-
-// apiPathsForStyle returns the explicit APIPaths for a pinned (non-auto) style.
-func apiPathsForStyle(style APIStyle) *APIPaths {
-	if style == APIStyleOld {
-		return &OldStyleAPI
-	}
-	return &NewStyleAPI
 }
 
 // determineApiStyle checks the base URL to decide which API style to use and sets the apiPaths accordingly.

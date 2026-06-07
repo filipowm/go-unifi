@@ -97,7 +97,7 @@ func TestApiStyleOverrideOldStyleIsUnsupported(t *testing.T) {
 		APIStyle: APIStyleOld,
 	})
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "old-style (classic) controllers are unsupported")
+	assert.ErrorIs(t, err, ErrOldStyleUnsupported, "callers must be able to match the sentinel with errors.Is")
 }
 
 // TestApiStyleSetCopiesAreIsolated pins the value-returning seam:
@@ -126,17 +126,19 @@ func TestApiStyleSetCopiesAreIsolated(t *testing.T) {
 	a.Equal(apiPath, OldStyleAPI.ApiPath, "mutating a copy must not corrupt the shared OldStyleAPI")
 }
 
-// TestApiPathsForStyle pins the pinned-style->paths mapping: the old
-// style resolves to the &OldStyleAPI identity and the new style (and the auto
-// default) resolve to &NewStyleAPI, preserving the pointer-identity contract the
-// rest of the client relies on.
-func TestApiPathsForStyle(t *testing.T) {
+// TestApiStyleOverrideRejectsUnknown ensures that pinning an out-of-range
+// APIStyle fails fast with an explicit error instead of silently falling back to
+// the new style — a garbage value must never be treated as a valid pinned style.
+func TestApiStyleOverrideRejectsUnknown(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 
-	a.Same(&OldStyleAPI, apiPathsForStyle(APIStyleOld))
-	a.Same(&NewStyleAPI, apiPathsForStyle(APIStyleNew))
-	a.Same(&NewStyleAPI, apiPathsForStyle(APIStyleAuto), "auto defaults to the new style set")
+	_, err := newBareClient(&ClientConfig{
+		URL:      "https://example.com",
+		APIKey:   "test-key",
+		APIStyle: APIStyle(99),
+	})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "unsupported API style")
 }
 
 // TestDetermineApiStyle_OldStyleIsUnsupported exercises the 302 -> unsupported
@@ -158,5 +160,5 @@ func TestDetermineApiStyle_OldStyleIsUnsupported(t *testing.T) {
 		APIKey: "test-key",
 	})
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "old-style (classic) controllers are unsupported")
+	assert.ErrorIs(t, err, ErrOldStyleUnsupported, "callers must be able to match the sentinel with errors.Is")
 }
