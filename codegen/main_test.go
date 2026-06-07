@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/filipowm/go-unifi/codegen/internal"
 	"github.com/hashicorp/go-version"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -237,7 +238,7 @@ func TestDownloadGenerationInputs_SkipsLegacyDownloadWhenSnapshotComplete(t *tes
 	frozenDir := legacyFieldsDir(baseDir, internalVer)
 	r.NoError(os.MkdirAll(frozenDir, 0o755))
 	r.NoError(os.WriteFile(filepath.Join(frozenDir, "Device.json"), []byte(`{"k":"v"}`), 0o600))
-	r.NoError(os.WriteFile(filepath.Join(frozenDir, extractCompleteSentinel), nil, 0o600))
+	r.NoError(os.WriteFile(filepath.Join(frozenDir, internal.ExtractCompleteSentinel), nil, 0o600))
 
 	// Stage the Official spec snapshot so the official download is also skipped.
 	specPath := officialSpecSnapshotPath(baseDir, internalVer)

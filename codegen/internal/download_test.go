@@ -333,7 +333,7 @@ func TestDownloadAndExtract_WithCompletedDirectory(t *testing.T) {
 	r := require.New(t)
 
 	tempDir := t.TempDir()
-	r.NoError(os.WriteFile(filepath.Join(tempDir, extractCompleteSentinel), nil, 0o600))
+	r.NoError(os.WriteFile(filepath.Join(tempDir, ExtractCompleteSentinel), nil, 0o600))
 	testURL, _ := url.Parse("http://example.com/test.deb")
 
 	err := DownloadAndExtract(context.Background(), http.DefaultClient, *testURL, tempDir)
@@ -775,7 +775,7 @@ func TestDownloadAndExtract_FullChainOffline(t *testing.T) {
 
 	// A successful extract drops the completion sentinel and removes the
 	// intermediate ace.jar from the published directory.
-	_, err = os.Stat(filepath.Join(outputDir, extractCompleteSentinel))
+	_, err = os.Stat(filepath.Join(outputDir, ExtractCompleteSentinel))
 	r.NoError(err, "completion sentinel must be present after a successful extract")
 	_, err = os.Stat(filepath.Join(outputDir, "ace.jar"))
 	r.ErrorIs(err, os.ErrNotExist, "intermediate ace.jar must not be left behind")
@@ -802,7 +802,7 @@ func TestDownloadAndExtract_NotFoundOffline(t *testing.T) {
 
 	// A failed download must not leave a sentinel-bearing (or even
 	// existing) output dir behind.
-	_, statErr := os.Stat(filepath.Join(outputDir, extractCompleteSentinel))
+	_, statErr := os.Stat(filepath.Join(outputDir, ExtractCompleteSentinel))
 	r.ErrorIs(statErr, os.ErrNotExist, "no sentinel after a failed download")
 }
 

@@ -42,11 +42,11 @@ const (
 	// multi-MB .deb body is the long pole, so this is generous.
 	DefaultDownloadTimeout = 5 * time.Minute
 
-	// extractCompleteSentinel marks a fully-extracted output directory:
+	// ExtractCompleteSentinel marks a fully-extracted output directory:
 	// a version dir without this file is treated as partial/crashed and is
 	// re-extracted, so a run that dies mid-extraction can never be silently
 	// accepted on the next invocation.
-	extractCompleteSentinel = ".extract-complete"
+	ExtractCompleteSentinel = ".extract-complete"
 )
 
 // allowedDownloadHostSuffixes pins the controller download to Ubiquiti-owned
@@ -117,7 +117,7 @@ func downloadAndExtractAtomic(ctx context.Context, client *http.Client, download
 	// completion sentinel last so the dir renamed into place is atomically complete.
 	// Remove via the local tmpDir (not jarFile) to keep the path off the taint path.
 	_ = os.Remove(filepath.Join(tmpDir, "ace.jar"))
-	if err = os.WriteFile(filepath.Join(tmpDir, extractCompleteSentinel), nil, 0o644); err != nil { //nolint:gosec
+	if err = os.WriteFile(filepath.Join(tmpDir, ExtractCompleteSentinel), nil, 0o644); err != nil { //nolint:gosec
 		return fmt.Errorf("unable to write extraction sentinel: %w", err)
 	}
 
@@ -152,7 +152,7 @@ func ExtractionComplete(outputDir string) (bool, error) {
 	if !info.IsDir() {
 		return false, fmt.Errorf("%s isn't a directory", outputDir)
 	}
-	if _, err = os.Stat(filepath.Join(outputDir, extractCompleteSentinel)); err != nil {
+	if _, err = os.Stat(filepath.Join(outputDir, ExtractCompleteSentinel)); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			log.Debugf("output directory %s exists but is missing the completion sentinel; re-extracting", outputDir)
 			return false, nil
