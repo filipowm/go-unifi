@@ -7,11 +7,11 @@ import (
 	"strings"
 )
 
-// handWritten are operationIds whose wrappers live in hand-written siblings
+// customOps are operationIds whose wrappers live in hand-written siblings
 // (info.go, sites.go) and must NOT be generated. Their Go types collide with
 // hand-written models (Info, SiteOverview), so the models pass excludes/aliases
 // them too — see transform.go.
-var handWritten = map[string]bool{
+var customOps = map[string]bool{
 	"getInfo":             true,
 	"getSiteOverviewPage": true,
 }
@@ -106,7 +106,7 @@ func buildOperation(path, method string, raw, schemas map[string]any) (operation
 	if opID == "" {
 		return operation{}, false, fmt.Errorf("operation %s %s has no operationId", strings.ToUpper(method), path)
 	}
-	if handWritten[opID] {
+	if customOps[opID] {
 		return operation{}, true, nil
 	}
 	op := operation{

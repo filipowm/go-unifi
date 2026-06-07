@@ -16,10 +16,10 @@ var doerMethods = map[string]string{
 	"GET": "Get", "POST": "Post", "PUT": "Put", "DELETE": "Delete", "PATCH": "Patch",
 }
 
-// handWrittenMethods are the surface methods implemented by hand (info.go,
+// customMethods are the surface methods implemented by hand (info.go,
 // sites.go). They carry no generated wrapper body but MUST appear in the Client
 // interface and its mock, so the generated surface is the single source of truth.
-var handWrittenMethods = []method{
+var customMethods = []method{
 	{Name: "GetInfo", Doc: "returns the controller application info (GET /v1/info).", Params: []arg{ctxArg}, Returns: []string{"*Info", "error"}},
 	{Name: "ListSites", Doc: "returns all local sites, auto-paginating the list envelope.", Params: []arg{ctxArg}, Returns: []string{"[]SiteOverview", "error"}},
 	{Name: "ResolveSiteID", Doc: "maps a legacy site name to its Official-API site UUID, caching the lookup.", Params: []arg{ctxArg, {Name: "name", Type: "string"}}, Returns: []string{"string", "error"}},
@@ -44,8 +44,8 @@ type method struct {
 // methods returns the full surface — generated operations plus the hand-written
 // methods — sorted by name for deterministic output.
 func methods(ops []operation) []method {
-	all := make([]method, 0, len(ops)+len(handWrittenMethods))
-	all = append(all, handWrittenMethods...)
+	all := make([]method, 0, len(ops)+len(customMethods))
+	all = append(all, customMethods...)
 	for i := range ops {
 		all = append(all, methodFor(ops[i]))
 	}
