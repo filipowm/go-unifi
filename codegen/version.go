@@ -33,6 +33,11 @@ const (
 // its UniFi OS Server package. Packages before this version are silently skipped.
 var minOfficialSpecVersion = version.Must(version.NewVersion("10.1.78"))
 
+// maxInternalVersion is the last classic Network Controller release that carries
+// internal api/fields/*.json definitions for code generation. UOS packages
+// (>= 10.x) dropped these files; the classic controller is EOL at this version.
+var maxInternalVersion = version.Must(version.NewVersion("9.5.21"))
+
 // resolveOfficialSpecVersion resolves the version to use for the Official-API
 // OpenAPI spec snapshot, decoupled from the internal (resource-gen) version:
 //   - explicit non-empty marker: resolve exactly that version
@@ -50,6 +55,57 @@ func resolveOfficialSpecVersion(p UnifiVersionProvider, internal *UnifiVersion, 
 		return internal, nil
 	}
 	return p.Latest()
+}
+
+// resolveInternalVersion resolves the controller version for Internal-API code
+// generation, enforcing the classic-controller EOL cap at maxInternalVersion:
+//   - "latest": resolve via the firmware API, then clamp — min(resolved, 9.5.21).
+//   - explicit <= 9.5.21: return the requested version unchanged.
+//   - explicit > 9.5.21: fail loud with an actionable error pointing to the
+//     Official OpenAPI frontend (#121) and the -official-spec-version flag.
+//
+// The cap lives here only; the shared provider (Latest/ByVersionMarker) is never
+// touched so resolveOfficialSpecVersion can resolve >= 10.1.78 without interference.
+func resolveInternalVersion(p UnifiVersionProvider, marker string) (*UnifiVersion, error) {
+	if marker != LatestVersionMarker {
+		explicit, err := version.NewVersion(marker)
+		if err != nil {
+			// Invalid syntax — delegate so the existing error message is preserved.
+			resolved, resolveErr := p.ByVersionMarker(marker)
+			if resolveErr != nil {
+				return nil, fmt.Errorf("resolve internal version marker %q via provider: %w", marker, resolveErr)
+			}
+			return resolved, nil
+		}
+		if explicit.Core().GreaterThan(maxInternalVersion) {
+			return nil, fmt.Errorf(
+				"internal API version %s is not supported: the classic UniFi Network Controller "+
+					"reached end-of-life at %s and UOS packages (>= 10.x) no longer ship the "+
+					"internal api/fields/*.json definitions required for resource code generation; "+
+					"to target the Official OpenAPI surface use the Official frontend (GitHub issue #121) "+
+					"with -official-spec-version <version> (minimum supported: %s); "+
+					"to generate Internal resources pin to a version <= %s (e.g. make generate VERSION=%s)",
+				explicit.Core(), maxInternalVersion, minOfficialSpecVersion,
+				maxInternalVersion, maxInternalVersion,
+			)
+		}
+	}
+
+	resolved, err := p.ByVersionMarker(marker)
+	if err != nil {
+		return nil, fmt.Errorf("resolve internal version marker %q: %w", marker, err)
+	}
+
+	// Clamp: if the firmware API reports a UOS version (e.g. 10.x slipping through
+	// the product filter), cap to maxInternalVersion so callers always see <= 9.5.21.
+	if resolved.Version.Core().GreaterThan(maxInternalVersion) {
+		capped, err := p.ByVersionMarker(maxInternalVersion.String())
+		if err != nil {
+			return nil, fmt.Errorf("resolving capped internal version %s: %w", maxInternalVersion, err)
+		}
+		return capped, nil
+	}
+	return resolved, nil
 }
 
 type UnifiVersion struct {

@@ -130,7 +130,7 @@ func main() {
 // Official-API spec version from opts. Extracted to keep generate()'s cyclomatic
 // complexity inside the configured budget.
 func resolveVersions(p UnifiVersionProvider, opts options) (*UnifiVersion, *UnifiVersion, error) {
-	internalVer, err := p.ByVersionMarker(opts.version)
+	internalVer, err := resolveInternalVersion(p, opts.version)
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to determine version and download URL for Unifi version %s: %w", opts.version, err)
 	}

@@ -45,16 +45,30 @@ Any other version (`make generate-resources VERSION=<x>`) targets a different `c
 4. Update the `go:generate` arg in `unifi/codegen.go` and `.unifi-version`.
 5. Regenerate; verify the golden diff is empty or only the intended type changes.
 
-## Two-version model
+## Two-pipeline version model
 
-Internal resource version and Official-spec version are intentionally decoupled:
+The two code-generation pipelines track **independent** version axes:
 
-| Pin | Controls |
-|---|---|
-| `.unifi-version` / `go generate` arg | internal `.deb` → resources (`9.5.21`) |
-| `codegen/openapi/integration-<ver>.json` (committed) | Official OpenAPI snapshot (`10.1.78`) |
+| Pin | Controls | Resolution |
+|---|---|---|
+| `.unifi-version` / `go generate` arg | Internal `.deb` → resources (capped at `9.5.21`) | `resolveInternalVersion` |
+| `codegen/openapi/integration-<ver>.json` (committed) | Official OpenAPI snapshot (`10.1.78+`) | `resolveOfficialSpecVersion` |
 
-The Official API first shipped in 10.1.78. Resolution (`resolveOfficialSpecVersion`): `--official-spec-version` flag → internal version if ≥ 10.1.78 → else `latest`. `codegen/v2/` = hand-maintained V2 API defs (`apiv2.go.tmpl`).
+**Internal pipeline — capped at 9.5.21 (classic EOL, fail loud past it)**
+
+The classic UniFi Network Controller reached end-of-life at 9.5.21. UOS packages (>= 10.x) no longer ship the `api/fields/*.json` definitions that the Internal pipeline reads. `resolveInternalVersion` enforces this:
+
+- `latest` (or any resolved version > 9.5.21): clamp to 9.5.21 — `min(resolved, 9.5.21)`.
+- explicit version > 9.5.21: **fail loud** with an actionable error pointing to the Official OpenAPI frontend (issue #121) and the `-official-spec-version` flag.
+- explicit version ≤ 9.5.21: resolved unchanged (backward compat — `make generate VERSION=<x>` still works).
+
+The cap lives **only** in `resolveInternalVersion`; the shared provider (`Latest`/`ByVersionMarker`) is never modified.
+
+**Official pipeline — tracks UOS ≥ 10.1.78**
+
+The Official API first shipped in 10.1.78. `resolveOfficialSpecVersion`: `--official-spec-version` flag → internal version if ≥ 10.1.78 → else `latest`. Deliberately unaffected by the internal cap so legitimate UOS versions resolve freely.
+
+`codegen/v2/` = hand-maintained V2 API defs (`apiv2.go.tmpl`).
 
 ## Official surface internals
 
