@@ -21,7 +21,10 @@ cd codegen/official && go run .   # -openapi-dir / -out-dir override the default
 
 **Folded into `go generate` (second pass).** `generate()` (root `main.go`) shells out to this module via `os/exec` after the Internal pass (`official_pass.go`), so one `go generate unifi/codegen.go` emits both surfaces. We shell out rather than import to keep the oapi-codegen graph out of the root module.
 
-**Tri-shape wrappers** (`resources.go` + `surface.go`). Each operation is classified from its `operationId` + HTTP method + parameters (NOT path regexes): `List*`→`[]…Overview` (auto-paginating the offset/limit envelope, max 200), `Get*`→`*…Details`, `Create/Update/Patch*(…CreateOrUpdate)`, plus ordering GET/PUT, action POSTs, references, `statistics/latest`, and bulk `deleteVouchers` (its `filter` is REQUIRED — guarded against empty). Wrapper types resolve through the same `finalName` map as the models, so they match emitted type names exactly. `getInfo`/`getSiteOverviewPage` are skipped — hand-written in `info.go`/`sites.go`. The `PATCH` verb is carried by `official.Doer.Patch` (and `unifi.client.Patch`, exposed on the public `Client` via `customizations.yml`).
+**Tri-shape wrappers** (`resources.go` + `surface.go`) — operations classified from `operationId` + method + params, not path regexes:
+
+- Shapes: `List*`→`[]…Overview` (auto-paginates offset/limit), `Get*`→`*…Details`, `Create/Update/Patch*(…CreateOrUpdate)`. Non-CRUD ops (ordering GET/PUT, action POSTs, `references`, `statistics/latest`, required-filter `deleteVouchers`) go through the same classifier.
+- Types reuse the models' `finalName` map. `getInfo`/`getSiteOverviewPage` are skipped (hand-written siblings). `PATCH` rides `official.Doer.Patch`.
 
 **The oneOf transform** (`transform.go`, `naming.go`) — oapi-codegen's allOf+discriminator path silently drops every variant struct, so the spec is rewritten into its oneOf path (per-variant union types). Deterministic, fail-loud:
 
