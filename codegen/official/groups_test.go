@@ -10,14 +10,14 @@ import (
 func TestGroupName(t *testing.T) {
 	t.Parallel()
 	cases := map[string]string{
-		"Firewall":                   "Firewall",  // as-is
-		"Networks":                   "Networks",  // as-is
-		"Clients":                    "Clients",   // as-is
-		"Sites":                      "Sites",     // as-is
-		"Hotspot":                    "Hotspot",   // as-is
-		"UniFi Devices":              "Devices",   // override
-		"DNS Policies":               "DNSPolicies",      // override: plural collection
-		"Access Control (ACL Rules)": "ACLs",            // override: plural collection
+		"Firewall":                   "Firewall",             // as-is
+		"Networks":                   "Networks",             // as-is
+		"Clients":                    "Clients",              // as-is
+		"Sites":                      "Sites",                // as-is
+		"Hotspot":                    "Hotspot",              // as-is
+		"UniFi Devices":              "Devices",              // override
+		"DNS Policies":               "DNSPolicies",          // override: plural collection
+		"Access Control (ACL Rules)": "ACLs",                 // override: plural collection
 		"Traffic Matching Lists":     "TrafficMatchingLists", // override: plural collection
 		"WiFi Broadcasts":            "WifiBroadcasts",
 		"Supporting Resources":       "Supporting",
@@ -32,29 +32,43 @@ func TestGroupName(t *testing.T) {
 
 func TestMethodName(t *testing.T) {
 	t.Parallel()
-	cases := []struct{ group, op, want string }{
-		{"Firewall", "CreateFirewallPolicy", "CreatePolicy"},
-		{"Firewall", "GetFirewallPolicyOrdering", "GetPolicyOrdering"},
-		{"Firewall", "GetFirewallZones", "GetZones"},
-		{"Devices", "AdoptDevice", "Adopt"},
-		{"Devices", "GetAdoptedDeviceOverviewPage", "GetAdoptedOverviewPage"},
-		{"Devices", "ExecutePortAction", "ExecutePortAction"}, // no Device token
-		{"Networks", "GetNetworksOverviewPage", "GetOverviewPage"},
-		{"DNSPolicies", "CreateDnsPolicy", "Create"},
-		{"DNSPolicies", "GetDnsPolicy", "Get"},
-		{"DNSPolicies", "GetDnsPolicyPage", "GetPage"},
-		{"ACLs", "CreateAclRule", "CreateRule"},
-		{"ACLs", "GetAclRulePage", "GetRulePage"},
-		{"ACLs", "GetAclRuleOrdering", "GetRuleOrdering"},
-		{"TrafficMatchingLists", "CreateTrafficMatchingList", "Create"},
-		{"TrafficMatchingLists", "GetTrafficMatchingList", "Get"},
-		{"TrafficMatchingLists", "GetTrafficMatchingLists", "GetLists"},
-		{"WifiBroadcasts", "GetWifiBroadcastPage", "GetPage"},
-		{"Hotspot", "GetVouchers", "GetVouchers"},              // no stem token
-		{"Supporting", "GetDeviceTagPage", "GetDeviceTagPage"}, // "Device" kept: not Supporting's stem
+	// item != "" marks a list op (List<Qualifier>); a GET with no item is a
+	// single read (a trailing Details qualifier is dropped); other verbs pass
+	// through after stem stripping.
+	cases := []struct{ group, op, method, item, want string }{
+		{"Firewall", "CreateFirewallPolicy", "POST", "", "CreatePolicy"},
+		{"Firewall", "GetFirewallPolicyOrdering", "GET", "", "GetPolicyOrdering"},
+		{"Firewall", "GetFirewallZones", "GET", "FirewallZone", "ListZones"},
+		{"Firewall", "GetFirewallPolicies", "GET", "FirewallPolicy", "ListPolicies"},
+		{"Firewall", "GetFirewallPolicy", "GET", "", "GetPolicy"},
+		{"Firewall", "GetFirewallZone", "GET", "", "GetZone"},
+		{"Devices", "AdoptDevice", "POST", "", "Adopt"},
+		{"Devices", "GetAdoptedDeviceOverviewPage", "GET", "AdoptedDeviceOverview", "ListAdopted"},
+		{"Devices", "GetAdoptedDeviceDetails", "GET", "", "GetAdopted"},
+		{"Devices", "GetPendingDevicePage", "GET", "DevicePendingAdoption", "ListPending"},
+		{"Devices", "ExecutePortAction", "POST", "", "ExecutePortAction"}, // no Device token
+		{"Networks", "GetNetworksOverviewPage", "GET", "NetworkOverview", "List"},
+		{"Networks", "GetNetworkDetails", "GET", "", "Get"},
+		{"Networks", "GetNetworkReferences", "GET", "", "GetReferences"},
+		{"DNSPolicies", "CreateDnsPolicy", "POST", "", "Create"},
+		{"DNSPolicies", "GetDnsPolicy", "GET", "", "Get"},
+		{"DNSPolicies", "GetDnsPolicyPage", "GET", "DNSPolicy", "List"},
+		{"ACLs", "CreateAclRule", "POST", "", "CreateRule"},
+		{"ACLs", "GetAclRulePage", "GET", "ACLRuleObject", "ListRule"},
+		{"ACLs", "GetAclRuleOrdering", "GET", "", "GetRuleOrdering"},
+		{"ACLs", "GetAclRule", "GET", "", "GetRule"},
+		{"TrafficMatchingLists", "CreateTrafficMatchingList", "POST", "", "Create"},
+		{"TrafficMatchingLists", "GetTrafficMatchingList", "GET", "", "Get"},
+		{"TrafficMatchingLists", "GetTrafficMatchingLists", "GET", "TrafficMatchingList", "List"},
+		{"WifiBroadcasts", "GetWifiBroadcastPage", "GET", "WifiBroadcastOverview", "List"},
+		{"WifiBroadcasts", "GetWifiBroadcastDetails", "GET", "", "Get"},
+		{"Hotspot", "GetVouchers", "GET", "HotspotVoucherDetails", "ListVouchers"}, // no stem token
+		{"Hotspot", "GetVoucher", "GET", "", "GetVoucher"},
+		{"Supporting", "GetDeviceTagPage", "GET", "DeviceTag", "ListDeviceTag"}, // "Device" kept: not Supporting's stem
 	}
 	for _, c := range cases {
-		assert.Equalf(t, c.want, methodName(c.group, c.op), "methodName(%q, %q)", c.group, c.op)
+		op := operation{Group: c.group, Name: c.op, HTTPMethod: c.method, ItemType: c.item}
+		assert.Equalf(t, c.want, methodName(op), "methodName(%q, %q)", c.group, c.op)
 	}
 }
 
@@ -82,10 +96,33 @@ func TestBuildGroupsFromSpec(t *testing.T) {
 
 	// Info/Sites carry only their re-homed hand-written methods (op == nil).
 	requireMethod(t, byName["Info"], "Get", true)
-	requireMethod(t, byName["Sites"], "List", true)
+	requireMethod(t, byName["Sites"], "ListPage", true)
+	requireMethod(t, byName["Sites"], "ListAll", true)
 	requireMethod(t, byName["Sites"], "ResolveID", true)
-	// Firewall carries generated wrappers.
+	// Firewall carries generated wrappers; a list op splits into Page + All.
 	requireMethod(t, byName["Firewall"], "CreatePolicy", false)
+	requireMethod(t, byName["Firewall"], "ListPoliciesPage", false)
+	requireMethod(t, byName["Firewall"], "ListPoliciesAll", false)
+}
+
+// TestListOperationSplitsIntoPageAndAll asserts a list operation yields exactly a
+// bounded ListXxxPage (Page[T], *ListOptions) and a lazy ListXxxAll (iter.Seq2),
+// the core of the redesigned list surface.
+func TestListOperationSplitsIntoPageAndAll(t *testing.T) {
+	t.Parallel()
+	op := operation{Group: "Firewall", Name: "GetFirewallPolicies", HTTPMethod: "GET", ItemType: "FirewallPolicy"}
+	methods := methodsFor(op)
+	require.Len(t, methods, 2)
+
+	page, all := methods[0], methods[1]
+	assert.Equal(t, "ListPoliciesPage", page.Name)
+	assert.Equal(t, kindListPage, page.kind)
+	assert.Equal(t, []string{"Page[FirewallPolicy]", "error"}, page.Returns)
+	assert.Equal(t, "*ListOptions", page.Params[len(page.Params)-1].Type)
+
+	assert.Equal(t, "ListPoliciesAll", all.Name)
+	assert.Equal(t, kindListAll, all.kind)
+	assert.Equal(t, []string{"iter.Seq2[FirewallPolicy, error]"}, all.Returns)
 }
 
 // TestBuildGroupsCollisionFailsLoud feeds two operations that strip to the same

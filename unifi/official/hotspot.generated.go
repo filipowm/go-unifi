@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"iter"
 	"net/url"
 )
 
@@ -19,8 +20,10 @@ type HotspotClient interface {
 	DeleteVouchers(ctx context.Context, siteId string, filter string) (*VoucherDeletionResults, error)
 	// GetVoucher maps to GET /v1/sites/%s/hotspot/vouchers/%s on the Official API.
 	GetVoucher(ctx context.Context, siteId string, voucherId string) (*HotspotVoucherDetails, error)
-	// GetVouchers maps to GET /v1/sites/%s/hotspot/vouchers on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
-	GetVouchers(ctx context.Context, siteId string) ([]HotspotVoucherDetails, error)
+	// ListVouchersAll lazily drains every item from GET /v1/sites/%s/hotspot/vouchers, paging on demand; pass "" filter to drain unfiltered; range it and break to stop early.
+	ListVouchersAll(ctx context.Context, siteId string, filter string) iter.Seq2[HotspotVoucherDetails, error]
+	// ListVouchersPage returns one page from GET /v1/sites/%s/hotspot/vouchers; nil opts fetches the first page at the default size.
+	ListVouchersPage(ctx context.Context, siteId string, opts *ListOptions) (Page[HotspotVoucherDetails], error)
 }
 
 // hotspotClient wraps the shared apiClient so transport, gate and site cache stay single-sourced.
@@ -84,26 +87,32 @@ func (c hotspotClient) GetVoucher(ctx context.Context, siteId string, voucherId 
 	return &out, nil
 }
 
-// GetVouchers maps to GET /v1/sites/%s/hotspot/vouchers on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
-func (c hotspotClient) GetVouchers(ctx context.Context, siteId string) ([]HotspotVoucherDetails, error) {
+// ListVouchersAll lazily drains every item from GET /v1/sites/%s/hotspot/vouchers, paging on demand; pass "" filter to drain unfiltered; range it and break to stop early.
+func (c hotspotClient) ListVouchersAll(ctx context.Context, siteId string, filter string) iter.Seq2[HotspotVoucherDetails, error] {
+	return listSeq[HotspotVoucherDetails](ctx, c.apiClient, c.path(fmt.Sprintf("/sites/%s/hotspot/vouchers", url.PathEscape(siteId))), filter)
+}
+
+// ListVouchersPage returns one page from GET /v1/sites/%s/hotspot/vouchers; nil opts fetches the first page at the default size.
+func (c hotspotClient) ListVouchersPage(ctx context.Context, siteId string, opts *ListOptions) (Page[HotspotVoucherDetails], error) {
 	if err := c.check(ctx); err != nil {
-		return nil, err
+		return Page[HotspotVoucherDetails]{}, err
 	}
-	var out []HotspotVoucherDetails
-	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/hotspot/vouchers", url.PathEscape(siteId))), &out); err != nil {
-		return nil, fmt.Errorf("failed GetVouchers: %w", err)
+	p, err := listPage[HotspotVoucherDetails](ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/hotspot/vouchers", url.PathEscape(siteId))), opts)
+	if err != nil {
+		return Page[HotspotVoucherDetails]{}, fmt.Errorf("failed ListVouchersPage: %w", err)
 	}
-	return out, nil
+	return p, nil
 }
 
 // HotspotClientMock is a func-field test double implementing HotspotClient. A nil field
 // panics on call, surfacing an un-stubbed method in tests.
 type HotspotClientMock struct {
-	CreateVouchersFunc func(context.Context, string, HotspotVoucherCreationRequest) (*VoucherCreationResult, error)
-	DeleteVoucherFunc  func(context.Context, string, string) (*VoucherDeletionResults, error)
-	DeleteVouchersFunc func(context.Context, string, string) (*VoucherDeletionResults, error)
-	GetVoucherFunc     func(context.Context, string, string) (*HotspotVoucherDetails, error)
-	GetVouchersFunc    func(context.Context, string) ([]HotspotVoucherDetails, error)
+	CreateVouchersFunc   func(context.Context, string, HotspotVoucherCreationRequest) (*VoucherCreationResult, error)
+	DeleteVoucherFunc    func(context.Context, string, string) (*VoucherDeletionResults, error)
+	DeleteVouchersFunc   func(context.Context, string, string) (*VoucherDeletionResults, error)
+	GetVoucherFunc       func(context.Context, string, string) (*HotspotVoucherDetails, error)
+	ListVouchersAllFunc  func(context.Context, string, string) iter.Seq2[HotspotVoucherDetails, error]
+	ListVouchersPageFunc func(context.Context, string, *ListOptions) (Page[HotspotVoucherDetails], error)
 }
 
 var _ HotspotClient = (*HotspotClientMock)(nil)
@@ -124,6 +133,10 @@ func (m *HotspotClientMock) GetVoucher(ctx context.Context, siteId string, vouch
 	return m.GetVoucherFunc(ctx, siteId, voucherId)
 }
 
-func (m *HotspotClientMock) GetVouchers(ctx context.Context, siteId string) ([]HotspotVoucherDetails, error) {
-	return m.GetVouchersFunc(ctx, siteId)
+func (m *HotspotClientMock) ListVouchersAll(ctx context.Context, siteId string, filter string) iter.Seq2[HotspotVoucherDetails, error] {
+	return m.ListVouchersAllFunc(ctx, siteId, filter)
+}
+
+func (m *HotspotClientMock) ListVouchersPage(ctx context.Context, siteId string, opts *ListOptions) (Page[HotspotVoucherDetails], error) {
+	return m.ListVouchersPageFunc(ctx, siteId, opts)
 }

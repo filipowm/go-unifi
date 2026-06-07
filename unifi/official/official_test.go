@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -73,8 +74,14 @@ func TestGateBlocksOperations(t *testing.T) {
 	require.ErrorIs(t, err, sentinel)
 	assert.Empty(t, d.calls, "gate must short-circuit before any transport call")
 
-	_, err = c.Sites().List(context.Background())
+	_, err = c.Sites().ListPage(context.Background(), nil)
 	require.ErrorIs(t, err, sentinel)
+
+	// ListAll runs the gate before paging and surfaces failure as the first
+	// yielded error — no transport call is made.
+	_, err = Collect(c.Sites().ListAll(context.Background(), ""))
+	require.ErrorIs(t, err, sentinel)
+	assert.Empty(t, d.calls, "gate must short-circuit the iterator before any transport call")
 }
 
 // sitePage builds one {offset,limit,count,totalCount,data} envelope.
@@ -82,20 +89,22 @@ func sitePage(offset, total int, data []SiteOverview) page[SiteOverview] {
 	return page[SiteOverview]{Offset: offset, Limit: maxPageLimit, Count: len(data), TotalCount: total, Data: data}
 }
 
-func TestListSitesAutoPaginates(t *testing.T) {
+func TestListAllDrainsAcrossPages(t *testing.T) {
 	t.Parallel()
-	// 250 sites across two pages of <=200 — the resolver must walk both.
+	// 250 sites across two pages of <=200 — ListAll must walk both.
 	all := make([]SiteOverview, 0, 250)
 	for i := range 250 {
 		all = append(all, SiteOverview{ID: fmt.Sprintf("uuid-%d", i), InternalReference: fmt.Sprintf("site%d", i), Name: fmt.Sprintf("Site %d", i)})
 	}
 
-	calls := 0
-	d := &pagingDoer{fn: func(_ string, respBody any) error {
-		start := calls * maxPageLimit
-		calls++
+	var urls []string
+	d := &pagingDoer{fn: func(apiPath string, respBody any) error {
+		urls = append(urls, apiPath)
+		// Drive the page slice from the offset in the URL, not a call counter,
+		// so a regressed listSeq that sends offset=0 twice returns duplicate items
+		// and breaks the assertion below rather than silently passing.
+		start := parseOffset(apiPath)
 		if start >= len(all) {
-			// Empty page signals end-of-list to listAll.
 			return encode(sitePage(start, len(all), nil), respBody)
 		}
 		end := min(start+maxPageLimit, len(all))
@@ -103,11 +112,101 @@ func TestListSitesAutoPaginates(t *testing.T) {
 	}}
 	c := New(d, base, nil)
 
-	sites, err := c.Sites().List(context.Background())
+	sites, err := Collect(c.Sites().ListAll(context.Background(), ""))
 	require.NoError(t, err)
 	assert.Len(t, sites, 250)
 	// Two fetches: page 1 (200 items), page 2 (50 items, offset==totalCount -> stop).
-	assert.Equal(t, 2, calls, "expected exactly two pages")
+	require.Len(t, urls, 2, "expected exactly two page requests")
+	assert.Contains(t, urls[0], "offset=0", "first page must start at offset 0")
+	assert.Contains(t, urls[1], "offset=200", "second page must advance to offset 200 (len of first page)")
+}
+
+// TestListAllBreakStopsFetching asserts a consumer break aborts the iterator
+// before it pages again — draining is abortable, the core of the new contract.
+func TestListAllBreakStopsFetching(t *testing.T) {
+	t.Parallel()
+	all := make([]SiteOverview, 0, 400)
+	for i := range 400 {
+		all = append(all, SiteOverview{ID: fmt.Sprintf("u%d", i), InternalReference: fmt.Sprintf("r%d", i), Name: "n"})
+	}
+	calls := 0
+	d := &pagingDoer{fn: func(apiPath string, respBody any) error {
+		start := calls * maxPageLimit
+		calls++
+		end := min(start+maxPageLimit, len(all))
+		return encode(sitePage(start, len(all), all[start:end]), respBody)
+	}}
+	c := New(d, base, nil)
+
+	seen := 0
+	for _, err := range c.Sites().ListAll(context.Background(), "") {
+		require.NoError(t, err)
+		seen++
+		if seen == 5 {
+			break
+		}
+	}
+	assert.Equal(t, 5, seen)
+	assert.Equal(t, 1, calls, "break must stop the iterator without fetching the next page")
+}
+
+// TestListPageFetchesSinglePage asserts the bounded default: one page only, even
+// when the server reports far more remain, and nil opts means the first page.
+func TestListPageFetchesSinglePage(t *testing.T) {
+	t.Parallel()
+	calls := 0
+	d := &pagingDoer{fn: func(apiPath string, respBody any) error {
+		calls++
+		assert.Contains(t, apiPath, "offset=0")
+		assert.Contains(t, apiPath, "limit=200", "nil opts must request the default page size")
+		return encode(sitePage(0, 9999, []SiteOverview{{ID: "u1", InternalReference: "r1", Name: "n"}}), respBody)
+	}}
+	c := New(d, base, nil)
+
+	page, err := c.Sites().ListPage(context.Background(), nil)
+	require.NoError(t, err)
+	require.Len(t, page.Items, 1)
+	assert.Equal(t, 9999, page.TotalCount)
+	assert.Equal(t, 1, calls, "ListPage must fetch exactly one page, never drain")
+}
+
+// TestListPageClampsLimit asserts a non-positive limit and an over-cap limit both
+// resolve to maxPageLimit, and an explicit offset is forwarded verbatim.
+func TestListPageClampsLimit(t *testing.T) {
+	t.Parallel()
+	cases := map[string]int{"zero": 0, "negative": -7, "over-cap": maxPageLimit + 500}
+	for name, limit := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			var url string
+			d := &pagingDoer{fn: func(apiPath string, respBody any) error {
+				url = apiPath
+				return encode(sitePage(10, 1, nil), respBody)
+			}}
+			c := New(d, base, nil)
+
+			_, err := c.Sites().ListPage(context.Background(), &ListOptions{Offset: 10, Limit: limit})
+			require.NoError(t, err)
+			assert.Contains(t, url, "limit=200", "limit must clamp to maxPageLimit")
+			assert.Contains(t, url, "offset=10", "explicit offset must be forwarded")
+		})
+	}
+}
+
+// TestListEmptyDataYieldsEmptyResult asserts an empty data[] is a benign empty
+// result (no nil-deref) in both ListPage and ListAll.
+func TestListEmptyDataYieldsEmptyResult(t *testing.T) {
+	t.Parallel()
+	d := &fakeDoer{responses: map[string]any{base + "/sites": sitePage(0, 0, nil)}}
+	c := New(d, base, nil)
+
+	page, err := c.Sites().ListPage(context.Background(), nil)
+	require.NoError(t, err)
+	assert.Empty(t, page.Items)
+
+	sites, err := Collect(c.Sites().ListAll(context.Background(), ""))
+	require.NoError(t, err)
+	assert.Empty(t, sites)
 }
 
 func TestResolveSiteIDCachesByInternalReference(t *testing.T) {
@@ -162,15 +261,19 @@ func TestGetInfoTransportError(t *testing.T) {
 	require.ErrorIs(t, err, sentinel)
 }
 
-// TestListSitesTransportError asserts the error from the Doer is wrapped and
-// propagated by ListSites.
-func TestListSitesTransportError(t *testing.T) {
+// TestListTransportError asserts a Doer error is wrapped and propagated
+// identically by both ListPage and ListAll (the error envelope, e.g. a mapped
+// *ServerError from the transport, flows through unchanged).
+func TestListTransportError(t *testing.T) {
 	t.Parallel()
 	sentinel := errors.New("connection reset")
 	d := &fakeDoer{err: sentinel}
 	c := New(d, base, nil)
 
-	_, err := c.Sites().List(context.Background())
+	_, err := c.Sites().ListPage(context.Background(), nil)
+	require.ErrorIs(t, err, sentinel)
+
+	_, err = Collect(c.Sites().ListAll(context.Background(), ""))
 	require.ErrorIs(t, err, sentinel)
 }
 
@@ -186,8 +289,8 @@ func TestResolveSiteIDTransportError(t *testing.T) {
 	require.ErrorIs(t, err, sentinel)
 }
 
-// TestListAllTerminatesOnEmptyPageWithHighTotalCount asserts listAll stops when
-// data dries up even when the server still reports a large totalCount.
+// TestListAllTerminatesOnEmptyPageWithHighTotalCount asserts the iterator stops
+// when data dries up even when the server still reports a large totalCount.
 func TestListAllTerminatesOnEmptyPageWithHighTotalCount(t *testing.T) {
 	t.Parallel()
 	const reportedTotal = 999
@@ -203,16 +306,78 @@ func TestListAllTerminatesOnEmptyPageWithHighTotalCount(t *testing.T) {
 			// First page: return real data but lie about totalCount.
 			return encode(sitePage(0, reportedTotal, realData), respBody)
 		default:
-			// Second page: empty data — listAll must terminate here.
+			// Second page: empty data — the iterator must terminate here.
 			return encode(sitePage(len(realData), reportedTotal, nil), respBody)
 		}
 	}}
 	c := New(d, base, nil)
 
-	sites, err := c.Sites().List(context.Background())
+	sites, err := Collect(c.Sites().ListAll(context.Background(), ""))
 	require.NoError(t, err)
 	assert.Len(t, sites, len(realData))
 	assert.Equal(t, 2, calls, "must stop after the empty page, not spin to totalCount")
+}
+
+// TestListAllForwardsFilterAcrossPages asserts ListXxxAll re-sends the filter on
+// EVERY page request and advances the offset correctly. The mock derives its
+// response slice from the URL's offset param so a regression where listSeq sends
+// offset=0 twice would return duplicates rather than 250 distinct items.
+func TestListAllForwardsFilterAcrossPages(t *testing.T) {
+	t.Parallel()
+	// 250 sites across two pages of <=200 so both filter AND offset are asserted
+	// on more than one request.
+	all := make([]SiteOverview, 0, 250)
+	for i := range 250 {
+		all = append(all, SiteOverview{ID: fmt.Sprintf("u%d", i), InternalReference: fmt.Sprintf("r%d", i), Name: "n"})
+	}
+
+	var urls []string
+	d := &pagingDoer{fn: func(apiPath string, respBody any) error {
+		urls = append(urls, apiPath)
+		start := parseOffset(apiPath)
+		end := min(start+maxPageLimit, len(all))
+		return encode(sitePage(start, len(all), all[start:end]), respBody)
+	}}
+	c := New(d, base, nil)
+
+	sites, err := Collect(c.Sites().ListAll(context.Background(), "name.eq('n')"))
+	require.NoError(t, err)
+	require.Len(t, sites, 250)
+	require.Len(t, urls, 2, "expected the filter to be forwarded across both pages")
+	for _, u := range urls {
+		assert.Contains(t, u, "filter=name.eq", "filter must appear on every page request")
+	}
+	assert.Contains(t, urls[0], "offset=0", "first page must start at offset 0")
+	assert.Contains(t, urls[1], "offset=200", "second page must advance to offset 200")
+}
+
+// parseOffset extracts the offset query param from an API path, returning 0 if
+// absent or malformed — used by mock helpers to derive response slices from the URL.
+func parseOffset(apiPath string) int {
+	_, qs, _ := strings.Cut(apiPath, "?")
+	vals, err := url.ParseQuery(qs)
+	if err != nil {
+		return 0
+	}
+	v := vals.Get("offset")
+	if v == "" {
+		return 0
+	}
+	n := 0
+	_, _ = fmt.Sscan(v, &n)
+	return n
+}
+
+// TestListPagePropagatesTransportError asserts ListPage wraps and propagates the
+// transport error.
+func TestListPagePropagatesTransportError(t *testing.T) {
+	t.Parallel()
+	sentinel := errors.New("boom")
+	d := &pagingDoer{fn: func(string, any) error { return sentinel }}
+	c := New(d, base, nil)
+
+	_, err := c.Sites().ListPage(context.Background(), &ListOptions{Limit: 10})
+	require.ErrorIs(t, err, sentinel)
 }
 
 // pagingDoer drives ListSites pagination through a custom per-call function.

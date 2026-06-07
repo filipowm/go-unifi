@@ -22,15 +22,31 @@ var doerMethods = map[string]string{
 // the single source of truth; the generator never clobbers the hand-written body.
 var customMethods = []method{
 	{Group: "Info", Name: "Get", Doc: "returns the controller application info (GET /v1/info).", Params: []arg{ctxArg}, Returns: []string{"*Info", "error"}},
-	{Group: "Sites", Name: "List", Doc: "returns all local sites, auto-paginating the list envelope.", Params: []arg{ctxArg}, Returns: []string{"[]SiteOverview", "error"}},
+	{Group: "Sites", Name: "ListPage", Doc: "returns one page of local sites; nil opts fetches the first page at the default size.", Params: []arg{ctxArg, listOptionsArg}, Returns: []string{"Page[SiteOverview]", "error"}},
+	{Group: "Sites", Name: "ListAll", Doc: "lazily drains every local site across pages; pass \"\" to drain unfiltered.", Params: []arg{ctxArg, {Name: "filter", Type: "string"}}, Returns: []string{"iter.Seq2[SiteOverview, error]"}},
 	{Group: "Sites", Name: "ResolveID", Doc: "maps a legacy site name to its Official-API site UUID, caching the lookup.", Params: []arg{ctxArg, {Name: "name", Type: "string"}}, Returns: []string{"string", "error"}},
 }
 
 // ctxArg is the leading context argument shared by every surface method.
 var ctxArg = arg{Name: "ctx", Type: "context.Context"}
 
+// listOptionsArg is the page-bounding argument on every ListPage method; its
+// runtime type (*ListOptions) is hand-written in unifi/official/pagination.go.
+var listOptionsArg = arg{Name: "opts", Type: "*ListOptions"}
+
 // arg is a single method parameter.
 type arg struct{ Name, Type string }
+
+// methodKind selects the wrapper-body shape. The zero value (kindScalar) covers
+// single-detail/create/update/action wrappers, which dispatch on op shape; list
+// operations split into a bounded kindListPage and a lazy kindListAll.
+type methodKind int
+
+const (
+	kindScalar methodKind = iota
+	kindListPage
+	kindListAll
+)
 
 // method is the unified view a generated wrapper, an interface entry, and a mock
 // entry are all rendered from, so the three stay in lockstep.
@@ -41,6 +57,7 @@ type method struct {
 	Params  []arg
 	Returns []string   // Go return types, terminal element is always "error"
 	op      *operation // nil for hand-written methods (interface/mock only)
+	kind    methodKind
 }
 
 // group is one per-tag surface: its accessor/type name plus the methods it carries.
@@ -64,8 +81,9 @@ func buildGroups(ops []operation) ([]group, error) {
 		byName[m.Group] = append(byName[m.Group], m)
 	}
 	for i := range ops {
-		m := methodFor(ops[i])
-		byName[m.Group] = append(byName[m.Group], m)
+		for _, m := range methodsFor(ops[i]) {
+			byName[m.Group] = append(byName[m.Group], m)
+		}
 	}
 	groups := make([]group, 0, len(byName))
 	for name, ms := range byName {
@@ -91,53 +109,101 @@ func assertNoCollision(group string, ms []method) error {
 	return nil
 }
 
-// methodFor lifts an operation into the unified method view, stripping the group
-// prefix from the operationId so the name reads cleanly under its accessor.
-func methodFor(op operation) method {
-	o := op
-	m := method{Name: methodName(op.Group, op.Name), Group: op.Group, Doc: docFor(op), op: &o}
-	m.Params = append(m.Params, ctxArg)
+// methodsFor lifts an operation into the unified method view(s). A list operation
+// yields TWO methods — a bounded ListXxxPage and a lazy ListXxxAll — so callers
+// opt into draining explicitly; every other shape yields a single method.
+func methodsFor(op operation) []method {
+	if op.IsList() {
+		return []method{listPageMethod(op), listAllMethod(op)}
+	}
+	return []method{scalarMethod(op)}
+}
+
+// baseParams renders the leading parameters shared by every shape: ctx, then the
+// path args, then the required query args (all strings).
+func baseParams(op operation) []arg {
+	params := make([]arg, 0, 1+len(op.PathArgs)+len(op.QueryArgs))
+	params = append(params, ctxArg)
 	for _, p := range op.PathArgs {
-		m.Params = append(m.Params, arg{Name: p.Name, Type: "string"})
+		params = append(params, arg{Name: p.Name, Type: "string"})
 	}
 	for _, q := range op.QueryArgs {
-		m.Params = append(m.Params, arg{Name: q.Name, Type: "string"})
+		params = append(params, arg{Name: q.Name, Type: "string"})
 	}
+	return params
+}
+
+// scalarMethod builds a single-detail/create/update/action wrapper, stripping the
+// group prefix from the operationId so the name reads cleanly under its accessor.
+func scalarMethod(op operation) method {
+	o := op
+	m := method{Name: methodName(op), Group: op.Group, Doc: docFor(op), op: &o, kind: kindScalar}
+	m.Params = baseParams(op)
 	if op.BodyType != "" {
 		m.Params = append(m.Params, arg{Name: "body", Type: op.BodyType})
 	}
-	switch {
-	case op.IsList():
-		m.Returns = []string{"[]" + op.ItemType, "error"}
-	case op.ReturnType != "":
+	if op.ReturnType != "" {
 		m.Returns = []string{"*" + op.ReturnType, "error"}
-	default:
+	} else {
 		m.Returns = []string{"error"}
 	}
 	return m
 }
 
-// docFor builds the godoc body for an operation method.
-// List shapes append an auto-pagination notice so callers see the cost at the call site.
+// listPageMethod builds the bounded ListXxxPage method: one page per call, opts
+// govern offset/limit/filter.
+func listPageMethod(op operation) method {
+	o := op
+	m := method{Name: methodName(op) + "Page", Group: op.Group, Doc: pageDoc(op), op: &o, kind: kindListPage}
+	m.Params = append(baseParams(op), listOptionsArg)
+	m.Returns = []string{"Page[" + op.ItemType + "]", "error"}
+	return m
+}
+
+// listAllMethod builds the lazy ListXxxAll iterator method: drains every item with
+// an optional server-side filter (empty string = unfiltered).
+func listAllMethod(op operation) method {
+	o := op
+	m := method{Name: methodName(op) + "All", Group: op.Group, Doc: allDoc(op), op: &o, kind: kindListAll}
+	m.Params = append(baseParams(op), arg{Name: "filter", Type: "string"})
+	m.Returns = []string{"iter.Seq2[" + op.ItemType + ", error]"}
+	return m
+}
+
+// docFor builds the godoc body for a scalar operation method.
 func docFor(op operation) string {
-	base := fmt.Sprintf("maps to %s /v1%s on the Official API.", op.HTTPMethod, op.SubPath)
-	if op.IsList() {
-		return base + " Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items."
-	}
-	return base
+	return fmt.Sprintf("maps to %s /v1%s on the Official API.", op.HTTPMethod, op.SubPath)
+}
+
+// pageDoc/allDoc document the two halves of a list operation's surface.
+func pageDoc(op operation) string {
+	return fmt.Sprintf("returns one page from %s /v1%s; nil opts fetches the first page at the default size.", op.HTTPMethod, op.SubPath)
+}
+
+func allDoc(op operation) string {
+	return fmt.Sprintf("lazily drains every item from %s /v1%s, paging on demand; pass \"\" filter to drain unfiltered; range it and break to stop early.", op.HTTPMethod, op.SubPath)
 }
 
 // valueReturn reports whether the method returns a value alongside its error
 // (so failure paths must return a leading zero value).
 func (m method) valueReturn() bool { return len(m.Returns) > 1 }
 
-// zeroPrefix is the leading return operand(s) on an error path: "nil, " for a
-// value-returning method, empty for an error-only one.
+// zeroPrefix is the leading return operand(s) on an error path: the first
+// return's zero value plus ", " for a value-returning method, empty otherwise.
 func (m method) zeroPrefix() string {
 	if m.valueReturn() {
-		return "nil, "
+		return zeroValue(m.Returns[0]) + ", "
 	}
 	return ""
+}
+
+// zeroValue is the Go zero literal for a return type: nil for pointer/slice/map,
+// else a composite-literal (T{}) — so Page[T] returns Page[T]{} on the error path.
+func zeroValue(t string) string {
+	if strings.HasPrefix(t, "*") || strings.HasPrefix(t, "[]") || strings.HasPrefix(t, "map[") {
+		return "nil"
+	}
+	return t + "{}"
 }
 
 // signature renders the interface/wrapper signature, e.g.
@@ -205,6 +271,9 @@ func groupImports(g group) string {
 	if use["fmt"] {
 		imports = append(imports, `"fmt"`)
 	}
+	if use["iter"] {
+		imports = append(imports, `"iter"`)
+	}
 	if use["net/url"] {
 		imports = append(imports, `"net/url"`)
 	}
@@ -214,15 +283,21 @@ func groupImports(g group) string {
 	return "import (\n\t" + strings.Join(imports, "\n\t") + "\n)\n\n"
 }
 
-// groupImportUse reports which std-lib imports the group's generated wrapper
-// bodies need; hand-written-only groups (no ops) need none beyond context.
+// groupImportUse reports which std-lib imports the group file needs. iter is
+// driven by signatures (any ListAll iterator return, incl. hand-written ones);
+// fmt/net/url/errors are driven by the generated wrapper bodies.
 func groupImportUse(g group) map[string]bool {
 	use := map[string]bool{}
 	for _, m := range g.Methods {
+		for _, r := range m.Returns {
+			if strings.Contains(r, "iter.Seq2") {
+				use["iter"] = true
+			}
+		}
 		if m.op == nil {
 			continue
 		}
-		use["fmt"] = true // every wrapper body wraps its error with fmt.
+		use["fmt"] = true // every generated wrapper body wraps its error with fmt.
 		if len(m.op.QueryArgs) > 0 || len(m.op.PathArgs) > 0 {
 			use["net/url"] = true
 		}
@@ -234,8 +309,23 @@ func groupImportUse(g group) map[string]bool {
 }
 
 // wrapperBody renders one wrapper method on the group's impl type, dispatching on
-// its shape.
+// its kind.
 func wrapperBody(g group, m method) string {
+	switch m.kind {
+	case kindListPage:
+		return listPageBody(g, m)
+	case kindListAll:
+		return listAllBody(g, m)
+	case kindScalar:
+		return scalarBody(g, m)
+	default:
+		panic(fmt.Sprintf("unknown method kind %d", m.kind))
+	}
+}
+
+// scalarBody renders a single-detail/create/update/action wrapper: gate check,
+// optional required-filter guard, one transport call, wrapped error.
+func scalarBody(g group, m method) string {
 	op := m.op
 	zero := m.zeroPrefix()
 	var b strings.Builder
@@ -246,23 +336,44 @@ func wrapperBody(g group, m method) string {
 		fmt.Fprintf(&b, "\tif %s == \"\" {\n\t\treturn %serrors.New(%q)\n\t}\n", f, zero, f+" must not be empty")
 	}
 	path := pathExpr(*op)
-	switch {
-	case op.IsList():
-		fmt.Fprintf(&b, "\tvar out []%s\n", op.ItemType)
-		fmt.Fprintf(&b, "\tif err := listAll(ctx, c.doer, c.path(%s), &out); err != nil {\n", path)
-		fmt.Fprintf(&b, "\t\treturn nil, fmt.Errorf(%q, err)\n\t}\n", "failed "+m.Name+": %w")
-		b.WriteString("\treturn out, nil\n")
-	case op.ReturnType != "":
+	if op.ReturnType != "" {
 		fmt.Fprintf(&b, "\tvar out %s\n", op.ReturnType)
 		fmt.Fprintf(&b, "\tif err := c.doer.%s(ctx, c.path(%s), %s, &out); err != nil {\n", doerMethods[op.HTTPMethod], path, reqArg(*op))
 		fmt.Fprintf(&b, "\t\treturn nil, fmt.Errorf(%q, err)\n\t}\n", "failed "+m.Name+": %w")
 		b.WriteString("\treturn &out, nil\n")
-	default:
+	} else {
 		fmt.Fprintf(&b, "\tif err := c.doer.%s(ctx, c.path(%s), %s, nil); err != nil {\n", doerMethods[op.HTTPMethod], path, reqArg(*op))
 		fmt.Fprintf(&b, "\t\treturn fmt.Errorf(%q, err)\n\t}\n", "failed "+m.Name+": %w")
 		b.WriteString("\treturn nil\n")
 	}
 	b.WriteString("}\n")
+	return b.String()
+}
+
+// listPageBody renders the bounded ListXxxPage wrapper: gate check then a single
+// page fetch resolved against opts.
+func listPageBody(g group, m method) string {
+	item := m.op.ItemType
+	path := pathExpr(*m.op)
+	var b strings.Builder
+	fmt.Fprintf(&b, "// %s %s\n", m.Name, m.Doc)
+	fmt.Fprintf(&b, "func (c %s) %s {\n", g.impl(), m.signature())
+	fmt.Fprintf(&b, "\tif err := c.check(ctx); err != nil {\n\t\treturn Page[%s]{}, err\n\t}\n", item)
+	fmt.Fprintf(&b, "\tp, err := listPage[%s](ctx, c.doer, c.path(%s), opts)\n", item, path)
+	fmt.Fprintf(&b, "\tif err != nil {\n\t\treturn Page[%s]{}, fmt.Errorf(%q, err)\n\t}\n", item, "failed "+m.Name+": %w")
+	b.WriteString("\treturn p, nil\n}\n")
+	return b.String()
+}
+
+// listAllBody renders the lazy ListXxxAll wrapper: it returns the iterator, which
+// runs the gate check and pages on demand when ranged, forwarding filter on every request.
+func listAllBody(g group, m method) string {
+	item := m.op.ItemType
+	path := pathExpr(*m.op)
+	var b strings.Builder
+	fmt.Fprintf(&b, "// %s %s\n", m.Name, m.Doc)
+	fmt.Fprintf(&b, "func (c %s) %s {\n", g.impl(), m.signature())
+	fmt.Fprintf(&b, "\treturn listSeq[%s](ctx, c.apiClient, c.path(%s), filter)\n}\n", item, path)
 	return b.String()
 }
 
@@ -363,11 +474,16 @@ func mockReturns(m method) string {
 	return m.Returns[0]
 }
 
-// callArgs renders the argument names forwarded to the stub func.
+// callArgs renders the argument names forwarded to the stub func, spreading any
+// trailing variadic parameter (none today, but kept shape-agnostic).
 func callArgs(m method) string {
 	names := make([]string, len(m.Params))
 	for i, p := range m.Params {
-		names[i] = p.Name
+		if strings.HasPrefix(p.Type, "...") {
+			names[i] = p.Name + "..."
+		} else {
+			names[i] = p.Name
+		}
 	}
 	return strings.Join(names, ", ")
 }

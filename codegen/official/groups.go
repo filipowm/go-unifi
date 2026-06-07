@@ -73,15 +73,16 @@ func defaultGroupName(tag string) string {
 
 // methodName strips the group's resource word(s) from a PascalCase operation name
 // so it reads cleanly under the accessor (createFirewallPolicy under Firewall ->
-// CreatePolicy). The leading verb is never stripped; a word matches a stem
-// case-insensitively. For pluralised group names where the operationId contains
-// the singular resource form, stemOverrides provides the correct token set.
-func methodName(group, opName string) string {
-	stem, ok := stemOverrides[group]
+// CreatePolicy), then normalizes the read verb (normalizeReadVerb). The leading
+// verb is never stripped; a word matches a stem case-insensitively. For pluralised
+// group names where the operationId contains the singular resource form,
+// stemOverrides provides the correct token set.
+func methodName(op operation) string {
+	stem, ok := stemOverrides[op.Group]
 	if !ok {
-		stem = tokenize(group)
+		stem = tokenize(op.Group)
 	}
-	tokens := tokenize(opName)
+	tokens := tokenize(op.Name)
 	out := make([]string, 0, len(tokens))
 	for i, tok := range tokens {
 		if i > 0 && matchesStem(tok, stem) {
@@ -89,7 +90,30 @@ func methodName(group, opName string) string {
 		}
 		out = append(out, upperFirst(tok))
 	}
-	return strings.Join(out, "")
+	return strings.Join(normalizeReadVerb(out, op), "")
+}
+
+// listEnvelope are the page/collection words a normalized collection read drops:
+// the verb already says List, so Page/Overview/List(s) are redundant noise.
+var listEnvelope = map[string]bool{"Page": true, "Overview": true, "List": true, "Lists": true}
+
+// normalizeReadVerb makes reads uniform across the surface: a collection read
+// becomes List<Qualifier> (Get->List, trailing envelope words dropped) and a
+// single-item GET drops a trailing Details qualifier (Get<Qualifier>). Non-read
+// verbs (Create/Update/Delete/Patch/Execute/...) pass through untouched.
+func normalizeReadVerb(tokens []string, op operation) []string {
+	switch {
+	case op.IsList():
+		if len(tokens) > 0 && tokens[0] == "Get" {
+			tokens[0] = "List"
+		}
+		for len(tokens) > 1 && listEnvelope[tokens[len(tokens)-1]] {
+			tokens = tokens[:len(tokens)-1]
+		}
+	case op.HTTPMethod == "GET" && len(tokens) > 1 && tokens[len(tokens)-1] == "Details":
+		tokens = tokens[:len(tokens)-1]
+	}
+	return tokens
 }
 
 // matchesStem reports whether a token matches any stem word, comparing

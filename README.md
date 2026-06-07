@@ -119,16 +119,28 @@ The client exposes two API surfaces:
   new-style UniFi OS controller (version `10.1.78`+) with **API-key** authentication. The surface is
   **fluent**: one accessor per resource group (`Firewall()`, `Networks()`, `Devices()`, …, derived from the
   OpenAPI tags), each returning an independently mockable per-group interface. Methods are **generated** from
-  the committed OpenAPI snapshot in a tri-shape per resource — `…OverviewPage`/`GetPolicies…` (returns the
-  `…Overview` slice, auto-paginating the offset/limit envelope), `Get…` (`…Details`), and
-  `Create/Update/Patch…` (taking the `…CreateOrUpdate` body) — alongside the hand-written `Info().Get`,
-  `Sites().List` and `Sites().ResolveID`.
+  the committed OpenAPI snapshot in a uniform shape per resource. **List endpoints expose two methods** so
+  draining is explicit and never accidental — `List…Page(ctx, …, *official.ListOptions)` returns a single
+  **bounded** `official.Page[T]` (nil opts ⇒ the first page at the default size; `Limit` is clamped to 200),
+  and `List…All(ctx, …, filter)` returns a lazy, abortable `iter.Seq2[T, error]` that pages on demand (range it and
+  `break` to stop, or `official.Collect` it into a slice). Alongside: `Get…` (the single-item `…Details`) and
+  `Create/Update/Patch…` (taking the `…CreateOrUpdate` body), plus the hand-written `Info().Get`,
+  `Sites().ListPage`/`Sites().ListAll` and `Sites().ResolveID`.
 
 ```go
 sites, err := c.Internal().ListSites(ctx)                     // legacy API (same as c.ListSites(ctx))
 info, err := c.Official().Info().Get(ctx)                     // official OpenAPI
 id, err := c.Official().Sites().ResolveID(ctx, "default")     // map a legacy site name to its official UUID
-nets, err := c.Official().Networks().GetOverviewPage(ctx, id) // generated, auto-paginated list wrapper
+
+page, err := c.Official().Networks().ListPage(ctx, id, nil)   // ONE bounded page (the safe default)
+page, err = c.Official().Networks().ListPage(ctx, id, &official.ListOptions{Limit: 50, Filter: "name.eq('lan')"}) // bounded + filtered
+
+for net, err := range c.Official().Networks().ListAll(ctx, id, "") { // lazy drain — break stops further fetches
+	if err != nil { /* handle */ break }
+	_ = net
+}
+all, err := official.Collect(c.Official().Networks().ListAll(ctx, id, "")) // explicit materialization into a slice
+
 pol, err := c.Official().Firewall().CreatePolicy(ctx, id, body) // fluent, per-group accessor
 ```
 
