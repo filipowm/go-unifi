@@ -575,6 +575,51 @@ func buildCustomResources(dir string, customizer CodeCustomizer, v2 bool, logger
 	return buildResourcesFromDownloadedFields(dir, customizer, v2, logger)
 }
 
+// buildMergedResources builds the Internal-API resource set from two committed
+// field snapshots: floorFieldsDir (the supported-version floor) and fieldsDir
+// (the newest field shapes). It returns their union by struct name with the
+// newest snapshot winning — so newest field shapes apply on top of the floor,
+// resources retired before the floor (absent from BOTH snapshots) never appear,
+// and resources added after the floor are kept. An empty floorFieldsDir disables
+// the merge and yields the newest snapshot alone (the single-snapshot path used
+// by unit tests).
+func buildMergedResources(floorFieldsDir, fieldsDir string, customizer CodeCustomizer, logger shared.Logger) ([]*Resource, error) {
+	newest, err := buildResourcesFromDownloadedFields(fieldsDir, customizer, false, logger)
+	if err != nil {
+		return nil, err
+	}
+	if floorFieldsDir == "" {
+		return newest, nil
+	}
+	floor, err := buildResourcesFromDownloadedFields(floorFieldsDir, customizer, false, logger)
+	if err != nil {
+		return nil, err
+	}
+	return mergeResourceSets(floor, newest, orDefaultLogger(logger)), nil
+}
+
+// mergeResourceSets unions the floor and newest resource sets keyed by struct
+// name. The newest snapshot is emitted first, preserving its order and field
+// shapes (newest wins); floor-only resources — present at the floor but retired
+// by the newest snapshot, yet still within the supported range — are appended.
+// Keeping newest's exact order makes the merge a no-op for the common case where
+// the floor is a subset of the newest snapshot.
+func mergeResourceSets(floor, newest []*Resource, logger shared.Logger) []*Resource {
+	have := make(map[string]bool, len(newest))
+	merged := make([]*Resource, 0, len(newest)+len(floor))
+	for _, r := range newest {
+		have[r.StructName] = true
+		merged = append(merged, r)
+	}
+	for _, r := range floor {
+		if !have[r.StructName] {
+			logger.Debugf("merge: keeping floor-only resource %s (absent in newest snapshot)", r.StructName)
+			merged = append(merged, r)
+		}
+	}
+	return merged
+}
+
 func customizeBaseType(resource *Resource) {
 	baseType := resource.BaseType()
 	switch {

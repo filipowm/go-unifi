@@ -1,0 +1,70 @@
+{
+  "ad_blocking_configurations": [
+    {
+      "network_id": ""
+    }
+  ],
+  "ad_blocking_enabled": "true|false",
+  "advanced_filtering_preference": "|manual|disabled",
+  "dns_filtering": "true|false",
+  "dns_filters": [
+    {
+      "allowed_sites": [
+        "^[a-zA-Z0-9.-]+$|^$"
+      ],
+      "blocked_sites": [
+        "^[a-zA-Z0-9.-]+$|^$"
+      ],
+      "blocked_tld": [
+        "^[a-zA-Z0-9.-]+$|^$"
+      ],
+      "description": "",
+      "filter": "none|work|family",
+      "name": "",
+      "network_id": "",
+      "version": "v4|v6"
+    }
+  ],
+  "enabled_categories": [
+    "emerging-activex|emerging-attackresponse|botcc|emerging-chat|ciarmy|compromised|emerging-dns|emerging-dos|dshield|emerging-exploit|emerging-ftp|emerging-games|emerging-icmp|emerging-icmpinfo|emerging-imap|emerging-inappropriate|emerging-info|emerging-malware|emerging-misc|emerging-mobile|emerging-netbios|emerging-p2p|emerging-policy|emerging-pop3|emerging-rpc|emerging-scada|emerging-scan|emerging-shellcode|emerging-smtp|emerging-snmp|emerging-sql|emerging-telnet|emerging-tftp|tor|emerging-useragent|emerging-voip|emerging-webapps|emerging-webclient|emerging-webserver|emerging-worm|exploit-kit|adware-pup|botcc-portgrouped|phishing|threatview-cs-c2|3coresec|chat|coinminer|current-events|drop|hunting|icmp-info|inappropriate|info|ja3|policy|scada|dark-web-blocker-list|malicious-hosts"
+  ],
+  "enabled_networks": [
+    ""
+  ],
+  "honeypot": [
+    {
+      "ip_address": "",
+      "network_id": "",
+      "version": "v4|v6"
+    }
+  ],
+  "honeypot_enabled": "true|false",
+  "ips_mode": "ids|ips|ipsInline|disabled",
+  "memory_optimized": "true|false",
+  "restrict_torrents": "true|false",
+  "suppression": {
+    "alerts": [
+      {
+        "category": "",
+        "gid": "[\\d]+",
+        "id": "[\\d]+",
+        "signature": "",
+        "tracking": [
+          {
+            "direction": "both|src|dest",
+            "mode": "ip|subnet|network",
+            "value": ""
+          }
+        ],
+        "type": "all|track"
+      }
+    ],
+    "whitelist": [
+      {
+        "direction": "both|src|dest",
+        "mode": "ip|subnet|network",
+        "value": ""
+      }
+    ]
+  }
+}

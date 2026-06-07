@@ -55,12 +55,14 @@ func generateCodeFromTemplate(templateName, templateContent string, toWrite any)
 
 // generateCode generates code for each generation source and writes it to file.
 //
-// v2BaseDir is the directory holding the V2-API field definitions (the
-// "codegen/v2" tree). It is injected by the caller rather than discovered via
-// findCodegenDir at runtime, so generation is unit-testable against a fixture
-// without the real repo layout. logger receives all pipeline output;
-// when nil it falls back to the package-global logger.
-func generateCode(fieldsDir, v2BaseDir, outDir string, customizer CodeCustomizer, logger shared.Logger) error {
+// floorFieldsDir, when non-empty, is the supported-version floor's field-JSON
+// dir: the resource set is merged as floor ∪ fieldsDir (newest wins), bounding
+// the surface below by the floor. v2BaseDir is the directory holding the V2-API
+// field definitions (the "codegen/v2" tree). Both are injected by the caller
+// rather than discovered via findCodegenDir at runtime, so generation is
+// unit-testable against a fixture without the real repo layout. logger receives
+// all pipeline output; when nil it falls back to the package-global logger.
+func generateCode(floorFieldsDir, fieldsDir, v2BaseDir, outDir string, customizer CodeCustomizer, logger shared.Logger) error {
 	logger = orDefaultLogger(logger)
 	customizer.logger = logger
 
@@ -68,7 +70,7 @@ func generateCode(fieldsDir, v2BaseDir, outDir string, customizer CodeCustomizer
 		return fmt.Errorf("unable to create output directory %s: %w", outDir, err)
 	}
 
-	resources, err := buildResourcesFromDownloadedFields(fieldsDir, customizer, false, logger)
+	resources, err := buildMergedResources(floorFieldsDir, fieldsDir, customizer, logger)
 	if err != nil {
 		return fmt.Errorf("failed to build resources from downloaded fields: %w", err)
 	}

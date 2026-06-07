@@ -106,7 +106,7 @@ func TestGenerateCode_InjectedV2BaseDir(t *testing.T) {
 	logger, hook := test.NewNullLogger()
 	logger.SetLevel(logrus.DebugLevel)
 
-	err := generateCode(fieldsDir, v2BaseDir, outDir, CodeCustomizer{}, logger)
+	err := generateCode("", fieldsDir, v2BaseDir, outDir, CodeCustomizer{}, logger)
 	require.NoError(t, err)
 
 	// Both resources and the client interface land in outDir.
@@ -241,7 +241,7 @@ func TestGenerateCodeFromFields(t *testing.T) {
 			// Inject an empty v2 base dir (a fresh temp dir) so generation is
 			// decoupled from the real repo layout and never touches
 			// findCodegenDir.
-			err := generateCode(tt.fieldsDir, t.TempDir(), tt.outDir, CodeCustomizer{}, nil)
+			err := generateCode("", tt.fieldsDir, t.TempDir(), tt.outDir, CodeCustomizer{}, nil)
 
 			if tt.expectedError {
 				require.Error(t, err)

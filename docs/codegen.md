@@ -32,8 +32,11 @@ This command will:
 - Overwrite the generated files with the latest code
 
 > **Offline by default:** the legacy field inputs are read from the committed
-> `codegen/v9.5.21/` snapshot (no network download) when present. See
-> `codegen/CLAUDE.md` for the frozen-snapshot rationale and the refresh procedure.
+> `codegen/v9.5.21/` snapshot (newest field shapes) and the `codegen/v9.0.114/`
+> floor snapshot (no network download) when present. The resource set is their
+> merge: the 9.0.114 floor drops resources retired before it, 9.5.21 supplies the
+> newest shapes. See `codegen/CLAUDE.md` for the frozen-snapshot rationale and the
+> refresh procedure.
 
 ### 2. Running the Generator Directly with `go run`
 

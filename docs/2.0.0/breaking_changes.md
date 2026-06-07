@@ -324,3 +324,30 @@ These affect only forks of the generator:
 
 - `DownloadAndExtract` gained a leading `*http.Client` parameter (TEST-07, Wave 1).
 - `DownloadAndExtract`/`downloadJar` gained a leading `context.Context` parameter (ARCH-15, Wave 2).
+- `internal.Generate` / `generateCode` gained a leading `floorFieldsDir` parameter; root `codegen` added a
+  `-floor-version` flag and a frozen `codegen/v9.0.114/` floor snapshot (#126, below).
+
+### G. Supported controller floor 9.0.114; pre-floor resources retired (#126)
+
+**Status: DONE** — landed in issue #126 (apply the 9.0.114 floor).
+
+**Support-contract change (no realized compile break in this change).** 2.0.0 sets **9.0.114** as the
+supported controller floor: the Internal-API codegen now generates the resource set as a two-snapshot
+**merge** — the `9.0.114` floor bounds the surface below while the pinned `9.5.21` snapshot supplies the
+newest field shapes (newest wins). Any resource **retired before 9.0.114** is therefore not generated and
+not shipped; the floor is enforced structurally so the daily auto-regen can never reintroduce a pre-floor
+resource.
+
+Realized drop set: **none.** The legacy field source was already frozen at `9.5.21` (issue #124), and
+`9.0.114` is a strict subset of `9.5.21` at both the resource and field level — every pre-floor-retired
+resource was already absent from the shipped surface, and `9.5.21` already carried the newest field shapes.
+So this change removes **no** public type or field versus the prior `feat/2.0.0` surface; the golden
+type-diff is empty. The three settings present only above the floor (`SettingMdns`,
+`SettingRoamingAssistant`, `SettingTrafficFlow`) were **added after** 9.0.114 and are correctly **kept**
+(they are supported on controllers within the range, not retirements).
+
+Migration: none required for the generated surface. Operationally, controllers older than **9.0.114** are
+out of support for 2.0.0; field shapes not present at 9.0.114 may be absent on such controllers.
+
+**Provenance:** epic #117 task 2 (retirement half), issue #126; frozen snapshot `codegen/v9.0.114/`,
+pin in `unifi/codegen.go` (`-floor-version=9.0.114`).

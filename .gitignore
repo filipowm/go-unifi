@@ -1,6 +1,7 @@
 # Cache — downloaded version dirs are ignored; the pinned frozen snapshot is committed
 /fields/v*.*.*/
 /codegen/v*.*.*/
+!/codegen/v9.0.114/
 !/codegen/v9.5.21/
   
 # goreleaser

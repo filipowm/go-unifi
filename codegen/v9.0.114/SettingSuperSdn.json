@@ -1,0 +1,8 @@
+{
+  "auth_token": "",
+  "device_id": "",
+  "enabled": "true|false",
+  "migrated": "true|false",
+  "sso_login_enabled": "",
+  "ubic_uuid": ""
+}

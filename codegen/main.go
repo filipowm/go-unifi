@@ -91,6 +91,11 @@ type options struct {
 	// Tests inject a fixture path to exercise generation without the real repo
 	// layout.
 	v2BaseDir string
+	// floorVersion pins the supported-version floor (e.g. "9.0.114"). Its field
+	// snapshot bounds the generated resource set below: resources retired before
+	// the floor are dropped, while the internal version supplies the newest field
+	// shapes on top. Empty disables the floor merge (single-snapshot generation).
+	floorVersion string
 }
 
 func main() {
@@ -100,6 +105,7 @@ func main() {
 	outputDirFlag := flag.String("output-dir", ".", "The output directory of the generated Go code")
 	downloadOnly := flag.Bool("download-only", false, "Only download and build the API structures JSON directory, do not generate")
 	officialSpecVersionFlag := flag.String("official-spec-version", "", "Official-API OpenAPI spec version (default: same as controller when >=10.1.78, else latest)")
+	floorVersionFlag := flag.String("floor-version", "", "Supported-version floor (e.g. 9.0.114); its field snapshot bounds the resource set below (empty disables the floor merge)")
 	debugFlag := flag.Bool("debug", false, "Enable debug logging")
 	traceFlag := flag.Bool("trace", false, "Enable trace logging")
 
@@ -116,6 +122,7 @@ func main() {
 		downloadOnly:        *downloadOnly,
 		version:             specifiedVersion,
 		officialSpecVersion: *officialSpecVersionFlag,
+		floorVersion:        *floorVersionFlag,
 		firmwareUpdateApi:   defaultFirmwareUpdateApi,
 		customizationsPath:  "customizations.yml",
 		logger:              logger,
@@ -172,7 +179,7 @@ func generate(opts options) error {
 		return fmt.Errorf("unable to determine working directory: %w", err)
 	}
 	versionBaseDir := resolveDir(wd, opts.versionBaseDir)
-	structuresDir, err := downloadGenerationInputs(internalVersion, officialVersion, versionBaseDir, logger)
+	structuresDir, floorDir, err := resolveGenerationInputs(p, internalVersion, officialVersion, opts.floorVersion, versionBaseDir, logger)
 	if err != nil {
 		return err
 	}
@@ -196,7 +203,8 @@ func generate(opts options) error {
 		return fmt.Errorf("unable to create code customizer: %w", err)
 	}
 	// internal.Generate runs the Internal-API pass: resource code + client interface (root writes version.generated.go).
-	if err = internal.Generate(structuresDir, v2BaseDir, outDir, *customizer, logger); err != nil {
+	// floorDir bounds the resource set below by the supported-version floor.
+	if err = internal.Generate(floorDir, structuresDir, v2BaseDir, outDir, *customizer, logger); err != nil {
 		return err
 	}
 
@@ -234,6 +242,65 @@ func writeVersionArtifacts(internalVersion *UnifiVersion, officialVersion *Unifi
 	return nil
 }
 
+// resolveGenerationInputs acquires every field-definition input the generation
+// passes need: the newest legacy field JSONs + Official spec snapshot (via
+// downloadGenerationInputs) and the supported-version floor snapshot. Floor
+// acquisition failure is fatal — a wrong/missing floor must NOT silently ship.
+// Extracted to keep generate()'s cyclomatic complexity inside the budget.
+func resolveGenerationInputs(p UnifiVersionProvider, internalVersion, officialVersion *UnifiVersion, floorMarker, versionBaseDir string, logger Logger) (string, string, error) {
+	structuresDir, err := downloadGenerationInputs(internalVersion, officialVersion, versionBaseDir, logger)
+	if err != nil {
+		return "", "", err
+	}
+	floorDir, err := resolveFloorFieldsDir(floorMarker, p, versionBaseDir, logger)
+	if err != nil {
+		return "", "", err
+	}
+	return structuresDir, floorDir, nil
+}
+
+// resolveLegacyFieldsDir returns the field-JSON dir for ver, reading the
+// committed frozen snapshot when present (sentinel-complete) and downloading +
+// extracting the controller .deb otherwise. ctx bounds the download.
+func resolveLegacyFieldsDir(ctx context.Context, ver *UnifiVersion, versionBaseDir string, logger Logger) (string, error) {
+	structuresDir := legacyFieldsDir(versionBaseDir, ver.Version)
+	if ok, err := internal.ExtractionComplete(structuresDir); err != nil {
+		return "", fmt.Errorf("checking legacy field snapshot at %s: %w", structuresDir, err)
+	} else if ok {
+		logger.Infof("Using frozen legacy field snapshot at %s (no download)", structuresDir)
+		return structuresDir, nil
+	}
+	logger.Infoln("Downloading UniFi Network Internal API structures definitions...")
+	if err := internal.DownloadAndExtract(ctx, http.DefaultClient, *ver.DownloadUrl, structuresDir); err != nil {
+		return "", fmt.Errorf("unable to download and extract UniFi Controller API structures definitions: %w", err)
+	}
+	logger.Infof("Downloaded UniFi Controller API structures definitions in %s", structuresDir)
+	return structuresDir, nil
+}
+
+// resolveFloorFieldsDir resolves the supported-version floor's field-JSON dir
+// (frozen snapshot or download). An empty marker disables the floor merge,
+// returning "" so generation proceeds from the newest snapshot alone. A failure
+// to acquire the floor is fatal — the floor must never be silently skipped, or a
+// wrong (unbounded) resource surface could ship.
+func resolveFloorFieldsDir(marker string, p UnifiVersionProvider, versionBaseDir string, logger Logger) (string, error) {
+	if strings.TrimSpace(marker) == "" {
+		return "", nil
+	}
+	floorVer, err := p.ByVersionMarker(marker)
+	if err != nil {
+		return "", fmt.Errorf("unable to resolve floor version %s: %w", marker, err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), internal.DefaultDownloadTimeout)
+	defer cancel()
+	dir, err := resolveLegacyFieldsDir(ctx, floorVer, versionBaseDir, logger)
+	if err != nil {
+		return "", fmt.Errorf("unable to acquire floor field snapshot for %s: %w", floorVer.Version, err)
+	}
+	logger.Infof("Applying resource floor %s from %s", floorVer.Version, dir)
+	return dir, nil
+}
+
 // downloadGenerationInputs resolves the internal API field-definition JSONs
 // (from the committed frozen snapshot when present, otherwise downloading) and
 // commits/refreshes the Official OpenAPI spec snapshot.
@@ -242,17 +309,9 @@ func downloadGenerationInputs(internalVersion *UnifiVersion, officialVersion *Un
 	ctx, cancel := context.WithTimeout(context.Background(), internal.DefaultDownloadTimeout)
 	defer cancel()
 
-	structuresDir := legacyFieldsDir(versionBaseDir, internalVersion.Version)
-	if ok, err := internal.ExtractionComplete(structuresDir); err != nil {
-		return "", fmt.Errorf("checking legacy field snapshot at %s: %w", structuresDir, err)
-	} else if ok {
-		logger.Infof("Using frozen legacy field snapshot at %s (no download)", structuresDir)
-	} else {
-		logger.Infoln("Downloading UniFi Network Internal API structures definitions...")
-		if err = internal.DownloadAndExtract(ctx, http.DefaultClient, *internalVersion.DownloadUrl, structuresDir); err != nil {
-			return "", fmt.Errorf("unable to download and extract UniFi Controller API structures definitions: %w", err)
-		}
-		logger.Infof("Downloaded UniFi Controller API structures definitions in %s", structuresDir)
+	structuresDir, err := resolveLegacyFieldsDir(ctx, internalVersion, versionBaseDir, logger)
+	if err != nil {
+		return "", err
 	}
 
 	specURL, err := officialVersion.OfficialSpecURL()

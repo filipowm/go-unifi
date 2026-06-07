@@ -33,9 +33,11 @@ codegen/official/       Separate go.mod module: Official OpenAPI surface generat
 
 **Client interface split** (`client.go.tmpl`): `InternalClient` (resource CRUD) + `Client` (transport/lifecycle + hand-written `Internal()`/`Official()`). After changing it, regenerate `client.generated.go` **and** `client_mock.generated.go` (offline moq — see `unifi/mock.go`).
 
-## Frozen legacy snapshot (`codegen/v9.5.21/`)
+## Frozen legacy snapshots (`codegen/v9.5.21/` + floor `codegen/v9.0.114/`)
 
-Committed field-JSON snapshot (+ `.extract-complete` sentinel) so the Internal pass reads it directly — legacy fields are **frozen at 9.5.21** for 2.0.0. `unifi/codegen.go` pins `go:generate` to `9.5.21`, making daily CI a deterministic offline no-op. `.gitignore` keeps `/codegen/v*.*.*/` ignored but unignores `!/codegen/v9.5.21/`.
+Committed field-JSON snapshots (+ `.extract-complete` sentinel) so the Internal pass reads them directly — legacy fields are **frozen at 9.5.21** for 2.0.0. `unifi/codegen.go` pins `go:generate` to `9.5.21`, making daily CI a deterministic offline no-op. `.gitignore` keeps `/codegen/v*.*.*/` ignored but unignores `!/codegen/v9.5.21/` and `!/codegen/v9.0.114/`.
+
+**Resource floor (two-snapshot merge).** `unifi/codegen.go` also passes `-floor-version=9.0.114`. The Internal pass then generates the resource set as a merge of two snapshots (`internal.buildMergedResources` → `mergeResourceSets`): the **9.0.114 floor** bounds the surface below, the **9.5.21** snapshot supplies the newest field shapes (newest wins, union by struct name). Resources retired **before** 9.0.114 are absent from both snapshots and never generated; resources added after the floor (present only in 9.5.21) are kept. Today 9.0.114 ⊂ 9.5.21, so the merge is a no-op (empty drop set) — its value is structural: the floor can never be silently exceeded. An empty `-floor-version` disables the merge (single-snapshot generation, the path used by unit tests).
 
 Any other version (`make generate-resources VERSION=<x>`) targets a different `codegen/v<ver>/` dir and **downloads** — only do this to refresh the snapshot:
 
@@ -51,7 +53,8 @@ Internal resource version and Official-spec version are intentionally decoupled:
 
 | Pin | Controls |
 |---|---|
-| `.unifi-version` / `go generate` arg | internal `.deb` → resources (`9.5.21`) |
+| `.unifi-version` / `go generate` arg | internal `.deb` → newest field shapes (`9.5.21`) |
+| `-floor-version` arg / `codegen/v9.0.114/` | supported resource floor (drops pre-floor resources) |
 | `codegen/openapi/integration-<ver>.json` (committed) | Official OpenAPI snapshot (`10.1.78`) |
 
 The Official API first shipped in 10.1.78. Resolution (`resolveOfficialSpecVersion`): `--official-spec-version` flag → internal version if ≥ 10.1.78 → else `latest`. `codegen/v2/` = hand-maintained V2 API defs (`apiv2.go.tmpl`).

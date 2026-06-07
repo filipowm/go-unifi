@@ -1,0 +1,23 @@
+{
+  "acl_device_isolation": [
+    ""
+  ],
+  "acl_l3_isolation": [
+    {
+      "destination_networks": [
+        ""
+      ],
+      "source_network": ""
+    }
+  ],
+  "dhcp_snoop": "true|false",
+  "dot1x_fallback_networkconf_id": "[\\d\\w]+|",
+  "dot1x_portctrl_enabled": "true|false",
+  "flowctrl_enabled": "true|false",
+  "jumboframe_enabled": "true|false",
+  "radiusprofile_id": "",
+  "stp_version": "stp|rstp|disabled",
+  "switch_exclusions": [
+    "^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$"
+  ]
+}

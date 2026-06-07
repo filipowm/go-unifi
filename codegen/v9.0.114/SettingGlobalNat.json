@@ -1,0 +1,6 @@
+{
+  "excluded_network_ids": [
+    ""
+  ],
+  "mode": "auto|custom|off"
+}

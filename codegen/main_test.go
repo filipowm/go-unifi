@@ -281,6 +281,38 @@ func TestDownloadGenerationInputs_FallsThroughToDownloadWhenNoSentinel(t *testin
 	r.ErrorContains(err, "not an allowed Ubiquiti host")
 }
 
+// TestResolveFloorFieldsDir_EmptyMarkerDisablesFloor pins that an empty floor
+// marker returns "" with no provider/network interaction, so generation falls
+// back to single-snapshot mode.
+func TestResolveFloorFieldsDir_EmptyMarkerDisablesFloor(t *testing.T) {
+	t.Parallel()
+	r := require.New(t)
+
+	dir, err := resolveFloorFieldsDir("", NewUnifiVersionProvider(defaultFirmwareUpdateApi), t.TempDir(), setupLogging(false, false))
+	r.NoError(err)
+	r.Empty(dir, "empty floor marker must disable the floor merge")
+}
+
+// TestResolveFloorFieldsDir_UsesFrozenSnapshot pins that a complete frozen floor
+// snapshot (sentinel present) is used directly with no network download.
+func TestResolveFloorFieldsDir_UsesFrozenSnapshot(t *testing.T) {
+	t.Parallel()
+	r := require.New(t)
+
+	baseDir := t.TempDir()
+	floorVer, err := version.NewVersion("9.0.114")
+	r.NoError(err)
+
+	frozenDir := legacyFieldsDir(baseDir, floorVer)
+	r.NoError(os.MkdirAll(frozenDir, 0o755))
+	r.NoError(os.WriteFile(filepath.Join(frozenDir, "Device.json"), []byte(`{"k":"v"}`), 0o600))
+	r.NoError(os.WriteFile(filepath.Join(frozenDir, internal.ExtractCompleteSentinel), nil, 0o600))
+
+	dir, err := resolveFloorFieldsDir("9.0.114", NewUnifiVersionProvider(defaultFirmwareUpdateApi), baseDir, setupLogging(false, false))
+	r.NoError(err, "must use the frozen floor snapshot without downloading")
+	r.Equal(frozenDir, dir)
+}
+
 func TestGenerateDownloadOnly(t *testing.T) {
 	t.Parallel()
 	skipIfShort(t)
