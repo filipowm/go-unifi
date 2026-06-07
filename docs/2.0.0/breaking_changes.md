@@ -338,16 +338,33 @@ newest field shapes (newest wins). Any resource **retired before 9.0.114** is th
 not shipped; the floor is enforced structurally so the daily auto-regen can never reintroduce a pre-floor
 resource.
 
-Realized drop set: **none.** The legacy field source was already frozen at `9.5.21` (issue #124), and
-`9.0.114` is a strict subset of `9.5.21` at both the resource and field level — every pre-floor-retired
-resource was already absent from the shipped surface, and `9.5.21` already carried the newest field shapes.
-So this change removes **no** public type or field versus the prior `feat/2.0.0` surface; the golden
-type-diff is empty. The three settings present only above the floor (`SettingMdns`,
-`SettingRoamingAssistant`, `SettingTrafficFlow`) were **added after** 9.0.114 and are correctly **kept**
-(they are supported on controllers within the range, not retirements).
+Realized drop set: **none at the resource level; 17 fields intentionally retired at the field level.**
+The merge is newest-wins at struct-name granularity (whole-resource replacement, not field-level union):
+when a resource exists in both snapshots, the 9.5.21 struct wins in full and any field present only in the
+9.0.114 snapshot is silently dropped. The resource-level subset claim is correct: 9.0.114 has 74 resources
+vs 9.5.21's 77, with only `SettingMdns`, `SettingRoamingAssistant`, and `SettingTrafficFlow` added after
+the floor (and correctly kept). But at **field level**, 17 fields across 4 shared resources exist in
+9.0.114 but NOT in 9.5.21 and are therefore **intentionally dropped** by the newest-wins merge:
+
+| Resource | Dropped fields (present only in 9.0.114) |
+|---|---|
+| `ChannelPlan` | `ap_blacklisted_channels`, `conf_source`, `coupling`, `fitness`, `note`, `radio`, `satisfaction`, `satisfaction_table`, `site_blacklisted_channels` |
+| `SettingIps` | `ad_blocking_configurations`, `ad_blocking_enabled`, `dns_filtering`, `dns_filters` |
+| `SettingSuperMgmt` | `autobackup_s3_access_key`, `autobackup_s3_secret`, `autobackup_s3_bucket` |
+| `NetworkConf` | `igmp_forward_unknown_multicast` |
+
+**Decision: floor bounds resource membership, not fields.** These 17 fields are intentionally unsupported
+in 2.0.0. The floor guarantees that no resource _type_ retired before 9.0.114 is generated; it does not
+guarantee that every field present on a 9.0.114 controller is representable. Fields dropped by 9.5.21 are
+treated as retired — callers on supported controllers (≥ 9.0.114) that relied on these fields must work
+around their absence or request they be re-added via a hand-written sibling file.
+
+The golden type-diff is empty because no _public type_ was added or removed versus the prior surface
+(the 17 fields were already absent from the 9.5.21-frozen output). The three settings added after the floor
+were correctly kept.
 
 Migration: none required for the generated surface. Operationally, controllers older than **9.0.114** are
-out of support for 2.0.0; field shapes not present at 9.0.114 may be absent on such controllers.
+out of support for 2.0.0; the 17 fields listed above are not available regardless of controller version.
 
 **Provenance:** epic #117 task 2 (retirement half), issue #126; frozen snapshot `codegen/v9.0.114/`,
 pin in `unifi/codegen.go` (`-floor-version=9.0.114`).

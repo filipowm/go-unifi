@@ -64,6 +64,33 @@ func TestBuildMergedResources_FloorBoundedUnion(t *testing.T) {
 	assert.Contains(t, shared.BaseType().Fields, "NewField", "newest must win for shared resources")
 }
 
+// TestBuildMergedResources_FloorOnlyFieldDropped pins the production newest-wins
+// semantics at field level: when a shared resource has a field ONLY in the floor
+// (absent from newest), that field is dropped — newest's struct wins in full.
+// This is the non-obvious behavior that drops the 17 floor-only fields in the
+// real 9.0.114/9.5.21 merge; a regression to field-union would pass the basic
+// FloorBoundedUnion test above but fail this one.
+func TestBuildMergedResources_FloorOnlyFieldDropped(t *testing.T) {
+	t.Parallel()
+
+	floor := t.TempDir()
+	newest := t.TempDir()
+
+	// Shared resource: floor has an extra field that newest dropped -> newest wins,
+	// floor_only_field must NOT appear in the merged resource.
+	writeFields(t, floor, "Shared.json", `{"old_field": ".{0,32}", "floor_only_field": ".{0,32}"}`)
+	writeFields(t, newest, "Shared.json", `{"old_field": ".{0,32}", "new_field": ".{0,32}"}`)
+
+	merged, err := buildMergedResources(floor, newest, CodeCustomizer{}, nil)
+	require.NoError(t, err)
+
+	shared := findResource(merged, "Shared")
+	require.NotNil(t, shared)
+	assert.Contains(t, shared.BaseType().Fields, "NewField", "newest field must be present")
+	assert.NotContains(t, shared.BaseType().Fields, "FloorOnlyField",
+		"floor-only field must be dropped: newest struct wins in full (no field-level union)")
+}
+
 // TestBuildMergedResources_EmptyFloorIsSingleSnapshot pins that an empty floor
 // disables the merge: generation proceeds from the newest snapshot alone, with
 // no floor-bounding applied.

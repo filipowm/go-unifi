@@ -313,6 +313,25 @@ func TestResolveFloorFieldsDir_UsesFrozenSnapshot(t *testing.T) {
 	r.Equal(frozenDir, dir)
 }
 
+// TestResolveFloorFieldsDir_InvalidMarkerFails pins the fail-loud acquisition path:
+// an unresolvable floor marker must return an error, never silently skip the floor
+// and ship an unbounded resource surface. This covers the p.ByVersionMarker failure
+// branch (the other fatal branch — resolveLegacyFieldsDir failure — is exercised by
+// TestDownloadGenerationInputs_FallsThroughToDownloadWhenNoSentinel).
+func TestResolveFloorFieldsDir_InvalidMarkerFails(t *testing.T) {
+	t.Parallel()
+	r := require.New(t)
+
+	dir, err := resolveFloorFieldsDir(
+		"invalid-bogus-version", // malformed; version.NewVersion fails inside ByVersionMarker
+		NewUnifiVersionProvider(defaultFirmwareUpdateApi),
+		t.TempDir(),
+		setupLogging(false, false),
+	)
+	r.Error(err, "unresolvable floor marker must propagate a fatal error, not \"\"")
+	r.Empty(dir, "on acquisition failure, dir must be empty string")
+}
+
 func TestGenerateDownloadOnly(t *testing.T) {
 	t.Parallel()
 	skipIfShort(t)
