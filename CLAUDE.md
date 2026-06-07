@@ -6,7 +6,7 @@ hand-written layer wraps them with a usable client.
 ## CRITICAL: generated code
 
 - Files named `*.generated.go` start with `// Code generated ... DO NOT EDIT.` **Never hand-edit them.** A daily CI workflow regenerates and overwrites them.
-- To change generated output: edit `codegen/customizations.yml` (field type/name/tags/unmarshalers) and regenerate, OR add a hand-written sibling `.go` file.
+- To change generated output: edit `codegen/internal/customizations.yml` (field type/name/tags/unmarshalers) and regenerate, OR add a hand-written sibling `.go` file.
   See `codegen/CLAUDE.md`.
 - Generated CRUD methods are private (`getUser`, `listUser`); public wrappers (`GetUser`, `ListUser`) live in hand-written `.go` siblings.
 - The generated `Client` interface embeds `InternalClient` (all resource CRUD) and adds transport/lifecycle methods plus `Internal()`/`Official()` accessors. The Official API (`unifi/official`) is a one-way dependency (`unifi -> official`): it imports nothing back, taking the transport as a structural `Doer`.

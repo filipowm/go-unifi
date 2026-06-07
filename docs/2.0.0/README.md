@@ -140,7 +140,7 @@ go generate unifi/codegen.go                 # only when regenerating resources
 Local `Makefile` wraps these: `build | test | test-fast | cover | lint | fmt | check | generate`.
 
 - **Never hand-edit `*.generated.go`** (they start with `DO NOT EDIT`; CI regenerates). Change output via
-  `codegen/customizations.yml` or add a hand-written sibling `.go` (see
+  `codegen/internal/customizations.yml` or add a hand-written sibling `.go` (see
   [`codegen/CLAUDE.md`](../../codegen/CLAUDE.md)). Generated CRUD is private (`getUser`); public wrappers
   (`GetUser`) are hand-written siblings.
 - `ctx context.Context` is the first arg of every client method. Wrap returned errors with `%w`.

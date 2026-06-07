@@ -72,7 +72,7 @@ The `customizations.yml` file is used to fine-tune the code generation process. 
 
 ### How to Use customizations.yml
 
-1. **Edit the File**: Open `codegen/customizations.yml` in your favorite editor and modify the settings according to your needs. 
+1. **Edit the File**: Open `codegen/internal/customizations.yml` in your favorite editor and modify the settings according to your needs. 
    The file typically contains sections for field mappings, endpoint customizations, and additional template directives.
 
 2. **Run the Generator**: When you run the generator (using either `go generate` or `go run ./codegen`), 
