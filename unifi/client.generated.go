@@ -1184,21 +1184,6 @@ type Client interface {
 	// Get sends a GET request to the controller.
 	Get(ctx context.Context, apiPath string, reqBody any, respBody any) error
 
-	// Login logs in to the controller. Useful only for user/password authentication.
-	Login() error
-
-	// LoginContext logs in to the controller using the supplied context for cancellation/deadline. Useful only for user/password authentication.
-	LoginContext(ctx context.Context) error
-
-	// Logout logs out from the controller.
-	Logout() error
-
-	// LogoutContext logs out from the controller using the supplied context for cancellation/deadline.
-	LogoutContext(ctx context.Context) error
-
-	// Patch sends a PATCH request to the controller.
-	Patch(ctx context.Context, apiPath string, reqBody any, respBody any) error
-
 	// Post sends a POST request to the controller.
 	Post(ctx context.Context, apiPath string, reqBody any, respBody any) error
 
