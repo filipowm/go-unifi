@@ -163,14 +163,16 @@ func legacyFieldsDir(baseDir string, ver *version.Version) string {
 	return filepath.Join(baseDir, fmt.Sprintf("v%s", ver.Core()))
 }
 
-func writeVersionFile(version *version.Version, outDir string) error {
+func writeVersionFile(internalVersion *version.Version, officialVersion *version.Version, outDir string) error {
 	versionGo := fmt.Appendf(nil, `
 // Generated code. DO NOT EDIT.
 
 package unifi
 
 const UnifiVersion = %q
-`, version.Core())
+
+const OfficialAPIVersion = %q
+`, internalVersion.Core(), officialVersion.Core())
 
 	versionGo, err := format.Source(versionGo)
 	if err != nil {
@@ -184,4 +186,9 @@ const UnifiVersion = %q
 func writeVersionRepoMarkerFile(version *version.Version, outDir string) error {
 	versionRepoMarker := []byte(version.Core().String())
 	return os.WriteFile(filepath.Join(outDir, ".unifi-version"), versionRepoMarker, 0o644) //nolint:gosec
+}
+
+func writeOfficialVersionRepoMarkerFile(version *version.Version, outDir string) error {
+	versionRepoMarker := []byte(version.Core().String())
+	return os.WriteFile(filepath.Join(outDir, ".unifi-version-official"), versionRepoMarker, 0o644) //nolint:gosec
 }

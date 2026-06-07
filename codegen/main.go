@@ -222,7 +222,7 @@ func generate(opts options) error {
 		return err
 	}
 
-	if err = writeVersionArtifacts(unifiVersion, outDir, logger); err != nil {
+	if err = writeVersionArtifacts(unifiVersion, officialVersion, outDir, logger); err != nil {
 		return err
 	}
 
@@ -230,17 +230,21 @@ func generate(opts options) error {
 	return nil
 }
 
-// writeVersionArtifacts writes version.generated.go beside the resources and the
-// .unifi-version marker at the parent of outDir (the unifi/ package), so the
-// marker tracks the generated code regardless of cwd.
-func writeVersionArtifacts(unifiVersion *UnifiVersion, outDir string, logger Logger) error {
+// writeVersionArtifacts writes version.generated.go beside the resources and both
+// .unifi-version (Internal) and .unifi-version-official (Official) markers at the
+// parent of outDir (the repo root), so both markers track the generated code
+// regardless of cwd.
+func writeVersionArtifacts(unifiVersion *UnifiVersion, officialVersion *UnifiVersion, outDir string, logger Logger) error {
 	logger.Infof("Writing version file...")
-	if err := writeVersionFile(unifiVersion.Version, outDir); err != nil {
+	if err := writeVersionFile(unifiVersion.Version, officialVersion.Version, outDir); err != nil {
 		return fmt.Errorf("failed to write version file to %s: %w", outDir, err)
 	}
 	markerDir := filepath.Dir(outDir)
 	if err := writeVersionRepoMarkerFile(unifiVersion.Version, markerDir); err != nil {
-		return fmt.Errorf("failed to write version file to %s: %w", markerDir, err)
+		return fmt.Errorf("failed to write internal version marker to %s: %w", markerDir, err)
+	}
+	if err := writeOfficialVersionRepoMarkerFile(officialVersion.Version, markerDir); err != nil {
+		return fmt.Errorf("failed to write official version marker to %s: %w", markerDir, err)
 	}
 	return nil
 }
