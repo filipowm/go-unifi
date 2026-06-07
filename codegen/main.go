@@ -259,7 +259,7 @@ func downloadGenerationInputs(internalVersion *UnifiVersion, officialVersion *Un
 	} else if ok {
 		logger.Infof("Using frozen legacy field snapshot at %s (no download)", structuresDir)
 	} else {
-		logger.Infoln("Downloading UniFi Controller API structures definitions...")
+		logger.Infoln("Downloading UniFi Network Internal API structures definitions...")
 		if err = DownloadAndExtract(ctx, http.DefaultClient, *internalVersion.DownloadUrl, structuresDir); err != nil {
 			return "", fmt.Errorf("unable to download and extract UniFi Controller API structures definitions: %w", err)
 		}
