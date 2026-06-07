@@ -171,13 +171,13 @@ func generate(opts options) error {
 	logger := orDefaultLogger(opts.logger)
 
 	p := NewUnifiVersionProvider(opts.firmwareUpdateApi)
-	unifiVersion, officialVersion, err := resolveVersions(p, opts)
+	internalVersion, officialVersion, err := resolveVersions(p, opts)
 	if err != nil {
 		return err
 	}
 
-	logger.Infof("UniFi Controller version: %s", unifiVersion.Version)
-	logger.Infof("UniFi Controller download URL: %s", unifiVersion.DownloadUrl.String())
+	logger.Infof("UniFi Controller version: %s", internalVersion.Version)
+	logger.Infof("UniFi Controller download URL: %s", internalVersion.DownloadUrl.String())
 	logger.Infof("Official-API spec version: %s", officialVersion.Version)
 
 	wd, err := os.Getwd()
@@ -185,7 +185,7 @@ func generate(opts options) error {
 		return fmt.Errorf("unable to determine working directory: %w", err)
 	}
 	versionBaseDir := resolveDir(wd, opts.versionBaseDir)
-	structuresDir, err := downloadGenerationInputs(unifiVersion, officialVersion, versionBaseDir, logger)
+	structuresDir, err := downloadGenerationInputs(internalVersion, officialVersion, versionBaseDir, logger)
 	if err != nil {
 		return err
 	}
@@ -222,7 +222,7 @@ func generate(opts options) error {
 		return err
 	}
 
-	if err = writeVersionArtifacts(unifiVersion, officialVersion, outDir, logger); err != nil {
+	if err = writeVersionArtifacts(internalVersion, officialVersion, outDir, logger); err != nil {
 		return err
 	}
 
@@ -234,13 +234,13 @@ func generate(opts options) error {
 // .unifi-version (Internal) and .unifi-version-official (Official) markers at the
 // parent of outDir (the repo root), so both markers track the generated code
 // regardless of cwd.
-func writeVersionArtifacts(unifiVersion *UnifiVersion, officialVersion *UnifiVersion, outDir string, logger Logger) error {
+func writeVersionArtifacts(internalVersion *UnifiVersion, officialVersion *UnifiVersion, outDir string, logger Logger) error {
 	logger.Infof("Writing version file...")
-	if err := writeVersionFile(unifiVersion.Version, officialVersion.Version, outDir); err != nil {
+	if err := writeVersionFile(internalVersion.Version, officialVersion.Version, outDir); err != nil {
 		return fmt.Errorf("failed to write version file to %s: %w", outDir, err)
 	}
 	markerDir := filepath.Dir(outDir)
-	if err := writeVersionRepoMarkerFile(unifiVersion.Version, markerDir); err != nil {
+	if err := writeVersionRepoMarkerFile(internalVersion.Version, markerDir); err != nil {
 		return fmt.Errorf("failed to write internal version marker to %s: %w", markerDir, err)
 	}
 	if err := writeOfficialVersionRepoMarkerFile(officialVersion.Version, markerDir); err != nil {
