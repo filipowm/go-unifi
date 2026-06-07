@@ -219,17 +219,28 @@ func TestListAllTerminatesOnEmptyPageWithHighTotalCount(t *testing.T) {
 // auto-paginated request path — the filter param that used to be dropped.
 func TestListForwardsFilterAcrossPages(t *testing.T) {
 	t.Parallel()
+	// 250 sites across two pages of <=200 so the filter is asserted on more than
+	// one request — a single full page would never exercise the "across pages" path.
+	all := make([]SiteOverview, 0, 250)
+	for i := range 250 {
+		all = append(all, SiteOverview{ID: fmt.Sprintf("u%d", i), InternalReference: fmt.Sprintf("r%d", i), Name: "n"})
+	}
+
 	var urls []string
+	calls := 0
 	d := &pagingDoer{fn: func(apiPath string, respBody any) error {
 		urls = append(urls, apiPath)
-		return encode(sitePage(0, 1, []SiteOverview{{ID: "u", InternalReference: "r", Name: "n"}}), respBody)
+		start := calls * maxPageLimit
+		calls++
+		end := min(start+maxPageLimit, len(all))
+		return encode(sitePage(start, len(all), all[start:end]), respBody)
 	}}
 	c := New(d, base, nil)
 
 	sites, err := c.Sites().List(context.Background(), WithFilter("name.eq('n')"))
 	require.NoError(t, err)
-	require.Len(t, sites, 1)
-	require.NotEmpty(t, urls)
+	require.Len(t, sites, 250)
+	require.Len(t, urls, 2, "expected the filter to be forwarded across both pages")
 	for _, u := range urls {
 		assert.Contains(t, u, "filter=name.eq")
 	}
