@@ -71,7 +71,7 @@ func generateFiles(raw []byte, pkgName string) ([]generatedFile, error) {
 	}
 	client, err := generateClient(groups, pkgName)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("generating client: %w", err)
 	}
 	files := []generatedFile{
 		{"models.generated.go", models},
