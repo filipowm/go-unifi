@@ -1,4 +1,4 @@
-package main
+package internal
 
 import (
 	_ "embed"
@@ -152,7 +152,7 @@ func NewClientInfoBuilder() *ClientInfoBuilder {
 	return &ClientInfoBuilder{}
 }
 
-func (c *ClientInfoBuilder) AddFunction(f ClientFunction) *ClientInfoBuilder { //nolint: unparam
+func (c *ClientInfoBuilder) AddFunction(f ClientFunction) *ClientInfoBuilder {
 	c.functions = append(c.functions, f)
 	return c
 }

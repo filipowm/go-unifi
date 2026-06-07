@@ -179,8 +179,12 @@ const OfficialAPIVersion = %q
 		return err
 	}
 
-	_, err = writeGeneratedFile(outDir, "version", string(versionGo))
-	return err
+	goFilePath := filepath.Join(outDir, "version.generated.go")
+	_ = os.Remove(goFilePath)
+	if err := os.WriteFile(goFilePath, versionGo, 0o644); err != nil { //nolint:gosec
+		return fmt.Errorf("failed to write %s: %w", goFilePath, err)
+	}
+	return nil
 }
 
 // writeVersionMarker writes a plain-text version marker (core version, no

@@ -1,11 +1,10 @@
-package main
+package internal //nolint:testpackage // tests access unexported symbols
 
 import (
 	"archive/tar"
 	"archive/zip"
 	"bytes"
 	"context"
-	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -15,6 +14,7 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"github.com/filipowm/go-unifi/codegen/shared"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/ulikunitz/xz"
@@ -165,7 +165,7 @@ func TestExtractOfficialSpec_NotFound(t *testing.T) {
 	r.NoError(tw.Close())
 
 	_, err = extractOfficialSpec(bytes.NewReader(buf.Bytes()))
-	r.ErrorIs(err, errOfficialSpecNotFound)
+	r.ErrorIs(err, ErrOfficialSpecNotFound)
 }
 
 // TestExtractOfficialSpec_Oversize trips the decompression-bomb cap.
@@ -258,66 +258,9 @@ func TestDownloadAndExtractOfficialSpec_NotFoundOffline(t *testing.T) {
 
 	outPath := filepath.Join(t.TempDir(), "openapi", "integration-10.1.78.json")
 	err = DownloadAndExtractOfficialSpec(context.Background(), server.Client(), *u, outPath)
-	r.ErrorIs(err, errOfficialSpecNotFound)
+	r.ErrorIs(err, ErrOfficialSpecNotFound)
 	_, statErr := os.Stat(outPath)
 	r.ErrorIs(statErr, os.ErrNotExist)
-}
-
-// TestDownloadOfficialSpecSnapshot_SkipsIfSnapshotExists verifies that
-// downloadOfficialSpecSnapshot skips the network download entirely when the
-// committed snapshot file is already present, making `go generate` fully offline
-// when both the legacy fields and the Official spec snapshots are committed.
-func TestDownloadOfficialSpecSnapshot_SkipsIfSnapshotExists(t *testing.T) {
-	t.Parallel()
-	r := require.New(t)
-
-	// Write a pre-existing snapshot file so downloadOfficialSpecSnapshot finds it.
-	specPath := filepath.Join(t.TempDir(), "integration-10.1.78.json")
-	r.NoError(os.WriteFile(specPath, []byte(`{"openapi":"3.1.0"}`), 0o600))
-
-	// Use a URL that would be rejected by the host guard — if the function
-	// mistakenly tried to download, it would return an error here.
-	badURL, _ := url.Parse("https://evil.example.com/bad.deb")
-	logger := setupLogging(false, false)
-
-	err := downloadOfficialSpecSnapshot(context.Background(), http.DefaultClient, *badURL, specPath, logger)
-	r.NoError(err, "must skip download when snapshot already exists")
-
-	// The pre-existing file must be intact (not overwritten).
-	data, readErr := os.ReadFile(specPath)
-	r.NoError(readErr)
-	r.JSONEq(`{"openapi":"3.1.0"}`, string(data), "existing snapshot must not be overwritten")
-}
-
-// TestDownloadOfficialSpecSnapshot_OldVersionSkips pins the <10.1.78 regression-safety
-// path in downloadOfficialSpecSnapshot: a UOS package without integration.json must
-// yield nil (generation continues) and write no snapshot. This tests the httptest
-// seam introduced so the non-fatal swallow-and-continue branch is fully covered.
-func TestDownloadOfficialSpecSnapshot_OldVersionSkips(t *testing.T) {
-	t.Parallel()
-	r := require.New(t)
-
-	// Build a UOS deb without integration.json, mimicking pre-10.1.78 packages.
-	dataTarXz := buildDataTarXz(t, map[string][]byte{"./usr/lib/unifi/other.json": []byte("{}")})
-	deb := buildDeb(t, map[string][]byte{"data.tar.xz": dataTarXz})
-	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
-		_, _ = rw.Write(deb)
-	}))
-	defer server.Close()
-
-	specURL, err := url.Parse(server.URL)
-	r.NoError(err)
-
-	specPath := filepath.Join(t.TempDir(), "integration-9.5.21.json")
-	logger := setupLogging(false, false)
-
-	// downloadOfficialSpecSnapshot must return nil (non-fatal skip), not propagate errOfficialSpecNotFound.
-	err = downloadOfficialSpecSnapshot(context.Background(), server.Client(), *specURL, specPath, logger)
-	r.NoError(err, "pre-Official-API package must skip without error; generation must continue")
-
-	// No snapshot file must be written for old packages.
-	_, statErr := os.Stat(specPath)
-	r.ErrorIs(statErr, os.ErrNotExist, "no snapshot must be written for packages lacking integration.json")
 }
 
 // TestDownloadAndExtractOfficialSpec_NotFoundHTTP asserts the non-200 branch.
@@ -378,37 +321,6 @@ func TestDownloadAndExtractOfficialSpec_ContextCancelled(t *testing.T) {
 	r.ErrorIs(err, context.Canceled)
 	_, statErr := os.Stat(outPath)
 	r.ErrorIs(statErr, os.ErrNotExist)
-}
-
-// TestDownloadAndExtractOfficialSpec_Live performs the REAL fetch+extract from
-// dl.ui.com to prove the spec source end-to-end. Gated behind -short so CI/unit
-// runs stay offline; the full quality gate (no -short) exercises it live.
-func TestDownloadAndExtractOfficialSpec_Live(t *testing.T) {
-	t.Parallel()
-	skipIfShort(t)
-	r := require.New(t)
-	a := assert.New(t)
-
-	uv, err := NewUnifiVersionProvider(defaultFirmwareUpdateApi).Latest()
-	r.NoError(err)
-	specURL, err := uv.OfficialSpecURL()
-	r.NoError(err)
-
-	outPath := filepath.Join(t.TempDir(), "openapi", "integration-"+uv.Version.String()+".json")
-	err = DownloadAndExtractOfficialSpec(context.Background(), http.DefaultClient, *specURL, outPath)
-	r.NoError(err, "live fetch of %s must succeed", specURL.String())
-
-	data, err := os.ReadFile(outPath)
-	r.NoError(err)
-	var spec struct {
-		OpenAPI string `json:"openapi"`
-		Info    struct {
-			Version string `json:"version"`
-		} `json:"info"`
-	}
-	r.NoError(json.Unmarshal(data, &spec))
-	a.Truef(strings.HasPrefix(spec.OpenAPI, "3.1"), "expected OpenAPI 3.1, got %q", spec.OpenAPI)
-	a.NotEmpty(spec.Info.Version, "spec info.version must be present")
 }
 
 // Test when the output directory already exists AND carries the completion
@@ -1042,7 +954,7 @@ func TestDownloadAndExtract_MidExtractFailureReExtracts(t *testing.T) {
 	r.ErrorContains(err, "decompression bomb")
 
 	// The failed run must not leave a directory that a re-run treats as complete.
-	complete, cerr := extractionComplete(outputDir)
+	complete, cerr := ExtractionComplete(outputDir)
 	r.NoError(cerr)
 	a.False(complete, "partial extract must not be marked complete")
 	// And no sibling temp dir should be left lying around.
@@ -1060,25 +972,25 @@ func TestDownloadAndExtract_MidExtractFailureReExtracts(t *testing.T) {
 	data, err := os.ReadFile(filepath.Join(outputDir, "Device.json"))
 	r.NoError(err)
 	a.JSONEq(`{"key":"value"}`, string(data))
-	complete, cerr = extractionComplete(outputDir)
+	complete, cerr = ExtractionComplete(outputDir)
 	r.NoError(cerr)
 	a.True(complete, "successful re-run must be marked complete")
 }
 
 // TestCommittedFrozenSnapshotIsOfflineComplete guards the #124 freeze: the
 // committed codegen/v9.5.21/ snapshot must stay self-contained and offline-ready,
-// i.e. extractionComplete reports it complete (sentinel present). If the sentinel
+// i.e. ExtractionComplete reports it complete (sentinel present). If the sentinel
 // were ever dropped from the tree, generation would silently fall back to a
 // network download — this catches that regression with a fast, offline test.
 func TestCommittedFrozenSnapshotIsOfflineComplete(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 
-	codegenDir, err := findCodegenDir()
+	codegenDir, err := shared.FindCodegenDir()
 	r.NoError(err)
 	frozenDir := filepath.Join(codegenDir, "v9.5.21")
 
-	complete, err := extractionComplete(frozenDir)
+	complete, err := ExtractionComplete(frozenDir)
 	r.NoError(err)
 	r.True(complete, "committed codegen/v9.5.21 snapshot must be offline-complete (sentinel present)")
 }

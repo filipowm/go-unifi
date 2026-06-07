@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	_ "embed"
 	"errors"
 	"flag"
 	"fmt"
@@ -13,23 +12,14 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/filipowm/go-unifi/codegen/internal"
+	"github.com/filipowm/go-unifi/codegen/shared"
 	"github.com/sirupsen/logrus"
 )
 
-// Logger is the minimal logging surface the generation pipeline depends on. It
-// is satisfied by *logrus.Logger (and *logrus.Entry), so production code can
-// inject a real logger while tests inject their own instance with a local hook,
-// asserting output in parallel without mutating shared state.
-type Logger interface {
-	Tracef(format string, args ...any)
-	Debugf(format string, args ...any)
-	Debugln(args ...any)
-	Infof(format string, args ...any)
-	Infoln(args ...any)
-	Warnf(format string, args ...any)
-	Errorf(format string, args ...any)
-	Error(args ...any)
-}
+// Logger is an alias for shared.Logger so existing root code (options, tests)
+// compiles without change.
+type Logger = shared.Logger
 
 // log is the package-global logger used by the CLI path and as the default for
 // any pipeline component that was not given an explicit logger. Production
@@ -46,10 +36,7 @@ func defaultLogger() Logger { return log }
 // Centralizing the nil-guard keeps the pipeline entry points from each carrying
 // their own branch.
 func orDefaultLogger(logger Logger) Logger {
-	if logger == nil {
-		return defaultLogger()
-	}
-	return logger
+	return shared.OrDefaultLogger(logger, defaultLogger)
 }
 
 func usage() {
@@ -143,15 +130,15 @@ func main() {
 // Official-API spec version from opts. Extracted to keep generate()'s cyclomatic
 // complexity inside the configured budget.
 func resolveVersions(p UnifiVersionProvider, opts options) (*UnifiVersion, *UnifiVersion, error) {
-	internal, err := p.ByVersionMarker(opts.version)
+	internalVer, err := p.ByVersionMarker(opts.version)
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to determine version and download URL for Unifi version %s: %w", opts.version, err)
 	}
-	official, err := resolveOfficialSpecVersion(p, internal, opts.officialSpecVersion)
+	officialVer, err := resolveOfficialSpecVersion(p, internalVer, opts.officialSpecVersion)
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to resolve Official API spec version: %w", err)
 	}
-	return internal, official, nil
+	return internalVer, officialVer, nil
 }
 
 // resolveV2BaseDir returns the injected V2-API field-definitions base dir, or
@@ -195,8 +182,6 @@ func generate(opts options) error {
 		return nil
 	}
 
-	logger.Infoln("Generating resources code...")
-
 	// Resolve the V2-API field-definitions base dir. Tests inject opts.v2BaseDir
 	// to avoid depending on the real repo layout; the CLI leaves it empty and we
 	// discover codegen/v2 relative to the project root.
@@ -206,13 +191,13 @@ func generate(opts options) error {
 	}
 
 	outDir := resolveDir(wd, opts.outputDir)
-	customizer, err := NewCodeCustomizer(opts.customizationsPath)
+	customizer, err := internal.NewCodeCustomizer(opts.customizationsPath)
 	if err != nil {
 		return fmt.Errorf("unable to create code customizer: %w", err)
 	}
-	customizer.logger = logger
-	if err = generateCode(structuresDir, v2BaseDir, outDir, *customizer, logger); err != nil {
-		return fmt.Errorf("unable to generate resources code: %w", err)
+	// internal.Generate runs the Internal-API pass: resource code + client interface (root writes version.generated.go).
+	if err = internal.Generate(structuresDir, v2BaseDir, outDir, *customizer, logger); err != nil {
+		return err
 	}
 
 	// Second pass: fold in the Official-API frontend so one `go generate` emits
@@ -254,17 +239,17 @@ func writeVersionArtifacts(internalVersion *UnifiVersion, officialVersion *Unifi
 // commits/refreshes the Official OpenAPI spec snapshot.
 // Both network paths share one bounded context; the .deb stream is the long pole.
 func downloadGenerationInputs(internalVersion *UnifiVersion, officialVersion *UnifiVersion, versionBaseDir string, logger Logger) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), defaultDownloadTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), internal.DefaultDownloadTimeout)
 	defer cancel()
 
 	structuresDir := legacyFieldsDir(versionBaseDir, internalVersion.Version)
-	if ok, err := extractionComplete(structuresDir); err != nil {
+	if ok, err := internal.ExtractionComplete(structuresDir); err != nil {
 		return "", fmt.Errorf("checking legacy field snapshot at %s: %w", structuresDir, err)
 	} else if ok {
 		logger.Infof("Using frozen legacy field snapshot at %s (no download)", structuresDir)
 	} else {
 		logger.Infoln("Downloading UniFi Network Internal API structures definitions...")
-		if err = DownloadAndExtract(ctx, http.DefaultClient, *internalVersion.DownloadUrl, structuresDir); err != nil {
+		if err = internal.DownloadAndExtract(ctx, http.DefaultClient, *internalVersion.DownloadUrl, structuresDir); err != nil {
 			return "", fmt.Errorf("unable to download and extract UniFi Controller API structures definitions: %w", err)
 		}
 		logger.Infof("Downloaded UniFi Controller API structures definitions in %s", structuresDir)
@@ -293,8 +278,8 @@ func downloadOfficialSpecSnapshot(ctx context.Context, client *http.Client, spec
 		return nil
 	}
 	logger.Infoln("Downloading Official OpenAPI spec snapshot...")
-	if err := DownloadAndExtractOfficialSpec(ctx, client, specURL, specPath); err != nil {
-		if errors.Is(err, errOfficialSpecNotFound) {
+	if err := internal.DownloadAndExtractOfficialSpec(ctx, client, specURL, specPath); err != nil {
+		if errors.Is(err, internal.ErrOfficialSpecNotFound) {
 			logger.Warnf("Official OpenAPI spec not present at %s (package predates Official API); skipping snapshot", specURL.String())
 			return nil
 		}
@@ -302,12 +287,4 @@ func downloadOfficialSpecSnapshot(ctx context.Context, client *http.Client, spec
 	}
 	logger.Infof("Committed Official OpenAPI spec snapshot to %s", specPath)
 	return nil
-}
-
-// resolveDir returns dir as-is if absolute, otherwise joined with base.
-func resolveDir(base, dir string) string {
-	if path.IsAbs(dir) {
-		return dir
-	}
-	return filepath.Join(base, dir)
 }

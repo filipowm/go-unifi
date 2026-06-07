@@ -1,6 +1,7 @@
-package main
+package internal //nolint:testpackage // tests access unexported symbols
 
 import (
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -184,7 +185,7 @@ func TestDescribedFeatureFromV2DefsURLsWellFormed(t *testing.T) {
 	customizer, err := NewCodeCustomizer(defaultCustomizationsPath)
 	require.NoError(t, err)
 
-	resources, err := buildResourcesFromDownloadedFields("v2", *customizer, true, nil)
+	resources, err := buildResourcesFromDownloadedFields(filepath.Join("..", "v2"), *customizer, true, nil)
 	require.NoError(t, err)
 
 	var df *Resource

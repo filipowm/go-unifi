@@ -1,4 +1,4 @@
-package main
+package internal
 
 import (
 	_ "embed"
@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/filipowm/go-unifi/codegen/shared"
 	"gopkg.in/yaml.v3"
 )
 
@@ -21,7 +22,7 @@ type Customizations struct {
 	Client    *ClientCustomization              `yaml:"client"`
 }
 
-type Generate struct {
+type customizationsConfig struct {
 	Customizations *Customizations `yaml:"customizations"`
 }
 
@@ -197,8 +198,8 @@ func readCustomizationsYml(customizationsPath string) ([]byte, error) {
 	return customizations, nil
 }
 
-func unmarshalCustomizationYaml(customizationsPath string) (*Generate, error) {
-	var generate Generate
+func unmarshalCustomizationYaml(customizationsPath string) (*customizationsConfig, error) {
+	var generate customizationsConfig
 	customizationsYml, err := readCustomizationsYml(customizationsPath)
 	if err != nil {
 		return nil, err
@@ -224,7 +225,7 @@ type CodeCustomizer struct {
 	// warning). It is injected by generate()/generateCode; when nil, log()
 	// falls back to the package-global logger so a directly-built customizer
 	// (tests) still works.
-	logger Logger
+	logger shared.Logger
 }
 
 func NewCodeCustomizer(customizationsPath string) (*CodeCustomizer, error) {
@@ -326,6 +327,6 @@ func (r *CodeCustomizer) ApplyToClient(client *ClientInfoBuilder) {
 
 // log returns the customizer's injected logger, or the package-global fallback
 // when none was set.
-func (r *CodeCustomizer) log() Logger {
+func (r *CodeCustomizer) log() shared.Logger {
 	return orDefaultLogger(r.logger)
 }

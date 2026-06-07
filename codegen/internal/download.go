@@ -1,4 +1,4 @@
-package main
+package internal
 
 import (
 	"archive/tar"
@@ -18,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/filipowm/go-unifi/codegen/shared"
 	"github.com/iancoleman/strcase"
 	"github.com/ulikunitz/xz"
 	"github.com/xor-gate/ar"
@@ -36,10 +37,10 @@ const (
 	// Server package's data.tar.xz.
 	officialSpecTarPath = "./usr/lib/unifi/webapps/ROOT/api-docs/integration.json"
 
-	// defaultDownloadTimeout caps the whole .deb download+stream when the caller
+	// DefaultDownloadTimeout caps the whole .deb download+stream when the caller
 	// injects a client without its own Timeout (or a nil client). Streaming the
 	// multi-MB .deb body is the long pole, so this is generous.
-	defaultDownloadTimeout = 5 * time.Minute
+	DefaultDownloadTimeout = 5 * time.Minute
 
 	// extractCompleteSentinel marks a fully-extracted output directory:
 	// a version dir without this file is treated as partial/crashed and is
@@ -55,10 +56,10 @@ const (
 // separately to keep the offline httptest seam working.
 var allowedDownloadHostSuffixes = []string{"ui.com", "ubnt.com"}
 
-// errOfficialSpecNotFound marks a UniFi OS Server package that carries no
+// ErrOfficialSpecNotFound marks a UniFi OS Server package that carries no
 // integration.json (controllers predating the Official API, < 10.1.78) so
 // callers can skip the snapshot instead of failing the whole generation.
-var errOfficialSpecNotFound = errors.New("integration.json (OpenAPI spec) not found in UniFi OS Server package")
+var ErrOfficialSpecNotFound = errors.New("integration.json (OpenAPI spec) not found in UniFi OS Server package")
 
 // DownloadAndExtract downloads the controller .deb from downloadUrl and extracts
 // the API field-definition JSONs into outputDir. ctx bounds the network
@@ -69,7 +70,7 @@ var errOfficialSpecNotFound = errors.New("integration.json (OpenAPI spec) not fo
 func DownloadAndExtract(ctx context.Context, client *http.Client, downloadUrl url.URL, outputDir string) error {
 	// ctx must be non-nil; callers (generate(), tests) pass a bounded or
 	// background context. A nil ctx panics in http.NewRequestWithContext.
-	if complete, err := extractionComplete(outputDir); err != nil {
+	if complete, err := ExtractionComplete(outputDir); err != nil {
 		return err
 	} else if complete {
 		log.Debugf("API structures already extracted in %s, skipping download", outputDir)
@@ -136,11 +137,11 @@ func publishExtractedDir(tmpDir, outputDir string) error {
 	return nil
 }
 
-// extractionComplete reports whether outputDir already holds a fully-extracted
+// ExtractionComplete reports whether outputDir already holds a fully-extracted
 // field set, identified by the completion sentinel. A missing dir, a dir without
 // the sentinel (partial/crashed run), or a non-directory all report false so the
 // caller re-extracts; a path that exists but is not a directory is an error.
-func extractionComplete(outputDir string) (bool, error) {
+func ExtractionComplete(outputDir string) (bool, error) {
 	info, err := os.Stat(outputDir)
 	if errors.Is(err, os.ErrNotExist) {
 		return false, nil
@@ -222,10 +223,10 @@ func withDebDataTar(ctx context.Context, client *http.Client, downloadUrl url.UR
 	if client == nil {
 		// Never use http.DefaultClient (no timeout) for a multi-MB
 		// streamed download; construct one with a sane default timeout.
-		client = &http.Client{Timeout: defaultDownloadTimeout}
+		client = &http.Client{Timeout: DefaultDownloadTimeout}
 	} else if client.Timeout == 0 {
 		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, defaultDownloadTimeout)
+		ctx, cancel = context.WithTimeout(ctx, DefaultDownloadTimeout)
 		defer cancel()
 	}
 
@@ -275,7 +276,7 @@ func DownloadAndExtractOfficialSpec(ctx context.Context, client *http.Client, do
 }
 
 // extractOfficialSpec walks the data tar for integration.json and returns its
-// raw bytes, capped against decompression bombs. Returns errOfficialSpecNotFound
+// raw bytes, capped against decompression bombs. Returns ErrOfficialSpecNotFound
 // when the package predates the Official API.
 func extractOfficialSpec(r io.Reader) ([]byte, error) {
 	tarReader := tar.NewReader(r)
@@ -293,13 +294,13 @@ func extractOfficialSpec(r io.Reader) ([]byte, error) {
 		}
 
 		var buf bytes.Buffer
-		if _, err = copyWithLimit(&buf, tarReader, maxOpenAPISpecSize); err != nil {
+		if _, err = shared.CopyWithLimit(&buf, tarReader, maxOpenAPISpecSize); err != nil {
 			return nil, fmt.Errorf("unable to read integration.json: %w", err)
 		}
 		log.Debugf("integration.json extracted (%d bytes)", buf.Len())
 		return buf.Bytes(), nil
 	}
-	return nil, errOfficialSpecNotFound
+	return nil, ErrOfficialSpecNotFound
 }
 
 // writeOfficialSpecSnapshot writes the spec to outputPath atomically — temp file
@@ -385,7 +386,7 @@ func extractAceJar(r io.Reader, outputDir string) (string, error) {
 		}
 		defer aceJar.Close()
 
-		if _, err = copyWithLimit(aceJar, tarReader, maxAceJarSize); err != nil {
+		if _, err = shared.CopyWithLimit(aceJar, tarReader, maxAceJarSize); err != nil {
 			return "", fmt.Errorf("unable to write ace.jar temp file: %w", err)
 		}
 		log.Debugf("ace.jar extracted to: %s", aceJar.Name())
@@ -433,7 +434,7 @@ func extractZipEntry(f *zip.File, fieldsDir string) error {
 	}
 	defer dst.Close()
 
-	_, err = copyWithLimit(dst, src, maxJSONSize)
+	_, err = shared.CopyWithLimit(dst, src, maxJSONSize)
 	log.Debugf("extracted %s", f.Name)
 	if err != nil {
 		return err
