@@ -20,13 +20,10 @@ var customOps = map[string]bool{
 // deterministic regardless of JSON map ordering.
 var httpMethods = []string{"get", "post", "put", "delete", "patch"}
 
-// paginationParams are the pagination query params the runtime owns via the
-// variadic ListOption (WithOffset/WithLimit on every list wrapper); they never
-// surface as positional method arguments. The third standardized list param,
-// the optional "filter", is likewise owned by the option (WithFilter) — it is
-// dropped from list method args by the required-only check below, while a
-// REQUIRED filter on a non-list op (the bulk deleteVouchers) stays an explicit
-// arg. Pagination/filtering is thus one uniform mechanism, not a per-resource arg.
+// paginationParams are query params the runtime owns via ListOption
+// (WithOffset/WithLimit), so they never become method arguments. The optional
+// "filter" is likewise owned (WithFilter) and dropped by the required-only check
+// below; a REQUIRED filter (bulk deleteVouchers) still stays an explicit arg.
 var paginationParams = map[string]bool{"offset": true, "limit": true}
 
 // param is one method argument sourced from a path or required query parameter.
