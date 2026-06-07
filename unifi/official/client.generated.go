@@ -52,31 +52,31 @@ type Client interface {
 	GetAclRule(ctx context.Context, siteId string, aclRuleId string) (*ACLRule, error)
 	// GetAclRuleOrdering maps to GET /v1/sites/%s/acl-rules/ordering on the Official API.
 	GetAclRuleOrdering(ctx context.Context, siteId string) (*ACLRuleOrdering, error)
-	// GetAclRulePage maps to GET /v1/sites/%s/acl-rules on the Official API.
+	// GetAclRulePage maps to GET /v1/sites/%s/acl-rules on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
 	GetAclRulePage(ctx context.Context, siteId string) ([]ACLRuleObject, error)
 	// GetAdoptedDeviceDetails maps to GET /v1/sites/%s/devices/%s on the Official API.
 	GetAdoptedDeviceDetails(ctx context.Context, siteId string, deviceId string) (*AdoptedDeviceDetails, error)
 	// GetAdoptedDeviceLatestStatistics maps to GET /v1/sites/%s/devices/%s/statistics/latest on the Official API.
 	GetAdoptedDeviceLatestStatistics(ctx context.Context, siteId string, deviceId string) (*LatestStatisticsForADevice, error)
-	// GetAdoptedDeviceOverviewPage maps to GET /v1/sites/%s/devices on the Official API.
+	// GetAdoptedDeviceOverviewPage maps to GET /v1/sites/%s/devices on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
 	GetAdoptedDeviceOverviewPage(ctx context.Context, siteId string) ([]AdoptedDeviceOverview, error)
 	// GetConnectedClientDetails maps to GET /v1/sites/%s/clients/%s on the Official API.
 	GetConnectedClientDetails(ctx context.Context, siteId string, clientId string) (*ClientDetails, error)
-	// GetConnectedClientOverviewPage maps to GET /v1/sites/%s/clients on the Official API.
+	// GetConnectedClientOverviewPage maps to GET /v1/sites/%s/clients on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
 	GetConnectedClientOverviewPage(ctx context.Context, siteId string) ([]ClientOverview, error)
-	// GetCountries maps to GET /v1/countries on the Official API.
+	// GetCountries maps to GET /v1/countries on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
 	GetCountries(ctx context.Context) ([]CountryDefinition, error)
-	// GetDeviceTagPage maps to GET /v1/sites/%s/device-tags on the Official API.
+	// GetDeviceTagPage maps to GET /v1/sites/%s/device-tags on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
 	GetDeviceTagPage(ctx context.Context, siteId string) ([]DeviceTag, error)
 	// GetDnsPolicy maps to GET /v1/sites/%s/dns/policies/%s on the Official API.
 	GetDnsPolicy(ctx context.Context, siteId string, dnsPolicyId string) (*DNSPolicy, error)
-	// GetDnsPolicyPage maps to GET /v1/sites/%s/dns/policies on the Official API.
+	// GetDnsPolicyPage maps to GET /v1/sites/%s/dns/policies on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
 	GetDnsPolicyPage(ctx context.Context, siteId string) ([]DNSPolicy, error)
-	// GetDpiApplicationCategories maps to GET /v1/dpi/categories on the Official API.
+	// GetDpiApplicationCategories maps to GET /v1/dpi/categories on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
 	GetDpiApplicationCategories(ctx context.Context) ([]DPICategory, error)
-	// GetDpiApplications maps to GET /v1/dpi/applications on the Official API.
+	// GetDpiApplications maps to GET /v1/dpi/applications on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
 	GetDpiApplications(ctx context.Context) ([]DPIApplication, error)
-	// GetFirewallPolicies maps to GET /v1/sites/%s/firewall/policies on the Official API.
+	// GetFirewallPolicies maps to GET /v1/sites/%s/firewall/policies on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
 	GetFirewallPolicies(ctx context.Context, siteId string) ([]FirewallPolicy, error)
 	// GetFirewallPolicy maps to GET /v1/sites/%s/firewall/policies/%s on the Official API.
 	GetFirewallPolicy(ctx context.Context, siteId string, firewallPolicyId string) (*FirewallPolicy, error)
@@ -84,7 +84,7 @@ type Client interface {
 	GetFirewallPolicyOrdering(ctx context.Context, siteId string, sourceFirewallZoneId string, destinationFirewallZoneId string) (*FirewallPolicyOrdering, error)
 	// GetFirewallZone maps to GET /v1/sites/%s/firewall/zones/%s on the Official API.
 	GetFirewallZone(ctx context.Context, siteId string, firewallZoneId string) (*FirewallZone, error)
-	// GetFirewallZones maps to GET /v1/sites/%s/firewall/zones on the Official API.
+	// GetFirewallZones maps to GET /v1/sites/%s/firewall/zones on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
 	GetFirewallZones(ctx context.Context, siteId string) ([]FirewallZone, error)
 	// GetInfo returns the controller application info (GET /v1/info).
 	GetInfo(ctx context.Context) (*Info, error)
@@ -92,29 +92,29 @@ type Client interface {
 	GetNetworkDetails(ctx context.Context, siteId string, networkId string) (*NetworkDetails, error)
 	// GetNetworkReferences maps to GET /v1/sites/%s/networks/%s/references on the Official API.
 	GetNetworkReferences(ctx context.Context, siteId string, networkId string) (*NetworkReferences, error)
-	// GetNetworksOverviewPage maps to GET /v1/sites/%s/networks on the Official API.
+	// GetNetworksOverviewPage maps to GET /v1/sites/%s/networks on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
 	GetNetworksOverviewPage(ctx context.Context, siteId string) ([]NetworkOverview, error)
-	// GetPendingDevicePage maps to GET /v1/pending-devices on the Official API.
+	// GetPendingDevicePage maps to GET /v1/pending-devices on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
 	GetPendingDevicePage(ctx context.Context) ([]DevicePendingAdoption, error)
-	// GetRadiusProfileOverviewPage maps to GET /v1/sites/%s/radius/profiles on the Official API.
+	// GetRadiusProfileOverviewPage maps to GET /v1/sites/%s/radius/profiles on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
 	GetRadiusProfileOverviewPage(ctx context.Context, siteId string) ([]RadiusProfileOverview, error)
-	// GetSiteToSiteVpnTunnelPage maps to GET /v1/sites/%s/vpn/site-to-site-tunnels on the Official API.
+	// GetSiteToSiteVpnTunnelPage maps to GET /v1/sites/%s/vpn/site-to-site-tunnels on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
 	GetSiteToSiteVpnTunnelPage(ctx context.Context, siteId string) ([]SiteToSiteVPNTunnelOverview, error)
 	// GetTrafficMatchingList maps to GET /v1/sites/%s/traffic-matching-lists/%s on the Official API.
 	GetTrafficMatchingList(ctx context.Context, siteId string, trafficMatchingListId string) (*TrafficMatchingList, error)
-	// GetTrafficMatchingLists maps to GET /v1/sites/%s/traffic-matching-lists on the Official API.
+	// GetTrafficMatchingLists maps to GET /v1/sites/%s/traffic-matching-lists on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
 	GetTrafficMatchingLists(ctx context.Context, siteId string) ([]TrafficMatchingList, error)
 	// GetVoucher maps to GET /v1/sites/%s/hotspot/vouchers/%s on the Official API.
 	GetVoucher(ctx context.Context, siteId string, voucherId string) (*HotspotVoucherDetails, error)
-	// GetVouchers maps to GET /v1/sites/%s/hotspot/vouchers on the Official API.
+	// GetVouchers maps to GET /v1/sites/%s/hotspot/vouchers on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
 	GetVouchers(ctx context.Context, siteId string) ([]HotspotVoucherDetails, error)
-	// GetVpnServerPage maps to GET /v1/sites/%s/vpn/servers on the Official API.
+	// GetVpnServerPage maps to GET /v1/sites/%s/vpn/servers on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
 	GetVpnServerPage(ctx context.Context, siteId string) ([]VPNServerOverview, error)
-	// GetWansOverviewPage maps to GET /v1/sites/%s/wans on the Official API.
+	// GetWansOverviewPage maps to GET /v1/sites/%s/wans on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
 	GetWansOverviewPage(ctx context.Context, siteId string) ([]WANOverview, error)
 	// GetWifiBroadcastDetails maps to GET /v1/sites/%s/wifi/broadcasts/%s on the Official API.
 	GetWifiBroadcastDetails(ctx context.Context, siteId string, wifiBroadcastId string) (*WifiBroadcastDetails, error)
-	// GetWifiBroadcastPage maps to GET /v1/sites/%s/wifi/broadcasts on the Official API.
+	// GetWifiBroadcastPage maps to GET /v1/sites/%s/wifi/broadcasts on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
 	GetWifiBroadcastPage(ctx context.Context, siteId string) ([]WifiBroadcastOverview, error)
 	// ListSites returns all local sites, auto-paginating the list envelope.
 	ListSites(ctx context.Context) ([]SiteOverview, error)
