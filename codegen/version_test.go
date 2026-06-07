@@ -588,6 +588,11 @@ func newUOSFirmwareServer(t *testing.T, reportedVersion string) *httptest.Server
 	}
 
 	return httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		// Prove the firmware API is queried with the correct channel/product filters.
+		query := req.URL.Query()
+		assert.Contains(t, query["filter"], firmwareUpdateApiFilter("channel", releaseChannel))
+		assert.Contains(t, query["filter"], firmwareUpdateApiFilter("product", unifiControllerProduct))
+
 		resp, err := json.Marshal(respData)
 		assert.NoError(t, err)
 		_, err = rw.Write(resp)
@@ -629,15 +634,63 @@ func TestResolveInternalVersion_LatestBelowCapPassthrough(t *testing.T) {
 	assert.Equal(t, "9.3.45", got.Version.String())
 }
 
+// TestResolveInternalVersion_LatestAtCapPassthrough verifies that when the firmware
+// API reports exactly 9.5.21 (the cap boundary), no clamp fires and the version is
+// returned as-is — min(9.5.21, 9.5.21) must equal 9.5.21 unchanged.
+func TestResolveInternalVersion_LatestAtCapPassthrough(t *testing.T) {
+	t.Parallel()
+
+	server := newUOSFirmwareServer(t, "9.5.21")
+	defer server.Close()
+
+	p := NewUnifiVersionProvider(server.URL)
+	got, err := resolveInternalVersion(p, LatestVersionMarker)
+	require.NoError(t, err)
+	assert.Equal(t, "9.5.21", got.Version.String())
+	// URL comes from the firmware API response, not a re-resolved clamp.
+	assert.Equal(t, fmt.Sprintf(baseDownloadUrl, "9.5.21"), got.DownloadUrl.String())
+}
+
+// TestResolveVersions_InternalCapOfficialUncapped guards the resolveVersions wiring:
+// internal goes through resolveInternalVersion (cap-enforcing) while official goes
+// through resolveOfficialSpecVersion (uncapped). A silent re-wire would break this.
+func TestResolveVersions_InternalCapOfficialUncapped(t *testing.T) {
+	t.Parallel()
+
+	// Internal: explicit 9.3.45 -> ByVersionMarker is invoked by resolveInternalVersion.
+	// Official: auto-detect (9.3.45 < minOfficialSpecVersion) -> Latest() is invoked by resolveOfficialSpecVersion.
+	internal935 := mustUnifiVersion(t, "9.3.45")
+	official1078 := mustUnifiVersion(t, "10.1.78")
+	rec := &recordingVersionProvider{byMarkerResult: internal935, latestResult: official1078}
+
+	internalVer, officialVer, err := resolveVersions(rec, options{
+		version:             "9.3.45",
+		officialSpecVersion: "", // auto: internal < minOfficialSpecVersion -> Latest()
+	})
+	require.NoError(t, err)
+
+	// Internal: routed through resolveInternalVersion, below cap, ByVersionMarker invoked.
+	assert.True(t, rec.byMarkerCalled, "resolveInternalVersion must call ByVersionMarker")
+	assert.Equal(t, "9.3.45", rec.byMarkerArg)
+	assert.Equal(t, "9.3.45", internalVer.Version.String())
+
+	// Official: routed through resolveOfficialSpecVersion, Latest() invoked, no cap applied.
+	assert.True(t, rec.latestCalled, "resolveOfficialSpecVersion must call Latest() for auto-detect path")
+	assert.Equal(t, "10.1.78", officialVer.Version.String())
+}
+
 // TestResolveInternalVersion_ExplicitAtCap verifies that an explicit version exactly
 // at maxInternalVersion (9.5.21) resolves normally without error.
 func TestResolveInternalVersion_ExplicitAtCap(t *testing.T) {
 	t.Parallel()
 
-	p := NewUnifiVersionProvider(defaultFirmwareUpdateApi) // not called for explicit valid version
-	got, err := resolveInternalVersion(p, "9.5.21")
+	// ByVersionMarker is called but performs no network I/O for explicit <= cap.
+	rec := &recordingVersionProvider{byMarkerResult: mustUnifiVersion(t, "9.5.21")}
+	got, err := resolveInternalVersion(rec, "9.5.21")
 	require.NoError(t, err)
 	assert.Equal(t, "9.5.21", got.Version.String())
+	assert.True(t, rec.byMarkerCalled)
+	assert.Equal(t, "9.5.21", rec.byMarkerArg)
 }
 
 // TestResolveInternalVersion_ExplicitBelowCap verifies that an explicit version
@@ -645,26 +698,32 @@ func TestResolveInternalVersion_ExplicitAtCap(t *testing.T) {
 func TestResolveInternalVersion_ExplicitBelowCap(t *testing.T) {
 	t.Parallel()
 
-	p := NewUnifiVersionProvider(defaultFirmwareUpdateApi) // not called for explicit valid version
-	got, err := resolveInternalVersion(p, "9.3.45")
+	// ByVersionMarker is called but performs no network I/O for explicit <= cap.
+	rec := &recordingVersionProvider{byMarkerResult: mustUnifiVersion(t, "9.3.45")}
+	got, err := resolveInternalVersion(rec, "9.3.45")
 	require.NoError(t, err)
 	assert.Equal(t, "9.3.45", got.Version.String())
+	assert.True(t, rec.byMarkerCalled)
+	assert.Equal(t, "9.3.45", rec.byMarkerArg)
 }
 
 // TestResolveInternalVersion_ExplicitNewerFails verifies that an explicit version
 // above maxInternalVersion (9.5.21) returns an actionable error mentioning the
-// classic-controller EOL, the absence of internal field defs in UOS, and the
-// Official OpenAPI frontend.
+// classic-controller EOL, the Official OpenAPI frontend, and the CLI flag.
 func TestResolveInternalVersion_ExplicitNewerFails(t *testing.T) {
 	t.Parallel()
 
-	p := NewUnifiVersionProvider(defaultFirmwareUpdateApi) // must not be called
-	_, err := resolveInternalVersion(p, "10.1.78")
+	// Fail-loud returns before reaching the provider; verify it is never consulted.
+	rec := &recordingVersionProvider{}
+	_, err := resolveInternalVersion(rec, "10.1.78")
 	require.Error(t, err)
 	require.ErrorContains(t, err, "10.1.78")
 	require.ErrorContains(t, err, maxInternalVersion.String())
 	require.ErrorContains(t, err, "end-of-life")
 	require.ErrorContains(t, err, "Official")
+	require.ErrorContains(t, err, "-official-spec-version")
+	require.ErrorContains(t, err, "#121")
+	assert.False(t, rec.byMarkerCalled)
 }
 
 // TestResolveInternalVersion_ExplicitMuchNewerFails verifies the fail-loud path for
@@ -672,11 +731,15 @@ func TestResolveInternalVersion_ExplicitNewerFails(t *testing.T) {
 func TestResolveInternalVersion_ExplicitMuchNewerFails(t *testing.T) {
 	t.Parallel()
 
-	p := NewUnifiVersionProvider(defaultFirmwareUpdateApi)
-	_, err := resolveInternalVersion(p, "11.0.0")
+	// Fail-loud returns before reaching the provider; verify it is never consulted.
+	rec := &recordingVersionProvider{}
+	_, err := resolveInternalVersion(rec, "11.0.0")
 	require.Error(t, err)
 	require.ErrorContains(t, err, "11.0.0")
 	require.ErrorContains(t, err, maxInternalVersion.String())
+	require.ErrorContains(t, err, "-official-spec-version")
+	require.ErrorContains(t, err, "#121")
+	assert.False(t, rec.byMarkerCalled)
 }
 
 // TestResolveInternalVersion_PrereleaseAtCapAllowed verifies that a prerelease suffix
