@@ -71,7 +71,11 @@ func resolveInternalVersion(p UnifiVersionProvider, marker string) (*UnifiVersio
 		explicit, err := version.NewVersion(marker)
 		if err != nil {
 			// Invalid syntax — delegate so the existing error message is preserved.
-			return p.ByVersionMarker(marker)
+			resolved, resolveErr := p.ByVersionMarker(marker)
+			if resolveErr != nil {
+				return nil, fmt.Errorf("resolve internal version marker %q via provider: %w", marker, resolveErr)
+			}
+			return resolved, nil
 		}
 		if explicit.Core().GreaterThan(maxInternalVersion) {
 			return nil, fmt.Errorf(
@@ -89,7 +93,7 @@ func resolveInternalVersion(p UnifiVersionProvider, marker string) (*UnifiVersio
 
 	resolved, err := p.ByVersionMarker(marker)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("resolve internal version marker %q: %w", marker, err)
 	}
 
 	// Clamp: if the firmware API reports a UOS version (e.g. 10.x slipping through
