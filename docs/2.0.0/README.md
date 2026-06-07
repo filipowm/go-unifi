@@ -25,7 +25,7 @@ issue**, and the issue body is the contract.
 - **Implementation plan** — ordered, concrete steps naming the files/dirs touched.
 - **Acceptance criteria** — objectively verifiable checklist; always includes "build + test + lint pass"
   and "docs updated".
-- **Known edge cases** — version gating (floor 9.0.114, OpenAPI from 10.1.68), dual-shape resources,
+- **Known edge cases** — version gating (floor 9.0.114, OpenAPI from 10.1.78), dual-shape resources,
   error mapping (`meta.rc==error` → `*ServerError`, 404 → `ErrNotFound`), any breaking change.
 
 **Issue metadata (required):** type label (`feat`/`fix`/`refactor`/`docs`/`chore`/`test`/`ci`), plus
