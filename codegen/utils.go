@@ -2,7 +2,6 @@ package main
 
 import (
 	"io"
-	"path"
 	"path/filepath"
 
 	"github.com/filipowm/go-unifi/codegen/shared"
@@ -25,7 +24,7 @@ func copyWithLimit(dst io.Writer, src io.Reader, maxSize int64) (int64, error) {
 
 // resolveDir returns dir as-is if absolute, otherwise joined with base.
 func resolveDir(base, dir string) string {
-	if path.IsAbs(dir) {
+	if filepath.IsAbs(dir) {
 		return dir
 	}
 	return filepath.Join(base, dir)

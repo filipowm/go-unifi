@@ -65,10 +65,11 @@ func FindProjectRoot() (string, error) {
 		if _, err := os.Stat(filepath.Join(wd, "go.mod")); err == nil {
 			return wd, nil
 		}
-		if wd == "/" {
+		parent := filepath.Dir(wd)
+		if parent == wd { // reached the filesystem/volume root
 			break
 		}
-		wd = filepath.Dir(wd)
+		wd = parent
 	}
 	return "", errors.New("unable to find project root")
 }
