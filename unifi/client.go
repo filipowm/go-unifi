@@ -87,23 +87,6 @@ type ClientConfig struct {
 	DisableOfficialAPI bool
 }
 
-// Credentials abstracts authentication credentials.
-// Only API-key authentication is supported as of 2.0.0.
-type Credentials interface {
-	// IsAPIKey always returns true; kept for interface completeness.
-	IsAPIKey() bool
-	// GetAPIKey returns the API key.
-	GetAPIKey() string
-}
-
-// APIKeyCredentials holds API key authentication details.
-type APIKeyCredentials struct {
-	APIKey string
-}
-
-func (a APIKeyCredentials) IsAPIKey() bool    { return true }
-func (a APIKeyCredentials) GetAPIKey() string { return a.APIKey }
-
 // client represents a UniFi client.
 //
 // Concurrency contract: a *client is safe for concurrent use by multiple
