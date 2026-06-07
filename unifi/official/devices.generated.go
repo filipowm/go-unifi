@@ -5,6 +5,7 @@ package official
 import (
 	"context"
 	"fmt"
+	"iter"
 	"net/url"
 )
 
@@ -20,10 +21,14 @@ type DevicesClient interface {
 	GetAdopted(ctx context.Context, siteId string, deviceId string) (*AdoptedDeviceDetails, error)
 	// GetAdoptedLatestStatistics maps to GET /v1/sites/%s/devices/%s/statistics/latest on the Official API.
 	GetAdoptedLatestStatistics(ctx context.Context, siteId string, deviceId string) (*LatestStatisticsForADevice, error)
-	// ListAdopted maps to GET /v1/sites/%s/devices on the Official API. Without options it auto-paginates the whole collection; pass WithOffset/WithLimit for a single bounded page or WithFilter to filter server-side.
-	ListAdopted(ctx context.Context, siteId string, opts ...ListOption) ([]AdoptedDeviceOverview, error)
-	// ListPending maps to GET /v1/pending-devices on the Official API. Without options it auto-paginates the whole collection; pass WithOffset/WithLimit for a single bounded page or WithFilter to filter server-side.
-	ListPending(ctx context.Context, opts ...ListOption) ([]DevicePendingAdoption, error)
+	// ListAdoptedAll lazily drains every item from GET /v1/sites/%s/devices, paging on demand; range it and break to stop early.
+	ListAdoptedAll(ctx context.Context, siteId string) iter.Seq2[AdoptedDeviceOverview, error]
+	// ListAdoptedPage returns one page from GET /v1/sites/%s/devices; nil opts fetches the first page at the default size.
+	ListAdoptedPage(ctx context.Context, siteId string, opts *ListOptions) (Page[AdoptedDeviceOverview], error)
+	// ListPendingAll lazily drains every item from GET /v1/pending-devices, paging on demand; range it and break to stop early.
+	ListPendingAll(ctx context.Context) iter.Seq2[DevicePendingAdoption, error]
+	// ListPendingPage returns one page from GET /v1/pending-devices; nil opts fetches the first page at the default size.
+	ListPendingPage(ctx context.Context, opts *ListOptions) (Page[DevicePendingAdoption], error)
 	// Remove maps to DELETE /v1/sites/%s/devices/%s on the Official API.
 	Remove(ctx context.Context, siteId string, deviceId string) error
 }
@@ -96,28 +101,38 @@ func (c devicesClient) GetAdoptedLatestStatistics(ctx context.Context, siteId st
 	return &out, nil
 }
 
-// ListAdopted maps to GET /v1/sites/%s/devices on the Official API. Without options it auto-paginates the whole collection; pass WithOffset/WithLimit for a single bounded page or WithFilter to filter server-side.
-func (c devicesClient) ListAdopted(ctx context.Context, siteId string, opts ...ListOption) ([]AdoptedDeviceOverview, error) {
-	if err := c.check(ctx); err != nil {
-		return nil, err
-	}
-	var out []AdoptedDeviceOverview
-	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/devices", url.PathEscape(siteId))), &out, opts...); err != nil {
-		return nil, fmt.Errorf("failed ListAdopted: %w", err)
-	}
-	return out, nil
+// ListAdoptedAll lazily drains every item from GET /v1/sites/%s/devices, paging on demand; range it and break to stop early.
+func (c devicesClient) ListAdoptedAll(ctx context.Context, siteId string) iter.Seq2[AdoptedDeviceOverview, error] {
+	return listSeq[AdoptedDeviceOverview](ctx, c.apiClient, c.path(fmt.Sprintf("/sites/%s/devices", url.PathEscape(siteId))), "")
 }
 
-// ListPending maps to GET /v1/pending-devices on the Official API. Without options it auto-paginates the whole collection; pass WithOffset/WithLimit for a single bounded page or WithFilter to filter server-side.
-func (c devicesClient) ListPending(ctx context.Context, opts ...ListOption) ([]DevicePendingAdoption, error) {
+// ListAdoptedPage returns one page from GET /v1/sites/%s/devices; nil opts fetches the first page at the default size.
+func (c devicesClient) ListAdoptedPage(ctx context.Context, siteId string, opts *ListOptions) (Page[AdoptedDeviceOverview], error) {
 	if err := c.check(ctx); err != nil {
-		return nil, err
+		return Page[AdoptedDeviceOverview]{}, err
 	}
-	var out []DevicePendingAdoption
-	if err := listAll(ctx, c.doer, c.path("/pending-devices"), &out, opts...); err != nil {
-		return nil, fmt.Errorf("failed ListPending: %w", err)
+	p, err := listPage[AdoptedDeviceOverview](ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/devices", url.PathEscape(siteId))), opts)
+	if err != nil {
+		return Page[AdoptedDeviceOverview]{}, fmt.Errorf("failed ListAdoptedPage: %w", err)
 	}
-	return out, nil
+	return p, nil
+}
+
+// ListPendingAll lazily drains every item from GET /v1/pending-devices, paging on demand; range it and break to stop early.
+func (c devicesClient) ListPendingAll(ctx context.Context) iter.Seq2[DevicePendingAdoption, error] {
+	return listSeq[DevicePendingAdoption](ctx, c.apiClient, c.path("/pending-devices"), "")
+}
+
+// ListPendingPage returns one page from GET /v1/pending-devices; nil opts fetches the first page at the default size.
+func (c devicesClient) ListPendingPage(ctx context.Context, opts *ListOptions) (Page[DevicePendingAdoption], error) {
+	if err := c.check(ctx); err != nil {
+		return Page[DevicePendingAdoption]{}, err
+	}
+	p, err := listPage[DevicePendingAdoption](ctx, c.doer, c.path("/pending-devices"), opts)
+	if err != nil {
+		return Page[DevicePendingAdoption]{}, fmt.Errorf("failed ListPendingPage: %w", err)
+	}
+	return p, nil
 }
 
 // Remove maps to DELETE /v1/sites/%s/devices/%s on the Official API.
@@ -139,8 +154,10 @@ type DevicesClientMock struct {
 	ExecutePortActionFunc          func(context.Context, string, string, string, PortActionRequest) error
 	GetAdoptedFunc                 func(context.Context, string, string) (*AdoptedDeviceDetails, error)
 	GetAdoptedLatestStatisticsFunc func(context.Context, string, string) (*LatestStatisticsForADevice, error)
-	ListAdoptedFunc                func(context.Context, string, ...ListOption) ([]AdoptedDeviceOverview, error)
-	ListPendingFunc                func(context.Context, ...ListOption) ([]DevicePendingAdoption, error)
+	ListAdoptedAllFunc             func(context.Context, string) iter.Seq2[AdoptedDeviceOverview, error]
+	ListAdoptedPageFunc            func(context.Context, string, *ListOptions) (Page[AdoptedDeviceOverview], error)
+	ListPendingAllFunc             func(context.Context) iter.Seq2[DevicePendingAdoption, error]
+	ListPendingPageFunc            func(context.Context, *ListOptions) (Page[DevicePendingAdoption], error)
 	RemoveFunc                     func(context.Context, string, string) error
 }
 
@@ -166,12 +183,20 @@ func (m *DevicesClientMock) GetAdoptedLatestStatistics(ctx context.Context, site
 	return m.GetAdoptedLatestStatisticsFunc(ctx, siteId, deviceId)
 }
 
-func (m *DevicesClientMock) ListAdopted(ctx context.Context, siteId string, opts ...ListOption) ([]AdoptedDeviceOverview, error) {
-	return m.ListAdoptedFunc(ctx, siteId, opts...)
+func (m *DevicesClientMock) ListAdoptedAll(ctx context.Context, siteId string) iter.Seq2[AdoptedDeviceOverview, error] {
+	return m.ListAdoptedAllFunc(ctx, siteId)
 }
 
-func (m *DevicesClientMock) ListPending(ctx context.Context, opts ...ListOption) ([]DevicePendingAdoption, error) {
-	return m.ListPendingFunc(ctx, opts...)
+func (m *DevicesClientMock) ListAdoptedPage(ctx context.Context, siteId string, opts *ListOptions) (Page[AdoptedDeviceOverview], error) {
+	return m.ListAdoptedPageFunc(ctx, siteId, opts)
+}
+
+func (m *DevicesClientMock) ListPendingAll(ctx context.Context) iter.Seq2[DevicePendingAdoption, error] {
+	return m.ListPendingAllFunc(ctx)
+}
+
+func (m *DevicesClientMock) ListPendingPage(ctx context.Context, opts *ListOptions) (Page[DevicePendingAdoption], error) {
+	return m.ListPendingPageFunc(ctx, opts)
 }
 
 func (m *DevicesClientMock) Remove(ctx context.Context, siteId string, deviceId string) error {

@@ -5,6 +5,7 @@ package official
 import (
 	"context"
 	"fmt"
+	"iter"
 	"net/url"
 )
 
@@ -18,8 +19,10 @@ type ACLsClient interface {
 	GetRule(ctx context.Context, siteId string, aclRuleId string) (*ACLRule, error)
 	// GetRuleOrdering maps to GET /v1/sites/%s/acl-rules/ordering on the Official API.
 	GetRuleOrdering(ctx context.Context, siteId string) (*ACLRuleOrdering, error)
-	// ListRule maps to GET /v1/sites/%s/acl-rules on the Official API. Without options it auto-paginates the whole collection; pass WithOffset/WithLimit for a single bounded page or WithFilter to filter server-side.
-	ListRule(ctx context.Context, siteId string, opts ...ListOption) ([]ACLRuleObject, error)
+	// ListRuleAll lazily drains every item from GET /v1/sites/%s/acl-rules, paging on demand; range it and break to stop early.
+	ListRuleAll(ctx context.Context, siteId string) iter.Seq2[ACLRuleObject, error]
+	// ListRulePage returns one page from GET /v1/sites/%s/acl-rules; nil opts fetches the first page at the default size.
+	ListRulePage(ctx context.Context, siteId string, opts *ListOptions) (Page[ACLRuleObject], error)
 	// UpdateRule maps to PUT /v1/sites/%s/acl-rules/%s on the Official API.
 	UpdateRule(ctx context.Context, siteId string, aclRuleId string, body ACLRuleUpdate) (*ACLRule, error)
 	// UpdateRuleOrdering maps to PUT /v1/sites/%s/acl-rules/ordering on the Official API.
@@ -83,16 +86,21 @@ func (c aCLsClient) GetRuleOrdering(ctx context.Context, siteId string) (*ACLRul
 	return &out, nil
 }
 
-// ListRule maps to GET /v1/sites/%s/acl-rules on the Official API. Without options it auto-paginates the whole collection; pass WithOffset/WithLimit for a single bounded page or WithFilter to filter server-side.
-func (c aCLsClient) ListRule(ctx context.Context, siteId string, opts ...ListOption) ([]ACLRuleObject, error) {
+// ListRuleAll lazily drains every item from GET /v1/sites/%s/acl-rules, paging on demand; range it and break to stop early.
+func (c aCLsClient) ListRuleAll(ctx context.Context, siteId string) iter.Seq2[ACLRuleObject, error] {
+	return listSeq[ACLRuleObject](ctx, c.apiClient, c.path(fmt.Sprintf("/sites/%s/acl-rules", url.PathEscape(siteId))), "")
+}
+
+// ListRulePage returns one page from GET /v1/sites/%s/acl-rules; nil opts fetches the first page at the default size.
+func (c aCLsClient) ListRulePage(ctx context.Context, siteId string, opts *ListOptions) (Page[ACLRuleObject], error) {
 	if err := c.check(ctx); err != nil {
-		return nil, err
+		return Page[ACLRuleObject]{}, err
 	}
-	var out []ACLRuleObject
-	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/acl-rules", url.PathEscape(siteId))), &out, opts...); err != nil {
-		return nil, fmt.Errorf("failed ListRule: %w", err)
+	p, err := listPage[ACLRuleObject](ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/acl-rules", url.PathEscape(siteId))), opts)
+	if err != nil {
+		return Page[ACLRuleObject]{}, fmt.Errorf("failed ListRulePage: %w", err)
 	}
-	return out, nil
+	return p, nil
 }
 
 // UpdateRule maps to PUT /v1/sites/%s/acl-rules/%s on the Official API.
@@ -126,7 +134,8 @@ type ACLsClientMock struct {
 	DeleteRuleFunc         func(context.Context, string, string) error
 	GetRuleFunc            func(context.Context, string, string) (*ACLRule, error)
 	GetRuleOrderingFunc    func(context.Context, string) (*ACLRuleOrdering, error)
-	ListRuleFunc           func(context.Context, string, ...ListOption) ([]ACLRuleObject, error)
+	ListRuleAllFunc        func(context.Context, string) iter.Seq2[ACLRuleObject, error]
+	ListRulePageFunc       func(context.Context, string, *ListOptions) (Page[ACLRuleObject], error)
 	UpdateRuleFunc         func(context.Context, string, string, ACLRuleUpdate) (*ACLRule, error)
 	UpdateRuleOrderingFunc func(context.Context, string, ACLRuleOrdering) (*ACLRuleOrdering, error)
 }
@@ -149,8 +158,12 @@ func (m *ACLsClientMock) GetRuleOrdering(ctx context.Context, siteId string) (*A
 	return m.GetRuleOrderingFunc(ctx, siteId)
 }
 
-func (m *ACLsClientMock) ListRule(ctx context.Context, siteId string, opts ...ListOption) ([]ACLRuleObject, error) {
-	return m.ListRuleFunc(ctx, siteId, opts...)
+func (m *ACLsClientMock) ListRuleAll(ctx context.Context, siteId string) iter.Seq2[ACLRuleObject, error] {
+	return m.ListRuleAllFunc(ctx, siteId)
+}
+
+func (m *ACLsClientMock) ListRulePage(ctx context.Context, siteId string, opts *ListOptions) (Page[ACLRuleObject], error) {
+	return m.ListRulePageFunc(ctx, siteId, opts)
 }
 
 func (m *ACLsClientMock) UpdateRule(ctx context.Context, siteId string, aclRuleId string, body ACLRuleUpdate) (*ACLRule, error) {

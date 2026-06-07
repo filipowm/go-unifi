@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"iter"
 )
 
 // ErrSiteNotFound is returned by ResolveID when the given legacy site name
@@ -19,18 +20,22 @@ type SiteOverview struct {
 	Name              string `json:"name"`
 }
 
-// List returns local sites; without options it auto-paginates, else
-// WithOffset/WithLimit fetch a single bounded page and WithFilter filters
-// server-side.
-func (c sitesClient) List(ctx context.Context, opts ...ListOption) ([]SiteOverview, error) {
+// ListPage returns one page of local sites; nil opts fetches the first page at
+// the default size.
+func (c sitesClient) ListPage(ctx context.Context, opts *ListOptions) (Page[SiteOverview], error) {
 	if err := c.check(ctx); err != nil {
-		return nil, err
+		return Page[SiteOverview]{}, err
 	}
-	var sites []SiteOverview
-	if err := listAll(ctx, c.doer, c.path("/sites"), &sites, opts...); err != nil {
-		return nil, fmt.Errorf("failed listing sites: %w", err)
+	p, err := listPage[SiteOverview](ctx, c.doer, c.path("/sites"), opts)
+	if err != nil {
+		return Page[SiteOverview]{}, fmt.Errorf("failed listing sites: %w", err)
 	}
-	return sites, nil
+	return p, nil
+}
+
+// ListAll lazily drains every local site across pages.
+func (c sitesClient) ListAll(ctx context.Context) iter.Seq2[SiteOverview, error] {
+	return listSeq[SiteOverview](ctx, c.apiClient, c.path("/sites"), "")
 }
 
 // ResolveID maps a legacy site name (the Internal-API identifier, carried as
@@ -40,7 +45,7 @@ func (c sitesClient) ResolveID(ctx context.Context, name string) (string, error)
 	if id, ok := c.cachedSiteID(name); ok {
 		return id, nil
 	}
-	sites, err := c.List(ctx)
+	sites, err := Collect(c.ListAll(ctx))
 	if err != nil {
 		return "", err
 	}

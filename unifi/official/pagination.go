@@ -3,46 +3,36 @@ package official
 import (
 	"context"
 	"fmt"
+	"iter"
 	"net/url"
 	"strconv"
 )
 
 // maxPageLimit is the largest page size the Official list endpoints accept
-// (the spec caps limit at 200; default is 25). We request the max to minimize
-// round-trips during auto-pagination.
+// (the spec caps limit at 200; default is 25). It is the default page size and
+// the size ListAll uses per fetch to minimize drain round-trips.
 const maxPageLimit = 200
 
-// ListOption configures a single list request. With no options a list method
-// auto-paginates (drains every page); WithOffset/WithLimit switch it to a single
-// bounded page, and WithFilter narrows the result server-side.
-type ListOption func(*listParams)
-
-// listParams is the resolved option set. offset/limit are pointers so "explicit
-// pagination requested" is distinguishable from a zero default.
-type listParams struct {
-	offset *int
-	limit  *int
-	filter string
+// ListOptions bounds a single ListPage call. A nil *ListOptions means the first
+// page at the default size; a non-positive Limit defaults to maxPageLimit and a
+// larger one is clamped to it. Offset 0 is a valid explicit value.
+type ListOptions struct {
+	Offset int
+	Limit  int
+	Filter string // optional server-side filter expression
 }
 
-// WithOffset requests a single bounded page starting at offset (disables
-// auto-pagination).
-func WithOffset(offset int) ListOption { return func(p *listParams) { p.offset = &offset } }
+// Page is the public face of the {offset,limit,count,totalCount,data} envelope
+// the Official list endpoints return. Items is the decoded data slice.
+type Page[T any] struct {
+	Items      []T
+	Offset     int
+	Limit      int
+	Count      int
+	TotalCount int
+}
 
-// WithLimit requests a single bounded page of at most limit items (disables
-// auto-pagination).
-func WithLimit(limit int) ListOption { return func(p *listParams) { p.limit = &limit } }
-
-// WithFilter applies a server-side filter expression; it composes with both the
-// auto-paginating default and explicit pagination.
-func WithFilter(filter string) ListOption { return func(p *listParams) { p.filter = filter } }
-
-// bounded reports whether the caller asked for explicit pagination (a single
-// bounded page) rather than the drain-all default.
-func (p listParams) bounded() bool { return p.offset != nil || p.limit != nil }
-
-// page is the {offset,limit,count,totalCount,data[]} envelope returned by the
-// paginated Official list endpoints.
+// page is the raw {offset,limit,count,totalCount,data[]} envelope.
 type page[T any] struct {
 	Offset     int `json:"offset"`
 	Limit      int `json:"limit"`
@@ -51,42 +41,74 @@ type page[T any] struct {
 	Data       []T `json:"data"`
 }
 
-// listAll fetches a paginated list endpoint into out. With no options it drains
-// every page (terminating on an empty page or when accumulated == totalCount);
-// WithOffset/WithLimit fetch exactly one bounded page instead. A filter, when
-// set, is forwarded on every request. Error mapping is identical in both modes:
-// the Doer maps meta.rc==error to *ServerError and yields an empty data[].
-func listAll[T any](ctx context.Context, doer Doer, basePath string, out *[]T, opts ...ListOption) error {
-	var lp listParams
-	for _, o := range opts {
-		o(&lp)
-	}
-
-	if lp.bounded() {
-		offset, limit := derefOr(lp.offset, 0), derefOr(lp.limit, maxPageLimit)
-		p, err := fetchPage[T](ctx, doer, basePath, offset, limit, lp.filter)
+// Collect materializes an iterator into a slice, short-circuiting on the first
+// error. It is the explicit opt-in for callers who genuinely want every item in
+// memory rather than streaming via ListAll.
+func Collect[T any](seq iter.Seq2[T, error]) ([]T, error) {
+	var out []T
+	for item, err := range seq {
 		if err != nil {
-			return err
+			return nil, err
 		}
-		*out = append(*out, p.Data...)
-		return nil
+		out = append(out, item)
 	}
+	return out, nil
+}
 
-	offset := 0
-	for {
-		p, err := fetchPage[T](ctx, doer, basePath, offset, maxPageLimit, lp.filter)
-		if err != nil {
-			return err
+// listPage fetches exactly ONE page, resolving nil/partial opts to sane defaults.
+// The caller (wrapper) runs the capability gate before this.
+func listPage[T any](ctx context.Context, doer Doer, basePath string, opts *ListOptions) (Page[T], error) {
+	offset, limit, filter := resolveOptions(opts)
+	p, err := fetchPage[T](ctx, doer, basePath, offset, limit, filter)
+	if err != nil {
+		return Page[T]{}, err
+	}
+	return Page[T]{Items: p.Data, Offset: p.Offset, Limit: p.Limit, Count: p.Count, TotalCount: p.TotalCount}, nil
+}
+
+// listSeq returns a lazy iterator that drains every item across pages. It runs
+// the capability gate before the first fetch (surfacing a failed check as the
+// first yielded error), forwards filter on every request, stops on an empty page
+// or once offset reaches totalCount, and aborts immediately — issuing no further
+// request — when the consumer breaks (yield returns false).
+func listSeq[T any](ctx context.Context, c *apiClient, basePath, filter string) iter.Seq2[T, error] {
+	return func(yield func(T, error) bool) {
+		var zero T
+		if err := c.check(ctx); err != nil {
+			yield(zero, err)
+			return
 		}
-		*out = append(*out, p.Data...)
-		offset += len(p.Data)
-		// Terminate on an empty page (definitive end-of-list) or when accumulated
-		// equals totalCount. If the server underreports totalCount, the equal-count
-		// check never fires and the empty-page terminator catches it.
-		if len(p.Data) == 0 || offset == p.TotalCount {
-			return nil
+		offset := 0
+		for {
+			p, err := fetchPage[T](ctx, c.doer, basePath, offset, maxPageLimit, filter)
+			if err != nil {
+				yield(zero, err)
+				return
+			}
+			for _, item := range p.Data {
+				if !yield(item, nil) {
+					return
+				}
+			}
+			offset += len(p.Data)
+			if len(p.Data) == 0 || offset >= p.TotalCount {
+				return
+			}
 		}
 	}
+}
+
+// resolveOptions normalizes list options: nil => first page at maxPageLimit; a
+// non-positive or oversized Limit clamps to maxPageLimit; a negative Offset to 0.
+func resolveOptions(opts *ListOptions) (int, int, string) {
+	if opts == nil {
+		return 0, maxPageLimit, ""
+	}
+	limit := opts.Limit
+	if limit <= 0 || limit > maxPageLimit {
+		limit = maxPageLimit
+	}
+	return max(opts.Offset, 0), limit, opts.Filter
 }
 
 // fetchPage GETs one page at the given offset/limit, forwarding filter when set.
@@ -105,12 +127,4 @@ func pageURL(basePath string, offset, limit int, filter string) string {
 		q.Set("filter", filter)
 	}
 	return fmt.Sprintf("%s?%s", basePath, q.Encode())
-}
-
-// derefOr returns *p, or def when p is nil.
-func derefOr(p *int, def int) int {
-	if p == nil {
-		return def
-	}
-	return *p
 }

@@ -5,6 +5,7 @@ package official
 import (
 	"context"
 	"fmt"
+	"iter"
 	"net/url"
 )
 
@@ -18,8 +19,10 @@ type NetworksClient interface {
 	Get(ctx context.Context, siteId string, networkId string) (*NetworkDetails, error)
 	// GetReferences maps to GET /v1/sites/%s/networks/%s/references on the Official API.
 	GetReferences(ctx context.Context, siteId string, networkId string) (*NetworkReferences, error)
-	// List maps to GET /v1/sites/%s/networks on the Official API. Without options it auto-paginates the whole collection; pass WithOffset/WithLimit for a single bounded page or WithFilter to filter server-side.
-	List(ctx context.Context, siteId string, opts ...ListOption) ([]NetworkOverview, error)
+	// ListAll lazily drains every item from GET /v1/sites/%s/networks, paging on demand; range it and break to stop early.
+	ListAll(ctx context.Context, siteId string) iter.Seq2[NetworkOverview, error]
+	// ListPage returns one page from GET /v1/sites/%s/networks; nil opts fetches the first page at the default size.
+	ListPage(ctx context.Context, siteId string, opts *ListOptions) (Page[NetworkOverview], error)
 	// Update maps to PUT /v1/sites/%s/networks/%s on the Official API.
 	Update(ctx context.Context, siteId string, networkId string, body NetworkCreateOrUpdate) (*NetworkDetails, error)
 }
@@ -81,16 +84,21 @@ func (c networksClient) GetReferences(ctx context.Context, siteId string, networ
 	return &out, nil
 }
 
-// List maps to GET /v1/sites/%s/networks on the Official API. Without options it auto-paginates the whole collection; pass WithOffset/WithLimit for a single bounded page or WithFilter to filter server-side.
-func (c networksClient) List(ctx context.Context, siteId string, opts ...ListOption) ([]NetworkOverview, error) {
+// ListAll lazily drains every item from GET /v1/sites/%s/networks, paging on demand; range it and break to stop early.
+func (c networksClient) ListAll(ctx context.Context, siteId string) iter.Seq2[NetworkOverview, error] {
+	return listSeq[NetworkOverview](ctx, c.apiClient, c.path(fmt.Sprintf("/sites/%s/networks", url.PathEscape(siteId))), "")
+}
+
+// ListPage returns one page from GET /v1/sites/%s/networks; nil opts fetches the first page at the default size.
+func (c networksClient) ListPage(ctx context.Context, siteId string, opts *ListOptions) (Page[NetworkOverview], error) {
 	if err := c.check(ctx); err != nil {
-		return nil, err
+		return Page[NetworkOverview]{}, err
 	}
-	var out []NetworkOverview
-	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/networks", url.PathEscape(siteId))), &out, opts...); err != nil {
-		return nil, fmt.Errorf("failed List: %w", err)
+	p, err := listPage[NetworkOverview](ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/networks", url.PathEscape(siteId))), opts)
+	if err != nil {
+		return Page[NetworkOverview]{}, fmt.Errorf("failed ListPage: %w", err)
 	}
-	return out, nil
+	return p, nil
 }
 
 // Update maps to PUT /v1/sites/%s/networks/%s on the Official API.
@@ -112,7 +120,8 @@ type NetworksClientMock struct {
 	DeleteFunc        func(context.Context, string, string) error
 	GetFunc           func(context.Context, string, string) (*NetworkDetails, error)
 	GetReferencesFunc func(context.Context, string, string) (*NetworkReferences, error)
-	ListFunc          func(context.Context, string, ...ListOption) ([]NetworkOverview, error)
+	ListAllFunc       func(context.Context, string) iter.Seq2[NetworkOverview, error]
+	ListPageFunc      func(context.Context, string, *ListOptions) (Page[NetworkOverview], error)
 	UpdateFunc        func(context.Context, string, string, NetworkCreateOrUpdate) (*NetworkDetails, error)
 }
 
@@ -134,8 +143,12 @@ func (m *NetworksClientMock) GetReferences(ctx context.Context, siteId string, n
 	return m.GetReferencesFunc(ctx, siteId, networkId)
 }
 
-func (m *NetworksClientMock) List(ctx context.Context, siteId string, opts ...ListOption) ([]NetworkOverview, error) {
-	return m.ListFunc(ctx, siteId, opts...)
+func (m *NetworksClientMock) ListAll(ctx context.Context, siteId string) iter.Seq2[NetworkOverview, error] {
+	return m.ListAllFunc(ctx, siteId)
+}
+
+func (m *NetworksClientMock) ListPage(ctx context.Context, siteId string, opts *ListOptions) (Page[NetworkOverview], error) {
+	return m.ListPageFunc(ctx, siteId, opts)
 }
 
 func (m *NetworksClientMock) Update(ctx context.Context, siteId string, networkId string, body NetworkCreateOrUpdate) (*NetworkDetails, error) {

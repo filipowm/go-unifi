@@ -96,10 +96,33 @@ func TestBuildGroupsFromSpec(t *testing.T) {
 
 	// Info/Sites carry only their re-homed hand-written methods (op == nil).
 	requireMethod(t, byName["Info"], "Get", true)
-	requireMethod(t, byName["Sites"], "List", true)
+	requireMethod(t, byName["Sites"], "ListPage", true)
+	requireMethod(t, byName["Sites"], "ListAll", true)
 	requireMethod(t, byName["Sites"], "ResolveID", true)
-	// Firewall carries generated wrappers.
+	// Firewall carries generated wrappers; a list op splits into Page + All.
 	requireMethod(t, byName["Firewall"], "CreatePolicy", false)
+	requireMethod(t, byName["Firewall"], "ListPoliciesPage", false)
+	requireMethod(t, byName["Firewall"], "ListPoliciesAll", false)
+}
+
+// TestListOperationSplitsIntoPageAndAll asserts a list operation yields exactly a
+// bounded ListXxxPage (Page[T], *ListOptions) and a lazy ListXxxAll (iter.Seq2),
+// the core of the redesigned list surface.
+func TestListOperationSplitsIntoPageAndAll(t *testing.T) {
+	t.Parallel()
+	op := operation{Group: "Firewall", Name: "GetFirewallPolicies", HTTPMethod: "GET", ItemType: "FirewallPolicy"}
+	methods := methodsFor(op)
+	require.Len(t, methods, 2)
+
+	page, all := methods[0], methods[1]
+	assert.Equal(t, "ListPoliciesPage", page.Name)
+	assert.Equal(t, kindListPage, page.kind)
+	assert.Equal(t, []string{"Page[FirewallPolicy]", "error"}, page.Returns)
+	assert.Equal(t, "*ListOptions", page.Params[len(page.Params)-1].Type)
+
+	assert.Equal(t, "ListPoliciesAll", all.Name)
+	assert.Equal(t, kindListAll, all.kind)
+	assert.Equal(t, []string{"iter.Seq2[FirewallPolicy, error]"}, all.Returns)
 }
 
 // TestBuildGroupsCollisionFailsLoud feeds two operations that strip to the same
