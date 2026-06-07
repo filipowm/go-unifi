@@ -35,6 +35,7 @@ type param struct {
 // operationId + HTTP method + parameters, never from path regexes.
 type operation struct {
 	Name       string  // Go method name (PascalCase operationId)
+	Group      string  // PascalCase group name from the operation's primary tag
 	HTTPMethod string  // GET/POST/PUT/DELETE/PATCH
 	SubPath    string  // path with the leading /v1 stripped and {param}->%s
 	PathArgs   []param // ordered path arguments (URL order)
@@ -109,8 +110,13 @@ func buildOperation(path, method string, raw, schemas map[string]any) (operation
 	if customOps[opID] {
 		return operation{}, true, nil
 	}
+	group, err := operationGroup(raw)
+	if err != nil {
+		return operation{}, false, fmt.Errorf("operation %s %s: %w", strings.ToUpper(method), path, err)
+	}
 	op := operation{
 		Name:       pascal(opID),
+		Group:      group,
 		HTTPMethod: strings.ToUpper(method),
 		SubPath:    subPath(path),
 		PathArgs:   pathArgs(path),

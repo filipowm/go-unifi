@@ -57,7 +57,7 @@ func TestGetInfo(t *testing.T) {
 	d := &fakeDoer{responses: map[string]any{base + "/info": Info{ApplicationVersion: "10.1.78"}}}
 	c := New(d, base, nil)
 
-	info, err := c.GetInfo(context.Background())
+	info, err := c.Info().Get(context.Background())
 	require.NoError(t, err)
 	assert.Equal(t, "10.1.78", info.ApplicationVersion)
 	assert.Equal(t, []string{base + "/info"}, d.calls)
@@ -69,11 +69,11 @@ func TestGateBlocksOperations(t *testing.T) {
 	d := &fakeDoer{}
 	c := New(d, base, func(context.Context) error { return sentinel })
 
-	_, err := c.GetInfo(context.Background())
+	_, err := c.Info().Get(context.Background())
 	require.ErrorIs(t, err, sentinel)
 	assert.Empty(t, d.calls, "gate must short-circuit before any transport call")
 
-	_, err = c.ListSites(context.Background())
+	_, err = c.Sites().List(context.Background())
 	require.ErrorIs(t, err, sentinel)
 }
 
@@ -103,7 +103,7 @@ func TestListSitesAutoPaginates(t *testing.T) {
 	}}
 	c := New(d, base, nil)
 
-	sites, err := c.ListSites(context.Background())
+	sites, err := c.Sites().List(context.Background())
 	require.NoError(t, err)
 	assert.Len(t, sites, 250)
 	// Two fetches: page 1 (200 items), page 2 (50 items, offset==totalCount -> stop).
@@ -120,18 +120,18 @@ func TestResolveSiteIDCachesByInternalReference(t *testing.T) {
 	}}
 	c := New(d, base, nil)
 
-	id, err := c.ResolveSiteID(context.Background(), "default")
+	id, err := c.Sites().ResolveID(context.Background(), "default")
 	require.NoError(t, err)
 	assert.Equal(t, "uuid-default", id)
 
 	// Second lookup is served from cache: no further transport call.
 	before := len(d.calls)
-	id2, err := c.ResolveSiteID(context.Background(), "other")
+	id2, err := c.Sites().ResolveID(context.Background(), "other")
 	require.NoError(t, err)
 	assert.Equal(t, "uuid-other", id2)
 	assert.Len(t, d.calls, before, "cached lookup must not hit transport again")
 
-	_, err = c.ResolveSiteID(context.Background(), "ghost")
+	_, err = c.Sites().ResolveID(context.Background(), "ghost")
 	require.Error(t, err)
 }
 
@@ -146,7 +146,7 @@ func TestResolveSiteIDNotFoundSentinel(t *testing.T) {
 	}}
 	c := New(d, base, nil)
 
-	_, err := c.ResolveSiteID(context.Background(), "ghost")
+	_, err := c.Sites().ResolveID(context.Background(), "ghost")
 	require.ErrorIs(t, err, ErrSiteNotFound, "not-found must be matchable with errors.Is")
 }
 
@@ -158,7 +158,7 @@ func TestGetInfoTransportError(t *testing.T) {
 	d := &fakeDoer{err: sentinel}
 	c := New(d, base, nil)
 
-	_, err := c.GetInfo(context.Background())
+	_, err := c.Info().Get(context.Background())
 	require.ErrorIs(t, err, sentinel)
 }
 
@@ -170,7 +170,7 @@ func TestListSitesTransportError(t *testing.T) {
 	d := &fakeDoer{err: sentinel}
 	c := New(d, base, nil)
 
-	_, err := c.ListSites(context.Background())
+	_, err := c.Sites().List(context.Background())
 	require.ErrorIs(t, err, sentinel)
 }
 
@@ -182,7 +182,7 @@ func TestResolveSiteIDTransportError(t *testing.T) {
 	d := &fakeDoer{err: sentinel}
 	c := New(d, base, nil)
 
-	_, err := c.ResolveSiteID(context.Background(), "default")
+	_, err := c.Sites().ResolveID(context.Background(), "default")
 	require.ErrorIs(t, err, sentinel)
 }
 
@@ -209,7 +209,7 @@ func TestListAllTerminatesOnEmptyPageWithHighTotalCount(t *testing.T) {
 	}}
 	c := New(d, base, nil)
 
-	sites, err := c.ListSites(context.Background())
+	sites, err := c.Sites().List(context.Background())
 	require.NoError(t, err)
 	assert.Len(t, sites, len(realData))
 	assert.Equal(t, 2, calls, "must stop after the empty page, not spin to totalCount")

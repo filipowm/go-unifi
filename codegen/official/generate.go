@@ -48,8 +48,9 @@ func GenerateAll(specPath, outDir, pkgName string) error {
 	return nil
 }
 
-// generateFiles renders every generated file from raw spec bytes:
-// models (oapi-codegen) + wrappers + client interface + mock. Disk-free so tests
+// generateFiles renders every generated file from raw spec bytes: models
+// (oapi-codegen) + the parent Client interface/mock + one file per resource group
+// (group interface, accessor, wrapper impls, per-group mock). Disk-free so tests
 // can assert determinism in-process.
 func generateFiles(raw []byte, pkgName string) ([]generatedFile, error) {
 	models, err := GenerateModels(raw, pkgName)
@@ -64,24 +65,26 @@ func generateFiles(raw []byte, pkgName string) ([]generatedFile, error) {
 	if err != nil {
 		return nil, fmt.Errorf("building operations: %w", err)
 	}
-	wrappers, err := generateWrappers(ops, pkgName)
+	groups, err := buildGroups(ops)
+	if err != nil {
+		return nil, fmt.Errorf("building groups: %w", err)
+	}
+	client, err := generateClient(groups, pkgName)
 	if err != nil {
 		return nil, err
 	}
-	client, err := generateClient(ops, pkgName)
-	if err != nil {
-		return nil, err
-	}
-	mock, err := generateMock(ops, pkgName)
-	if err != nil {
-		return nil, err
-	}
-	return []generatedFile{
+	files := []generatedFile{
 		{"models.generated.go", models},
-		{"wrappers.generated.go", wrappers},
 		{"client.generated.go", client},
-		{"client_mock.generated.go", mock},
-	}, nil
+	}
+	for _, g := range groups {
+		code, err := generateGroupFile(g, pkgName)
+		if err != nil {
+			return nil, fmt.Errorf("generating group %s: %w", g.Name, err)
+		}
+		files = append(files, generatedFile{g.file(), code})
+	}
+	return files, nil
 }
 
 // GenerateModels runs the transform and oapi-codegen against raw spec bytes,
