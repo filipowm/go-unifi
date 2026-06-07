@@ -38,7 +38,7 @@ func findOp(t *testing.T, ops []operation, name string) operation {
 // TestSurfaceMatchesCommitted byte-guards every generated surface file against
 // the committed copy — the in-repo mirror of the determinism gate.
 func TestSurfaceMatchesCommitted(t *testing.T) {
-	files, err := GenerateSurfaceFiles(loadSnapshot(t), defaultPackageName)
+	files, err := generateFiles(loadSnapshot(t), defaultPackageName)
 	require.NoError(t, err)
 	for _, f := range files {
 		want, err := os.ReadFile(filepath.Join(committedDir, f.name))
@@ -52,9 +52,9 @@ func TestSurfaceMatchesCommitted(t *testing.T) {
 // TestSurfaceDeterministic proves generation is byte-identical on re-run.
 func TestSurfaceDeterministic(t *testing.T) {
 	raw := loadSnapshot(t)
-	a, err := GenerateSurfaceFiles(raw, defaultPackageName)
+	a, err := generateFiles(raw, defaultPackageName)
 	require.NoError(t, err)
-	b, err := GenerateSurfaceFiles(raw, defaultPackageName)
+	b, err := generateFiles(raw, defaultPackageName)
 	require.NoError(t, err)
 	require.Equal(t, a, b, "two generations of the same snapshot must be identical")
 }

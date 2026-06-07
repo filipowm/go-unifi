@@ -21,8 +21,8 @@ const (
 	generatorVersion = "(devel)"
 )
 
-// surfaceFile names a generated file alongside its rendered source.
-type surfaceFile struct {
+// generatedFile names a generated file alongside its rendered source.
+type generatedFile struct {
 	name string
 	code string
 }
@@ -35,7 +35,7 @@ func GenerateAll(specPath, outDir, pkgName string) error {
 	if err != nil {
 		return fmt.Errorf("reading spec %s: %w", specPath, err)
 	}
-	files, err := GenerateSurfaceFiles(raw, pkgName)
+	files, err := generateFiles(raw, pkgName)
 	if err != nil {
 		return err
 	}
@@ -48,10 +48,10 @@ func GenerateAll(specPath, outDir, pkgName string) error {
 	return nil
 }
 
-// GenerateSurfaceFiles renders every Official-surface file from raw spec bytes:
+// generateFiles renders every generated file from raw spec bytes:
 // models (oapi-codegen) + wrappers + client interface + mock. Disk-free so tests
 // can assert determinism in-process.
-func GenerateSurfaceFiles(raw []byte, pkgName string) ([]surfaceFile, error) {
+func generateFiles(raw []byte, pkgName string) ([]generatedFile, error) {
 	models, err := GenerateModels(raw, pkgName)
 	if err != nil {
 		return nil, err
@@ -76,7 +76,7 @@ func GenerateSurfaceFiles(raw []byte, pkgName string) ([]surfaceFile, error) {
 	if err != nil {
 		return nil, err
 	}
-	return []surfaceFile{
+	return []generatedFile{
 		{"models.generated.go", models},
 		{"wrappers.generated.go", wrappers},
 		{"client.generated.go", client},
