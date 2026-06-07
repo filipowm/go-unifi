@@ -598,6 +598,8 @@ func newUOSFirmwareServer(t *testing.T, reportedVersion string) *httptest.Server
 // TestResolveInternalVersion_LatestClampedWhenAPIReportsUOS verifies that when the
 // firmware API reports a UOS-era version (> 9.5.21), resolveInternalVersion clamps
 // to maxInternalVersion (9.5.21) — the classic controller is EOL past that point.
+// Critically, the clamp re-invokes ByVersionMarker("9.5.21") so the returned
+// DownloadUrl points to the 9.5.21 .deb, not the UOS package.
 func TestResolveInternalVersion_LatestClampedWhenAPIReportsUOS(t *testing.T) {
 	t.Parallel()
 
@@ -608,6 +610,8 @@ func TestResolveInternalVersion_LatestClampedWhenAPIReportsUOS(t *testing.T) {
 	got, err := resolveInternalVersion(p, LatestVersionMarker)
 	require.NoError(t, err)
 	assert.Equal(t, maxInternalVersion.String(), got.Version.String())
+	// Verify the download URL was resolved for 9.5.21, not the UOS (10.x) package.
+	assert.Equal(t, fmt.Sprintf(baseDownloadUrl, maxInternalVersion.String()), got.DownloadUrl.String())
 }
 
 // TestResolveInternalVersion_LatestBelowCapPassthrough verifies that when the
@@ -673,6 +677,44 @@ func TestResolveInternalVersion_ExplicitMuchNewerFails(t *testing.T) {
 	require.Error(t, err)
 	require.ErrorContains(t, err, "11.0.0")
 	require.ErrorContains(t, err, maxInternalVersion.String())
+}
+
+// TestResolveInternalVersion_PrereleaseAtCapAllowed verifies that a prerelease suffix
+// on an otherwise-allowed version (e.g. 9.5.21-rc1) passes the cap check — Core()
+// strips the pre-release tag so the effective version equals maxInternalVersion.
+func TestResolveInternalVersion_PrereleaseAtCapAllowed(t *testing.T) {
+	t.Parallel()
+
+	p := NewUnifiVersionProvider(defaultFirmwareUpdateApi)
+	got, err := resolveInternalVersion(p, "9.5.21-rc1")
+	require.NoError(t, err)
+	assert.Equal(t, "9.5.21", got.Version.String())
+}
+
+// TestResolveInternalVersion_BuildMetaAtCapAllowed verifies that build metadata
+// (e.g. 9.5.21+ci) on an otherwise-allowed version passes the cap check — Core()
+// strips build metadata so the effective version equals maxInternalVersion.
+func TestResolveInternalVersion_BuildMetaAtCapAllowed(t *testing.T) {
+	t.Parallel()
+
+	p := NewUnifiVersionProvider(defaultFirmwareUpdateApi)
+	got, err := resolveInternalVersion(p, "9.5.21+ci")
+	require.NoError(t, err)
+	assert.Equal(t, "9.5.21", got.Version.String())
+}
+
+// TestResolveInternalVersion_PostEOLPrereleaseStillFails verifies that a post-EOL
+// version with a prerelease suffix (e.g. 10.0.0-beta) still fails loud — Core()
+// strips the pre-release tag but 10.0.0 > maxInternalVersion, so the cap fires.
+func TestResolveInternalVersion_PostEOLPrereleaseStillFails(t *testing.T) {
+	t.Parallel()
+
+	p := NewUnifiVersionProvider(defaultFirmwareUpdateApi)
+	_, err := resolveInternalVersion(p, "10.0.0-beta")
+	require.Error(t, err)
+	require.ErrorContains(t, err, "10.0.0")
+	require.ErrorContains(t, err, maxInternalVersion.String())
+	require.ErrorContains(t, err, "end-of-life")
 }
 
 // TestResolveInternalVersion_OfficialPathUnaffected verifies that resolveOfficialSpecVersion
