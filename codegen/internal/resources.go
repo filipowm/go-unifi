@@ -1,4 +1,4 @@
-package main
+package internal
 
 import (
 	_ "embed"
@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/filipowm/go-unifi/codegen/shared"
 	"github.com/iancoleman/strcase"
 )
 
@@ -143,7 +144,7 @@ type Resource struct {
 	// collision warnings). It is injected by buildResourcesFromDownloadedFields;
 	// when nil (e.g. a Resource built directly in a test), log() falls back to
 	// the package-global logger.
-	logger Logger
+	logger shared.Logger
 }
 
 func NewResource(structName string, resourcePath string) *Resource {
@@ -262,7 +263,7 @@ func (r *Resource) GenerateCode() (string, error) {
 // log returns the resource's injected logger, or the package-global fallback
 // when none was set. Keeping access behind this accessor lets directly-built
 // Resource values (tests) log without panicking on a nil field.
-func (r *Resource) log() Logger {
+func (r *Resource) log() shared.Logger {
 	return orDefaultLogger(r.logger)
 }
 
@@ -509,7 +510,7 @@ func normalizeValidation(re string) string {
 
 var skippable = []string{"AuthenticationRequest.json", "Setting.json", "Wall.json"}
 
-func buildResourcesFromDownloadedFields(fieldsDir string, customizer CodeCustomizer, v2 bool, logger Logger) ([]*Resource, error) {
+func buildResourcesFromDownloadedFields(fieldsDir string, customizer CodeCustomizer, v2 bool, logger shared.Logger) ([]*Resource, error) {
 	logger = orDefaultLogger(logger)
 	fieldsFiles, err := os.ReadDir(fieldsDir)
 	if err != nil {
@@ -570,7 +571,7 @@ func buildResourcesFromDownloadedFields(fieldsDir string, customizer CodeCustomi
 	return resources, nil
 }
 
-func buildCustomResources(dir string, customizer CodeCustomizer, v2 bool, logger Logger) ([]*Resource, error) {
+func buildCustomResources(dir string, customizer CodeCustomizer, v2 bool, logger shared.Logger) ([]*Resource, error) {
 	return buildResourcesFromDownloadedFields(dir, customizer, v2, logger)
 }
 

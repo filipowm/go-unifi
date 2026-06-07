@@ -1,4 +1,4 @@
-package main
+package internal //nolint:testpackage // tests access unexported symbols
 
 import (
 	"os"

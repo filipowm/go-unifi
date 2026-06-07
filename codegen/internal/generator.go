@@ -1,4 +1,4 @@
-package main
+package internal
 
 import (
 	"bytes"
@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"text/template"
 
+	"github.com/filipowm/go-unifi/codegen/shared"
 	"github.com/iancoleman/strcase"
 )
 
@@ -59,11 +60,11 @@ func generateCodeFromTemplate(templateName, templateContent string, toWrite any)
 // findCodegenDir at runtime, so generation is unit-testable against a fixture
 // without the real repo layout. logger receives all pipeline output;
 // when nil it falls back to the package-global logger.
-func generateCode(fieldsDir, v2BaseDir, outDir string, customizer CodeCustomizer, logger Logger) error {
+func generateCode(fieldsDir, v2BaseDir, outDir string, customizer CodeCustomizer, logger shared.Logger) error {
 	logger = orDefaultLogger(logger)
 	customizer.logger = logger
 
-	if _, err := ensurePath(outDir); err != nil {
+	if _, err := shared.EnsurePath(outDir); err != nil {
 		return fmt.Errorf("unable to create output directory %s: %w", outDir, err)
 	}
 
@@ -109,7 +110,7 @@ func generateCode(fieldsDir, v2BaseDir, outDir string, customizer CodeCustomizer
 // point was dead work — processJSON has already run, so the re-wrapped processor
 // would never be invoked again, and resourcePath would be re-set to the same
 // value.
-func collectResourceGenerators(resources []*Resource, customizer CodeCustomizer, logger Logger) []Generatable {
+func collectResourceGenerators(resources []*Resource, customizer CodeCustomizer, logger shared.Logger) []Generatable {
 	logger = orDefaultLogger(logger)
 	cb := NewClientInfoBuilder()
 	customizer.ApplyToClient(cb)

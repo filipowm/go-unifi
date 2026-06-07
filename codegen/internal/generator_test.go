@@ -1,4 +1,4 @@
-package main
+package internal //nolint:testpackage // tests access unexported symbols
 
 import (
 	"os"
@@ -26,7 +26,7 @@ func TestGenerateCodeFromTemplate(t *testing.T) {
 		{
 			name:         "valid template",
 			templateName: "simple",
-			template: `package main
+			template: `package internal //nolint:testpackage // tests access unexported symbols
 
 const greeting = "{{.Greeting}}"`,
 			data:         struct{ Greeting string }{Greeting: "hello"},
@@ -50,7 +50,7 @@ const greeting = "{{.Greeting}}"`,
 		{
 			name:         "complex template",
 			templateName: "complex",
-			template: `package main
+			template: `package internal //nolint:testpackage // tests access unexported symbols
 
 type {{.TypeName}} struct {
 	{{range .Fields}}

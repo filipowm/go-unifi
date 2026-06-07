@@ -2,14 +2,34 @@
 
 Generates `../unifi/*.generated.go` from the controller's API definitions. Run via `go generate unifi/codegen.go`.
 
-**Never edit `*.generated.go`.** Fix the source — `customizations.yml`, the version JSON, or a `*.tmpl` — and regenerate. For behavior, add a sibling `../unifi/<resource>.go`.
+**Never edit `*.generated.go`.** Fix the source — `codegen/internal/customizations.yml`, the version JSON, or a `*.tmpl` — and regenerate. For behavior, add a sibling `../unifi/<resource>.go`.
+
+## Package layout
+
+```
+codegen/                Root orchestration (package main): version resolution, downloading,
+                        Official-API pass handoff, version.generated.go + both marker files.
+codegen/shared/         Shared utilities: Logger interface, EnsurePath/FindProjectRoot/FindCodegenDir,
+                        CopyWithLimit. Imported by both root and internal.
+codegen/internal/       Internal-API generation engine. Exposes internal.Generate() as the single
+                        entry point. Holds customizations.yml, api.go.tmpl, apiv2.go.tmpl,
+                        client.go.tmpl, common.tmpl, download.go, resources.go, customize.go,
+                        generator.go, clients.go.
+codegen/official/       Separate go.mod module: Official OpenAPI surface generator (standalone).
+```
+
+**Root orchestrates, internal generates.** `main.go`'s `generate()` calls `internal.Generate(structuresDir, v2BaseDir, outDir, customizer, logger)` for the Internal-API pass (resources + client interface only — **NOT version.generated.go**), then shells out to `codegen/official` for the Official-API pass. **Root writes version.generated.go** (both `UnifiVersion` and `OfficialAPIVersion` constants) **plus both markers** (`.unifi-version`, `.unifi-version-official`) via `writeVersionArtifacts`.
 
 ## Two surfaces, one `go generate`
 
-`generate()` (`main.go`) runs two passes; both read **committed snapshots offline** (no network in CI):
+`generate()` runs two passes; both read **committed snapshots offline** (no network in CI):
 
-1. **Internal** (`download.go`→`resources.go`→`customize.go`→`generator.go`) — controller field JSONs → `<resource>.generated.go` + `version.generated.go` + `.unifi-version`. Steps: JSON→Resource, infer Go types from validation regexes, snake→Camel (`fieldReps`), apply `customizations.yml`, render `api.go.tmpl`/`apiv2.go.tmpl`.
+1. **Internal** (`internal/download.go`→`internal/resources.go`→`internal/customize.go`→`internal/generator.go`) — controller field JSONs → `<resource>.generated.go` + `client.generated.go`. Steps: JSON→Resource, infer Go types from validation regexes, snake→Camel (`fieldReps`), apply `internal/customizations.yml`, render `api.go.tmpl`/`apiv2.go.tmpl`.
 2. **Official** (`codegen/official/`, a **separate Go module** shelled out via `os/exec` from `official_pass.go`) — committed OpenAPI snapshot → the whole `unifi/official/` surface. The separate module keeps `oapi-codegen`/`kin-openapi` out of the root `go.mod`.
+
+**Client interface split** (`internal/client.go.tmpl` + `internal/clients.go`): renders `InternalClient` (resource CRUD) and `Client` (embeds it + transport/lifecycle fns + hand-written `Internal()`/`Official()`), split on `ClientFunction.ResourceName()`. After changing it, regenerate `client.generated.go` **and** `client_mock.generated.go` (offline moq — see `unifi/mock.go`).
+
+**Customizations file** lives at `codegen/internal/customizations.yml` (embedded in the binary). Edit it there to override field types, add query params, exclude resources, or declare extra client functions. The default embed path is `"customizations.yml"` (matched by `NewCodeCustomizer("")`); pass an explicit path for tests.
 
 **Client interface split** (`client.go.tmpl`): `InternalClient` (resource CRUD) + `Client` (transport/lifecycle + hand-written `Internal()`/`Official()`). After changing it, regenerate `client.generated.go` **and** `client_mock.generated.go` (offline moq — see `unifi/mock.go`).
 
