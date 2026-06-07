@@ -28,9 +28,6 @@ type Doer interface {
 // every operation and its error (unavailable/disabled) is returned verbatim.
 type Gate func(ctx context.Context) error
 
-// Client is the Official UniFi OpenAPI surface; its interface and mock are
-// generated in client.generated.go / client_mock.generated.go from the spec.
-
 // apiClient is the default Client implementation bound to an injected Doer.
 type apiClient struct {
 	doer     Doer
