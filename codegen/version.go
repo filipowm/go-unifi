@@ -187,5 +187,9 @@ const OfficialAPIVersion = %q
 // trailing newline) to outDir/filename — used for both .unifi-version (Internal)
 // and .unifi-version-official (Official).
 func writeVersionMarker(version *version.Version, outDir, filename string) error {
-	return os.WriteFile(filepath.Join(outDir, filename), []byte(version.Core().String()), 0o644) //nolint:gosec
+	path := filepath.Join(outDir, filename)
+	if err := os.WriteFile(path, []byte(version.Core().String()), 0o644); err != nil { //nolint:gosec
+		return fmt.Errorf("write version marker %s: %w", path, err)
+	}
+	return nil
 }
