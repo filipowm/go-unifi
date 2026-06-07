@@ -12,10 +12,10 @@ import (
 type ClientsClient interface {
 	// ExecuteConnectedAction maps to POST /v1/sites/%s/clients/%s/actions on the Official API.
 	ExecuteConnectedAction(ctx context.Context, siteId string, clientId string, body ClientActionRequest) (*ClientActionResponse, error)
-	// GetConnectedDetails maps to GET /v1/sites/%s/clients/%s on the Official API.
-	GetConnectedDetails(ctx context.Context, siteId string, clientId string) (*ClientDetails, error)
-	// GetConnectedOverviewPage maps to GET /v1/sites/%s/clients on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
-	GetConnectedOverviewPage(ctx context.Context, siteId string) ([]ClientOverview, error)
+	// GetConnected maps to GET /v1/sites/%s/clients/%s on the Official API.
+	GetConnected(ctx context.Context, siteId string, clientId string) (*ClientDetails, error)
+	// ListConnected maps to GET /v1/sites/%s/clients on the Official API. Without options it auto-paginates the whole collection; pass WithOffset/WithLimit for a single bounded page or WithFilter to filter server-side.
+	ListConnected(ctx context.Context, siteId string, opts ...ListOption) ([]ClientOverview, error)
 }
 
 // clientsClient wraps the shared apiClient so transport, gate and site cache stay single-sourced.
@@ -40,26 +40,26 @@ func (c clientsClient) ExecuteConnectedAction(ctx context.Context, siteId string
 	return &out, nil
 }
 
-// GetConnectedDetails maps to GET /v1/sites/%s/clients/%s on the Official API.
-func (c clientsClient) GetConnectedDetails(ctx context.Context, siteId string, clientId string) (*ClientDetails, error) {
+// GetConnected maps to GET /v1/sites/%s/clients/%s on the Official API.
+func (c clientsClient) GetConnected(ctx context.Context, siteId string, clientId string) (*ClientDetails, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
 	}
 	var out ClientDetails
 	if err := c.doer.Get(ctx, c.path(fmt.Sprintf("/sites/%s/clients/%s", url.PathEscape(siteId), url.PathEscape(clientId))), nil, &out); err != nil {
-		return nil, fmt.Errorf("failed GetConnectedDetails: %w", err)
+		return nil, fmt.Errorf("failed GetConnected: %w", err)
 	}
 	return &out, nil
 }
 
-// GetConnectedOverviewPage maps to GET /v1/sites/%s/clients on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
-func (c clientsClient) GetConnectedOverviewPage(ctx context.Context, siteId string) ([]ClientOverview, error) {
+// ListConnected maps to GET /v1/sites/%s/clients on the Official API. Without options it auto-paginates the whole collection; pass WithOffset/WithLimit for a single bounded page or WithFilter to filter server-side.
+func (c clientsClient) ListConnected(ctx context.Context, siteId string, opts ...ListOption) ([]ClientOverview, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
 	}
 	var out []ClientOverview
-	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/clients", url.PathEscape(siteId))), &out); err != nil {
-		return nil, fmt.Errorf("failed GetConnectedOverviewPage: %w", err)
+	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/clients", url.PathEscape(siteId))), &out, opts...); err != nil {
+		return nil, fmt.Errorf("failed ListConnected: %w", err)
 	}
 	return out, nil
 }
@@ -67,9 +67,9 @@ func (c clientsClient) GetConnectedOverviewPage(ctx context.Context, siteId stri
 // ClientsClientMock is a func-field test double implementing ClientsClient. A nil field
 // panics on call, surfacing an un-stubbed method in tests.
 type ClientsClientMock struct {
-	ExecuteConnectedActionFunc   func(context.Context, string, string, ClientActionRequest) (*ClientActionResponse, error)
-	GetConnectedDetailsFunc      func(context.Context, string, string) (*ClientDetails, error)
-	GetConnectedOverviewPageFunc func(context.Context, string) ([]ClientOverview, error)
+	ExecuteConnectedActionFunc func(context.Context, string, string, ClientActionRequest) (*ClientActionResponse, error)
+	GetConnectedFunc           func(context.Context, string, string) (*ClientDetails, error)
+	ListConnectedFunc          func(context.Context, string, ...ListOption) ([]ClientOverview, error)
 }
 
 var _ ClientsClient = (*ClientsClientMock)(nil)
@@ -78,10 +78,10 @@ func (m *ClientsClientMock) ExecuteConnectedAction(ctx context.Context, siteId s
 	return m.ExecuteConnectedActionFunc(ctx, siteId, clientId, body)
 }
 
-func (m *ClientsClientMock) GetConnectedDetails(ctx context.Context, siteId string, clientId string) (*ClientDetails, error) {
-	return m.GetConnectedDetailsFunc(ctx, siteId, clientId)
+func (m *ClientsClientMock) GetConnected(ctx context.Context, siteId string, clientId string) (*ClientDetails, error) {
+	return m.GetConnectedFunc(ctx, siteId, clientId)
 }
 
-func (m *ClientsClientMock) GetConnectedOverviewPage(ctx context.Context, siteId string) ([]ClientOverview, error) {
-	return m.GetConnectedOverviewPageFunc(ctx, siteId)
+func (m *ClientsClientMock) ListConnected(ctx context.Context, siteId string, opts ...ListOption) ([]ClientOverview, error) {
+	return m.ListConnectedFunc(ctx, siteId, opts...)
 }

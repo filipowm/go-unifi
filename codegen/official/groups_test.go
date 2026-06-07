@@ -10,14 +10,14 @@ import (
 func TestGroupName(t *testing.T) {
 	t.Parallel()
 	cases := map[string]string{
-		"Firewall":                   "Firewall",  // as-is
-		"Networks":                   "Networks",  // as-is
-		"Clients":                    "Clients",   // as-is
-		"Sites":                      "Sites",     // as-is
-		"Hotspot":                    "Hotspot",   // as-is
-		"UniFi Devices":              "Devices",   // override
-		"DNS Policies":               "DNSPolicies",      // override: plural collection
-		"Access Control (ACL Rules)": "ACLs",            // override: plural collection
+		"Firewall":                   "Firewall",             // as-is
+		"Networks":                   "Networks",             // as-is
+		"Clients":                    "Clients",              // as-is
+		"Sites":                      "Sites",                // as-is
+		"Hotspot":                    "Hotspot",              // as-is
+		"UniFi Devices":              "Devices",              // override
+		"DNS Policies":               "DNSPolicies",          // override: plural collection
+		"Access Control (ACL Rules)": "ACLs",                 // override: plural collection
 		"Traffic Matching Lists":     "TrafficMatchingLists", // override: plural collection
 		"WiFi Broadcasts":            "WifiBroadcasts",
 		"Supporting Resources":       "Supporting",
@@ -32,29 +32,43 @@ func TestGroupName(t *testing.T) {
 
 func TestMethodName(t *testing.T) {
 	t.Parallel()
-	cases := []struct{ group, op, want string }{
-		{"Firewall", "CreateFirewallPolicy", "CreatePolicy"},
-		{"Firewall", "GetFirewallPolicyOrdering", "GetPolicyOrdering"},
-		{"Firewall", "GetFirewallZones", "GetZones"},
-		{"Devices", "AdoptDevice", "Adopt"},
-		{"Devices", "GetAdoptedDeviceOverviewPage", "GetAdoptedOverviewPage"},
-		{"Devices", "ExecutePortAction", "ExecutePortAction"}, // no Device token
-		{"Networks", "GetNetworksOverviewPage", "GetOverviewPage"},
-		{"DNSPolicies", "CreateDnsPolicy", "Create"},
-		{"DNSPolicies", "GetDnsPolicy", "Get"},
-		{"DNSPolicies", "GetDnsPolicyPage", "GetPage"},
-		{"ACLs", "CreateAclRule", "CreateRule"},
-		{"ACLs", "GetAclRulePage", "GetRulePage"},
-		{"ACLs", "GetAclRuleOrdering", "GetRuleOrdering"},
-		{"TrafficMatchingLists", "CreateTrafficMatchingList", "Create"},
-		{"TrafficMatchingLists", "GetTrafficMatchingList", "Get"},
-		{"TrafficMatchingLists", "GetTrafficMatchingLists", "GetLists"},
-		{"WifiBroadcasts", "GetWifiBroadcastPage", "GetPage"},
-		{"Hotspot", "GetVouchers", "GetVouchers"},              // no stem token
-		{"Supporting", "GetDeviceTagPage", "GetDeviceTagPage"}, // "Device" kept: not Supporting's stem
+	// item != "" marks a list op (List<Qualifier>); a GET with no item is a
+	// single read (a trailing Details qualifier is dropped); other verbs pass
+	// through after stem stripping.
+	cases := []struct{ group, op, method, item, want string }{
+		{"Firewall", "CreateFirewallPolicy", "POST", "", "CreatePolicy"},
+		{"Firewall", "GetFirewallPolicyOrdering", "GET", "", "GetPolicyOrdering"},
+		{"Firewall", "GetFirewallZones", "GET", "FirewallZone", "ListZones"},
+		{"Firewall", "GetFirewallPolicies", "GET", "FirewallPolicy", "ListPolicies"},
+		{"Firewall", "GetFirewallPolicy", "GET", "", "GetPolicy"},
+		{"Firewall", "GetFirewallZone", "GET", "", "GetZone"},
+		{"Devices", "AdoptDevice", "POST", "", "Adopt"},
+		{"Devices", "GetAdoptedDeviceOverviewPage", "GET", "AdoptedDeviceOverview", "ListAdopted"},
+		{"Devices", "GetAdoptedDeviceDetails", "GET", "", "GetAdopted"},
+		{"Devices", "GetPendingDevicePage", "GET", "DevicePendingAdoption", "ListPending"},
+		{"Devices", "ExecutePortAction", "POST", "", "ExecutePortAction"}, // no Device token
+		{"Networks", "GetNetworksOverviewPage", "GET", "NetworkOverview", "List"},
+		{"Networks", "GetNetworkDetails", "GET", "", "Get"},
+		{"Networks", "GetNetworkReferences", "GET", "", "GetReferences"},
+		{"DNSPolicies", "CreateDnsPolicy", "POST", "", "Create"},
+		{"DNSPolicies", "GetDnsPolicy", "GET", "", "Get"},
+		{"DNSPolicies", "GetDnsPolicyPage", "GET", "DNSPolicy", "List"},
+		{"ACLs", "CreateAclRule", "POST", "", "CreateRule"},
+		{"ACLs", "GetAclRulePage", "GET", "ACLRuleObject", "ListRule"},
+		{"ACLs", "GetAclRuleOrdering", "GET", "", "GetRuleOrdering"},
+		{"ACLs", "GetAclRule", "GET", "", "GetRule"},
+		{"TrafficMatchingLists", "CreateTrafficMatchingList", "POST", "", "Create"},
+		{"TrafficMatchingLists", "GetTrafficMatchingList", "GET", "", "Get"},
+		{"TrafficMatchingLists", "GetTrafficMatchingLists", "GET", "TrafficMatchingList", "List"},
+		{"WifiBroadcasts", "GetWifiBroadcastPage", "GET", "WifiBroadcastOverview", "List"},
+		{"WifiBroadcasts", "GetWifiBroadcastDetails", "GET", "", "Get"},
+		{"Hotspot", "GetVouchers", "GET", "HotspotVoucherDetails", "ListVouchers"}, // no stem token
+		{"Hotspot", "GetVoucher", "GET", "", "GetVoucher"},
+		{"Supporting", "GetDeviceTagPage", "GET", "DeviceTag", "ListDeviceTag"}, // "Device" kept: not Supporting's stem
 	}
 	for _, c := range cases {
-		assert.Equalf(t, c.want, methodName(c.group, c.op), "methodName(%q, %q)", c.group, c.op)
+		op := operation{Group: c.group, Name: c.op, HTTPMethod: c.method, ItemType: c.item}
+		assert.Equalf(t, c.want, methodName(op), "methodName(%q, %q)", c.group, c.op)
 	}
 }
 

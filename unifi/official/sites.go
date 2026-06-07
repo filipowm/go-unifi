@@ -19,13 +19,15 @@ type SiteOverview struct {
 	Name              string `json:"name"`
 }
 
-// List returns all local sites, auto-paginating the list envelope.
-func (c sitesClient) List(ctx context.Context) ([]SiteOverview, error) {
+// List returns local sites; without options it auto-paginates, else
+// WithOffset/WithLimit fetch a single bounded page and WithFilter filters
+// server-side.
+func (c sitesClient) List(ctx context.Context, opts ...ListOption) ([]SiteOverview, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
 	}
 	var sites []SiteOverview
-	if err := listAll(ctx, c.doer, c.path("/sites"), &sites); err != nil {
+	if err := listAll(ctx, c.doer, c.path("/sites"), &sites, opts...); err != nil {
 		return nil, fmt.Errorf("failed listing sites: %w", err)
 	}
 	return sites, nil

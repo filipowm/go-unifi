@@ -215,6 +215,38 @@ func TestListAllTerminatesOnEmptyPageWithHighTotalCount(t *testing.T) {
 	assert.Equal(t, 2, calls, "must stop after the empty page, not spin to totalCount")
 }
 
+// TestListForwardsFilterAcrossPages asserts WithFilter is sent on the
+// auto-paginated request path — the filter param that used to be dropped.
+func TestListForwardsFilterAcrossPages(t *testing.T) {
+	t.Parallel()
+	var urls []string
+	d := &pagingDoer{fn: func(apiPath string, respBody any) error {
+		urls = append(urls, apiPath)
+		return encode(sitePage(0, 1, []SiteOverview{{ID: "u", InternalReference: "r", Name: "n"}}), respBody)
+	}}
+	c := New(d, base, nil)
+
+	sites, err := c.Sites().List(context.Background(), WithFilter("name.eq('n')"))
+	require.NoError(t, err)
+	require.Len(t, sites, 1)
+	require.NotEmpty(t, urls)
+	for _, u := range urls {
+		assert.Contains(t, u, "filter=name.eq")
+	}
+}
+
+// TestBoundedListPropagatesTransportError asserts a single-page (bounded) read
+// wraps and propagates the transport error like the drain-all path.
+func TestBoundedListPropagatesTransportError(t *testing.T) {
+	t.Parallel()
+	sentinel := errors.New("boom")
+	d := &pagingDoer{fn: func(string, any) error { return sentinel }}
+	c := New(d, base, nil)
+
+	_, err := c.Sites().List(context.Background(), WithLimit(10))
+	require.ErrorIs(t, err, sentinel)
+}
+
 // pagingDoer drives ListSites pagination through a custom per-call function.
 type pagingDoer struct {
 	fn func(apiPath string, respBody any) error

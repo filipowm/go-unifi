@@ -14,12 +14,12 @@ type NetworksClient interface {
 	Create(ctx context.Context, siteId string, body NetworkCreateOrUpdate) (*NetworkDetails, error)
 	// Delete maps to DELETE /v1/sites/%s/networks/%s on the Official API.
 	Delete(ctx context.Context, siteId string, networkId string) error
-	// GetDetails maps to GET /v1/sites/%s/networks/%s on the Official API.
-	GetDetails(ctx context.Context, siteId string, networkId string) (*NetworkDetails, error)
-	// GetOverviewPage maps to GET /v1/sites/%s/networks on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
-	GetOverviewPage(ctx context.Context, siteId string) ([]NetworkOverview, error)
+	// Get maps to GET /v1/sites/%s/networks/%s on the Official API.
+	Get(ctx context.Context, siteId string, networkId string) (*NetworkDetails, error)
 	// GetReferences maps to GET /v1/sites/%s/networks/%s/references on the Official API.
 	GetReferences(ctx context.Context, siteId string, networkId string) (*NetworkReferences, error)
+	// List maps to GET /v1/sites/%s/networks on the Official API. Without options it auto-paginates the whole collection; pass WithOffset/WithLimit for a single bounded page or WithFilter to filter server-side.
+	List(ctx context.Context, siteId string, opts ...ListOption) ([]NetworkOverview, error)
 	// Update maps to PUT /v1/sites/%s/networks/%s on the Official API.
 	Update(ctx context.Context, siteId string, networkId string, body NetworkCreateOrUpdate) (*NetworkDetails, error)
 }
@@ -57,28 +57,16 @@ func (c networksClient) Delete(ctx context.Context, siteId string, networkId str
 	return nil
 }
 
-// GetDetails maps to GET /v1/sites/%s/networks/%s on the Official API.
-func (c networksClient) GetDetails(ctx context.Context, siteId string, networkId string) (*NetworkDetails, error) {
+// Get maps to GET /v1/sites/%s/networks/%s on the Official API.
+func (c networksClient) Get(ctx context.Context, siteId string, networkId string) (*NetworkDetails, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
 	}
 	var out NetworkDetails
 	if err := c.doer.Get(ctx, c.path(fmt.Sprintf("/sites/%s/networks/%s", url.PathEscape(siteId), url.PathEscape(networkId))), nil, &out); err != nil {
-		return nil, fmt.Errorf("failed GetDetails: %w", err)
+		return nil, fmt.Errorf("failed Get: %w", err)
 	}
 	return &out, nil
-}
-
-// GetOverviewPage maps to GET /v1/sites/%s/networks on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
-func (c networksClient) GetOverviewPage(ctx context.Context, siteId string) ([]NetworkOverview, error) {
-	if err := c.check(ctx); err != nil {
-		return nil, err
-	}
-	var out []NetworkOverview
-	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/networks", url.PathEscape(siteId))), &out); err != nil {
-		return nil, fmt.Errorf("failed GetOverviewPage: %w", err)
-	}
-	return out, nil
 }
 
 // GetReferences maps to GET /v1/sites/%s/networks/%s/references on the Official API.
@@ -91,6 +79,18 @@ func (c networksClient) GetReferences(ctx context.Context, siteId string, networ
 		return nil, fmt.Errorf("failed GetReferences: %w", err)
 	}
 	return &out, nil
+}
+
+// List maps to GET /v1/sites/%s/networks on the Official API. Without options it auto-paginates the whole collection; pass WithOffset/WithLimit for a single bounded page or WithFilter to filter server-side.
+func (c networksClient) List(ctx context.Context, siteId string, opts ...ListOption) ([]NetworkOverview, error) {
+	if err := c.check(ctx); err != nil {
+		return nil, err
+	}
+	var out []NetworkOverview
+	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/networks", url.PathEscape(siteId))), &out, opts...); err != nil {
+		return nil, fmt.Errorf("failed List: %w", err)
+	}
+	return out, nil
 }
 
 // Update maps to PUT /v1/sites/%s/networks/%s on the Official API.
@@ -108,12 +108,12 @@ func (c networksClient) Update(ctx context.Context, siteId string, networkId str
 // NetworksClientMock is a func-field test double implementing NetworksClient. A nil field
 // panics on call, surfacing an un-stubbed method in tests.
 type NetworksClientMock struct {
-	CreateFunc          func(context.Context, string, NetworkCreateOrUpdate) (*NetworkDetails, error)
-	DeleteFunc          func(context.Context, string, string) error
-	GetDetailsFunc      func(context.Context, string, string) (*NetworkDetails, error)
-	GetOverviewPageFunc func(context.Context, string) ([]NetworkOverview, error)
-	GetReferencesFunc   func(context.Context, string, string) (*NetworkReferences, error)
-	UpdateFunc          func(context.Context, string, string, NetworkCreateOrUpdate) (*NetworkDetails, error)
+	CreateFunc        func(context.Context, string, NetworkCreateOrUpdate) (*NetworkDetails, error)
+	DeleteFunc        func(context.Context, string, string) error
+	GetFunc           func(context.Context, string, string) (*NetworkDetails, error)
+	GetReferencesFunc func(context.Context, string, string) (*NetworkReferences, error)
+	ListFunc          func(context.Context, string, ...ListOption) ([]NetworkOverview, error)
+	UpdateFunc        func(context.Context, string, string, NetworkCreateOrUpdate) (*NetworkDetails, error)
 }
 
 var _ NetworksClient = (*NetworksClientMock)(nil)
@@ -126,16 +126,16 @@ func (m *NetworksClientMock) Delete(ctx context.Context, siteId string, networkI
 	return m.DeleteFunc(ctx, siteId, networkId)
 }
 
-func (m *NetworksClientMock) GetDetails(ctx context.Context, siteId string, networkId string) (*NetworkDetails, error) {
-	return m.GetDetailsFunc(ctx, siteId, networkId)
-}
-
-func (m *NetworksClientMock) GetOverviewPage(ctx context.Context, siteId string) ([]NetworkOverview, error) {
-	return m.GetOverviewPageFunc(ctx, siteId)
+func (m *NetworksClientMock) Get(ctx context.Context, siteId string, networkId string) (*NetworkDetails, error) {
+	return m.GetFunc(ctx, siteId, networkId)
 }
 
 func (m *NetworksClientMock) GetReferences(ctx context.Context, siteId string, networkId string) (*NetworkReferences, error) {
 	return m.GetReferencesFunc(ctx, siteId, networkId)
+}
+
+func (m *NetworksClientMock) List(ctx context.Context, siteId string, opts ...ListOption) ([]NetworkOverview, error) {
+	return m.ListFunc(ctx, siteId, opts...)
 }
 
 func (m *NetworksClientMock) Update(ctx context.Context, siteId string, networkId string, body NetworkCreateOrUpdate) (*NetworkDetails, error) {

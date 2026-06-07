@@ -16,8 +16,8 @@ type DNSPoliciesClient interface {
 	Delete(ctx context.Context, siteId string, dnsPolicyId string) error
 	// Get maps to GET /v1/sites/%s/dns/policies/%s on the Official API.
 	Get(ctx context.Context, siteId string, dnsPolicyId string) (*DNSPolicy, error)
-	// GetPage maps to GET /v1/sites/%s/dns/policies on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
-	GetPage(ctx context.Context, siteId string) ([]DNSPolicy, error)
+	// List maps to GET /v1/sites/%s/dns/policies on the Official API. Without options it auto-paginates the whole collection; pass WithOffset/WithLimit for a single bounded page or WithFilter to filter server-side.
+	List(ctx context.Context, siteId string, opts ...ListOption) ([]DNSPolicy, error)
 	// Update maps to PUT /v1/sites/%s/dns/policies/%s on the Official API.
 	Update(ctx context.Context, siteId string, dnsPolicyId string, body DNSPolicyCreateOrUpdate) (*DNSPolicy, error)
 }
@@ -67,14 +67,14 @@ func (c dNSPoliciesClient) Get(ctx context.Context, siteId string, dnsPolicyId s
 	return &out, nil
 }
 
-// GetPage maps to GET /v1/sites/%s/dns/policies on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
-func (c dNSPoliciesClient) GetPage(ctx context.Context, siteId string) ([]DNSPolicy, error) {
+// List maps to GET /v1/sites/%s/dns/policies on the Official API. Without options it auto-paginates the whole collection; pass WithOffset/WithLimit for a single bounded page or WithFilter to filter server-side.
+func (c dNSPoliciesClient) List(ctx context.Context, siteId string, opts ...ListOption) ([]DNSPolicy, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
 	}
 	var out []DNSPolicy
-	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/dns/policies", url.PathEscape(siteId))), &out); err != nil {
-		return nil, fmt.Errorf("failed GetPage: %w", err)
+	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/dns/policies", url.PathEscape(siteId))), &out, opts...); err != nil {
+		return nil, fmt.Errorf("failed List: %w", err)
 	}
 	return out, nil
 }
@@ -94,11 +94,11 @@ func (c dNSPoliciesClient) Update(ctx context.Context, siteId string, dnsPolicyI
 // DNSPoliciesClientMock is a func-field test double implementing DNSPoliciesClient. A nil field
 // panics on call, surfacing an un-stubbed method in tests.
 type DNSPoliciesClientMock struct {
-	CreateFunc  func(context.Context, string, DNSPolicyCreateOrUpdate) (*DNSPolicy, error)
-	DeleteFunc  func(context.Context, string, string) error
-	GetFunc     func(context.Context, string, string) (*DNSPolicy, error)
-	GetPageFunc func(context.Context, string) ([]DNSPolicy, error)
-	UpdateFunc  func(context.Context, string, string, DNSPolicyCreateOrUpdate) (*DNSPolicy, error)
+	CreateFunc func(context.Context, string, DNSPolicyCreateOrUpdate) (*DNSPolicy, error)
+	DeleteFunc func(context.Context, string, string) error
+	GetFunc    func(context.Context, string, string) (*DNSPolicy, error)
+	ListFunc   func(context.Context, string, ...ListOption) ([]DNSPolicy, error)
+	UpdateFunc func(context.Context, string, string, DNSPolicyCreateOrUpdate) (*DNSPolicy, error)
 }
 
 var _ DNSPoliciesClient = (*DNSPoliciesClientMock)(nil)
@@ -115,8 +115,8 @@ func (m *DNSPoliciesClientMock) Get(ctx context.Context, siteId string, dnsPolic
 	return m.GetFunc(ctx, siteId, dnsPolicyId)
 }
 
-func (m *DNSPoliciesClientMock) GetPage(ctx context.Context, siteId string) ([]DNSPolicy, error) {
-	return m.GetPageFunc(ctx, siteId)
+func (m *DNSPoliciesClientMock) List(ctx context.Context, siteId string, opts ...ListOption) ([]DNSPolicy, error) {
+	return m.ListFunc(ctx, siteId, opts...)
 }
 
 func (m *DNSPoliciesClientMock) Update(ctx context.Context, siteId string, dnsPolicyId string, body DNSPolicyCreateOrUpdate) (*DNSPolicy, error) {

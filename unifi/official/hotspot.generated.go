@@ -19,8 +19,8 @@ type HotspotClient interface {
 	DeleteVouchers(ctx context.Context, siteId string, filter string) (*VoucherDeletionResults, error)
 	// GetVoucher maps to GET /v1/sites/%s/hotspot/vouchers/%s on the Official API.
 	GetVoucher(ctx context.Context, siteId string, voucherId string) (*HotspotVoucherDetails, error)
-	// GetVouchers maps to GET /v1/sites/%s/hotspot/vouchers on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
-	GetVouchers(ctx context.Context, siteId string) ([]HotspotVoucherDetails, error)
+	// ListVouchers maps to GET /v1/sites/%s/hotspot/vouchers on the Official API. Without options it auto-paginates the whole collection; pass WithOffset/WithLimit for a single bounded page or WithFilter to filter server-side.
+	ListVouchers(ctx context.Context, siteId string, opts ...ListOption) ([]HotspotVoucherDetails, error)
 }
 
 // hotspotClient wraps the shared apiClient so transport, gate and site cache stay single-sourced.
@@ -84,14 +84,14 @@ func (c hotspotClient) GetVoucher(ctx context.Context, siteId string, voucherId 
 	return &out, nil
 }
 
-// GetVouchers maps to GET /v1/sites/%s/hotspot/vouchers on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
-func (c hotspotClient) GetVouchers(ctx context.Context, siteId string) ([]HotspotVoucherDetails, error) {
+// ListVouchers maps to GET /v1/sites/%s/hotspot/vouchers on the Official API. Without options it auto-paginates the whole collection; pass WithOffset/WithLimit for a single bounded page or WithFilter to filter server-side.
+func (c hotspotClient) ListVouchers(ctx context.Context, siteId string, opts ...ListOption) ([]HotspotVoucherDetails, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
 	}
 	var out []HotspotVoucherDetails
-	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/hotspot/vouchers", url.PathEscape(siteId))), &out); err != nil {
-		return nil, fmt.Errorf("failed GetVouchers: %w", err)
+	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/hotspot/vouchers", url.PathEscape(siteId))), &out, opts...); err != nil {
+		return nil, fmt.Errorf("failed ListVouchers: %w", err)
 	}
 	return out, nil
 }
@@ -103,7 +103,7 @@ type HotspotClientMock struct {
 	DeleteVoucherFunc  func(context.Context, string, string) (*VoucherDeletionResults, error)
 	DeleteVouchersFunc func(context.Context, string, string) (*VoucherDeletionResults, error)
 	GetVoucherFunc     func(context.Context, string, string) (*HotspotVoucherDetails, error)
-	GetVouchersFunc    func(context.Context, string) ([]HotspotVoucherDetails, error)
+	ListVouchersFunc   func(context.Context, string, ...ListOption) ([]HotspotVoucherDetails, error)
 }
 
 var _ HotspotClient = (*HotspotClientMock)(nil)
@@ -124,6 +124,6 @@ func (m *HotspotClientMock) GetVoucher(ctx context.Context, siteId string, vouch
 	return m.GetVoucherFunc(ctx, siteId, voucherId)
 }
 
-func (m *HotspotClientMock) GetVouchers(ctx context.Context, siteId string) ([]HotspotVoucherDetails, error) {
-	return m.GetVouchersFunc(ctx, siteId)
+func (m *HotspotClientMock) ListVouchers(ctx context.Context, siteId string, opts ...ListOption) ([]HotspotVoucherDetails, error) {
+	return m.ListVouchersFunc(ctx, siteId, opts...)
 }

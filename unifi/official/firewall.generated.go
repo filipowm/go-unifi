@@ -18,16 +18,16 @@ type FirewallClient interface {
 	DeletePolicy(ctx context.Context, siteId string, firewallPolicyId string) error
 	// DeleteZone maps to DELETE /v1/sites/%s/firewall/zones/%s on the Official API.
 	DeleteZone(ctx context.Context, siteId string, firewallZoneId string) error
-	// GetPolicies maps to GET /v1/sites/%s/firewall/policies on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
-	GetPolicies(ctx context.Context, siteId string) ([]FirewallPolicy, error)
 	// GetPolicy maps to GET /v1/sites/%s/firewall/policies/%s on the Official API.
 	GetPolicy(ctx context.Context, siteId string, firewallPolicyId string) (*FirewallPolicy, error)
 	// GetPolicyOrdering maps to GET /v1/sites/%s/firewall/policies/ordering on the Official API.
 	GetPolicyOrdering(ctx context.Context, siteId string, sourceFirewallZoneId string, destinationFirewallZoneId string) (*FirewallPolicyOrdering, error)
 	// GetZone maps to GET /v1/sites/%s/firewall/zones/%s on the Official API.
 	GetZone(ctx context.Context, siteId string, firewallZoneId string) (*FirewallZone, error)
-	// GetZones maps to GET /v1/sites/%s/firewall/zones on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
-	GetZones(ctx context.Context, siteId string) ([]FirewallZone, error)
+	// ListPolicies maps to GET /v1/sites/%s/firewall/policies on the Official API. Without options it auto-paginates the whole collection; pass WithOffset/WithLimit for a single bounded page or WithFilter to filter server-side.
+	ListPolicies(ctx context.Context, siteId string, opts ...ListOption) ([]FirewallPolicy, error)
+	// ListZones maps to GET /v1/sites/%s/firewall/zones on the Official API. Without options it auto-paginates the whole collection; pass WithOffset/WithLimit for a single bounded page or WithFilter to filter server-side.
+	ListZones(ctx context.Context, siteId string, opts ...ListOption) ([]FirewallZone, error)
 	// PatchPolicy maps to PATCH /v1/sites/%s/firewall/policies/%s on the Official API.
 	PatchPolicy(ctx context.Context, siteId string, firewallPolicyId string, body PatchFirewallPolicy) (*FirewallPolicy, error)
 	// UpdatePolicy maps to PUT /v1/sites/%s/firewall/policies/%s on the Official API.
@@ -94,18 +94,6 @@ func (c firewallClient) DeleteZone(ctx context.Context, siteId string, firewallZ
 	return nil
 }
 
-// GetPolicies maps to GET /v1/sites/%s/firewall/policies on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
-func (c firewallClient) GetPolicies(ctx context.Context, siteId string) ([]FirewallPolicy, error) {
-	if err := c.check(ctx); err != nil {
-		return nil, err
-	}
-	var out []FirewallPolicy
-	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/firewall/policies", url.PathEscape(siteId))), &out); err != nil {
-		return nil, fmt.Errorf("failed GetPolicies: %w", err)
-	}
-	return out, nil
-}
-
 // GetPolicy maps to GET /v1/sites/%s/firewall/policies/%s on the Official API.
 func (c firewallClient) GetPolicy(ctx context.Context, siteId string, firewallPolicyId string) (*FirewallPolicy, error) {
 	if err := c.check(ctx); err != nil {
@@ -142,14 +130,26 @@ func (c firewallClient) GetZone(ctx context.Context, siteId string, firewallZone
 	return &out, nil
 }
 
-// GetZones maps to GET /v1/sites/%s/firewall/zones on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
-func (c firewallClient) GetZones(ctx context.Context, siteId string) ([]FirewallZone, error) {
+// ListPolicies maps to GET /v1/sites/%s/firewall/policies on the Official API. Without options it auto-paginates the whole collection; pass WithOffset/WithLimit for a single bounded page or WithFilter to filter server-side.
+func (c firewallClient) ListPolicies(ctx context.Context, siteId string, opts ...ListOption) ([]FirewallPolicy, error) {
+	if err := c.check(ctx); err != nil {
+		return nil, err
+	}
+	var out []FirewallPolicy
+	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/firewall/policies", url.PathEscape(siteId))), &out, opts...); err != nil {
+		return nil, fmt.Errorf("failed ListPolicies: %w", err)
+	}
+	return out, nil
+}
+
+// ListZones maps to GET /v1/sites/%s/firewall/zones on the Official API. Without options it auto-paginates the whole collection; pass WithOffset/WithLimit for a single bounded page or WithFilter to filter server-side.
+func (c firewallClient) ListZones(ctx context.Context, siteId string, opts ...ListOption) ([]FirewallZone, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
 	}
 	var out []FirewallZone
-	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/firewall/zones", url.PathEscape(siteId))), &out); err != nil {
-		return nil, fmt.Errorf("failed GetZones: %w", err)
+	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/firewall/zones", url.PathEscape(siteId))), &out, opts...); err != nil {
+		return nil, fmt.Errorf("failed ListZones: %w", err)
 	}
 	return out, nil
 }
@@ -209,11 +209,11 @@ type FirewallClientMock struct {
 	CreateZoneFunc           func(context.Context, string, FirewallZoneCreateOrUpdate) (*FirewallZone, error)
 	DeletePolicyFunc         func(context.Context, string, string) error
 	DeleteZoneFunc           func(context.Context, string, string) error
-	GetPoliciesFunc          func(context.Context, string) ([]FirewallPolicy, error)
 	GetPolicyFunc            func(context.Context, string, string) (*FirewallPolicy, error)
 	GetPolicyOrderingFunc    func(context.Context, string, string, string) (*FirewallPolicyOrdering, error)
 	GetZoneFunc              func(context.Context, string, string) (*FirewallZone, error)
-	GetZonesFunc             func(context.Context, string) ([]FirewallZone, error)
+	ListPoliciesFunc         func(context.Context, string, ...ListOption) ([]FirewallPolicy, error)
+	ListZonesFunc            func(context.Context, string, ...ListOption) ([]FirewallZone, error)
 	PatchPolicyFunc          func(context.Context, string, string, PatchFirewallPolicy) (*FirewallPolicy, error)
 	UpdatePolicyFunc         func(context.Context, string, string, FirewallPolicyCreateOrUpdate) (*FirewallPolicy, error)
 	UpdatePolicyOrderingFunc func(context.Context, string, string, string, FirewallPolicyOrdering) (*FirewallPolicyOrdering, error)
@@ -238,10 +238,6 @@ func (m *FirewallClientMock) DeleteZone(ctx context.Context, siteId string, fire
 	return m.DeleteZoneFunc(ctx, siteId, firewallZoneId)
 }
 
-func (m *FirewallClientMock) GetPolicies(ctx context.Context, siteId string) ([]FirewallPolicy, error) {
-	return m.GetPoliciesFunc(ctx, siteId)
-}
-
 func (m *FirewallClientMock) GetPolicy(ctx context.Context, siteId string, firewallPolicyId string) (*FirewallPolicy, error) {
 	return m.GetPolicyFunc(ctx, siteId, firewallPolicyId)
 }
@@ -254,8 +250,12 @@ func (m *FirewallClientMock) GetZone(ctx context.Context, siteId string, firewal
 	return m.GetZoneFunc(ctx, siteId, firewallZoneId)
 }
 
-func (m *FirewallClientMock) GetZones(ctx context.Context, siteId string) ([]FirewallZone, error) {
-	return m.GetZonesFunc(ctx, siteId)
+func (m *FirewallClientMock) ListPolicies(ctx context.Context, siteId string, opts ...ListOption) ([]FirewallPolicy, error) {
+	return m.ListPoliciesFunc(ctx, siteId, opts...)
+}
+
+func (m *FirewallClientMock) ListZones(ctx context.Context, siteId string, opts ...ListOption) ([]FirewallZone, error) {
+	return m.ListZonesFunc(ctx, siteId, opts...)
 }
 
 func (m *FirewallClientMock) PatchPolicy(ctx context.Context, siteId string, firewallPolicyId string, body PatchFirewallPolicy) (*FirewallPolicy, error) {

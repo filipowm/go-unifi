@@ -22,12 +22,17 @@ var doerMethods = map[string]string{
 // the single source of truth; the generator never clobbers the hand-written body.
 var customMethods = []method{
 	{Group: "Info", Name: "Get", Doc: "returns the controller application info (GET /v1/info).", Params: []arg{ctxArg}, Returns: []string{"*Info", "error"}},
-	{Group: "Sites", Name: "List", Doc: "returns all local sites, auto-paginating the list envelope.", Params: []arg{ctxArg}, Returns: []string{"[]SiteOverview", "error"}},
+	{Group: "Sites", Name: "List", Doc: "returns all local sites; without options it auto-paginates, else WithOffset/WithLimit fetch a single bounded page and WithFilter filters server-side.", Params: []arg{ctxArg, listOptionsArg}, Returns: []string{"[]SiteOverview", "error"}},
 	{Group: "Sites", Name: "ResolveID", Doc: "maps a legacy site name to its Official-API site UUID, caching the lookup.", Params: []arg{ctxArg, {Name: "name", Type: "string"}}, Returns: []string{"string", "error"}},
 }
 
 // ctxArg is the leading context argument shared by every surface method.
 var ctxArg = arg{Name: "ctx", Type: "context.Context"}
+
+// listOptionsArg is the trailing variadic option argument on every list method;
+// its runtime type (ListOption/WithOffset/WithLimit/WithFilter) is hand-written
+// in unifi/official/pagination.go.
+var listOptionsArg = arg{Name: "opts", Type: "...ListOption"}
 
 // arg is a single method parameter.
 type arg struct{ Name, Type string }
@@ -95,7 +100,7 @@ func assertNoCollision(group string, ms []method) error {
 // prefix from the operationId so the name reads cleanly under its accessor.
 func methodFor(op operation) method {
 	o := op
-	m := method{Name: methodName(op.Group, op.Name), Group: op.Group, Doc: docFor(op), op: &o}
+	m := method{Name: methodName(op), Group: op.Group, Doc: docFor(op), op: &o}
 	m.Params = append(m.Params, ctxArg)
 	for _, p := range op.PathArgs {
 		m.Params = append(m.Params, arg{Name: p.Name, Type: "string"})
@@ -108,6 +113,7 @@ func methodFor(op operation) method {
 	}
 	switch {
 	case op.IsList():
+		m.Params = append(m.Params, listOptionsArg)
 		m.Returns = []string{"[]" + op.ItemType, "error"}
 	case op.ReturnType != "":
 		m.Returns = []string{"*" + op.ReturnType, "error"}
@@ -118,11 +124,11 @@ func methodFor(op operation) method {
 }
 
 // docFor builds the godoc body for an operation method.
-// List shapes append an auto-pagination notice so callers see the cost at the call site.
+// List shapes spell out the option contract so callers see pagination/filter at the call site.
 func docFor(op operation) string {
 	base := fmt.Sprintf("maps to %s /v1%s on the Official API.", op.HTTPMethod, op.SubPath)
 	if op.IsList() {
-		return base + " Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items."
+		return base + " Without options it auto-paginates the whole collection; pass WithOffset/WithLimit for a single bounded page or WithFilter to filter server-side."
 	}
 	return base
 }
@@ -249,7 +255,7 @@ func wrapperBody(g group, m method) string {
 	switch {
 	case op.IsList():
 		fmt.Fprintf(&b, "\tvar out []%s\n", op.ItemType)
-		fmt.Fprintf(&b, "\tif err := listAll(ctx, c.doer, c.path(%s), &out); err != nil {\n", path)
+		fmt.Fprintf(&b, "\tif err := listAll(ctx, c.doer, c.path(%s), &out, opts...); err != nil {\n", path)
 		fmt.Fprintf(&b, "\t\treturn nil, fmt.Errorf(%q, err)\n\t}\n", "failed "+m.Name+": %w")
 		b.WriteString("\treturn out, nil\n")
 	case op.ReturnType != "":
@@ -363,11 +369,16 @@ func mockReturns(m method) string {
 	return m.Returns[0]
 }
 
-// callArgs renders the argument names forwarded to the stub func.
+// callArgs renders the argument names forwarded to the stub func, spreading a
+// trailing variadic parameter (opts ...ListOption -> opts...).
 func callArgs(m method) string {
 	names := make([]string, len(m.Params))
 	for i, p := range m.Params {
-		names[i] = p.Name
+		if strings.HasPrefix(p.Type, "...") {
+			names[i] = p.Name + "..."
+		} else {
+			names[i] = p.Name
+		}
 	}
 	return strings.Join(names, ", ")
 }

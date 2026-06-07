@@ -119,16 +119,17 @@ The client exposes two API surfaces:
   new-style UniFi OS controller (version `10.1.78`+) with **API-key** authentication. The surface is
   **fluent**: one accessor per resource group (`Firewall()`, `Networks()`, `Devices()`, …, derived from the
   OpenAPI tags), each returning an independently mockable per-group interface. Methods are **generated** from
-  the committed OpenAPI snapshot in a tri-shape per resource — `…OverviewPage`/`GetPolicies…` (returns the
-  `…Overview` slice, auto-paginating the offset/limit envelope), `Get…` (`…Details`), and
-  `Create/Update/Patch…` (taking the `…CreateOrUpdate` body) — alongside the hand-written `Info().Get`,
-  `Sites().List` and `Sites().ResolveID`.
+  the committed OpenAPI snapshot in a uniform shape per resource — `List…` (returns the `…Overview` slice;
+  auto-paginates by default, or pass `WithOffset`/`WithLimit` for a single bounded page and `WithFilter` to
+  filter server-side), `Get…` (the single-item `…Details`), and `Create/Update/Patch…` (taking the
+  `…CreateOrUpdate` body) — alongside the hand-written `Info().Get`, `Sites().List` and `Sites().ResolveID`.
 
 ```go
 sites, err := c.Internal().ListSites(ctx)                     // legacy API (same as c.ListSites(ctx))
 info, err := c.Official().Info().Get(ctx)                     // official OpenAPI
 id, err := c.Official().Sites().ResolveID(ctx, "default")     // map a legacy site name to its official UUID
-nets, err := c.Official().Networks().GetOverviewPage(ctx, id) // generated, auto-paginated list wrapper
+nets, err := c.Official().Networks().List(ctx, id)            // generated list wrapper (auto-paginates by default)
+page, err := c.Official().Networks().List(ctx, id, official.WithLimit(50), official.WithFilter("name.eq('lan')")) // bounded + filtered
 pol, err := c.Official().Firewall().CreatePolicy(ctx, id, body) // fluent, per-group accessor
 ```
 

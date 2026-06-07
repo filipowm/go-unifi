@@ -55,7 +55,7 @@ func TestGeneratedGetWrapper(t *testing.T) {
 	}}
 	c := New(d, base, nil)
 
-	net, err := c.Networks().GetDetails(context.Background(), "s1", "n1")
+	net, err := c.Networks().Get(context.Background(), "s1", "n1")
 	require.NoError(t, err)
 	assert.Equal(t, "lan", net.Name)
 	assert.Equal(t, []string{"GET " + base + "/sites/s1/networks/n1"}, d.calls)
@@ -72,10 +72,32 @@ func TestGeneratedListWrapperPaginates(t *testing.T) {
 	}}
 	c := New(d, base, nil)
 
-	nets, err := c.Networks().GetOverviewPage(context.Background(), "s1")
+	nets, err := c.Networks().List(context.Background(), "s1")
 	require.NoError(t, err)
 	require.Len(t, nets, 2)
 	assert.Equal(t, "a", nets[0].Name)
+}
+
+// TestGeneratedListWrapperBoundedPage proves WithOffset/WithLimit fetch exactly
+// one bounded page (no drain-all probe) and that WithFilter is plumbed to the
+// request — the filter param that used to be dropped.
+func TestGeneratedListWrapperBoundedPage(t *testing.T) {
+	t.Parallel()
+	d := &cannedDoer{responses: map[string]any{
+		base + "/sites/s1/networks": map[string]any{
+			"data":       []map[string]any{{"name": "a"}, {"name": "b"}},
+			"totalCount": 99, // far more remain, yet a bounded read must not paginate.
+		},
+	}}
+	c := New(d, base, nil)
+
+	nets, err := c.Networks().List(context.Background(), "s1", WithOffset(0), WithLimit(2), WithFilter("name.eq('a')"))
+	require.NoError(t, err)
+	require.Len(t, nets, 2)
+	require.Len(t, d.calls, 1, "explicit pagination must fetch a single page")
+	assert.Contains(t, d.calls[0], "limit=2")
+	assert.Contains(t, d.calls[0], "offset=0")
+	assert.Contains(t, d.calls[0], "filter=name.eq")
 }
 
 // TestGeneratedPatchWrapper exercises the PATCH path via the new Doer.Patch seam.

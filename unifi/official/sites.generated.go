@@ -6,8 +6,8 @@ import "context"
 
 // SitesClient is the Sites resource group of the Official UniFi OpenAPI surface.
 type SitesClient interface {
-	// List returns all local sites, auto-paginating the list envelope.
-	List(ctx context.Context) ([]SiteOverview, error)
+	// List returns all local sites; without options it auto-paginates, else WithOffset/WithLimit fetch a single bounded page and WithFilter filters server-side.
+	List(ctx context.Context, opts ...ListOption) ([]SiteOverview, error)
 	// ResolveID maps a legacy site name to its Official-API site UUID, caching the lookup.
 	ResolveID(ctx context.Context, name string) (string, error)
 }
@@ -25,14 +25,14 @@ func (c *apiClient) Sites() SitesClient {
 // SitesClientMock is a func-field test double implementing SitesClient. A nil field
 // panics on call, surfacing an un-stubbed method in tests.
 type SitesClientMock struct {
-	ListFunc      func(context.Context) ([]SiteOverview, error)
+	ListFunc      func(context.Context, ...ListOption) ([]SiteOverview, error)
 	ResolveIDFunc func(context.Context, string) (string, error)
 }
 
 var _ SitesClient = (*SitesClientMock)(nil)
 
-func (m *SitesClientMock) List(ctx context.Context) ([]SiteOverview, error) {
-	return m.ListFunc(ctx)
+func (m *SitesClientMock) List(ctx context.Context, opts ...ListOption) ([]SiteOverview, error) {
+	return m.ListFunc(ctx, opts...)
 }
 
 func (m *SitesClientMock) ResolveID(ctx context.Context, name string) (string, error) {

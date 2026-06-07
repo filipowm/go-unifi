@@ -14,10 +14,10 @@ type WifiBroadcastsClient interface {
 	Create(ctx context.Context, siteId string, body WifiBroadcastCreateOrUpdate) (*WifiBroadcastDetails, error)
 	// Delete maps to DELETE /v1/sites/%s/wifi/broadcasts/%s on the Official API.
 	Delete(ctx context.Context, siteId string, wifiBroadcastId string) error
-	// GetDetails maps to GET /v1/sites/%s/wifi/broadcasts/%s on the Official API.
-	GetDetails(ctx context.Context, siteId string, wifiBroadcastId string) (*WifiBroadcastDetails, error)
-	// GetPage maps to GET /v1/sites/%s/wifi/broadcasts on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
-	GetPage(ctx context.Context, siteId string) ([]WifiBroadcastOverview, error)
+	// Get maps to GET /v1/sites/%s/wifi/broadcasts/%s on the Official API.
+	Get(ctx context.Context, siteId string, wifiBroadcastId string) (*WifiBroadcastDetails, error)
+	// List maps to GET /v1/sites/%s/wifi/broadcasts on the Official API. Without options it auto-paginates the whole collection; pass WithOffset/WithLimit for a single bounded page or WithFilter to filter server-side.
+	List(ctx context.Context, siteId string, opts ...ListOption) ([]WifiBroadcastOverview, error)
 	// Update maps to PUT /v1/sites/%s/wifi/broadcasts/%s on the Official API.
 	Update(ctx context.Context, siteId string, wifiBroadcastId string, body WifiBroadcastCreateOrUpdate) (*WifiBroadcastDetails, error)
 }
@@ -55,26 +55,26 @@ func (c wifiBroadcastsClient) Delete(ctx context.Context, siteId string, wifiBro
 	return nil
 }
 
-// GetDetails maps to GET /v1/sites/%s/wifi/broadcasts/%s on the Official API.
-func (c wifiBroadcastsClient) GetDetails(ctx context.Context, siteId string, wifiBroadcastId string) (*WifiBroadcastDetails, error) {
+// Get maps to GET /v1/sites/%s/wifi/broadcasts/%s on the Official API.
+func (c wifiBroadcastsClient) Get(ctx context.Context, siteId string, wifiBroadcastId string) (*WifiBroadcastDetails, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
 	}
 	var out WifiBroadcastDetails
 	if err := c.doer.Get(ctx, c.path(fmt.Sprintf("/sites/%s/wifi/broadcasts/%s", url.PathEscape(siteId), url.PathEscape(wifiBroadcastId))), nil, &out); err != nil {
-		return nil, fmt.Errorf("failed GetDetails: %w", err)
+		return nil, fmt.Errorf("failed Get: %w", err)
 	}
 	return &out, nil
 }
 
-// GetPage maps to GET /v1/sites/%s/wifi/broadcasts on the Official API. Auto-paginates the offset/limit envelope (up to maxPageLimit per request), returning all items.
-func (c wifiBroadcastsClient) GetPage(ctx context.Context, siteId string) ([]WifiBroadcastOverview, error) {
+// List maps to GET /v1/sites/%s/wifi/broadcasts on the Official API. Without options it auto-paginates the whole collection; pass WithOffset/WithLimit for a single bounded page or WithFilter to filter server-side.
+func (c wifiBroadcastsClient) List(ctx context.Context, siteId string, opts ...ListOption) ([]WifiBroadcastOverview, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
 	}
 	var out []WifiBroadcastOverview
-	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/wifi/broadcasts", url.PathEscape(siteId))), &out); err != nil {
-		return nil, fmt.Errorf("failed GetPage: %w", err)
+	if err := listAll(ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/wifi/broadcasts", url.PathEscape(siteId))), &out, opts...); err != nil {
+		return nil, fmt.Errorf("failed List: %w", err)
 	}
 	return out, nil
 }
@@ -94,11 +94,11 @@ func (c wifiBroadcastsClient) Update(ctx context.Context, siteId string, wifiBro
 // WifiBroadcastsClientMock is a func-field test double implementing WifiBroadcastsClient. A nil field
 // panics on call, surfacing an un-stubbed method in tests.
 type WifiBroadcastsClientMock struct {
-	CreateFunc     func(context.Context, string, WifiBroadcastCreateOrUpdate) (*WifiBroadcastDetails, error)
-	DeleteFunc     func(context.Context, string, string) error
-	GetDetailsFunc func(context.Context, string, string) (*WifiBroadcastDetails, error)
-	GetPageFunc    func(context.Context, string) ([]WifiBroadcastOverview, error)
-	UpdateFunc     func(context.Context, string, string, WifiBroadcastCreateOrUpdate) (*WifiBroadcastDetails, error)
+	CreateFunc func(context.Context, string, WifiBroadcastCreateOrUpdate) (*WifiBroadcastDetails, error)
+	DeleteFunc func(context.Context, string, string) error
+	GetFunc    func(context.Context, string, string) (*WifiBroadcastDetails, error)
+	ListFunc   func(context.Context, string, ...ListOption) ([]WifiBroadcastOverview, error)
+	UpdateFunc func(context.Context, string, string, WifiBroadcastCreateOrUpdate) (*WifiBroadcastDetails, error)
 }
 
 var _ WifiBroadcastsClient = (*WifiBroadcastsClientMock)(nil)
@@ -111,12 +111,12 @@ func (m *WifiBroadcastsClientMock) Delete(ctx context.Context, siteId string, wi
 	return m.DeleteFunc(ctx, siteId, wifiBroadcastId)
 }
 
-func (m *WifiBroadcastsClientMock) GetDetails(ctx context.Context, siteId string, wifiBroadcastId string) (*WifiBroadcastDetails, error) {
-	return m.GetDetailsFunc(ctx, siteId, wifiBroadcastId)
+func (m *WifiBroadcastsClientMock) Get(ctx context.Context, siteId string, wifiBroadcastId string) (*WifiBroadcastDetails, error) {
+	return m.GetFunc(ctx, siteId, wifiBroadcastId)
 }
 
-func (m *WifiBroadcastsClientMock) GetPage(ctx context.Context, siteId string) ([]WifiBroadcastOverview, error) {
-	return m.GetPageFunc(ctx, siteId)
+func (m *WifiBroadcastsClientMock) List(ctx context.Context, siteId string, opts ...ListOption) ([]WifiBroadcastOverview, error) {
+	return m.ListFunc(ctx, siteId, opts...)
 }
 
 func (m *WifiBroadcastsClientMock) Update(ctx context.Context, siteId string, wifiBroadcastId string, body WifiBroadcastCreateOrUpdate) (*WifiBroadcastDetails, error) {
