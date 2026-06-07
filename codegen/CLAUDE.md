@@ -11,13 +11,17 @@ Generates `../unifi/*.generated.go` from the controller's own API definitions. R
 
 **Client interface split** (`client.go.tmpl` + `clients.go`): renders `InternalClient` (resource CRUD) and `Client` (embeds it + transport/lifecycle fns + hand-written `Internal()`/`Official()`), split on `ClientFunction.ResourceName()`. After changing it, regenerate `client.generated.go` **and** `client_mock.generated.go` (offline moq — see `unifi/mock.go`).
 
-## Official-API frontend — OpenAPI models (`codegen/official/`)
+## Official-API frontend — OpenAPI surface (`codegen/official/`)
 
-Separate Go module (`…/codegen/official`) hosting the OpenAPI toolchain (`oapi-codegen/v2` + `kin-openapi`), isolated so those deps stay out of root `go.mod` (root gains only `oapi-codegen/runtime`, imported by the generated models). Reads the **committed** snapshot **offline** → writes `unifi/official/models.generated.go` (`DO NOT EDIT`).
+Separate Go module (`…/codegen/official`) hosting the OpenAPI toolchain (`oapi-codegen/v2` + `kin-openapi`), isolated so those deps stay out of root `go.mod` (root gains only `oapi-codegen/runtime`, imported by the generated models). Reads the **committed** snapshot **offline** → writes the whole Official surface into `unifi/official/` (all `DO NOT EDIT`): `models.generated.go`, `wrappers.generated.go`, `client.generated.go` (the `Client` interface), `client_mock.generated.go` (a func-field mock).
 
 ```sh
-cd codegen/official && go run .   # → ../../unifi/official/models.generated.go
+cd codegen/official && go run .   # -openapi-dir / -out-dir override the defaults
 ```
+
+**Folded into `go generate` (second pass).** `generate()` (root `main.go`) shells out to this module via `os/exec` after the Internal pass (`official_pass.go`), so one `go generate unifi/codegen.go` emits both surfaces. We shell out rather than import to keep the oapi-codegen graph out of the root module.
+
+**Tri-shape wrappers** (`resources.go` + `surface.go`). Each operation is classified from its `operationId` + HTTP method + parameters (NOT path regexes): `List*`→`[]…Overview` (auto-paginating the offset/limit envelope, max 200), `Get*`→`*…Details`, `Create/Update/Patch*(…CreateOrUpdate)`, plus ordering GET/PUT, action POSTs, references, `statistics/latest`, and bulk `deleteVouchers` (its `filter` is REQUIRED — guarded against empty). Wrapper types resolve through the same `finalName` map as the models, so they match emitted type names exactly. `getInfo`/`getSiteOverviewPage` are skipped — hand-written in `info.go`/`sites.go`. The `PATCH` verb is carried by `official.Doer.Patch` (and `unifi.client.Patch`, exposed on the public `Client` via `customizations.yml`).
 
 **The oneOf transform** (`transform.go`, `naming.go`) — oapi-codegen's allOf+discriminator path silently drops every variant struct, so the spec is rewritten into its oneOf path (per-variant union types). Deterministic, fail-loud:
 
@@ -32,7 +36,7 @@ cd codegen/official && go run .   # → ../../unifi/official/models.generated.go
 
 **Hand-written collisions** — `Site overview` is excluded (refs resolve to hand-written `SiteOverview`); `Application info` → `type ApplicationInfo = Info`.
 
-> Stage 3 folds this into `generator.go`'s second pass and adds the tri-shape wrappers + `official.Client`; until then it's a standalone runnable.
+**Determinism gate** — `TestSurfaceMatchesCommitted` byte-guards every generated surface file against its committed copy; `TestSurfaceDeterministic` proves re-generation is byte-identical.
 
 ## Download trust model (ARCH-15 / ARCH-16)
 
