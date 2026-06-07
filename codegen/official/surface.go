@@ -124,7 +124,8 @@ func banner() string {
 func generateWrappers(ops []operation, pkg string) (string, error) {
 	usesURL, usesErrors := false, false
 	for i := range ops {
-		if len(ops[i].QueryArgs) > 0 {
+		// Both path and query args are URL-escaped, so either pulls in net/url.
+		if len(ops[i].QueryArgs) > 0 || len(ops[i].PathArgs) > 0 {
 			usesURL = true
 		}
 		if ops[i].RequiredFilter() != "" {
@@ -201,8 +202,9 @@ func pathExpr(op operation) string {
 	var format strings.Builder
 	format.WriteString(op.SubPath)
 	args := make([]string, 0, len(op.PathArgs)+len(op.QueryArgs))
+	// Escape path segments: an ID containing '/', '?' or '#' must not alter the route.
 	for _, p := range op.PathArgs {
-		args = append(args, p.Name)
+		args = append(args, "url.PathEscape("+p.Name+")")
 	}
 	for i, q := range op.QueryArgs {
 		sep := "&"
