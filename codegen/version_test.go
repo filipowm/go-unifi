@@ -269,15 +269,36 @@ func TestWriteVersionFile(t *testing.T) {
 	a := assert.New(t)
 
 	tmpDir := t.TempDir()
-	v, err := version.NewVersion("7.3.83")
+	internal, err := version.NewVersion("7.3.83")
+	require.NoError(t, err)
+	official, err := version.NewVersion("10.1.78")
 	require.NoError(t, err)
 
-	err = writeVersionFile(v, tmpDir)
+	err = writeVersionFile(internal, official, tmpDir)
 	require.NoError(t, err)
 
 	content, err := os.ReadFile(filepath.Join(tmpDir, "version.generated.go"))
 	require.NoError(t, err)
 	a.Contains(string(content), `const UnifiVersion = "7.3.83"`)
+	a.Contains(string(content), `const OfficialAPIVersion = "10.1.78"`)
+}
+
+func TestWriteVersionFile_BothConstsDistinct(t *testing.T) {
+	t.Parallel()
+
+	tmpDir := t.TempDir()
+	internal, err := version.NewVersion("9.5.21")
+	require.NoError(t, err)
+	official, err := version.NewVersion("10.1.78")
+	require.NoError(t, err)
+
+	require.NoError(t, writeVersionFile(internal, official, tmpDir))
+
+	content, err := os.ReadFile(filepath.Join(tmpDir, "version.generated.go"))
+	require.NoError(t, err)
+	// Internal and Official versions legitimately diverge — verify each pin is written.
+	assert.Contains(t, string(content), `const UnifiVersion = "9.5.21"`)
+	assert.Contains(t, string(content), `const OfficialAPIVersion = "10.1.78"`)
 }
 
 func TestWriteVersionRepoMarkerFile(t *testing.T) {
@@ -288,7 +309,7 @@ func TestWriteVersionRepoMarkerFile(t *testing.T) {
 	v, err := version.NewVersion("7.3.83")
 	require.NoError(t, err)
 
-	err = writeVersionRepoMarkerFile(v, tmpDir)
+	err = writeVersionMarker(v, tmpDir, ".unifi-version")
 	require.NoError(t, err)
 
 	content, err := os.ReadFile(filepath.Join(tmpDir, ".unifi-version"))
@@ -307,10 +328,12 @@ func TestLatestUnifiVersion_InvalidUrl(t *testing.T) {
 func TestWriteVersionFile_InvalidDir(t *testing.T) {
 	t.Parallel()
 
-	v, err := version.NewVersion("7.3.83")
+	internal, err := version.NewVersion("7.3.83")
+	require.NoError(t, err)
+	official, err := version.NewVersion("10.1.78")
 	require.NoError(t, err)
 
-	err = writeVersionFile(v, "/nonexistent/directory")
+	err = writeVersionFile(internal, official, "/nonexistent/directory")
 	require.Error(t, err)
 	require.ErrorContains(t, err, "no such file or directory")
 }
@@ -321,7 +344,7 @@ func TestWriteVersionRepoMarkerFile_InvalidDir(t *testing.T) {
 	v, err := version.NewVersion("7.3.83")
 	require.NoError(t, err)
 
-	err = writeVersionRepoMarkerFile(v, "/nonexistent/directory")
+	err = writeVersionMarker(v, "/nonexistent/directory", ".unifi-version")
 	require.Error(t, err)
 	require.ErrorContains(t, err, "no such file or directory")
 }
@@ -362,15 +385,18 @@ func TestWriteVersionFile_EmptyVersion(t *testing.T) {
 	t.Parallel()
 
 	tmpDir := t.TempDir()
-	v, err := version.NewVersion("0.0.0")
+	internal, err := version.NewVersion("0.0.0")
+	require.NoError(t, err)
+	official, err := version.NewVersion("0.0.0")
 	require.NoError(t, err)
 
-	err = writeVersionFile(v, tmpDir)
+	err = writeVersionFile(internal, official, tmpDir)
 	require.NoError(t, err)
 
 	content, err := os.ReadFile(filepath.Join(tmpDir, "version.generated.go"))
 	require.NoError(t, err)
 	assert.Contains(t, string(content), `const UnifiVersion = "0.0.0"`)
+	assert.Contains(t, string(content), `const OfficialAPIVersion = "0.0.0"`)
 }
 
 func TestWriteVersionRepoMarkerFile_Permissions(t *testing.T) {
@@ -388,9 +414,81 @@ func TestWriteVersionRepoMarkerFile_Permissions(t *testing.T) {
 	v, err := version.NewVersion("7.3.83")
 	require.NoError(t, err)
 
-	err = writeVersionRepoMarkerFile(v, readOnlyDir)
+	err = writeVersionMarker(v, readOnlyDir, ".unifi-version")
 	require.Error(t, err)
 	require.ErrorContains(t, err, "permission denied")
+}
+
+func TestWriteOfficialVersionRepoMarkerFile(t *testing.T) {
+	t.Parallel()
+	a := assert.New(t)
+
+	tmpDir := t.TempDir()
+	v, err := version.NewVersion("10.1.78")
+	require.NoError(t, err)
+
+	err = writeVersionMarker(v, tmpDir, ".unifi-version-official")
+	require.NoError(t, err)
+
+	content, err := os.ReadFile(filepath.Join(tmpDir, ".unifi-version-official"))
+	require.NoError(t, err)
+	a.Equal("10.1.78", string(content))
+}
+
+func TestWriteOfficialVersionRepoMarkerFile_InvalidDir(t *testing.T) {
+	t.Parallel()
+
+	v, err := version.NewVersion("10.1.78")
+	require.NoError(t, err)
+
+	err = writeVersionMarker(v, "/nonexistent/directory", ".unifi-version-official")
+	require.Error(t, err)
+	require.ErrorContains(t, err, "no such file or directory")
+}
+
+func TestWriteOfficialVersionRepoMarkerFile_Permissions(t *testing.T) {
+	t.Parallel()
+
+	if os.Getuid() == 0 {
+		t.Skip("Skipping test when running as root")
+	}
+
+	tmpDir := t.TempDir()
+	readOnlyDir := filepath.Join(tmpDir, "readonly")
+	err := os.Mkdir(readOnlyDir, 0o555)
+	require.NoError(t, err)
+
+	v, err := version.NewVersion("10.1.78")
+	require.NoError(t, err)
+
+	err = writeVersionMarker(v, readOnlyDir, ".unifi-version-official")
+	require.Error(t, err)
+	require.ErrorContains(t, err, "permission denied")
+}
+
+// TestWriteVersionRepoMarkersIndependent verifies Internal and Official markers
+// are written to separate files and their content is independent — the two API
+// surfaces can legitimately pin different versions.
+func TestWriteVersionRepoMarkersIndependent(t *testing.T) {
+	t.Parallel()
+
+	tmpDir := t.TempDir()
+	internal, err := version.NewVersion("9.5.21")
+	require.NoError(t, err)
+	official, err := version.NewVersion("10.1.78")
+	require.NoError(t, err)
+
+	require.NoError(t, writeVersionMarker(internal, tmpDir, ".unifi-version"))
+	require.NoError(t, writeVersionMarker(official, tmpDir, ".unifi-version-official"))
+
+	internalContent, err := os.ReadFile(filepath.Join(tmpDir, ".unifi-version"))
+	require.NoError(t, err)
+	officialContent, err := os.ReadFile(filepath.Join(tmpDir, ".unifi-version-official"))
+	require.NoError(t, err)
+
+	assert.Equal(t, "9.5.21", string(internalContent))
+	assert.Equal(t, "10.1.78", string(officialContent))
+	assert.NotEqual(t, string(internalContent), string(officialContent))
 }
 
 // recordingVersionProvider records which provider methods resolveOfficialSpecVersion

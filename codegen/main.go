@@ -171,13 +171,13 @@ func generate(opts options) error {
 	logger := orDefaultLogger(opts.logger)
 
 	p := NewUnifiVersionProvider(opts.firmwareUpdateApi)
-	unifiVersion, officialVersion, err := resolveVersions(p, opts)
+	internalVersion, officialVersion, err := resolveVersions(p, opts)
 	if err != nil {
 		return err
 	}
 
-	logger.Infof("UniFi Controller version: %s", unifiVersion.Version)
-	logger.Infof("UniFi Controller download URL: %s", unifiVersion.DownloadUrl.String())
+	logger.Infof("UniFi Controller version: %s", internalVersion.Version)
+	logger.Infof("UniFi Controller download URL: %s", internalVersion.DownloadUrl.String())
 	logger.Infof("Official-API spec version: %s", officialVersion.Version)
 
 	wd, err := os.Getwd()
@@ -185,7 +185,7 @@ func generate(opts options) error {
 		return fmt.Errorf("unable to determine working directory: %w", err)
 	}
 	versionBaseDir := resolveDir(wd, opts.versionBaseDir)
-	structuresDir, err := downloadGenerationInputs(unifiVersion, officialVersion, versionBaseDir, logger)
+	structuresDir, err := downloadGenerationInputs(internalVersion, officialVersion, versionBaseDir, logger)
 	if err != nil {
 		return err
 	}
@@ -222,7 +222,7 @@ func generate(opts options) error {
 		return err
 	}
 
-	if err = writeVersionArtifacts(unifiVersion, outDir, logger); err != nil {
+	if err = writeVersionArtifacts(internalVersion, officialVersion, outDir, logger); err != nil {
 		return err
 	}
 
@@ -230,17 +230,21 @@ func generate(opts options) error {
 	return nil
 }
 
-// writeVersionArtifacts writes version.generated.go beside the resources and the
-// .unifi-version marker at the parent of outDir (the unifi/ package), so the
-// marker tracks the generated code regardless of cwd.
-func writeVersionArtifacts(unifiVersion *UnifiVersion, outDir string, logger Logger) error {
+// writeVersionArtifacts writes version.generated.go beside the resources and both
+// .unifi-version (Internal) and .unifi-version-official (Official) markers at the
+// parent of outDir (the repo root), so both markers track the generated code
+// regardless of cwd.
+func writeVersionArtifacts(internalVersion *UnifiVersion, officialVersion *UnifiVersion, outDir string, logger Logger) error {
 	logger.Infof("Writing version file...")
-	if err := writeVersionFile(unifiVersion.Version, outDir); err != nil {
+	if err := writeVersionFile(internalVersion.Version, officialVersion.Version, outDir); err != nil {
 		return fmt.Errorf("failed to write version file to %s: %w", outDir, err)
 	}
 	markerDir := filepath.Dir(outDir)
-	if err := writeVersionRepoMarkerFile(unifiVersion.Version, markerDir); err != nil {
-		return fmt.Errorf("failed to write version file to %s: %w", markerDir, err)
+	if err := writeVersionMarker(internalVersion.Version, markerDir, ".unifi-version"); err != nil {
+		return fmt.Errorf("failed to write internal version marker to %s: %w", markerDir, err)
+	}
+	if err := writeVersionMarker(officialVersion.Version, markerDir, ".unifi-version-official"); err != nil {
+		return fmt.Errorf("failed to write official version marker to %s: %w", markerDir, err)
 	}
 	return nil
 }

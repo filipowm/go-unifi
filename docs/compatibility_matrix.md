@@ -15,8 +15,11 @@ This table maps `go-unifi` library releases to the range of UniFi Network Contro
 > well, but this is **not checked**. If you hit an issue on a specific controller version, please
 > [open an issue](https://github.com/filipowm/go-unifi/issues).
 
-The library is updated daily to track the latest UniFi Controller releases, so the "Latest" value moves forward over time. 
-The controller version a given build targets is recorded in [`.unifi-version`](../.unifi-version).
+The library is updated daily to track the latest UniFi Controller releases, so the "Latest" value moves forward over time.
+Two plain-text version markers are written at the repo root by `go generate`:
+
+- [`.unifi-version`](../.unifi-version) — the Internal (legacy) API controller version
+- [`.unifi-version-official`](../.unifi-version-official) — the Official OpenAPI (`integration/v1`) spec version (requires controller ≥ `10.1.78`)
 
 ## Compatibility Changelog
 

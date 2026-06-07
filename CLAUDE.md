@@ -43,7 +43,8 @@ unifi/                  Single Go package: client + all resource types
   official/             Official UniFi OpenAPI (integration/v1) client — imports NOTHING from unifi
 codegen/                Code-generation pipeline (see codegen/CLAUDE.md)
 docs/                   Documentation
-.unifi-version          Supported controller version marker (e.g. 9.3.45)
+.unifi-version          Internal (legacy) API controller version marker (e.g. 9.5.21)
+.unifi-version-official Official OpenAPI (integration/v1) spec version marker (e.g. 10.1.78)
 ```
 
 ## Style

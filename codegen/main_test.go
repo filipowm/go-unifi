@@ -178,15 +178,22 @@ func TestGenerateLatest(t *testing.T) {
 	r.NoError(err)
 	assert.NotEmptyf(t, files, "output dir '%s' should not be empty", opts.outputDir)
 
-	// Marker is written beside outDir (at root), not in cwd, and matches version.generated.go.
+	// Internal marker written beside outDir (at root), and matches version.generated.go.
 	marker, err := os.ReadFile(filepath.Join(root, ".unifi-version"))
 	r.NoError(err)
-	version := strings.TrimSpace(string(marker))
-	r.NotEmpty(version)
+	internalVersion := strings.TrimSpace(string(marker))
+	r.NotEmpty(internalVersion)
 
 	versionGo, err := os.ReadFile(filepath.Join(opts.outputDir, "version.generated.go"))
 	r.NoError(err)
-	assert.Contains(t, string(versionGo), `"`+version+`"`, "marker must match version.generated.go")
+	assert.Contains(t, string(versionGo), `"`+internalVersion+`"`, "internal marker must match version.generated.go UnifiVersion")
+
+	// Official marker is also written beside outDir and its const is in version.generated.go.
+	officialMarker, err := os.ReadFile(filepath.Join(root, ".unifi-version-official"))
+	r.NoError(err)
+	officialVersion := strings.TrimSpace(string(officialMarker))
+	r.NotEmpty(officialVersion)
+	assert.Contains(t, string(versionGo), `OfficialAPIVersion = "`+officialVersion+`"`, "official marker must match version.generated.go OfficialAPIVersion")
 
 	// Assert that generate() commits the Official OpenAPI spec snapshot.
 	specGlob := filepath.Join(opts.versionBaseDir, "openapi", "integration-*.json")

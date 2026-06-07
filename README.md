@@ -1,7 +1,8 @@
 # UniFi Go SDK
 
 ![GitHub Release](https://img.shields.io/github/v/release/filipowm/go-unifi)
-![Supported UniFi Controller Version](https://img.shields.io/badge/dynamic/regex?url=https%3A%2F%2Fraw.githubusercontent.com%2Ffilipowm%2Fgo-unifi%2Frefs%2Fheads%2Fmain%2F.unifi-version&search=(.*)%3F&logo=ubiquiti&label=Supported%20UniFi%20Controller%20Version&color=yellow)
+![Supported Internal API Version](https://img.shields.io/badge/dynamic/regex?url=https%3A%2F%2Fraw.githubusercontent.com%2Ffilipowm%2Fgo-unifi%2Frefs%2Fheads%2Fmain%2F.unifi-version&search=(.*)%3F&logo=ubiquiti&label=Supported%20Internal%20API%20Version&color=yellow)
+![Supported Official API Version](https://img.shields.io/badge/dynamic/regex?url=https%3A%2F%2Fraw.githubusercontent.com%2Ffilipowm%2Fgo-unifi%2Frefs%2Fheads%2Fmain%2F.unifi-version-official&search=(.*)%3F&logo=ubiquiti&label=Supported%20Official%20API%20Version&color=blue)
 [![Docs](https://img.shields.io/badge/docs-reference-blue)](https://github.com/filipowm/go-unifi/blob/main/docs/readme.md)
 [![GoDoc](https://godoc.org/github.com/filipowm/go-unifi?status.svg)](https://godoc.org/github.com/filipowm/go-unifi)
 ![GitHub branch check runs](https://img.shields.io/github/check-runs/filipowm/go-unifi/main)
@@ -23,7 +24,7 @@ Check out the detailed [documentation](docs/readme.md) for more information.
 
 ## Supported UniFi Controller Versions
 
-Any version after 5.12.35 is supported as of now. **Latest version: 9.5.21**.
+Any version after 5.12.35 is supported as of now. **Latest Internal API version: 9.5.21; Latest Official API version: 10.1.78**.
 The SDK is updated daily to track the latest UniFi Controller versions.
 If you encounter any issues with the latest UniFi Controller version, please open an issue.
 

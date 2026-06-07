@@ -32,13 +32,12 @@ jobs:
           path: "./.unifi-version"
           trim: "true"
 
-      # Surface the committed Official OpenAPI snapshot version (its filename) so
-      # the PR body shows which spec the Official surface was regenerated from.
-      - name: "Read Official OpenAPI snapshot version"
-        id: "openapi_version"
-        run: |
-          latest=$(ls -t codegen/openapi/integration-*.json | head -n1)
-          echo "version=$(basename "$latest" .json | sed -E 's/integration-//')" >> "$GITHUB_OUTPUT"
+      - name: "Read Official API version marker"
+        id: "official_version"
+        uses: "juliangruber/read-file-action@271ff311a4947af354c6abcd696a306553b9ec18"  # v1.1.8
+        with:
+          path: "./.unifi-version-official"
+          trim: "true"
 
       # TODO: Automatically merge the PR if tests pass.
       - uses: "peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1"  # v8.1.1
@@ -50,6 +49,6 @@ jobs:
             Automated regeneration via `go generate unifi/codegen.go`.
 
             - Internal resources → controller `${{ steps.unifi_version.outputs.content }}`
-            - Official OpenAPI surface (models + wrappers + interface + mock) → spec `${{ steps.openapi_version.outputs.version }}`
+            - Official OpenAPI surface (models + wrappers + interface + mock) → spec `${{ steps.official_version.outputs.content }}`
 
             Review the `codegen/openapi/integration-*.json` diff for the spec delta.
