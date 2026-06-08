@@ -483,6 +483,52 @@ func TestNewClientSkipSystemInfoNoRoundTrip(t *testing.T) {
 	assert.Zero(t, sysInfoHits.Load(), "NewClient with SkipSystemInfo:true must not fetch sysinfo at construction")
 }
 
+// TestNewClientSkipSystemInfoDeferredError verifies the core SkipSystemInfo contract:
+// construction must succeed even when the controller is unreachable or returns an auth
+// error, and the failure must then surface on the first Version/API call.
+func TestNewClientSkipSystemInfoDeferredError(t *testing.T) {
+	t.Parallel()
+
+	t.Run("unreachable controller defers error to first API call", func(t *testing.T) {
+		t.Parallel()
+		// Close immediately so every connection attempt gets "connection refused".
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusOK)
+		}))
+		ts.Close()
+
+		c, err := NewClient(&ClientConfig{
+			URL:            ts.URL,
+			APIKey:         "dummy",
+			APIStyle:       APIStyleNew, // pinned: no style probe
+			SkipSystemInfo: true,
+		})
+		require.NoError(t, err, "NewClient with SkipSystemInfo:true must succeed even when controller is unreachable")
+
+		_, err = c.VersionContext(context.Background())
+		require.Error(t, err, "VersionContext must surface the deferred connection error")
+	})
+
+	t.Run("bad API key defers auth error to first API call", func(t *testing.T) {
+		t.Parallel()
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusUnauthorized)
+		}))
+		defer ts.Close()
+
+		c, err := NewClient(&ClientConfig{
+			URL:            ts.URL,
+			APIKey:         "bad-key",
+			APIStyle:       APIStyleNew, // pinned: no style probe
+			SkipSystemInfo: true,
+		})
+		require.NoError(t, err, "NewClient with SkipSystemInfo:true must succeed even with a bad API key")
+
+		_, err = c.VersionContext(context.Background())
+		require.Error(t, err, "VersionContext must surface the deferred auth error")
+	})
+}
+
 func TestHttpTransportCustomizerError(t *testing.T) {
 	t.Parallel()
 	customizer := func(transport *http.Transport) (*http.Transport, error) {

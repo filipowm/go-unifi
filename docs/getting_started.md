@@ -23,11 +23,9 @@ go generate unifi/codegen.go
 
 ## Initialization
 
-The client supports both API Key authentication and username/password authentication. Below are examples for both methods.
-Unifi client support both username/password and API Key authentication. It is recommended to use API Key authentication
-together with dedicated user restricted to local access only.
+API Key authentication is the only supported authentication method in 2.0.0. Username/password authentication has been removed.
 
-**IMPORTANT:** API Key authentication is available only since UniFi Controller version 9.0.108
+**IMPORTANT:** API Key authentication requires UniFi Controller version 9.0.108 or later.
 
 ### Obtaining an API Key
 
@@ -38,13 +36,14 @@ together with dedicated user restricted to local access only.
 5. Add a name for your API Key.
 6. Copy the key and store it securely, as it will only be displayed once.
 7. Click Done to ensure the key is hashed and securely stored.
-8. Use the API Key 🎉
 
-### API Key Authentication
+### Standard Client Initialization
+
+`NewClient` validates configuration and eagerly fetches system information (fail-fast: bad credentials or an unreachable controller surfaces at construction time).
 
 ```go
 c, err := unifi.NewClient(&unifi.ClientConfig{
-    BaseURL: "https://unifi.localdomain",
+    URL:    "https://unifi.localdomain",
     APIKey: "your-api-key",
 })
 if err != nil {
@@ -52,52 +51,22 @@ if err != nil {
 }
 ```
 
-### Username/Password Authentication
+### Deferred / Offline Client Initialization
+
+Set `SkipSystemInfo: true` to skip the eager system-info fetch. Construction succeeds even when the controller is unreachable; the error surfaces on the first API call instead. Combine with a pinned `APIStyle` for fully-offline construction (no network probe at all).
 
 ```go
 c, err := unifi.NewClient(&unifi.ClientConfig{
-    BaseURL: "https://unifi.localdomain",
-    Username: "your-username",
-    Password: "your-password",
+    URL:            "https://unifi.localdomain",
+    APIKey:         "your-api-key",
+    APIStyle:       unifi.APIStyleNew, // skip network probe — required for offline construction
+    SkipSystemInfo: true,
 })
 if err != nil {
     log.Fatalf("Failed to create client: %v", err)
 }
-```
-
-You can also configure `Remember Me` option, which will prolong the session validity. Might be required for long-running applications, that require authentication only once.
-
-```go
-c, err := unifi.NewClient(&unifi.ClientConfig{
-    BaseURL: "https://unifi.localdomain",
-    Username: "your-username",
-    Password: "your-password",
-    RememberMe: true,
-})
-if err != nil {
-    log.Fatalf("Failed to create client: %v", err)
-}
-```
-
-### Bare Client Initialization
-
-You can also use bare client, which creates a `unifi.Client` without initialization like logging in and getting system information. This can be useful in specific scenarios, when doing such initialization might be an uneeded overhead. To create it you can use the `NewBareClient` function provided in the SDK (see `unifi/client.go`).
-
-Example usage:
-
-```go
-c, err := unifi.NewBareClient(&unifi.ClientConfig{
-    BaseURL: "https://unifi-controller.example.com",
-    APIKey: "your-api-key", // or use Username/Password as needed
-    // Configuration for a bare client
-})
-if err != nil {
-    log.Fatalf("Error creating bare client: %v", err)
-}
-err = c.Login()
-if err != nil {
-    log.Fatalf("Error logging in: %v", err)
-}
+// Any error (bad credentials, unreachable host) surfaces here instead:
+version, err := c.VersionContext(ctx)
 ```
 
 ## Generating Client Code
@@ -113,7 +82,7 @@ This will update the generated models and REST methods according to the current 
 
 ## Usage
 
-Once instantiated, the Bare Client provides direct access to the generated API methods. You can perform operations without the extra layers of processing provided by interceptors or custom validations.
+Once the client is instantiated you can call any API method directly.
 If you use a default site and didn't create any new ones, you can use the `default` site ID.
 
 **Example:**
