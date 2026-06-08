@@ -88,7 +88,7 @@ operations are missing.
 
 Fill in the Comments column ONLY for:
 - **Partial coverage (⚠️)** — explain concisely what is missing or different.
-- **Official-only resources (Legacy ❌, Official ✅)** — explain what the
+- **Official-only resources (Official ✅, Legacy ❌)** — explain what the
   Official API adds.
 
 Leave the Comments cell **blank** for rows where both surfaces are ✅, or where
@@ -100,9 +100,9 @@ Write `docs/2.0.0/coverage_matrix.md` with:
 
 1. A short intro paragraph.
 2. The emoji legend table (✅/⚠️/❌).
-3. The resource table: `| Resource | Legacy Internal API | Official API | Comments |`.
+3. The resource table: `| Resource | Official API | Legacy Internal API | Comments |`.
    - Sort rows alphabetically by Resource name.
-   - Legacy/Official cells contain ONLY an emoji mark (no text).
+   - Official/Legacy cells contain ONLY an emoji mark (no text).
    - Comments are plain prose, no markdown formatting inside the cell.
 
 The format must be stable and consistent across runs so that diffs remain
