@@ -291,26 +291,7 @@ These affect only forks of the generator:
 - `DownloadAndExtract` gained a leading `*http.Client` parameter (TEST-07, Wave 1).
 - `DownloadAndExtract`/`downloadJar` gained a leading `context.Context` parameter (ARCH-15, Wave 2).
 
-### G. `Device.QOSProfile` value → pointer
-
-**Status: DONE** — landed in generated code (device.generated.go).
-
-**Type change (compile break for direct field access).** `Device.QOSProfile` changed from `DeviceQOSProfile`
-(value) to `*DeviceQOSProfile` (pointer). Code that reads the field without a nil check will panic at
-runtime if the field is absent from the API response (nil pointer).
-
-```go
-// before
-mode := device.QOSProfile.QOSProfileMode // direct access on value type
-// after
-if device.QOSProfile != nil {
-    mode := device.QOSProfile.QOSProfileMode // pointer; check nil first
-}
-```
-
-**Provenance:** device.generated.go; delegated from epic #117, issue #148.
-
-### H. `NewBareClient` replaced by `NewClient` + `SkipSystemInfo`
+### G. `NewBareClient` replaced by `NewClient` + `SkipSystemInfo`
 
 **Status: DONE** — landed; `NewBareClient` removed.
 
@@ -326,7 +307,7 @@ c, err := unifi.NewClient(&unifi.ClientConfig{URL: "...", APIKey: "...", SkipSys
 
 **Provenance:** unifi/client.go; delegated from epic #117, issue #148.
 
-### I. New `Patch` method on `Client`
+### H. New `Patch` method on `Client`
 
 **Status: DONE** — landed in unifi/requests.go.
 

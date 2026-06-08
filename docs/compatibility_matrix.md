@@ -36,7 +36,7 @@ Two plain-text version markers are written at the repo root by `go generate`:
 
 See [docs/2.0.0/breaking_changes.md](2.0.0/breaking_changes.md) for the full list of 10 breaking changes.
 Key changes: API-key-only auth, TLS verify-by-default, Go 1.26+, `VerifySSL` → `SkipVerifySSL`, removed
-`Login`/`Logout`, `Device.QOSProfile` value → pointer, `NewBareClient` replaced by `SkipSystemInfo`.
+`Login`/`Logout`, `NewBareClient` replaced by `SkipSystemInfo`.
 
 ### 1.11.0 / UniFi Controller 9.5.21
 
