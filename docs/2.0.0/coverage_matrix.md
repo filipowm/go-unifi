@@ -17,27 +17,27 @@ methods in `unifi/official/client.generated.go` and the resource types in
 
 ## Coverage Table
 
-| Resource | Legacy Internal API | Official API | Comments |
+| Resource | Official API | Legacy Internal API | Comments |
 |---|:---:|:---:|---|
-| ACL Rules | ❌ | ✅ | New in Official API; no legacy equivalent. |
-| AP Groups | ✅ | ❌ | |
-| Controller Info | ❌ | ✅ | Official provides a dedicated controller info endpoint (`Info.Get`); legacy has no equivalent resource. |
-| Devices | ✅ | ⚠️ | Official covers adoption, listing, statistics, and device/port actions; legacy `Device` resource provides richer per-device configuration. |
-| DNS Policies | ❌ | ✅ | New in Official API; legacy has `DNSRecord` for static DNS entries but no policy-level DNS filtering. |
-| DNS Records | ✅ | ❌ | |
-| Dynamic DNS | ✅ | ❌ | |
-| Firewall Policies | ⚠️ | ✅ | Legacy `FirewallZonePolicy` provides zone-based policies with full CRUD (the direct counterpart of Official `FirewallPolicy`); legacy also exposes `FirewallRule`/`FirewallGroup` for the older rule-based model. Official adds policy ordering operations absent from the legacy surface. |
+| ACL Rules | ✅ | ❌ | New in Official API; no legacy equivalent. |
+| AP Groups | ❌ | ✅ | |
+| Controller Info | ✅ | ❌ | Official provides a dedicated controller info endpoint (`Info.Get`); legacy has no equivalent resource. |
+| Devices | ⚠️ | ✅ | Official covers adoption, listing, statistics, and device/port actions; legacy `Device` resource provides richer per-device configuration. |
+| DNS Policies | ✅ | ❌ | New in Official API; legacy has `DNSRecord` for static DNS entries but no policy-level DNS filtering. |
+| DNS Records | ❌ | ✅ | |
+| Dynamic DNS | ❌ | ✅ | |
+| Firewall Policies | ✅ | ⚠️ | Legacy `FirewallZonePolicy` provides zone-based policies with full CRUD (the direct counterpart of Official `FirewallPolicy`); legacy also exposes `FirewallRule`/`FirewallGroup` for the older rule-based model. Official adds policy ordering operations absent from the legacy surface. |
 | Firewall Zones | ✅ | ✅ | |
-| Hotspot Packages & Operators | ✅ | ❌ | |
-| Hotspot Vouchers | ❌ | ✅ | Voucher CRUD is new in Official; legacy `HotspotPackage` covers payment plan definitions and `HotspotOp` manages operator logins. |
+| Hotspot Packages & Operators | ❌ | ✅ | |
+| Hotspot Vouchers | ✅ | ❌ | Voucher CRUD is new in Official; legacy `HotspotPackage` covers payment plan definitions and `HotspotOp` manages operator logins. |
 | Networks | ✅ | ✅ | |
-| Port Forwarding | ✅ | ❌ | |
-| Port Profiles | ✅ | ❌ | |
-| RADIUS Accounts | ✅ | ❌ | |
-| RADIUS Profiles | ✅ | ❌ | |
-| Routing | ✅ | ❌ | |
-| Sites | ❌ | ✅ | Official exposes site listing and name-to-UUID resolution; legacy treats site names as implicit context parameters rather than managed resources. |
-| Traffic Matching Lists | ❌ | ✅ | New in Official API; no legacy equivalent. |
-| Users (Network Clients) | ✅ | ⚠️ | Legacy `User` manages known client devices with full CRUD (aliases, fixed IPs, WLAN groups); Official `Clients` covers connected-client listing and network actions only. |
+| Port Forwarding | ❌ | ✅ | |
+| Port Profiles | ❌ | ✅ | |
+| RADIUS Accounts | ❌ | ✅ | |
+| RADIUS Profiles | ❌ | ✅ | |
+| Routing | ❌ | ✅ | |
+| Sites | ✅ | ❌ | Official exposes site listing and name-to-UUID resolution; legacy treats site names as implicit context parameters rather than managed resources. |
+| Traffic Matching Lists | ✅ | ❌ | New in Official API; no legacy equivalent. |
+| Users (Network Clients) | ⚠️ | ✅ | Legacy `User` manages known client devices with full CRUD (aliases, fixed IPs, WLAN groups); Official `Clients` covers connected-client listing and network actions only. |
 | WiFi Networks (SSIDs) | ✅ | ✅ | |
-| WLAN Groups | ✅ | ❌ | |
+| WLAN Groups | ❌ | ✅ | |
