@@ -16,6 +16,7 @@ this one is your hands-on guide.
   - [API key replaces username/password](#api-key-replaces-usernamepassword)
   - [TLS verification now ON by default](#tls-verification-now-on-by-default)
   - [CSRF handling removed](#csrf-handling-removed)
+- [Official API surface (additive, recommended)](#official-api-surface-additive-recommended)
 - [Go version](#go-version)
 - [Client interface additions](#client-interface-additions)
 - [Error handling](#error-handling)
@@ -26,7 +27,6 @@ this one is your hands-on guide.
   - [`NewBareClient` replaced by `NewClient` with `SkipSystemInfo: true`](#newbareclient-replaced-by-newclient-with-skipsysteminfo-true)
   - [New `Patch` method](#new-patch-method)
   - [`UseLocking` is a no-op](#uselocking-is-a-no-op)
-- [Official API surface (additive)](#official-api-surface-additive)
 - [Further reading](#further-reading)
 
 ---
@@ -121,6 +121,38 @@ c.AddInterceptor(&unifi.CSRFInterceptor{}) // no-op now; type is gone
 ```
 
 **Check your code.** `grep -r 'CSRFInterceptor\|CsrfHeader' .`
+
+---
+
+## Official API surface (additive, recommended)
+
+**Recommended.** The Official API (`integration/v1`) is the surface Ubiquiti now maintains as a
+versioned, stable contract. **Prefer it over the legacy Internal API, and migrate existing Internal
+calls to their Official equivalents wherever a covered one exists.** The Internal surface stays
+supported for everything the Official API doesn't yet cover, but new code should reach for
+`c.Official()` first.
+
+**What changed.** `c.Official()` returns a fluent client for the UniFi official OpenAPI
+(`integration/v1`). This is new in 2.0.0 and is purely additive — no existing code changes.
+
+**Why.** Ubiquiti now ships a versioned, stable OpenAPI specification. The Official surface lets you
+use it without touching the Internal API.
+
+```go
+// Official API — new in 2.0.0; requires controller ≥ 10.1.78 with API-key auth
+info, err := c.Official().Info().Get(ctx)
+id, err := c.Official().Sites().ResolveID(ctx, "default") // legacy name → UUID
+
+page, err := c.Official().Networks().ListPage(ctx, id, nil)
+pol, err := c.Official().Firewall().CreatePolicy(ctx, id, body)
+```
+
+Operations on `c.Official()` return `ErrOfficialAPIUnavailable` if the controller is below `10.1.78`,
+is old-style, or uses non-API-key auth. Set `DisableOfficialAPI: true` in `ClientConfig` to opt out
+entirely (operations then fail fast with `ErrOfficialAPIDisabled`).
+
+In 2.0.0 the Internal surface remains the default — calling a resource method directly on `c` is
+identical to calling it on `c.Internal()`. The default is expected to flip to Official in 3.0.0.
 
 ---
 
@@ -305,32 +337,6 @@ cfg := &unifi.ClientConfig{} // concurrent by default
 ```
 
 **Check your code.** `grep -r 'UseLocking' .` — you can remove the field; setting it has no effect.
-
----
-
-## Official API surface (additive)
-
-**What changed.** `c.Official()` returns a fluent client for the UniFi official OpenAPI
-(`integration/v1`). This is new in 2.0.0 and is purely additive — no existing code changes.
-
-**Why.** Ubiquiti now ships a versioned, stable OpenAPI specification. The Official surface lets you
-use it without touching the Internal API.
-
-```go
-// Official API — new in 2.0.0; requires controller ≥ 10.1.78 with API-key auth
-info, err := c.Official().Info().Get(ctx)
-id, err := c.Official().Sites().ResolveID(ctx, "default") // legacy name → UUID
-
-page, err := c.Official().Networks().ListPage(ctx, id, nil)
-pol, err := c.Official().Firewall().CreatePolicy(ctx, id, body)
-```
-
-Operations on `c.Official()` return `ErrOfficialAPIUnavailable` if the controller is below `10.1.78`,
-is old-style, or uses non-API-key auth. Set `DisableOfficialAPI: true` in `ClientConfig` to opt out
-entirely (operations then fail fast with `ErrOfficialAPIDisabled`).
-
-In 2.0.0 the Internal surface remains the default — calling a resource method directly on `c` is
-identical to calling it on `c.Internal()`. The default is expected to flip to Official in 3.0.0.
 
 ---
 
