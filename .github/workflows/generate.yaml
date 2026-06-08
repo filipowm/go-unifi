@@ -1,8 +1,11 @@
 ---
 name: "Generate Unifi structures"
 on:
-#  schedule:
-#    - cron: "0 0 * * *"
+  # Off-peak minute (not :00) to avoid GitHub's top-of-hour scheduler congestion.
+  # Internal generation is capped at 9.5.21 (#129), so that half is an expected
+  # no-op; the live-moving part is the Official OpenAPI snapshot.
+  schedule:
+    - cron: "37 3 * * *"
   workflow_dispatch: {}
 
 permissions:
