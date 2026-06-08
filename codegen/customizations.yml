@@ -492,6 +492,8 @@ customizations:
           customUnmarshalType: "booleanishString"
         PortOverrides:
           omitEmpty: false
+        QOSProfile:
+          fieldType: "*DeviceQOSProfile"
     FirewallZone:
       resourcePath: "firewall/zone"
       fields:
