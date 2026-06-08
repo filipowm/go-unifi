@@ -2,34 +2,16 @@
 
 The UniFi Go SDK client is highly configurable to cater to different needs and environments. This document explains the various configuration options available in the client.
 
-## Authentication Methods
+## Authentication
 
-The client supports two authentication protocols:
-
-### API Key Authentication
-
-Use this method for better security and dedicated access. Example:
+The client uses **API Key authentication exclusively** (username/password was removed in 2.0.0). Obtain your
+key from the UniFi Network controller under Control Plane → Admins & Users → your admin user → Create API Key.
+Requires controller version 9.0.114 or newer.
 
 ```go
 c, err := unifi.NewClient(&unifi.ClientConfig{
-    BaseURL: "https://unifi.localdomain",
+    URL:    "https://unifi.localdomain",
     APIKey: "your-api-key",
-})
-if err != nil {
-    log.Fatalf("Error creating client: %v", err)
-}
-```
-
-### Username/Password Authentication
-
-Alternatively, you can use username and password:
-
-```go
-c, err := unifi.NewClient(&unifi.ClientConfig{
-    BaseURL: "https://unifi.localdomain",
-    Username: "your-username",
-    Password: "your-password",
-    RememberMe: true, // Optional: prolong the session validity. Might be needed for long-running applications.
 })
 if err != nil {
     log.Fatalf("Error creating client: %v", err)
@@ -48,8 +30,8 @@ Configure the validation mode as follows:
 
 ```go
 c, err := unifi.NewClient(&unifi.ClientConfig{
-    BaseURL: "https://unifi.localdomain",
-    APIKey: "your-api-key",
+    URL:            "https://unifi.localdomain",
+    APIKey:         "your-api-key",
     ValidationMode: unifi.HardValidation,
 })
 if err != nil {
@@ -73,7 +55,7 @@ or TLS configurations:
 
 ```go
 c, err := unifi.NewClient(&unifi.ClientConfig{
-    BaseURL: "https://unifi.localdomain",
+    URL:    "https://unifi.localdomain",
     APIKey: "your-api-key",
     HttpTransportCustomizer: func(transport *http.Transport) (*http.Transport, error) {
         transport.MaxIdleConns = 10
@@ -93,7 +75,7 @@ You can provide your own HTTP client configuration using the `HttpRoundTripperPr
 
 ```go
 c, err := unifi.NewClient(&unifi.ClientConfig{
-    BaseURL: "https://unifi.localdomain",
+    URL:    "https://unifi.localdomain",
     APIKey: "your-api-key",
     HttpRoundTripperProvider: func() http.RoundTripper {
         // Create a custom HTTP Round Tripper instance
@@ -106,7 +88,7 @@ c, err := unifi.NewClient(&unifi.ClientConfig{
 
 Interceptors let you hook into the request and response flow. They can be used for logging, metrics, or modifying requests/responses.
 
-Implement the [ClientInterceptor](https://pkg.go.dev/github.com/filipowm/go-unifi/unifi#ClientInterceptor) interface:
+Implement the [ClientInterceptor](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#ClientInterceptor) interface:
 
 ```go
 // LoggingInterceptor logs each request and response
@@ -123,8 +105,8 @@ func (l *LoggingInterceptor) InterceptResponse(resp *http.Response) error {
 }
 
 c, err := unifi.NewClient(&unifi.ClientConfig{
-    BaseURL: "https://unifi.localdomain",
-    APIKey: "your-api-key",
+    URL:          "https://unifi.localdomain",
+    APIKey:       "your-api-key",
     Interceptors: []unifi.ClientInterceptor{&LoggingInterceptor{}},
 })
 if err != nil {
@@ -155,7 +137,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/filipowm/go-unifi/unifi"
+	"github.com/filipowm/go-unifi/v2/unifi"
 )
 
 // customTransportCustomizer customizes the HTTP transport, e.g., setting idle connection limits and TLS options.
@@ -196,9 +178,7 @@ func main() {
 	// Create a comprehensive client configuration.
 	config := &unifi.ClientConfig{
 		URL:    "https://unifi.example.com", // Base URL of the UniFi controller (without trailing '/api')
-		APIKey: "your-api-key",              // API key for authentication. Alternatively, use User and Pass for user/password auth.
-		// User:         "username",                                 // Uncomment and provide if using user/password authentication
-		// Password:     "password",                                 // Uncomment and provide if using user/password authentication
+		APIKey: "your-api-key",              // API key for authentication (required; username/password removed in 2.0.0)
 		Timeout:        30 * time.Second,                                // Maximum duration to wait for a response
 		// SkipVerifySSL controls TLS verification and is SECURE BY DEFAULT: leave it false (the
 		// zero value) to verify certificates. Set it to true only for self-signed controller certs (logs a warning).

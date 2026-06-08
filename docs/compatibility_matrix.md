@@ -2,18 +2,27 @@
 
 This table maps `go-unifi` library releases to the range of UniFi Network Controller versions they are known to work with.
 
-| `go-unifi` version  | Min UniFi Controller | Latest UniFi Controller |
-|---------------------|----------------------|-------------------------|
-| `1.11.0`            | `5.12.35`            | `9.5.21`                |
-| `1.10.0`            | `5.12.35`            | `9.4.19`                |
-| `v1.9.0` – `v1.9.1` | `5.12.35`            | `9.3.45`                |
-| `v0.0.1` – `v1.8.1` | `5.12.35`            | `9.0.114`               |
+| `go-unifi` version  | Min UniFi Controller | Internal API version | Official API version |
+|---------------------|----------------------|----------------------|----------------------|
+| `2.0.0`             | `9.0.114`            | `9.5.21` (frozen)    | `10.1.78` (tracks spec) |
+| `1.11.0`            | `5.12.35`            | `9.5.21`             | —                    |
+| `1.10.0`            | `5.12.35`            | `9.4.19`             | —                    |
+| `v1.9.0` – `v1.9.1` | `5.12.35`            | `9.3.45`             | —                    |
+| `v0.0.1` – `v1.8.1` | `5.12.35`            | `9.0.114`            | —                    |
 
 > [!NOTE]
 > Only the **min** and **latest** versions listed above are explicitly verified. Versions in
 > between (and newer versions released after the latest tested one) are very likely supported as
 > well, but this is **not checked**. If you hit an issue on a specific controller version, please
 > [open an issue](https://github.com/filipowm/go-unifi/issues).
+
+**2.0.0 notes:**
+- The **minimum** controller version (9.0.114) is set by API-key authentication — the only supported auth.
+  Old-style (classic) controllers are unsupported (`ErrOldStyleUnsupported`).
+- The **Internal API** is frozen at `9.5.21` for 2.0.0. The daily version bump moves the `.unifi-version`
+  marker forward but the generated shapes won't diverge until the next major.
+- The **Official OpenAPI** surface (`c.Official()`) requires controller ≥ `10.1.78`. The spec version
+  (`.unifi-version-official`) tracks the latest committed snapshot and updates daily.
 
 The library is updated daily to track the latest UniFi Controller releases, so the "Latest" value moves forward over time.
 Two plain-text version markers are written at the repo root by `go generate`:
@@ -22,6 +31,12 @@ Two plain-text version markers are written at the repo root by `go generate`:
 - [`.unifi-version-official`](../.unifi-version-official) — the Official OpenAPI (`integration/v1`) spec version (requires controller ≥ `10.1.78`)
 
 ## Compatibility Changelog
+
+### 2.0.0 — Breaking changes
+
+See [docs/2.0.0/breaking_changes.md](2.0.0/breaking_changes.md) for the full list of 10 breaking changes.
+Key changes: API-key-only auth, TLS verify-by-default, Go 1.26+, `VerifySSL` → `SkipVerifySSL`, removed
+`Login`/`Logout`, `NewBareClient` replaced by `SkipSystemInfo`.
 
 ### 1.11.0 / UniFi Controller 9.5.21
 

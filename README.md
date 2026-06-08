@@ -4,19 +4,21 @@
 ![Supported Internal API Version](https://img.shields.io/badge/dynamic/regex?url=https%3A%2F%2Fraw.githubusercontent.com%2Ffilipowm%2Fgo-unifi%2Frefs%2Fheads%2Fmain%2F.unifi-version&search=(.*)%3F&logo=ubiquiti&label=Supported%20Internal%20API%20Version&color=yellow)
 ![Supported Official API Version](https://img.shields.io/badge/dynamic/regex?url=https%3A%2F%2Fraw.githubusercontent.com%2Ffilipowm%2Fgo-unifi%2Frefs%2Fheads%2Fmain%2F.unifi-version-official&search=(.*)%3F&logo=ubiquiti&label=Supported%20Official%20API%20Version&color=blue)
 [![Docs](https://img.shields.io/badge/docs-reference-blue)](https://github.com/filipowm/go-unifi/blob/main/docs/readme.md)
-[![GoDoc](https://godoc.org/github.com/filipowm/go-unifi?status.svg)](https://godoc.org/github.com/filipowm/go-unifi)
+[![Go Reference](https://pkg.go.dev/badge/github.com/filipowm/go-unifi/v2/unifi.svg)](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi)
 ![GitHub branch check runs](https://img.shields.io/github/check-runs/filipowm/go-unifi/main)
 ![GitHub License](https://img.shields.io/github/license/filipowm/go-unifi)
 
 This SDK provides a Go client for the UniFi Network Controller API. It is used primarily in the [Terraform provider for UniFi](https://github.com/filipowm/terraform-provider-unifi),
 but can be used independently for any Go project requiring UniFi Network Controller API integration.
 
-Check out the detailed [documentation](docs/readme.md) for more information.
+Check out the detailed [documentation](docs/readme.md) for more information, including the
+[1.x → 2.0 migration guide](docs/2.0.0/migration_guide.md) and the
+[breaking-changes log](docs/2.0.0/breaking_changes.md).
 
 ## Features
 
 - Great UniFi Network Controller API coverage through automated code generation and manually added code for undocumented endpoints
-- Easy to use client with support for API Key and username/password authentication
+- Easy to use client with support for API Key authentication (username/password removed in 2.0.0)
 - Generated data models from UniFi Controller API specifications
 - Daily automated updates to track the latest UniFi Controller versions
 - Support for multiple UniFi Controller versions
@@ -24,7 +26,13 @@ Check out the detailed [documentation](docs/readme.md) for more information.
 
 ## Supported UniFi Controller Versions
 
-Any version after 5.12.35 is supported as of now. **Latest Internal API version: 9.5.21; Latest Official API version: 10.1.78**.
+API-key authentication (the only supported auth in 2.0.0) requires a new-style UniFi OS controller,
+version **9.0.114** or newer. Old-style (classic) controllers are unsupported and construction fails
+immediately with `ErrOldStyleUnsupported`.
+
+The Internal API is tested against controller **9.5.21** (`.unifi-version`). The Official OpenAPI
+surface (`c.Official()`) requires controller **10.1.78** or newer (`.unifi-version-official`).
+
 The SDK is updated daily to track the latest UniFi Controller versions.
 If you encounter any issues with the latest UniFi Controller version, please open an issue.
 
@@ -56,13 +64,19 @@ and the UniFi Controller JAR is obfuscated, making it challenging to directly us
 
 ## Migrating from `paultyng/go-unifi`
 
-If you already use `paultyng/go-unifi`, you can easily migrate to this SDK, because it is a fork and the SDK is fully compatible with the original one.
+If you already use `paultyng/go-unifi`, you can migrate to this SDK — it is a fork and the core client
+methods remain the same.
 Check out the [migration guide](docs/migrating_from_upstream.md) for information on how to migrate from the upstream `paultyng/go-unifi` SDK.
+
+## Upgrading from go-unifi 1.x
+
+See the [1.x → 2.0 migration guide](docs/2.0.0/migration_guide.md) for a step-by-step walkthrough of every
+breaking change. A quick reference of all 10 breaks is in
+[breaking_changes.md](docs/2.0.0/breaking_changes.md).
 
 ## Usage
 
-Unifi client support both username/password and API Key authentication. It is recommended to use API Key authentication for better security,
-as well as dedicated user restricted to local access only.
+The UniFi client requires API Key authentication (available from UniFi Controller 9.0.114+).
 
 ### Obtaining an API Key
 
@@ -73,24 +87,14 @@ as well as dedicated user restricted to local access only.
 5. Add a name for your API Key.
 6. Copy the key and store it securely, as it will only be displayed once.
 7. Click Done to ensure the key is hashed and securely stored.
-8. Use the API Key 🎉
+8. Use the API Key
 
 ### Client Initialization
 
 ```go
 c, err := unifi.NewClient(&unifi.ClientConfig{
-BaseURL: "https://unifi.localdomain",
-APIKey: "your-api-key",
-})
-```
-
-Instead of API Key, you can also use username/password for authentication:
-
-```go
-c, err := unifi.NewClient(&unifi.ClientConfig{
-BaseURL: "https://unifi.localdomain",
-Username: "your-username",
-Password: "your-password",
+    URL:    "https://unifi.localdomain",
+    APIKey: "your-api-key",
 })
 ```
 
@@ -102,12 +106,13 @@ controller's CA instead.
 
 ```go
 c, err := unifi.NewClient(&unifi.ClientConfig{
-...
-SkipVerifySSL: true, // disable TLS verification (self-signed cert)
+    URL:           "https://unifi.localdomain",
+    APIKey:        "your-api-key",
+    SkipVerifySSL: true, // disable TLS verification (self-signed cert)
 })
 ```
 
-List of available client configuration options is available [here](https://pkg.go.dev/github.com/filipowm/go-unifi/unifi#ClientConfig).
+See the [full list of client configuration options](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#ClientConfig) on pkg.go.dev.
 
 ### Internal vs Official API
 
@@ -144,6 +149,9 @@ all, err := official.Collect(c.Official().Networks().ListAll(ctx, id, "")) // ex
 pol, err := c.Official().Firewall().CreatePolicy(ctx, id, body) // fluent, per-group accessor
 ```
 
+> **Resource groups:** `Hotspot()` exposes Vouchers; `Firewall()` exposes `PatchPolicy` and other
+> firewall resources. The Official surface has no top-level `Vouchers()` accessor — use `c.Official().Hotspot()`.
+
 In **2.0.0 the Internal surface stays the canonical default**, so existing code is untouched — calling a
 resource method on the client is identical to calling it on `c.Internal()`. **3.0.0 is expected to flip the
 default to the Official client.** The Official client is gated: operations return
@@ -153,17 +161,23 @@ either with `errors.Is`. Site identifiers differ between the surfaces — the In
 **name** while the Official API uses a **UUID** — so `Official().Sites().ResolveID` maps the familiar name
 to the UUID for you.
 
+### Low-level API calls
+
+For endpoints not covered by a generated method, the client exposes `Do`, `Get`, `Post`, `Put`, `Patch`,
+and `Delete`. See [Advanced Topics](docs/advanced_topics.md) for the path-resolution rules and examples.
+
 ### Customizing HTTP Client
 
 You can customize underlying HTTP client by using `HttpTransportCustomizer` interface:
 
 ```go
 c, err := unifi.NewClient(&unifi.ClientConfig{
-...
-HttpTransportCustomizer: func (transport *http.Transport) (*http.Transport, error) {
-transport.MaxIdleConns = 10
-return transport, nil
-},
+    URL:    "https://unifi.localdomain",
+    APIKey: "your-api-key",
+    HttpTransportCustomizer: func (transport *http.Transport) (*http.Transport, error) {
+        transport.MaxIdleConns = 10
+        return transport, nil
+    },
 })
 ```
 
@@ -172,25 +186,26 @@ return transport, nil
 You can use interceptors to modify requests and responses. This gives you more control over the client behavior
 and flexibility to add custom logic.
 
-To use interceptor logic, you need to create a struct implementing [ClientInterceptor](https://pkg.go.dev/github.com/filipowm/go-unifi/unifi#ClientInterceptor) interface.
+To use interceptor logic, you need to create a struct implementing [ClientInterceptor](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#ClientInterceptor) interface.
 For example, you can use interceptors to log requests and responses:
 
 ```go
 type LoggingInterceptor struct{}
 
 func (l *LoggingInterceptor) InterceptRequest(req *http.Request) error {
-log.Printf("Request: %s %s", req.Method, req.URL)
-return nil
+    log.Printf("Request: %s %s", req.Method, req.URL)
+    return nil
 }
 
 func (l *LoggingInterceptor) InterceptResponse(resp *http.Response) error {
-log.Printf("Response status: %d", resp.StatusCode)
-return nil
+    log.Printf("Response status: %d", resp.StatusCode)
+    return nil
 }
 
 c, err := unifi.NewClient(&unifi.ClientConfig{
-...
-Interceptors: []unifi.ClientInterceptor{&LoggingInterceptor{}},
+    URL:          "https://unifi.localdomain",
+    APIKey:       "your-api-key",
+    Interceptors: []unifi.ClientInterceptor{&LoggingInterceptor{}},
 })
 ```
 
@@ -210,8 +225,9 @@ To change the validation mode, you can use the `ValidationMode` field in the cli
 
 ```go
 c, err := unifi.NewClient(&unifi.ClientConfig{
-...
-ValidationMode: unifi.HardValidation,
+    URL:            "https://unifi.localdomain",
+    APIKey:         "your-api-key",
+    ValidationMode: unifi.HardValidation,
 })
 ```
 
@@ -219,17 +235,17 @@ If you use hard validation, you can get access to `unifi.ValidationError` struct
 
 ```go
 n := &unifi.Network{
-Name:     "my-network",
-Purpose:  "invalid-purpose",
-IPSubnet: "10.0.0.10/24",
+    Name:     "my-network",
+    Purpose:  "invalid-purpose",
+    IPSubnet: "10.0.0.10/24",
 }
 _, err = c.CreateNetwork(ctx, "default", n)
 
 if err != nil {
-validationError := &unifi.ValidationError{}
-errors.As(err, &validationError)
-fmt.Printf("Error: %v\n", validationError)
-fmt.Printf("Root: %v\n", validationError.Root)
+    validationError := &unifi.ValidationError{}
+    errors.As(err, &validationError)
+    fmt.Printf("Error: %v\n", validationError)
+    fmt.Printf("Root: %v\n", validationError.Root)
 }
 ```
 
@@ -248,10 +264,10 @@ Create user assigned to network:
 
 ```go
 user, err := c.CreateUser(ctx, "site-name", &unifi.User{
-Name:      "My Network User",
-MAC:       "00:00:00:00:00:00",
-NetworkID: network[0].ID,
-IP:        "10.0.21.37",
+    Name:      "My Network User",
+    MAC:       "00:00:00:00:00:00",
+    NetworkID: network[0].ID,
+    IP:        "10.0.21.37",
 })
 ```
 

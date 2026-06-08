@@ -33,20 +33,13 @@ if err != nil {
 
 ### filipowm/go-unifi Style
 
-The new library provides a more structured and configurable approach:
+The new library provides a more structured and configurable approach. In 2.0.0, only API Key
+authentication is supported (available from UniFi Controller 9.0.114+):
 
 ```go
-// Using API Key (recommended, requires UniFi Controller 9.0.108+)
 client, err := unifi.NewClient(&unifi.ClientConfig{
-    BaseURL: "https://unifi.localdomain",
-    APIKey:  "your-api-key",
-})
-
-// OR using username/password
-client, err := unifi.NewClient(&unifi.ClientConfig{
-    BaseURL:  "https://unifi.localdomain",
-    Username: "your-username",
-    Password: "your-password",
+    URL:    "https://unifi.localdomain",
+    APIKey: "your-api-key",
 })
 
 if err != nil {
@@ -62,7 +55,7 @@ if err != nil {
 
 2. **Authentication**:
    - Old: Only username/password authentication with explicit `Login()` call
-   - New: Supports both API Key (recommended) and username/password authentication
+   - New: API Key authentication only (username/password removed in 2.0.0)
    - New: Login is handled automatically during client creation
 
 3. **HTTP Client Configuration**:
@@ -83,19 +76,19 @@ if err != nil {
 
 ## Migration Steps
 
-1. Replace the import from `github.com/paultyng/go-unifi` to `github.com/filipowm/go-unifi`
-2. Replace manual client creation with `NewClient` and appropriate `ClientConfig`
+1. Replace the import from `github.com/paultyng/go-unifi` to `github.com/filipowm/go-unifi/v2`
+2. Replace manual client creation with `NewClient` and appropriate `ClientConfig` (API key required)
 3. TLS verification is now **on by default** (secure by default). To skip verification (e.g. self-signed
    certs), set `SkipVerifySSL` to `true` (the zero value `false` verifies), and
    disabling verification logs a warning:
    ```go
    client, err := unifi.NewClient(&unifi.ClientConfig{
-       BaseURL: "https://unifi.localdomain",
-       APIKey:  "your-api-key",
+       URL:           "https://unifi.localdomain",
+       APIKey:        "your-api-key",
        SkipVerifySSL: true,
    })
    ```
-4. Remove explicit `Login()` calls as they are now handled automatically, unless you use [bare client initialization](./getting_started.md#BareClientInitialization)
+4. Remove explicit `Login()` calls as they are now handled automatically
 5. Replace usage of `unifi.APIError` with `unifi.ServerError`
 
 The rest of your code using the client methods should continue to work as before, as the API methods remain the same.
