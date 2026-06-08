@@ -704,7 +704,7 @@ func TestDoInvalidJsonResponse(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c, err := newBareClient(&ClientConfig{
+	c, err := newClient(&ClientConfig{
 		URL:    ts.URL,
 		APIKey: "test-key",
 	})
@@ -743,7 +743,7 @@ func TestErrorHandlerCustom(t *testing.T) {
 	defer ts.Close()
 
 	customErrorHandler := &failingErrorHandler{}
-	c, err := newBareClient(&ClientConfig{
+	c, err := newClient(&ClientConfig{
 		URL:          ts.URL,
 		APIKey:       "test-key",
 		ErrorHandler: customErrorHandler,

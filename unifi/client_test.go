@@ -42,7 +42,7 @@ func verifyInterceptorPresence(a *assert.Assertions, c *client, interceptors []a
 func TestBareClientConstructor(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
-	c, err := newBareClient(&ClientConfig{
+	c, err := newClient(&ClientConfig{
 		URL:    localUrl,
 		APIKey: "test-key",
 	})
@@ -56,7 +56,7 @@ func TestNewClientWithApiKey(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
 	// when
-	c, err := newBareClient(&ClientConfig{
+	c, err := newClient(&ClientConfig{
 		URL:    localUrl,
 		APIKey: "test",
 	})
@@ -284,9 +284,9 @@ func TestVersionWithLockingNoDeadlock(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	// newBareClient leaves sysInfo uncached, so Version() takes the fetch path —
+	// newClient leaves sysInfo uncached, so Version() takes the fetch path —
 	// the exact path that previously deadlocked under UseLocking.
-	c, err := newBareClient(&ClientConfig{
+	c, err := newClient(&ClientConfig{
 		URL:        ts.URL,
 		APIKey:     "dummy",
 		UseLocking: true,
@@ -337,8 +337,8 @@ func TestVersionConcurrentCachedFetch(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	// newBareClient leaves sysInfo uncached, so the first Version() fetches.
-	c, err := newBareClient(&ClientConfig{
+	// newClient leaves sysInfo uncached, so the first Version() fetches.
+	c, err := newClient(&ClientConfig{
 		URL:        ts.URL,
 		APIKey:     "dummy",
 		UseLocking: true,
@@ -403,7 +403,7 @@ func TestBareClientDoesNotMutateConfig(t *testing.T) {
 	origURL := config.URL
 	origUserAgent := config.UserAgent
 
-	c, err := newBareClient(config)
+	c, err := newClient(config)
 	require.NoError(t, err)
 
 	// The caller's struct must be untouched.
