@@ -162,7 +162,7 @@ type DevicePortOverrides
   PriorityQueue2Level int json:"priority_queue2_level" unmarshalType:emptyStringInt
   PriorityQueue3Level int json:"priority_queue3_level" unmarshalType:emptyStringInt
   PriorityQueue4Level int json:"priority_queue4_level" unmarshalType:emptyStringInt
-  QOSProfile DeviceQOSProfile json:"qos_profile"
+  QOSProfile *DeviceQOSProfile json:"qos_profile"
   SettingPreference string json:"setting_preference"
   Speed int json:"speed" unmarshalType:emptyStringInt
   StormctrlBroadcastastEnabled bool json:"stormctrl_bcast_enabled"
