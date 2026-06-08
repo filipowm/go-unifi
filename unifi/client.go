@@ -356,7 +356,7 @@ func newClientFromConfig(config *ClientConfig, v *validator) (*client, error) {
 // It validates the configuration, determines the API style, and — unless SkipSystemInfo is true —
 // eagerly fetches system information from the controller (fail-fast for bad credentials/unreachable host).
 func NewClient(config *ClientConfig) (Client, error) { //nolint: ireturn
-	c, err := newBareClient(config)
+	c, err := newClient(config)
 	if err != nil {
 		return c, err
 	}
@@ -373,7 +373,7 @@ func NewClient(config *ClientConfig) (Client, error) { //nolint: ireturn
 	return c, nil
 }
 
-func newBareClient(config *ClientConfig) (*client, error) {
+func newClient(config *ClientConfig) (*client, error) {
 	v, err := newValidator()
 	if err != nil {
 		return nil, fmt.Errorf("failed creating validator: %w", err)

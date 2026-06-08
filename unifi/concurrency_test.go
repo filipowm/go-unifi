@@ -45,7 +45,7 @@ func TestConcurrentRequestsAPIKeyReplayNoRace(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c, err := newBareClient(&ClientConfig{
+	c, err := newClient(&ClientConfig{
 		URL:    ts.URL,
 		APIKey: wantKey,
 	})

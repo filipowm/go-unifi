@@ -78,7 +78,7 @@ func TestApiStyleOverrideSkipsProbe(t *testing.T) {
 	t.Parallel()
 	// localUrl points at an unreachable port: if the probe ran, construction
 	// would fail with a connection error. APIStyle skips it entirely.
-	c, err := newBareClient(&ClientConfig{
+	c, err := newClient(&ClientConfig{
 		URL:      localUrl,
 		APIKey:   "test-key",
 		APIStyle: APIStyleNew,
@@ -91,7 +91,7 @@ func TestApiStyleOverrideSkipsProbe(t *testing.T) {
 // fails immediately — classic controllers are unsupported after API-key-only auth.
 func TestApiStyleOverrideOldStyleIsUnsupported(t *testing.T) {
 	t.Parallel()
-	_, err := newBareClient(&ClientConfig{
+	_, err := newClient(&ClientConfig{
 		URL:      localUrl,
 		APIKey:   "test-key",
 		APIStyle: APIStyleOld,
@@ -132,7 +132,7 @@ func TestApiStyleSetCopiesAreIsolated(t *testing.T) {
 func TestApiStyleOverrideRejectsUnknown(t *testing.T) {
 	t.Parallel()
 
-	_, err := newBareClient(&ClientConfig{
+	_, err := newClient(&ClientConfig{
 		URL:      "https://example.com",
 		APIKey:   "test-key",
 		APIStyle: APIStyle(99),
@@ -155,7 +155,7 @@ func TestDetermineApiStyle_OldStyleIsUnsupported(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	_, err := newBareClient(&ClientConfig{
+	_, err := newClient(&ClientConfig{
 		URL:    ts.URL,
 		APIKey: "test-key",
 	})

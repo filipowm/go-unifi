@@ -77,7 +77,7 @@ func newControllerServer(t *testing.T, routes ...route) *controllerServer {
 // offline via the APIStyle override (no network probe, no login).
 func (cs *controllerServer) client() *client {
 	cs.t.Helper()
-	c, err := newBareClient(&ClientConfig{
+	c, err := newClient(&ClientConfig{
 		URL:      cs.srv.URL,
 		APIKey:   "test-key",
 		APIStyle: APIStyleNew,
@@ -98,7 +98,7 @@ func newOfflineClient(t *testing.T, cfg *ClientConfig) *client {
 	if cfg.APIStyle == APIStyleAuto {
 		cfg.APIStyle = APIStyleNew
 	}
-	c, err := newBareClient(cfg)
+	c, err := newClient(cfg)
 	require.NoError(t, err)
 	return c
 }

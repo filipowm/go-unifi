@@ -61,7 +61,7 @@ func TestOfficialGateUnavailableOldStyle(t *testing.T) {
 	t.Parallel()
 	// Old-style (classic) controllers are unsupported since 2.0.0; construction
 	// must fail immediately rather than letting a client reach Official().
-	_, err := newBareClient(&ClientConfig{
+	_, err := newClient(&ClientConfig{
 		URL:      testUrl,
 		APIKey:   "test-key",
 		APIStyle: APIStyleOld,
