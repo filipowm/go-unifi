@@ -21,17 +21,17 @@ in the codebase.
 ### Step 1 — Collect Official API groups
 
 Grep the live `unifi/official/client.generated.go` for the accessor methods on
-the `Client` interface. Each method name is one official group (e.g. `ACLs`,
-`Clients`, `DNSPolicies`, `Devices`, `Firewall`, `Hotspot`, `Info`, `Networks`,
-`Sites`, `TrafficMatchingLists`, `WifiBroadcasts`).
+the `Client` interface. Each method name is one official group. Discover them
+generically — never hardcode the list, so new groups are automatically picked up:
 
 ```bash
-grep -E 'ACLs\(\)|Clients\(\)|DNSPolicies\(\)|Devices\(\)|Firewall\(\)|Hotspot\(\)|Info\(\)|Networks\(\)|Sites\(\)|TrafficMatchingLists\(\)|WifiBroadcasts\(\)' \
-  unifi/official/client.generated.go
+grep -oE '^\t[A-Z][A-Za-z]+\(\) [A-Z][A-Za-z]+Client$' unifi/official/client.generated.go \
+  | grep -v 'Supporting'
 ```
 
-For each group, inspect its `<group>.generated.go` file in `unifi/official/` to
-understand what operations it exposes (full CRUD vs. read-only vs. actions-only).
+Each matched name (the part before `()`) is one official group. For each group,
+inspect its `<group>.generated.go` file in `unifi/official/` to understand what
+operations it exposes (full CRUD vs. read-only vs. actions-only).
 
 **IMPORTANT — Supporting is intentionally excluded.** The `Supporting` group is
 a shared enum/lookup helper (countries, DPI categories, device tags, etc.), not
@@ -56,7 +56,8 @@ Build a UNION of meaningful resource concepts across both surfaces. Rules:
 
 - Map multiple related official operations or legacy types onto ONE conceptual
   row where they clearly represent the same real-world resource (e.g.
-  `FirewallZone` legacy + Official `Firewall.Zone` ops → "Firewall Zones").
+  `FirewallZone` legacy + Official `Firewall.Zone` ops → "Firewall Zones";
+  `FirewallZonePolicy` legacy + Official `Firewall.Policy` ops → "Firewall Policies").
 - Keep concepts distinct when the models differ enough to matter (e.g.
   "Firewall Policies" vs "Firewall Zones" are separate rows).
 - Include legacy-only concepts that have no Official equivalent (Port Forwarding,
