@@ -69,7 +69,9 @@ if err != nil {
 // do something with the response
 ```
 
-For a partial update (PATCH), pass only the fields you want to change:
+For a partial update (PATCH), pass only the fields you want to change. `Patch` sends a literal HTTP PATCH,
+so the target endpoint must accept it — the Official `integration/v1` surface does; most legacy Internal
+REST resources (e.g. `networkconf`) expect `PUT`, so use `Put` for those:
 
 ```go
 patch := struct {
@@ -81,7 +83,8 @@ var patchResp struct {
     Data interface{} `json:"data"`
 }
 
-err = c.Patch(ctx, "s/default/rest/networkconf/<id>", patch, &patchResp)
+// Absolute path (leading slash) ⇒ sent as-is; PATCH-capable endpoint
+err = c.Patch(ctx, "/proxy/network/integration/v1/sites/<id>/...", patch, &patchResp)
 if err != nil {
     log.Fatalf("Error performing PATCH request: %v", err)
 }

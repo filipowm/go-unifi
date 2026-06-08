@@ -109,8 +109,9 @@ c.AddInterceptor(&unifi.CSRFInterceptor{}) // before — no-op now; type is gone
 
 **What changed.** The module requires Go 1.26 or later (`go 1.26.0` in `go.mod`).
 
-**Why.** The Official API surface uses range-over-func iterators (`iter.Seq2`) which were stabilised in
-Go 1.23. 1.26 is the current stable version that gives us a safe minimum with no surprises.
+**Why.** The Official API surface uses range-over-func iterators (`iter.Seq2`), which need Go ≥ 1.23. The
+module pins `1.26` as the project's supported toolchain baseline (the `go` directive in `go.mod`) — not
+because any single language feature demands it — so contributors and consumers build on one known-good floor.
 
 **Check your code.** Run `go version` — if you're below 1.26 you'll see a build error immediately. Update
 your toolchain (`go install golang.org/dl/go1.26.0@latest && go1.26.0 download`).
@@ -277,16 +278,19 @@ c, err := unifi.NewClient(&unifi.ClientConfig{
 **What changed.** The `Client` interface (and the concrete `*client`) now exposes a `Patch` method
 alongside the existing `Get`/`Post`/`Put`/`Delete`. It sends an HTTP PATCH request for partial updates.
 
-**Why.** The UniFi Official API uses PATCH for partial resource updates; adding it to the escape-hatch
-surface keeps parity.
+**Why.** PATCH is the standard verb for partial updates, and the escape-hatch surface (`Do`/`Get`/`Post`/
+`Put`/`Delete`) was missing it. It is most useful against endpoints that actually accept PATCH — notably
+the Official `integration/v1` surface and any new-style endpoint documented to support partial updates.
 
 ```go
-// new in 2.0.0 — partial update via PATCH
+// new in 2.0.0 — partial update via PATCH against a PATCH-capable endpoint
 patch := struct{ Name string `json:"name"` }{Name: "updated"}
-err := c.Patch(ctx, "s/default/rest/networkconf/<id>", patch, &resp)
+err := c.Patch(ctx, "/proxy/network/integration/v1/sites/<id>/...", patch, &resp)
 ```
 
-This is an additive change — no existing code is broken.
+`Patch` sends a literal HTTP PATCH — the target endpoint must accept it. Most legacy Internal REST
+resources (e.g. `networkconf`) expect `PUT`; use `Put` for those. This is an additive change — no
+existing code is broken.
 
 ---
 

@@ -334,9 +334,11 @@ c, err := unifi.NewClient(&unifi.ClientConfig{URL: "...", APIKey: "...", SkipSys
 method for HTTP PATCH requests, alongside the existing `Do`/`Get`/`Post`/`Put`/`Delete`.
 
 ```go
-// new in 2.0.0
-err := c.Patch(ctx, "s/default/rest/networkconf/<id>", patchBody, &resp)
+// new in 2.0.0 — target endpoint must accept PATCH (e.g. the Official integration/v1 surface)
+err := c.Patch(ctx, "/proxy/network/integration/v1/sites/<id>/...", patchBody, &resp)
 ```
+
+`Patch` sends a literal HTTP PATCH; most legacy Internal REST resources (e.g. `networkconf`) expect `PUT`.
 
 **Provenance:** unifi/requests.go; delegated from epic #117, issue #148.
 
@@ -345,9 +347,10 @@ err := c.Patch(ctx, "s/default/rest/networkconf/<id>", patchBody, &resp)
 ## Planned for 3.0.0
 
 The following changes from the original epic #117 13-row index are **not** landing in 2.0.0. They are
-deferred to the next major version.
+deferred to the next major version. They keep their original epic-row numbers under a `P` (planned) prefix
+so they don't collide with the renumbered landed rows 4–6 above.
 
-### 4. OpenAPI-shaped structs (deferred to 3.0.0)
+### P4. OpenAPI-shaped structs (originally epic-row 4; deferred to 3.0.0)
 
 **Status: PENDING** — no resources migrated yet; landing per-resource as part of the OpenAPI generator wave.
 
@@ -359,7 +362,7 @@ Migration: compile against the new module version; fix any field references repo
 
 **Provenance:** epic #117, OpenAPI-generator wave (issues TBD).
 
-### 5. Occasional field renames (deferred to 3.0.0)
+### P5. Occasional field renames (originally epic-row 5; deferred to 3.0.0)
 
 **Status: PENDING** — no field renames yet; land alongside each OpenAPI-driven resource migration.
 
@@ -371,15 +374,15 @@ Migration: compile-error-driven; rename at each call site.
 
 **Provenance:** epic #117, per-resource OpenAPI migration.
 
-### 6. New `integration/v1` `APIStyle` (deferred to 3.0.0)
+### P6. New `integration/v1` `APIStyle` (originally epic-row 6; deferred to 3.0.0)
 
 **Status: PENDING** — routing generated resources through the official `integration/v1` API is part of
-the OpenAPI generator wave (same milestone as rows 4/5); not yet landed.
+the OpenAPI generator wave (same milestone as rows P4/P5); not yet landed.
 
 **Interface change (compile break for custom `Client` implementations).** A new `APIStyle` constant will
 route code-generated resources through the UniFi official `integration/v1` API path instead of the legacy
 `/api/s/{site}/...` endpoints. The generated CRUD methods and their structs will adopt OpenAPI-derived
-shapes (see rows 4/5).
+shapes (see rows P4/P5).
 
 The `integration/v1` path is a capability layered on the new-style API — it is not a fourth independent
 style alongside `V1`, `V2`, and `new-style`; see `unifi/api_paths.go` for the documented constraint.
@@ -388,4 +391,4 @@ Note: the `Official()` accessor and the `integration/v1` info/sites vertical tha
 are documented in entries [D](#d-client-interface-split-into-internalclient--internalofficial-accessors-119)
 and [E](#e-official-api-unavailable-on-classicold-style-controllers-119) of the provenance index above.
 
-**Provenance:** epic #117, OpenAPI generator wave (issues TBD, same milestone as rows 4/5).
+**Provenance:** epic #117, OpenAPI generator wave (issues TBD, same milestone as rows P4/P5).

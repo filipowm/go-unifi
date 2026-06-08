@@ -44,7 +44,7 @@ func main() {
 	var response map[string]interface{} // Adjust this type based on the expected response
 	err = client.UploadFile(
 		context.Background(),
-		"s/default/upload", // The API endpoint path (site-relative; prefixed with /proxy/network/api)
+		"/proxy/network/upload/s/default/portalfile", // Upload endpoint (leading slash ⇒ sent as-is; uploads live under /proxy/network/upload, outside the /proxy/network/api tree)
 		"/path/to/your/file.txt", // Path to the file on disk
 		"file", // Form field name for the file
 		formFields, // Additional form fields
@@ -89,7 +89,7 @@ func main() {
 	var response map[string]interface{} // Adjust this type based on the expected response
 	err = client.UploadFileFromReader(
 		context.Background(),
-		"s/default/upload", // The API endpoint path (site-relative; prefixed with /proxy/network/api)
+		"/proxy/network/upload/s/default/portalfile", // Upload endpoint (leading slash ⇒ sent as-is; uploads live under /proxy/network/upload, outside the /proxy/network/api tree)
 		reader, // Reader with the file content
 		"myfile.txt", // Filename to use in the upload
 		"file", // Form field name for the file
