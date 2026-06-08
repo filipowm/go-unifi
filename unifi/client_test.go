@@ -39,7 +39,7 @@ func verifyInterceptorPresence(a *assert.Assertions, c *client, interceptors []a
 	}
 }
 
-func TestNewBareClient(t *testing.T) {
+func TestBareClientConstructor(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
 	c, err := newBareClient(&ClientConfig{
@@ -284,9 +284,9 @@ func TestVersionWithLockingNoDeadlock(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	// NewBareClient leaves sysInfo uncached, so Version() takes the fetch path —
+	// newBareClient leaves sysInfo uncached, so Version() takes the fetch path —
 	// the exact path that previously deadlocked under UseLocking.
-	c, err := NewBareClient(&ClientConfig{
+	c, err := newBareClient(&ClientConfig{
 		URL:        ts.URL,
 		APIKey:     "dummy",
 		UseLocking: true,
@@ -337,8 +337,8 @@ func TestVersionConcurrentCachedFetch(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	// NewBareClient leaves sysInfo uncached, so the first Version() fetches.
-	c, err := NewBareClient(&ClientConfig{
+	// newBareClient leaves sysInfo uncached, so the first Version() fetches.
+	c, err := newBareClient(&ClientConfig{
 		URL:        ts.URL,
 		APIKey:     "dummy",
 		UseLocking: true,
@@ -376,12 +376,12 @@ func TestVersionConcurrentCachedFetch(t *testing.T) {
 	assert.Equal(t, burstHits, sysInfoHits.Load(), "cached Version() must not trigger another sysInfo fetch")
 }
 
-// TestNewBareClientDoesNotMutateConfig is the end-to-end guard: building a
+// TestBareClientDoesNotMutateConfig is the end-to-end guard: building a
 // client from a config that carries a trailing-slash URL and an empty UserAgent
 // must leave the CALLER's config byte-for-byte intact, while the constructed
 // client behaves normalized — requests land on the trimmed URL. The APIStyle
 // override keeps construction fully offline (no network probe).
-func TestNewBareClientDoesNotMutateConfig(t *testing.T) {
+func TestBareClientDoesNotMutateConfig(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
 
@@ -449,6 +449,38 @@ func TestVersion(t *testing.T) {
 
 		assert.Empty(t, c.Version(), "a failing sysinfo fetch must make Version() return an empty string")
 	})
+}
+
+// TestNewClientSkipSystemInfoNoRoundTrip asserts that NewClient with SkipSystemInfo:true
+// issues zero sysinfo requests during construction. Only the style-probe (if APIStyleAuto)
+// or no requests at all (pinned APIStyle) should occur.
+func TestNewClientSkipSystemInfoNoRoundTrip(t *testing.T) {
+	t.Parallel()
+
+	var sysInfoHits atomic.Int32
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "", "/":
+			// Style probe — allowed.
+			w.WriteHeader(http.StatusOK)
+		case "/proxy/network/api/s/default/stat/sysinfo":
+			sysInfoHits.Add(1)
+			w.WriteHeader(http.StatusOK)
+			fmt.Fprintf(w, `{"data": [{"version": "9.9.9"}]}`)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer ts.Close()
+
+	_, err := NewClient(&ClientConfig{
+		URL:            ts.URL,
+		APIKey:         "dummy",
+		APIStyle:       APIStyleNew, // pinned: no style probe either
+		SkipSystemInfo: true,
+	})
+	require.NoError(t, err)
+	assert.Zero(t, sysInfoHits.Load(), "NewClient with SkipSystemInfo:true must not fetch sysinfo at construction")
 }
 
 func TestHttpTransportCustomizerError(t *testing.T) {
