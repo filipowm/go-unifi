@@ -27,7 +27,7 @@ Check out the detailed [documentation](docs/readme.md) for more information, inc
 ## Supported UniFi Controller Versions
 
 API-key authentication (the only supported auth in 2.0.0) requires a new-style UniFi OS controller,
-version **9.0.108** or newer. Old-style (classic) controllers are unsupported and construction fails
+version **9.0.114** or newer. Old-style (classic) controllers are unsupported and construction fails
 immediately with `ErrOldStyleUnsupported`.
 
 The Internal API is tested against controller **9.5.21** (`.unifi-version`). The Official OpenAPI
@@ -76,7 +76,7 @@ breaking change. A quick reference of all 10 breaks is in
 
 ## Usage
 
-The UniFi client requires API Key authentication (available from UniFi Controller 9.0.108+).
+The UniFi client requires API Key authentication (available from UniFi Controller 9.0.114+).
 
 ### Obtaining an API Key
 

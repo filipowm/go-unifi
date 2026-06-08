@@ -60,7 +60,7 @@ cfg := &unifi.ClientConfig{
 - `grep -r 'User:\|Username:\|Password:\|RememberMe:\|UserPassCredentials' .`
 - `grep -r '\.Login(\|\.Logout(' .`
 
-API keys require UniFi Network 9.0.108 or newer on a UniFi OS (new-style) controller.
+API keys require UniFi Network 9.0.114 or newer on a UniFi OS (new-style) controller.
 
 ---
 

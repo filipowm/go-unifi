@@ -34,7 +34,7 @@ if err != nil {
 ### filipowm/go-unifi Style
 
 The new library provides a more structured and configurable approach. In 2.0.0, only API Key
-authentication is supported (available from UniFi Controller 9.0.108+):
+authentication is supported (available from UniFi Controller 9.0.114+):
 
 ```go
 client, err := unifi.NewClient(&unifi.ClientConfig{

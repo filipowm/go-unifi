@@ -6,7 +6,7 @@ The UniFi Go SDK client is highly configurable to cater to different needs and e
 
 The client uses **API Key authentication exclusively** (username/password was removed in 2.0.0). Obtain your
 key from the UniFi Network controller under Control Plane → Admins & Users → your admin user → Create API Key.
-Requires controller version 9.0.108 or newer.
+Requires controller version 9.0.114 or newer.
 
 ```go
 c, err := unifi.NewClient(&unifi.ClientConfig{

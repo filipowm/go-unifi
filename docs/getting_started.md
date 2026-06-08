@@ -6,7 +6,7 @@ I highly recommend to use the latest version of UniFi Go SDK, as well as update 
 ## Prerequisites
 
 - Go 1.26 or later
-- UniFi Controller 9.0.108 or newer (new-style/UniFi-OS only; old-style controllers are unsupported)
+- UniFi Controller 9.0.114 or newer (new-style/UniFi-OS only; old-style controllers are unsupported)
 
 ## Installation
 
@@ -26,7 +26,7 @@ go generate unifi/codegen.go
 
 The client uses API Key authentication exclusively. Username/password authentication was removed in 2.0.0.
 
-**IMPORTANT:** API Key authentication is available only since UniFi Controller version 9.0.108. Old-style (classic) controllers are unsupported.
+**IMPORTANT:** API Key authentication is available only since UniFi Controller version 9.0.114. Old-style (classic) controllers are unsupported.
 
 ### Obtaining an API Key
 

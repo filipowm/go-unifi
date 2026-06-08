@@ -4,7 +4,7 @@ This table maps `go-unifi` library releases to the range of UniFi Network Contro
 
 | `go-unifi` version  | Min UniFi Controller | Internal API version | Official API version |
 |---------------------|----------------------|----------------------|----------------------|
-| `2.0.0`             | `9.0.108`            | `9.5.21` (frozen)    | `10.1.78` (tracks spec) |
+| `2.0.0`             | `9.0.114`            | `9.5.21` (frozen)    | `10.1.78` (tracks spec) |
 | `1.11.0`            | `5.12.35`            | `9.5.21`             | —                    |
 | `1.10.0`            | `5.12.35`            | `9.4.19`             | —                    |
 | `v1.9.0` – `v1.9.1` | `5.12.35`            | `9.3.45`             | —                    |
@@ -17,7 +17,7 @@ This table maps `go-unifi` library releases to the range of UniFi Network Contro
 > [open an issue](https://github.com/filipowm/go-unifi/issues).
 
 **2.0.0 notes:**
-- The **minimum** controller version (9.0.108) is set by API-key authentication — the only supported auth.
+- The **minimum** controller version (9.0.114) is set by API-key authentication — the only supported auth.
   Old-style (classic) controllers are unsupported (`ErrOldStyleUnsupported`).
 - The **Internal API** is frozen at `9.5.21` for 2.0.0. The daily version bump moves the `.unifi-version`
   marker forward but the generated shapes won't diverge until the next major.

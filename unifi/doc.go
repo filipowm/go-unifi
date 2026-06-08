@@ -2,7 +2,7 @@
 //
 // # Authentication
 //
-// Every client is created with [NewClient] using an API key (requires UniFi Network 9.0.108+
+// Every client is created with [NewClient] using an API key (requires UniFi Network 9.0.114+
 // on new-style/UniFi-OS controllers). Old-style (classic) controllers are unsupported and
 // return [ErrOldStyleUnsupported] at construction time.
 //
