@@ -60,6 +60,15 @@ func TestGeneratedSurface(t *testing.T) {
 	code, err := GenerateModels(loadSnapshot(t), defaultPackageName)
 	require.NoError(t, err)
 
+	// Placeholder godoc rewrite: oapi-codegen zero-info phrases must be gone.
+	assert.NotContains(t, code, "defines model for")
+	assert.NotContains(t, code, "defines parameters for")
+	assert.NotContains(t, code, "defines body for")
+	// Replacement phrases must be present.
+	assert.Contains(t, code, "is a generated model for the UniFi Official API.")
+	assert.Contains(t, code, "holds query parameters for the UniFi Official API.")
+	assert.Contains(t, code, "is a generated request body for the UniFi Official API.")
+
 	assert.Contains(t, code, "DO NOT EDIT.")
 	assert.Contains(t, code, "package official")
 	assert.NotContains(t, code, "type Integration")
