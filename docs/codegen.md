@@ -80,3 +80,9 @@ The `customizations.yml` file is used to fine-tune the code generation process. 
 
 3. **Review the Output**: Check the generated files to ensure that your customizations have been applied as expected. 
    Adjust the `customizations.yml` file and re-run the generator if further changes are needed.
+
+## API Coverage Matrix
+
+For a resource-centric view of which UniFi resources are covered by the Legacy Internal API vs. the Official
+OpenAPI surface, see [`docs/2.0.0/coverage_matrix.md`](2.0.0/coverage_matrix.md). The matrix is regenerable
+via `.claude/skills/unifi-coverage-matrix/` whenever the official groups or legacy resources change.
