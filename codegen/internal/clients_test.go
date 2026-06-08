@@ -187,5 +187,5 @@ func TestGenerateCode(t *testing.T) {
 	a.NotEmpty(code, "GenerateCode() returned empty code")
 	a.Contains(code, "TestFunc")
 	// Ensure the hardcoded official-API import survives template relocation.
-	a.Contains(code, "github.com/filipowm/go-unifi/unifi/official")
+	a.Contains(code, "github.com/filipowm/go-unifi/v2/unifi/official")
 }

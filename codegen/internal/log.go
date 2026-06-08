@@ -1,7 +1,7 @@
 package internal
 
 import (
-	"github.com/filipowm/go-unifi/codegen/shared"
+	"github.com/filipowm/go-unifi/v2/codegen/shared"
 	"github.com/sirupsen/logrus"
 )
 

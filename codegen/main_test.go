@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/filipowm/go-unifi/codegen/internal"
+	"github.com/filipowm/go-unifi/v2/codegen/internal"
 	"github.com/hashicorp/go-version"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"

@@ -5,7 +5,7 @@ package unifi
 
 import (
 	"context"
-	"github.com/filipowm/go-unifi/unifi/official"
+	"github.com/filipowm/go-unifi/v2/unifi/official"
 	"io"
 	"sync"
 )
