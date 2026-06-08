@@ -324,3 +324,34 @@ These affect only forks of the generator:
 
 - `DownloadAndExtract` gained a leading `*http.Client` parameter (TEST-07, Wave 1).
 - `DownloadAndExtract`/`downloadJar` gained a leading `context.Context` parameter (ARCH-15, Wave 2).
+
+### G. `unifi.NewBareClient` removed — use `NewClient` with `SkipSystemInfo: true` (issue #153)
+
+**Status: DONE** — landed in issue #153 (consolidate client constructors).
+
+**Function removal (compile break).** The exported `NewBareClient` constructor is removed. Its contract —
+constructing a client without the eager `GetSystemInformation` round-trip — is now covered by `NewClient`
+with `SkipSystemInfo: true`. For fully-offline construction (no network probe at all), also pin `APIStyle`
+to skip the style detection probe.
+
+```go
+// before
+c, err := unifi.NewBareClient(&unifi.ClientConfig{...})
+
+// after — deferred sysinfo check (surfaces on first API call)
+c, err := unifi.NewClient(&unifi.ClientConfig{
+    URL:            "https://unifi.localdomain",
+    APIKey:         "your-api-key",
+    SkipSystemInfo: true,
+})
+
+// after — fully offline (no network probe at construction)
+c, err := unifi.NewClient(&unifi.ClientConfig{
+    URL:            "https://unifi.localdomain",
+    APIKey:         "your-api-key",
+    APIStyle:       unifi.APIStyleNew,
+    SkipSystemInfo: true,
+})
+```
+
+**Provenance:** issue #153 (consolidate client constructors).
