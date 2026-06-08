@@ -9,6 +9,26 @@ You don't need to keep [breaking_changes.md](breaking_changes.md) open while rea
 rationale and affected symbols are inlined here. That document is a cross-reference for completeness;
 this one is your hands-on guide.
 
+## Table of Contents
+
+- [Fast path](#fast-path)
+- [Authentication & TLS](#authentication--tls)
+  - [API key replaces username/password](#api-key-replaces-usernamepassword)
+  - [TLS verification now ON by default](#tls-verification-now-on-by-default)
+  - [CSRF handling removed](#csrf-handling-removed)
+- [Go version](#go-version)
+- [Client interface additions](#client-interface-additions)
+- [Error handling](#error-handling)
+  - [`meta.rc=="error"` on HTTP 200 now surfaces as `*ServerError`](#metarcerror-on-http-200-now-surfaces-as-servererror)
+  - [404 responses now satisfy `errors.Is(err, ErrNotFound)`](#404-responses-now-satisfy-errorsiserr-errnotfound)
+  - [`Create`/`Update` no longer return `ErrNotFound` on unexpected responses](#createupdate-no-longer-return-errnotfound-on-unexpected-responses)
+- [Types and methods](#types-and-methods)
+  - [`NewBareClient` replaced by `NewClient` with `SkipSystemInfo: true`](#newbareclient-replaced-by-newclient-with-skipsysteminfo-true)
+  - [New `Patch` method](#new-patch-method)
+  - [`UseLocking` is a no-op](#uselocking-is-a-no-op)
+- [Official API surface (additive)](#official-api-surface-additive)
+- [Further reading](#further-reading)
+
 ---
 
 ## Fast path
@@ -24,7 +44,6 @@ Mechanical checklist — tick each off in order:
 - [ ] Replace `NewBareClient(cfg)` with `NewClient(cfg)` + `SkipSystemInfo: true`
 - [ ] Review error checks on `Create`/`Update` paths (no longer returns `ErrNotFound`)
 - [ ] If your code implements the `Client` interface, add `SetSetting`, `VersionContext`, and `GetSystemInformationContext`
-- [ ] If you reference `Device.QOSProfile` directly, update to the pointer type (`*DeviceQOSProfile`)
 - [ ] Remove any direct use of `CSRFInterceptor` or `CsrfHeader`
 
 ---
@@ -45,14 +64,14 @@ the path Ubiquiti is investing in. Removing the fallback keeps the auth surface 
 ```go
 // before
 cfg := &unifi.ClientConfig{
-    BaseURL:  "https://unifi.localdomain", // before
-    User:     "admin",                     // before
-    Password: "secret",                    // before
+    BaseURL:  "https://unifi.localdomain",
+    User:     "admin",
+    Password: "secret",
 }
 // after
 cfg := &unifi.ClientConfig{
-    URL:    "https://unifi.localdomain", // after
-    APIKey: "your-api-key",             // after — obtain from Control Plane → Admins & Users
+    URL:    "https://unifi.localdomain",
+    APIKey: "your-api-key", // obtain from Control Plane → Admins & Users
 }
 ```
 
@@ -75,10 +94,10 @@ The renamed, inverted field means safe code requires no action; unsafe code is e
 
 ```go
 // before — zero value silently skipped verification
-cfg := &unifi.ClientConfig{VerifySSL: false} // before — verification OFF
+cfg := &unifi.ClientConfig{VerifySSL: false} // verification OFF
 
 // after — zero value verifies; set true only for self-signed certs
-cfg := &unifi.ClientConfig{SkipVerifySSL: true} // after — disable for self-signed cert (logs a warning)
+cfg := &unifi.ClientConfig{SkipVerifySSL: true} // disable for self-signed cert (logs a warning)
 ```
 
 **Check your code.** `grep -r 'VerifySSL' .` — any hit that set `VerifySSL: false` was getting no TLS
@@ -97,7 +116,7 @@ session cookies, so CSRF management is irrelevant.
 
 ```go
 // before
-c.AddInterceptor(&unifi.CSRFInterceptor{}) // before — no-op now; type is gone
+c.AddInterceptor(&unifi.CSRFInterceptor{}) // no-op now; type is gone
 // after — simply remove the line
 ```
 
@@ -221,31 +240,6 @@ _, err = c.CreateNetwork(ctx, "default", n)
 
 ## Types and methods
 
-### `Device.QOSProfile` changed from value to pointer
-
-**What changed.** `Device.QOSProfile` was `DeviceQOSProfile` (value). It is now `*DeviceQOSProfile`
-(pointer). The field is set to `nil` when absent from the API response.
-
-**Why.** The UniFi API omits the `qos_profile` key entirely when it isn't configured. A pointer type
-lets the SDK express "not set" (nil) vs "set to the zero value" — the value type forced callers to
-inspect inner fields to distinguish the two cases.
-
-```go
-// before
-profile := device.QOSProfile         // DeviceQOSProfile value
-mode := device.QOSProfile.QOSProfileMode
-
-// after
-if device.QOSProfile != nil {         // check nil first
-    mode := device.QOSProfile.QOSProfileMode
-}
-```
-
-**Check your code.** `grep -r 'QOSProfile' .` — any code that reads `device.QOSProfile` without a nil
-check will now panic. Add the nil guard.
-
----
-
 ### `NewBareClient` replaced by `NewClient` with `SkipSystemInfo: true`
 
 **What changed.** The `NewBareClient` function is removed. Its purpose was to create a client without
@@ -304,10 +298,10 @@ underlying HTTP client became goroutine-safe.
 
 ```go
 // before — had an effect (serialised requests)
-cfg := &unifi.ClientConfig{UseLocking: true} // before
+cfg := &unifi.ClientConfig{UseLocking: true}
 
 // after — field retained for source compat but ignored; remove it
-cfg := &unifi.ClientConfig{} // after — concurrent by default
+cfg := &unifi.ClientConfig{} // concurrent by default
 ```
 
 **Check your code.** `grep -r 'UseLocking' .` — you can remove the field; setting it has no effect.

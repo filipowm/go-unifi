@@ -112,7 +112,7 @@ c, err := unifi.NewClient(&unifi.ClientConfig{
 })
 ```
 
-List of available client configuration options is available [here](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#ClientConfig).
+See the [full list of client configuration options](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#ClientConfig) on pkg.go.dev.
 
 ### Internal vs Official API
 
