@@ -33,6 +33,11 @@ func Transform(doc map[string]any) ([]string, error) {
 	if err := assertUpperSnakeMappings(schemas); err != nil {
 		return nil, err
 	}
+	// Before dedupeEnums so inline enum values are still readable; dedup then
+	// carries the x-* tag through enumRef.
+	if err := injectValidationTags(schemas); err != nil {
+		return nil, err
+	}
 	if err := dedupeEnums(schemas); err != nil {
 		return nil, err
 	}
