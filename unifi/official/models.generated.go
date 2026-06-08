@@ -2946,7 +2946,7 @@ func (e WirelessRadioOverviewWlanStandard) Valid() bool {
 	}
 }
 
-// ACLRule defines model for ACLRule.
+// ACLRule is a generated model for the UniFi Official API.
 type ACLRule struct {
 	// Action ACL rule action
 	Action ACLRuleAction `json:"action"`
@@ -2973,16 +2973,16 @@ type ACLRule struct {
 	union        json.RawMessage
 }
 
-// ACLRuleAction defines model for ACLRuleAction.
+// ACLRuleAction is a generated model for the UniFi Official API.
 type ACLRuleAction string
 
-// ACLRuleDeviceFilter defines model for ACLRuleDeviceFilter.
+// ACLRuleDeviceFilter is a generated model for the UniFi Official API.
 type ACLRuleDeviceFilter struct {
 	Type  string `json:"type"`
 	union json.RawMessage
 }
 
-// ACLRuleObject defines model for ACLRuleObject.
+// ACLRuleObject is a generated model for the UniFi Official API.
 type ACLRuleObject struct {
 	// Action ACL rule action
 	Action ACLRuleAction `json:"action"`
@@ -3009,12 +3009,12 @@ type ACLRuleObject struct {
 	union        json.RawMessage
 }
 
-// ACLRuleOrdering defines model for ACLRuleOrdering.
+// ACLRuleOrdering is a generated model for the UniFi Official API.
 type ACLRuleOrdering struct {
 	OrderedAclRuleIds []openapi_types.UUID `json:"orderedAclRuleIds"`
 }
 
-// ACLRuleUpdate defines model for ACLRuleUpdate.
+// ACLRuleUpdate is a generated model for the UniFi Official API.
 type ACLRuleUpdate struct {
 	// Action ACL rule action
 	Action ACLRuleAction `json:"action"`
@@ -3040,10 +3040,10 @@ type ACLRuleUpdate struct {
 	union        json.RawMessage
 }
 
-// AccessPointFeatureOverview defines model for AccessPointFeatureOverview.
+// AccessPointFeatureOverview is a generated model for the UniFi Official API.
 type AccessPointFeatureOverview = interface{}
 
-// AclRuleDevicesFilter defines model for AclRuleDevicesFilter.
+// AclRuleDevicesFilter is a generated model for the UniFi Official API.
 type AclRuleDevicesFilter struct {
 	// DeviceIds List of Switch capable device IDs to which the ACL rule will be provisioned.
 	DeviceIds *[]openapi_types.UUID `json:"deviceIds,omitempty"`
@@ -3051,7 +3051,7 @@ type AclRuleDevicesFilter struct {
 	union     json.RawMessage
 }
 
-// AclRulePage defines model for AclRulePage.
+// AclRulePage is a generated model for the UniFi Official API.
 type AclRulePage struct {
 	Count      int32           `json:"count"`
 	Data       []ACLRuleObject `json:"data"`
@@ -3060,7 +3060,7 @@ type AclRulePage struct {
 	TotalCount int64           `json:"totalCount"`
 }
 
-// AddressIPv4Matching defines model for AddressIPv4Matching.
+// AddressIPv4Matching is a generated model for the UniFi Official API.
 type AddressIPv4Matching struct {
 	Type string `json:"type"`
 
@@ -3069,7 +3069,7 @@ type AddressIPv4Matching struct {
 	union json.RawMessage
 }
 
-// AddressIPv6Matching defines model for AddressIPv6Matching.
+// AddressIPv6Matching is a generated model for the UniFi Official API.
 type AddressIPv6Matching struct {
 	Type string `json:"type"`
 
@@ -3078,7 +3078,7 @@ type AddressIPv6Matching struct {
 	union json.RawMessage
 }
 
-// AddressRangeIPv4Matching defines model for AddressRangeIPv4Matching.
+// AddressRangeIPv4Matching is a generated model for the UniFi Official API.
 type AddressRangeIPv4Matching struct {
 	// Start IPv4 start address
 	Start *string `json:"start,omitempty"`
@@ -3089,7 +3089,7 @@ type AddressRangeIPv4Matching struct {
 	union json.RawMessage
 }
 
-// AdoptedDeviceDetails defines model for AdoptedDeviceDetails.
+// AdoptedDeviceDetails is a generated model for the UniFi Official API.
 type AdoptedDeviceDetails struct {
 	AdoptedAt         *time.Time                `json:"adoptedAt,omitempty"`
 	ConfigurationId   string                    `json:"configurationId"`
@@ -3110,10 +3110,10 @@ type AdoptedDeviceDetails struct {
 	Uplink *DeviceUplinkInterfaceOverview `json:"uplink,omitempty"`
 }
 
-// AdoptedDeviceDetailsState defines model for AdoptedDeviceDetails.State.
+// AdoptedDeviceDetailsState is a generated model for the UniFi Official API.
 type AdoptedDeviceDetailsState string
 
-// AdoptedDeviceOverview defines model for AdoptedDeviceOverview.
+// AdoptedDeviceOverview is a generated model for the UniFi Official API.
 type AdoptedDeviceOverview struct {
 	Features          []AdoptedDeviceOverviewFeatures   `json:"features"`
 	FirmwareUpdatable bool                              `json:"firmwareUpdatable"`
@@ -3128,16 +3128,16 @@ type AdoptedDeviceOverview struct {
 	Supported         bool                              `json:"supported"`
 }
 
-// AdoptedDeviceOverviewFeatures defines model for AdoptedDeviceOverview.Features.
+// AdoptedDeviceOverviewFeatures is a generated model for the UniFi Official API.
 type AdoptedDeviceOverviewFeatures string
 
-// AdoptedDeviceOverviewInterfaces defines model for AdoptedDeviceOverview.Interfaces.
+// AdoptedDeviceOverviewInterfaces is a generated model for the UniFi Official API.
 type AdoptedDeviceOverviewInterfaces string
 
-// AdoptedDeviceOverviewState defines model for AdoptedDeviceOverview.State.
+// AdoptedDeviceOverviewState is a generated model for the UniFi Official API.
 type AdoptedDeviceOverviewState string
 
-// AdoptedDeviceOverviewPage defines model for AdoptedDeviceOverviewPage.
+// AdoptedDeviceOverviewPage is a generated model for the UniFi Official API.
 type AdoptedDeviceOverviewPage struct {
 	Count      int32                   `json:"count"`
 	Data       []AdoptedDeviceOverview `json:"data"`
@@ -3146,46 +3146,46 @@ type AdoptedDeviceOverviewPage struct {
 	TotalCount int64                   `json:"totalCount"`
 }
 
-// ApplicationInfo defines model for ApplicationInfo.
+// ApplicationInfo is a generated model for the UniFi Official API.
 type ApplicationInfo = Info
 
-// BlackoutScheduleConfiguration defines model for BlackoutScheduleConfiguration.
+// BlackoutScheduleConfiguration is a generated model for the UniFi Official API.
 type BlackoutScheduleConfiguration struct {
 	Days []BlackoutScheduleConfigurationPerDay `json:"days"`
 }
 
-// BlackoutScheduleConfigurationPerDay defines model for BlackoutScheduleConfigurationPerDay.
+// BlackoutScheduleConfigurationPerDay is a generated model for the UniFi Official API.
 type BlackoutScheduleConfigurationPerDay struct {
 	Day   BlackoutScheduleConfigurationPerDayDay `json:"day"`
 	Type  string                                 `json:"type"`
 	union json.RawMessage
 }
 
-// BlackoutScheduleConfigurationPerDayDay defines model for BlackoutScheduleConfigurationPerDay.Day.
+// BlackoutScheduleConfigurationPerDayDay is a generated model for the UniFi Official API.
 type BlackoutScheduleConfigurationPerDayDay string
 
-// BroadcastingDeviceFilter defines model for BroadcastingDeviceFilter.
+// BroadcastingDeviceFilter is a generated model for the UniFi Official API.
 type BroadcastingDeviceFilter struct {
 	Type  string `json:"type"`
 	union json.RawMessage
 }
 
-// ClientAccessOverview defines model for ClientAccessOverview.
+// ClientAccessOverview is a generated model for the UniFi Official API.
 type ClientAccessOverview = interface{}
 
-// ClientActionRequest defines model for ClientActionRequest.
+// ClientActionRequest is a generated model for the UniFi Official API.
 type ClientActionRequest struct {
 	Action string `json:"action"`
 	union  json.RawMessage
 }
 
-// ClientActionResponse defines model for ClientActionResponse.
+// ClientActionResponse is a generated model for the UniFi Official API.
 type ClientActionResponse struct {
 	Action string `json:"action"`
 	union  json.RawMessage
 }
 
-// ClientDetails defines model for ClientDetails.
+// ClientDetails is a generated model for the UniFi Official API.
 type ClientDetails struct {
 	Access      interface{}        `json:"access"`
 	ConnectedAt *time.Time         `json:"connectedAt,omitempty"`
@@ -3196,7 +3196,7 @@ type ClientDetails struct {
 	union       json.RawMessage
 }
 
-// ClientOverview defines model for ClientOverview.
+// ClientOverview is a generated model for the UniFi Official API.
 type ClientOverview struct {
 	Access      ClientAccessOverview `json:"access"`
 	ConnectedAt *time.Time           `json:"connectedAt,omitempty"`
@@ -3207,7 +3207,7 @@ type ClientOverview struct {
 	union       json.RawMessage
 }
 
-// ClientOverviewPage defines model for ClientOverviewPage.
+// ClientOverviewPage is a generated model for the UniFi Official API.
 type ClientOverviewPage struct {
 	Count      int32            `json:"count"`
 	Data       []ClientOverview `json:"data"`
@@ -3216,7 +3216,7 @@ type ClientOverviewPage struct {
 	TotalCount int64            `json:"totalCount"`
 }
 
-// CountryDefinition defines model for CountryDefinition.
+// CountryDefinition is a generated model for the UniFi Official API.
 type CountryDefinition struct {
 	// Code The country code in ISO 3166-1 alpha-2 format.
 	Code string `json:"code"`
@@ -3225,7 +3225,7 @@ type CountryDefinition struct {
 	Name string `json:"name"`
 }
 
-// CountryDefinitionPage defines model for CountryDefinitionPage.
+// CountryDefinitionPage is a generated model for the UniFi Official API.
 type CountryDefinitionPage struct {
 	Count      int32               `json:"count"`
 	Data       []CountryDefinition `json:"data"`
@@ -3234,7 +3234,7 @@ type CountryDefinitionPage struct {
 	TotalCount int64               `json:"totalCount"`
 }
 
-// DHCPConfigurationForIPv6Network defines model for DHCPConfigurationForIPv6Network.
+// DHCPConfigurationForIPv6Network is a generated model for the UniFi Official API.
 type DHCPConfigurationForIPv6Network struct {
 	IpAddressSuffixRange Ipv6AddressSuffixRangeSelector `json:"ipAddressSuffixRange"`
 
@@ -3242,7 +3242,7 @@ type DHCPConfigurationForIPv6Network struct {
 	LeaseTimeSeconds int32 `json:"leaseTimeSeconds"`
 }
 
-// DNSPolicy defines model for DNSPolicy.
+// DNSPolicy is a generated model for the UniFi Official API.
 type DNSPolicy struct {
 	Domain   *string                   `json:"domain,omitempty"`
 	Enabled  bool                      `json:"enabled"`
@@ -3252,20 +3252,20 @@ type DNSPolicy struct {
 	union    json.RawMessage
 }
 
-// DNSPolicyCreateOrUpdate defines model for DNSPolicyCreateOrUpdate.
+// DNSPolicyCreateOrUpdate is a generated model for the UniFi Official API.
 type DNSPolicyCreateOrUpdate struct {
 	Enabled bool   `json:"enabled"`
 	Type    string `json:"type"`
 	union   json.RawMessage
 }
 
-// DPIApplication defines model for DPIApplication.
+// DPIApplication is a generated model for the UniFi Official API.
 type DPIApplication struct {
 	Id   int32  `json:"id"`
 	Name string `json:"name"`
 }
 
-// DPIApplicationPage defines model for DPIApplicationPage.
+// DPIApplicationPage is a generated model for the UniFi Official API.
 type DPIApplicationPage struct {
 	Count      int32            `json:"count"`
 	Data       []DPIApplication `json:"data"`
@@ -3274,13 +3274,13 @@ type DPIApplicationPage struct {
 	TotalCount int64            `json:"totalCount"`
 }
 
-// DPICategory defines model for DPICategory.
+// DPICategory is a generated model for the UniFi Official API.
 type DPICategory struct {
 	Id   int32  `json:"id"`
 	Name string `json:"name"`
 }
 
-// DPICategoryPage defines model for DPICategoryPage.
+// DPICategoryPage is a generated model for the UniFi Official API.
 type DPICategoryPage struct {
 	Count      int32         `json:"count"`
 	Data       []DPICategory `json:"data"`
@@ -3289,50 +3289,50 @@ type DPICategoryPage struct {
 	TotalCount int64         `json:"totalCount"`
 }
 
-// DefaultClientAccessDetails defines model for DefaultClientAccessDetails.
+// DefaultClientAccessDetails is a generated model for the UniFi Official API.
 type DefaultClientAccessDetails struct {
 	Type  string `json:"type"`
 	union json.RawMessage
 }
 
-// DefaultClientAccessOverview defines model for DefaultClientAccessOverview.
+// DefaultClientAccessOverview is a generated model for the UniFi Official API.
 type DefaultClientAccessOverview struct {
 	Type  string `json:"type"`
 	union json.RawMessage
 }
 
-// DerivedEntityMetadata defines model for DerivedEntityMetadata.
+// DerivedEntityMetadata is a generated model for the UniFi Official API.
 type DerivedEntityMetadata = EntityMetadata
 
-// DerivedSiteToSiteTunnelMetadata defines model for DerivedSiteToSiteTunnelMetadata.
+// DerivedSiteToSiteTunnelMetadata is a generated model for the UniFi Official API.
 type DerivedSiteToSiteTunnelMetadata struct {
 	Origin string                                 `json:"origin"`
 	Source *DerivedSiteToSiteTunnelMetadataSource `json:"source,omitempty"`
 	union  json.RawMessage
 }
 
-// DerivedSiteToSiteTunnelMetadataSource defines model for DerivedSiteToSiteTunnelMetadata.Source.
+// DerivedSiteToSiteTunnelMetadataSource is a generated model for the UniFi Official API.
 type DerivedSiteToSiteTunnelMetadataSource string
 
-// DeviceActionRequest defines model for DeviceActionRequest.
+// DeviceActionRequest is a generated model for the UniFi Official API.
 type DeviceActionRequest struct {
 	Action string `json:"action"`
 	union  json.RawMessage
 }
 
-// DeviceAdoptionRequest defines model for DeviceAdoptionRequest.
+// DeviceAdoptionRequest is a generated model for the UniFi Official API.
 type DeviceAdoptionRequest struct {
 	IgnoreDeviceLimit bool   `json:"ignoreDeviceLimit"`
 	MacAddress        string `json:"macAddress"`
 }
 
-// DeviceFeatures defines model for DeviceFeatures.
+// DeviceFeatures is a generated model for the UniFi Official API.
 type DeviceFeatures struct {
 	AccessPoint *AccessPointFeatureOverview `json:"accessPoint,omitempty"`
 	Switching   *SwitchFeatureOverview      `json:"switching,omitempty"`
 }
 
-// DevicePendingAdoption defines model for DevicePendingAdoption.
+// DevicePendingAdoption is a generated model for the UniFi Official API.
 type DevicePendingAdoption struct {
 	AdoptionTargetSiteIds []openapi_types.UUID            `json:"adoptionTargetSiteIds"`
 	Features              []DevicePendingAdoptionFeatures `json:"features"`
@@ -3345,13 +3345,13 @@ type DevicePendingAdoption struct {
 	Supported             bool                            `json:"supported"`
 }
 
-// DevicePendingAdoptionFeatures defines model for DevicePendingAdoption.Features.
+// DevicePendingAdoptionFeatures is a generated model for the UniFi Official API.
 type DevicePendingAdoptionFeatures string
 
-// DevicePendingAdoptionState defines model for DevicePendingAdoption.State.
+// DevicePendingAdoptionState is a generated model for the UniFi Official API.
 type DevicePendingAdoptionState string
 
-// DevicePendingAdoptionPage defines model for DevicePendingAdoptionPage.
+// DevicePendingAdoptionPage is a generated model for the UniFi Official API.
 type DevicePendingAdoptionPage struct {
 	Count      int32                   `json:"count"`
 	Data       []DevicePendingAdoption `json:"data"`
@@ -3360,16 +3360,16 @@ type DevicePendingAdoptionPage struct {
 	TotalCount int64                   `json:"totalCount"`
 }
 
-// DevicePhysicalInterfaces defines model for DevicePhysicalInterfaces.
+// DevicePhysicalInterfaces is a generated model for the UniFi Official API.
 type DevicePhysicalInterfaces struct {
 	Ports  *[]PortOverview          `json:"ports,omitempty"`
 	Radios *[]WirelessRadioOverview `json:"radios,omitempty"`
 }
 
-// DeviceRestartRequest defines model for DeviceRestartRequest.
+// DeviceRestartRequest is a generated model for the UniFi Official API.
 type DeviceRestartRequest = DeviceActionRequest
 
-// DeviceTag defines model for DeviceTag.
+// DeviceTag is a generated model for the UniFi Official API.
 type DeviceTag struct {
 	DeviceIds []openapi_types.UUID             `json:"deviceIds"`
 	Id        openapi_types.UUID               `json:"id"`
@@ -3377,7 +3377,7 @@ type DeviceTag struct {
 	Name      string                           `json:"name"`
 }
 
-// DeviceTagPage defines model for DeviceTagPage.
+// DeviceTagPage is a generated model for the UniFi Official API.
 type DeviceTagPage struct {
 	Count      int32       `json:"count"`
 	Data       []DeviceTag `json:"data"`
@@ -3391,7 +3391,7 @@ type DeviceUplinkInterfaceOverview struct {
 	DeviceId openapi_types.UUID `json:"deviceId"`
 }
 
-// DnsARecord defines model for DnsARecord.
+// DnsARecord is a generated model for the UniFi Official API.
 type DnsARecord struct {
 	Domain      *string                   `json:"domain,omitempty"`
 	Enabled     bool                      `json:"enabled"`
@@ -3405,7 +3405,7 @@ type DnsARecord struct {
 	union      json.RawMessage
 }
 
-// DnsARecordCreateUpdate defines model for DnsARecordCreateUpdate.
+// DnsARecordCreateUpdate is a generated model for the UniFi Official API.
 type DnsARecordCreateUpdate struct {
 	Domain      *string `json:"domain,omitempty"`
 	Enabled     bool    `json:"enabled"`
@@ -3417,7 +3417,7 @@ type DnsARecordCreateUpdate struct {
 	union      json.RawMessage
 }
 
-// DnsAaaaRecord defines model for DnsAaaaRecord.
+// DnsAaaaRecord is a generated model for the UniFi Official API.
 type DnsAaaaRecord struct {
 	Domain      *string                   `json:"domain,omitempty"`
 	Enabled     bool                      `json:"enabled"`
@@ -3431,7 +3431,7 @@ type DnsAaaaRecord struct {
 	union      json.RawMessage
 }
 
-// DnsAaaaRecordCreateUpdate defines model for DnsAaaaRecordCreateUpdate.
+// DnsAaaaRecordCreateUpdate is a generated model for the UniFi Official API.
 type DnsAaaaRecordCreateUpdate struct {
 	Domain      *string `json:"domain,omitempty"`
 	Enabled     bool    `json:"enabled"`
@@ -3443,7 +3443,7 @@ type DnsAaaaRecordCreateUpdate struct {
 	union      json.RawMessage
 }
 
-// DnsCnameRecord defines model for DnsCnameRecord.
+// DnsCnameRecord is a generated model for the UniFi Official API.
 type DnsCnameRecord struct {
 	Domain       *string                   `json:"domain,omitempty"`
 	Enabled      bool                      `json:"enabled"`
@@ -3457,7 +3457,7 @@ type DnsCnameRecord struct {
 	union      json.RawMessage
 }
 
-// DnsCnameRecordCreateUpdate defines model for DnsCnameRecordCreateUpdate.
+// DnsCnameRecordCreateUpdate is a generated model for the UniFi Official API.
 type DnsCnameRecordCreateUpdate struct {
 	Domain       *string `json:"domain,omitempty"`
 	Enabled      bool    `json:"enabled"`
@@ -3469,7 +3469,7 @@ type DnsCnameRecordCreateUpdate struct {
 	union      json.RawMessage
 }
 
-// DnsForwardDomainPolicy defines model for DnsForwardDomainPolicy.
+// DnsForwardDomainPolicy is a generated model for the UniFi Official API.
 type DnsForwardDomainPolicy struct {
 	Domain  *string            `json:"domain,omitempty"`
 	Enabled bool               `json:"enabled"`
@@ -3482,7 +3482,7 @@ type DnsForwardDomainPolicy struct {
 	union     json.RawMessage
 }
 
-// DnsForwardDomainPolicyCreateUpdate defines model for DnsForwardDomainPolicyCreateUpdate.
+// DnsForwardDomainPolicyCreateUpdate is a generated model for the UniFi Official API.
 type DnsForwardDomainPolicyCreateUpdate struct {
 	Domain  *string `json:"domain,omitempty"`
 	Enabled bool    `json:"enabled"`
@@ -3493,7 +3493,7 @@ type DnsForwardDomainPolicyCreateUpdate struct {
 	union     json.RawMessage
 }
 
-// DnsMxRecord defines model for DnsMxRecord.
+// DnsMxRecord is a generated model for the UniFi Official API.
 type DnsMxRecord struct {
 	Domain           *string                   `json:"domain,omitempty"`
 	Enabled          bool                      `json:"enabled"`
@@ -3507,7 +3507,7 @@ type DnsMxRecord struct {
 	union    json.RawMessage
 }
 
-// DnsMxRecordCreateUpdate defines model for DnsMxRecordCreateUpdate.
+// DnsMxRecordCreateUpdate is a generated model for the UniFi Official API.
 type DnsMxRecordCreateUpdate struct {
 	Domain           *string `json:"domain,omitempty"`
 	Enabled          bool    `json:"enabled"`
@@ -3519,7 +3519,7 @@ type DnsMxRecordCreateUpdate struct {
 	union    json.RawMessage
 }
 
-// DnsPolicyPage defines model for DnsPolicyPage.
+// DnsPolicyPage is a generated model for the UniFi Official API.
 type DnsPolicyPage struct {
 	Count      int32       `json:"count"`
 	Data       []DNSPolicy `json:"data"`
@@ -3528,7 +3528,7 @@ type DnsPolicyPage struct {
 	TotalCount int64       `json:"totalCount"`
 }
 
-// DnsSrvRecord defines model for DnsSrvRecord.
+// DnsSrvRecord is a generated model for the UniFi Official API.
 type DnsSrvRecord struct {
 	Domain   *string                   `json:"domain,omitempty"`
 	Enabled  bool                      `json:"enabled"`
@@ -3554,7 +3554,7 @@ type DnsSrvRecord struct {
 	union  json.RawMessage
 }
 
-// DnsSrvRecordCreateUpdate defines model for DnsSrvRecordCreateUpdate.
+// DnsSrvRecordCreateUpdate is a generated model for the UniFi Official API.
 type DnsSrvRecordCreateUpdate struct {
 	Domain  *string `json:"domain,omitempty"`
 	Enabled bool    `json:"enabled"`
@@ -3578,7 +3578,7 @@ type DnsSrvRecordCreateUpdate struct {
 	union  json.RawMessage
 }
 
-// DnsTxtRecord defines model for DnsTxtRecord.
+// DnsTxtRecord is a generated model for the UniFi Official API.
 type DnsTxtRecord struct {
 	Domain   *string                   `json:"domain,omitempty"`
 	Enabled  bool                      `json:"enabled"`
@@ -3591,7 +3591,7 @@ type DnsTxtRecord struct {
 	union json.RawMessage
 }
 
-// DnsTxtRecordCreateUpdate defines model for DnsTxtRecordCreateUpdate.
+// DnsTxtRecordCreateUpdate is a generated model for the UniFi Official API.
 type DnsTxtRecordCreateUpdate struct {
 	Domain  *string `json:"domain,omitempty"`
 	Enabled bool    `json:"enabled"`
@@ -3602,16 +3602,16 @@ type DnsTxtRecordCreateUpdate struct {
 	union json.RawMessage
 }
 
-// EntityMetadata defines model for EntityMetadata.
+// EntityMetadata is a generated model for the UniFi Official API.
 type EntityMetadata struct {
 	Origin string `json:"origin"`
 	union  json.RawMessage
 }
 
-// FilterExpression defines model for FilterExpression.
+// FilterExpression is a generated model for the UniFi Official API.
 type FilterExpression = interface{}
 
-// FirewallPolicy defines model for FirewallPolicy.
+// FirewallPolicy is a generated model for the UniFi Official API.
 type FirewallPolicy struct {
 	// Action Defines action for matched traffic.
 	Action FirewallPolicyAction `json:"action"`
@@ -3646,7 +3646,7 @@ type FirewallPolicyAction struct {
 	union json.RawMessage
 }
 
-// FirewallPolicyActionAllow defines model for FirewallPolicyActionAllow.
+// FirewallPolicyActionAllow is a generated model for the UniFi Official API.
 type FirewallPolicyActionAllow struct {
 	// AllowReturnTraffic Creates a derived policy for the mirrored firewall zone pair to automatically allow the return traffic.
 	AllowReturnTraffic *bool  `json:"allowReturnTraffic,omitempty"`
@@ -3660,22 +3660,22 @@ type FirewallPolicyActionBlock = FirewallPolicyAction
 // FirewallPolicyActionReject Defines action for matched traffic.
 type FirewallPolicyActionReject = FirewallPolicyAction
 
-// FirewallPolicyApplicationCategoryFilter defines model for FirewallPolicyApplicationCategoryFilter.
+// FirewallPolicyApplicationCategoryFilter is a generated model for the UniFi Official API.
 type FirewallPolicyApplicationCategoryFilter struct {
 	// ApplicationCategoryIds Array of DPI Category IDs to match.
 	ApplicationCategoryIds []int32 `json:"applicationCategoryIds"`
 }
 
-// FirewallPolicyApplicationFilter defines model for FirewallPolicyApplicationFilter.
+// FirewallPolicyApplicationFilter is a generated model for the UniFi Official API.
 type FirewallPolicyApplicationFilter struct {
 	// ApplicationIds Array of DPI Application IDs to match.
 	ApplicationIds []int32 `json:"applicationIds"`
 }
 
-// FirewallPolicyConnectionStateFilter defines model for FirewallPolicyConnectionStateFilter.
+// FirewallPolicyConnectionStateFilter is a generated model for the UniFi Official API.
 type FirewallPolicyConnectionStateFilter string
 
-// FirewallPolicyCreateOrUpdate defines model for FirewallPolicyCreateOrUpdate.
+// FirewallPolicyCreateOrUpdate is a generated model for the UniFi Official API.
 type FirewallPolicyCreateOrUpdate struct {
 	// Action Defines action for matched traffic.
 	Action FirewallPolicyAction `json:"action"`
@@ -3701,7 +3701,7 @@ type FirewallPolicyCreateOrUpdate struct {
 	Source   FirewallPolicySource `json:"source"`
 }
 
-// FirewallPolicyDestination defines model for FirewallPolicyDestination.
+// FirewallPolicyDestination is a generated model for the UniFi Official API.
 type FirewallPolicyDestination struct {
 	TrafficFilter *FirewallPolicyDestinationTrafficFilter `json:"trafficFilter,omitempty"`
 
@@ -3709,7 +3709,7 @@ type FirewallPolicyDestination struct {
 	ZoneId openapi_types.UUID `json:"zoneId"`
 }
 
-// FirewallPolicyDestinationApplicationCategoryFilter defines model for FirewallPolicyDestinationApplicationCategoryFilter.
+// FirewallPolicyDestinationApplicationCategoryFilter is a generated model for the UniFi Official API.
 type FirewallPolicyDestinationApplicationCategoryFilter struct {
 	ApplicationCategoryFilter *FirewallPolicyApplicationCategoryFilter `json:"applicationCategoryFilter,omitempty"`
 
@@ -3719,7 +3719,7 @@ type FirewallPolicyDestinationApplicationCategoryFilter struct {
 	union      json.RawMessage
 }
 
-// FirewallPolicyDestinationApplicationFilter defines model for FirewallPolicyDestinationApplicationFilter.
+// FirewallPolicyDestinationApplicationFilter is a generated model for the UniFi Official API.
 type FirewallPolicyDestinationApplicationFilter struct {
 	ApplicationFilter *FirewallPolicyApplicationFilter `json:"applicationFilter,omitempty"`
 
@@ -3729,7 +3729,7 @@ type FirewallPolicyDestinationApplicationFilter struct {
 	union      json.RawMessage
 }
 
-// FirewallPolicyDestinationDomainFilter defines model for FirewallPolicyDestinationDomainFilter.
+// FirewallPolicyDestinationDomainFilter is a generated model for the UniFi Official API.
 type FirewallPolicyDestinationDomainFilter struct {
 	DomainFilter *FirewallPolicyDomainFilter `json:"domainFilter,omitempty"`
 
@@ -3739,7 +3739,7 @@ type FirewallPolicyDestinationDomainFilter struct {
 	union      json.RawMessage
 }
 
-// FirewallPolicyDestinationIpAddressFilter defines model for FirewallPolicyDestinationIpAddressFilter.
+// FirewallPolicyDestinationIpAddressFilter is a generated model for the UniFi Official API.
 type FirewallPolicyDestinationIpAddressFilter struct {
 	// IpAddressFilter Match traffic originating from, or destined to selected IP addresses.
 	IpAddressFilter *FirewallPolicyIPAddressFilter `json:"ipAddressFilter,omitempty"`
@@ -3750,7 +3750,7 @@ type FirewallPolicyDestinationIpAddressFilter struct {
 	union      json.RawMessage
 }
 
-// FirewallPolicyDestinationIpv6IidFilter defines model for FirewallPolicyDestinationIpv6IidFilter.
+// FirewallPolicyDestinationIpv6IidFilter is a generated model for the UniFi Official API.
 type FirewallPolicyDestinationIpv6IidFilter struct {
 	Ipv6IidFilter *FirewallPolicyIPv6InterfaceIdentifierFilter `json:"ipv6IidFilter,omitempty"`
 
@@ -3760,7 +3760,7 @@ type FirewallPolicyDestinationIpv6IidFilter struct {
 	union      json.RawMessage
 }
 
-// FirewallPolicyDestinationNetworkFilter defines model for FirewallPolicyDestinationNetworkFilter.
+// FirewallPolicyDestinationNetworkFilter is a generated model for the UniFi Official API.
 type FirewallPolicyDestinationNetworkFilter struct {
 	NetworkFilter *FirewallPolicyNetworkFilter `json:"networkFilter,omitempty"`
 
@@ -3770,7 +3770,7 @@ type FirewallPolicyDestinationNetworkFilter struct {
 	union      json.RawMessage
 }
 
-// FirewallPolicyDestinationPortFilter defines model for FirewallPolicyDestinationPortFilter.
+// FirewallPolicyDestinationPortFilter is a generated model for the UniFi Official API.
 type FirewallPolicyDestinationPortFilter struct {
 	// PortFilter Defines rules for matching traffic by port.
 	PortFilter *FirewallPolicyPortFilter `json:"portFilter,omitempty"`
@@ -3778,7 +3778,7 @@ type FirewallPolicyDestinationPortFilter struct {
 	union      json.RawMessage
 }
 
-// FirewallPolicyDestinationRegionFilter defines model for FirewallPolicyDestinationRegionFilter.
+// FirewallPolicyDestinationRegionFilter is a generated model for the UniFi Official API.
 type FirewallPolicyDestinationRegionFilter struct {
 	// PortFilter Defines rules for matching traffic by port.
 	PortFilter   *FirewallPolicyPortFilter   `json:"portFilter,omitempty"`
@@ -3787,7 +3787,7 @@ type FirewallPolicyDestinationRegionFilter struct {
 	union        json.RawMessage
 }
 
-// FirewallPolicyDestinationSiteToSiteVpnTunnelFilter defines model for FirewallPolicyDestinationSiteToSiteVpnTunnelFilter.
+// FirewallPolicyDestinationSiteToSiteVpnTunnelFilter is a generated model for the UniFi Official API.
 type FirewallPolicyDestinationSiteToSiteVpnTunnelFilter struct {
 	// PortFilter Defines rules for matching traffic by port.
 	PortFilter                *FirewallPolicyPortFilter                `json:"portFilter,omitempty"`
@@ -3796,13 +3796,13 @@ type FirewallPolicyDestinationSiteToSiteVpnTunnelFilter struct {
 	union                     json.RawMessage
 }
 
-// FirewallPolicyDestinationTrafficFilter defines model for FirewallPolicyDestinationTrafficFilter.
+// FirewallPolicyDestinationTrafficFilter is a generated model for the UniFi Official API.
 type FirewallPolicyDestinationTrafficFilter struct {
 	Type  string `json:"type"`
 	union json.RawMessage
 }
 
-// FirewallPolicyDestinationVpnServerFilter defines model for FirewallPolicyDestinationVpnServerFilter.
+// FirewallPolicyDestinationVpnServerFilter is a generated model for the UniFi Official API.
 type FirewallPolicyDestinationVpnServerFilter struct {
 	// PortFilter Defines rules for matching traffic by port.
 	PortFilter      *FirewallPolicyPortFilter      `json:"portFilter,omitempty"`
@@ -3811,7 +3811,7 @@ type FirewallPolicyDestinationVpnServerFilter struct {
 	union           json.RawMessage
 }
 
-// FirewallPolicyDomainFilter defines model for FirewallPolicyDomainFilter.
+// FirewallPolicyDomainFilter is a generated model for the UniFi Official API.
 type FirewallPolicyDomainFilter struct {
 	Type  string `json:"type"`
 	union json.RawMessage
@@ -3837,7 +3837,7 @@ type FirewallPolicyIPv4AndIPv6NamedProtocol struct {
 	union json.RawMessage
 }
 
-// FirewallPolicyIPv4AndIPv6NamedProtocolName defines model for FirewallPolicyIPv4AndIPv6NamedProtocol.Name.
+// FirewallPolicyIPv4AndIPv6NamedProtocolName is a generated model for the UniFi Official API.
 type FirewallPolicyIPv4AndIPv6NamedProtocolName string
 
 // FirewallPolicyIPv4AndIPv6Protocol Defines protocol matching. If null, matches all protocols.
@@ -3846,7 +3846,7 @@ type FirewallPolicyIPv4AndIPv6Protocol struct {
 	union json.RawMessage
 }
 
-// FirewallPolicyIPv4AndIPv6ProtocolNumber defines model for FirewallPolicyIPv4AndIPv6ProtocolNumber.
+// FirewallPolicyIPv4AndIPv6ProtocolNumber is a generated model for the UniFi Official API.
 type FirewallPolicyIPv4AndIPv6ProtocolNumber struct {
 	// MatchOpposite Match on all protocols except the specified protocol.
 	MatchOpposite *bool `json:"matchOpposite,omitempty"`
@@ -3869,7 +3869,7 @@ type FirewallPolicyIPv4NamedProtocol struct {
 	union json.RawMessage
 }
 
-// FirewallPolicyIPv4NamedProtocolName defines model for FirewallPolicyIPv4NamedProtocol.Name.
+// FirewallPolicyIPv4NamedProtocolName is a generated model for the UniFi Official API.
 type FirewallPolicyIPv4NamedProtocolName string
 
 // FirewallPolicyIPv4Protocol Defines protocol matching. If null, matches all protocols.
@@ -3878,7 +3878,7 @@ type FirewallPolicyIPv4Protocol struct {
 	union json.RawMessage
 }
 
-// FirewallPolicyIPv4ProtocolNumber defines model for FirewallPolicyIPv4ProtocolNumber.
+// FirewallPolicyIPv4ProtocolNumber is a generated model for the UniFi Official API.
 type FirewallPolicyIPv4ProtocolNumber struct {
 	// MatchOpposite Match on all protocols except the specified protocol.
 	MatchOpposite *bool `json:"matchOpposite,omitempty"`
@@ -3895,7 +3895,7 @@ type FirewallPolicyIPv4ProtocolPreset struct {
 	union json.RawMessage
 }
 
-// FirewallPolicyIPv6InterfaceIdentifierFilter defines model for FirewallPolicyIPv6InterfaceIdentifierFilter.
+// FirewallPolicyIPv6InterfaceIdentifierFilter is a generated model for the UniFi Official API.
 type FirewallPolicyIPv6InterfaceIdentifierFilter struct {
 	// Ipv6Iid IPv6 Interface Identifier.
 	Ipv6Iid string `json:"ipv6Iid"`
@@ -3910,7 +3910,7 @@ type FirewallPolicyIPv6NamedProtocol struct {
 	union json.RawMessage
 }
 
-// FirewallPolicyIPv6NamedProtocolName defines model for FirewallPolicyIPv6NamedProtocol.Name.
+// FirewallPolicyIPv6NamedProtocolName is a generated model for the UniFi Official API.
 type FirewallPolicyIPv6NamedProtocolName string
 
 // FirewallPolicyIPv6Protocol Defines protocol matching. If null, matches all protocols.
@@ -3925,7 +3925,7 @@ type FirewallPolicyIPv6ProtocolPreset struct {
 	union json.RawMessage
 }
 
-// FirewallPolicyIpAddressTrafficMatchingListFilter defines model for FirewallPolicyIpAddressTrafficMatchingListFilter.
+// FirewallPolicyIpAddressTrafficMatchingListFilter is a generated model for the UniFi Official API.
 type FirewallPolicyIpAddressTrafficMatchingListFilter struct {
 	// MatchOpposite Match on all IP addresses except the specified ones.
 	MatchOpposite bool `json:"matchOpposite"`
@@ -3936,7 +3936,7 @@ type FirewallPolicyIpAddressTrafficMatchingListFilter struct {
 	union                 json.RawMessage
 }
 
-// FirewallPolicyIpMatchingIpAddress defines model for FirewallPolicyIpMatchingIpAddress.
+// FirewallPolicyIpMatchingIpAddress is a generated model for the UniFi Official API.
 type FirewallPolicyIpMatchingIpAddress struct {
 	Type string `json:"type"`
 
@@ -3945,7 +3945,7 @@ type FirewallPolicyIpMatchingIpAddress struct {
 	union json.RawMessage
 }
 
-// FirewallPolicyIpMatchingRange defines model for FirewallPolicyIpMatchingRange.
+// FirewallPolicyIpMatchingRange is a generated model for the UniFi Official API.
 type FirewallPolicyIpMatchingRange struct {
 	// Start First IP address from range to match.
 	Start *string `json:"start,omitempty"`
@@ -3956,7 +3956,7 @@ type FirewallPolicyIpMatchingRange struct {
 	union json.RawMessage
 }
 
-// FirewallPolicyIpMatchingSubnet defines model for FirewallPolicyIpMatchingSubnet.
+// FirewallPolicyIpMatchingSubnet is a generated model for the UniFi Official API.
 type FirewallPolicyIpMatchingSubnet struct {
 	Type string `json:"type"`
 
@@ -3965,13 +3965,13 @@ type FirewallPolicyIpMatchingSubnet struct {
 	union json.RawMessage
 }
 
-// FirewallPolicyIpsecFilter defines model for FirewallPolicyIpsecFilter.
+// FirewallPolicyIpsecFilter is a generated model for the UniFi Official API.
 type FirewallPolicyIpsecFilter string
 
 // FirewallPolicyIpv4AndIpv6NamedProtocolDefault Defines rules for matching by protocol name.
 type FirewallPolicyIpv4AndIpv6NamedProtocolDefault = FirewallPolicyIPv4AndIPv6NamedProtocol
 
-// FirewallPolicyIpv4AndIpv6NamedProtocolFilter defines model for FirewallPolicyIpv4AndIpv6NamedProtocolFilter.
+// FirewallPolicyIpv4AndIpv6NamedProtocolFilter is a generated model for the UniFi Official API.
 type FirewallPolicyIpv4AndIpv6NamedProtocolFilter struct {
 	// MatchOpposite Match on all protocols except the specified protocol.
 	MatchOpposite *bool `json:"matchOpposite,omitempty"`
@@ -3982,7 +3982,7 @@ type FirewallPolicyIpv4AndIpv6NamedProtocolFilter struct {
 	union    json.RawMessage
 }
 
-// FirewallPolicyIpv4AndIpv6ProtocolPresetFilter defines model for FirewallPolicyIpv4AndIpv6ProtocolPresetFilter.
+// FirewallPolicyIpv4AndIpv6ProtocolPresetFilter is a generated model for the UniFi Official API.
 type FirewallPolicyIpv4AndIpv6ProtocolPresetFilter struct {
 	// Preset Defines rules for matching by protocol preset.
 	Preset *FirewallPolicyIPv4AndIPv6ProtocolPreset `json:"preset,omitempty"`
@@ -3993,7 +3993,7 @@ type FirewallPolicyIpv4AndIpv6ProtocolPresetFilter struct {
 // FirewallPolicyIpv4AndIpv6ProtocolPresetTcpUdp Defines rules for matching by protocol preset.
 type FirewallPolicyIpv4AndIpv6ProtocolPresetTcpUdp = FirewallPolicyIPv4AndIPv6ProtocolPreset
 
-// FirewallPolicyIpv4AndIpv6ProtocolScope defines model for FirewallPolicyIpv4AndIpv6ProtocolScope.
+// FirewallPolicyIpv4AndIpv6ProtocolScope is a generated model for the UniFi Official API.
 type FirewallPolicyIpv4AndIpv6ProtocolScope struct {
 	IpVersion string `json:"ipVersion"`
 
@@ -4005,7 +4005,7 @@ type FirewallPolicyIpv4AndIpv6ProtocolScope struct {
 // FirewallPolicyIpv4NamedProtocolDefault Defines rules for matching by protocol name.
 type FirewallPolicyIpv4NamedProtocolDefault = FirewallPolicyIPv4NamedProtocol
 
-// FirewallPolicyIpv4NamedProtocolFilter defines model for FirewallPolicyIpv4NamedProtocolFilter.
+// FirewallPolicyIpv4NamedProtocolFilter is a generated model for the UniFi Official API.
 type FirewallPolicyIpv4NamedProtocolFilter struct {
 	// MatchOpposite Match on all protocols except the specified protocol.
 	MatchOpposite *bool `json:"matchOpposite,omitempty"`
@@ -4016,7 +4016,7 @@ type FirewallPolicyIpv4NamedProtocolFilter struct {
 	union    json.RawMessage
 }
 
-// FirewallPolicyIpv4NamedProtocolIcmp defines model for FirewallPolicyIpv4NamedProtocolIcmp.
+// FirewallPolicyIpv4NamedProtocolIcmp is a generated model for the UniFi Official API.
 type FirewallPolicyIpv4NamedProtocolIcmp struct {
 	Name *FirewallPolicyIpv4NamedProtocolIcmpName `json:"name,omitempty"`
 
@@ -4025,13 +4025,13 @@ type FirewallPolicyIpv4NamedProtocolIcmp struct {
 	union          json.RawMessage
 }
 
-// FirewallPolicyIpv4NamedProtocolIcmpName defines model for FirewallPolicyIpv4NamedProtocolIcmp.Name.
+// FirewallPolicyIpv4NamedProtocolIcmpName is a generated model for the UniFi Official API.
 type FirewallPolicyIpv4NamedProtocolIcmpName string
 
 // FirewallPolicyIpv4NamedProtocolIcmpTypenameFilter Match specific type of ICMP traffic. If null, matches all types.
 type FirewallPolicyIpv4NamedProtocolIcmpTypenameFilter string
 
-// FirewallPolicyIpv4ProtocolPresetFilter defines model for FirewallPolicyIpv4ProtocolPresetFilter.
+// FirewallPolicyIpv4ProtocolPresetFilter is a generated model for the UniFi Official API.
 type FirewallPolicyIpv4ProtocolPresetFilter struct {
 	// Preset Defines rules for matching by protocol preset.
 	Preset *FirewallPolicyIPv4ProtocolPreset `json:"preset,omitempty"`
@@ -4042,7 +4042,7 @@ type FirewallPolicyIpv4ProtocolPresetFilter struct {
 // FirewallPolicyIpv4ProtocolPresetTcpUdp Defines rules for matching by protocol preset.
 type FirewallPolicyIpv4ProtocolPresetTcpUdp = FirewallPolicyIPv4ProtocolPreset
 
-// FirewallPolicyIpv4ProtocolScope defines model for FirewallPolicyIpv4ProtocolScope.
+// FirewallPolicyIpv4ProtocolScope is a generated model for the UniFi Official API.
 type FirewallPolicyIpv4ProtocolScope struct {
 	IpVersion string `json:"ipVersion"`
 
@@ -4054,7 +4054,7 @@ type FirewallPolicyIpv4ProtocolScope struct {
 // FirewallPolicyIpv6NamedProtocolDefault Defines rules for matching by protocol name.
 type FirewallPolicyIpv6NamedProtocolDefault = FirewallPolicyIPv6NamedProtocol
 
-// FirewallPolicyIpv6NamedProtocolFilter defines model for FirewallPolicyIpv6NamedProtocolFilter.
+// FirewallPolicyIpv6NamedProtocolFilter is a generated model for the UniFi Official API.
 type FirewallPolicyIpv6NamedProtocolFilter struct {
 	// MatchOpposite Match on all protocols except the specified protocol.
 	MatchOpposite *bool `json:"matchOpposite,omitempty"`
@@ -4065,7 +4065,7 @@ type FirewallPolicyIpv6NamedProtocolFilter struct {
 	union    json.RawMessage
 }
 
-// FirewallPolicyIpv6NamedProtocolIcmpv6 defines model for FirewallPolicyIpv6NamedProtocolIcmpv6.
+// FirewallPolicyIpv6NamedProtocolIcmpv6 is a generated model for the UniFi Official API.
 type FirewallPolicyIpv6NamedProtocolIcmpv6 struct {
 	Name *FirewallPolicyIpv6NamedProtocolIcmpv6Name `json:"name,omitempty"`
 
@@ -4074,13 +4074,13 @@ type FirewallPolicyIpv6NamedProtocolIcmpv6 struct {
 	union          json.RawMessage
 }
 
-// FirewallPolicyIpv6NamedProtocolIcmpv6Name defines model for FirewallPolicyIpv6NamedProtocolIcmpv6.Name.
+// FirewallPolicyIpv6NamedProtocolIcmpv6Name is a generated model for the UniFi Official API.
 type FirewallPolicyIpv6NamedProtocolIcmpv6Name string
 
 // FirewallPolicyIpv6NamedProtocolIcmpv6TypenameFilter Match specific type of ICMPv6 traffic. If null, matches all types.
 type FirewallPolicyIpv6NamedProtocolIcmpv6TypenameFilter string
 
-// FirewallPolicyIpv6ProtocolPresetFilter defines model for FirewallPolicyIpv6ProtocolPresetFilter.
+// FirewallPolicyIpv6ProtocolPresetFilter is a generated model for the UniFi Official API.
 type FirewallPolicyIpv6ProtocolPresetFilter struct {
 	// Preset Defines rules for matching by protocol preset.
 	Preset *FirewallPolicyIPv6ProtocolPreset `json:"preset,omitempty"`
@@ -4091,7 +4091,7 @@ type FirewallPolicyIpv6ProtocolPresetFilter struct {
 // FirewallPolicyIpv6ProtocolPresetTcpUdp Defines rules for matching by protocol preset.
 type FirewallPolicyIpv6ProtocolPresetTcpUdp = FirewallPolicyIPv6ProtocolPreset
 
-// FirewallPolicyIpv6ProtocolScope defines model for FirewallPolicyIpv6ProtocolScope.
+// FirewallPolicyIpv6ProtocolScope is a generated model for the UniFi Official API.
 type FirewallPolicyIpv6ProtocolScope struct {
 	IpVersion string `json:"ipVersion"`
 
@@ -4100,13 +4100,13 @@ type FirewallPolicyIpv6ProtocolScope struct {
 	union          json.RawMessage
 }
 
-// FirewallPolicyMACAddressFilter defines model for FirewallPolicyMACAddressFilter.
+// FirewallPolicyMACAddressFilter is a generated model for the UniFi Official API.
 type FirewallPolicyMACAddressFilter struct {
 	// MacAddresses Array of MAC addresses to match.
 	MacAddresses []string `json:"macAddresses"`
 }
 
-// FirewallPolicyNetworkFilter defines model for FirewallPolicyNetworkFilter.
+// FirewallPolicyNetworkFilter is a generated model for the UniFi Official API.
 type FirewallPolicyNetworkFilter struct {
 	// MatchOpposite Match on all Networks except the selected.
 	MatchOpposite bool `json:"matchOpposite"`
@@ -4115,12 +4115,12 @@ type FirewallPolicyNetworkFilter struct {
 	NetworkIds []openapi_types.UUID `json:"networkIds"`
 }
 
-// FirewallPolicyOrdering defines model for FirewallPolicyOrdering.
+// FirewallPolicyOrdering is a generated model for the UniFi Official API.
 type FirewallPolicyOrdering struct {
 	OrderedFirewallPolicyIds OrderedFirewallPolicyIDs `json:"orderedFirewallPolicyIds"`
 }
 
-// FirewallPolicyPage defines model for FirewallPolicyPage.
+// FirewallPolicyPage is a generated model for the UniFi Official API.
 type FirewallPolicyPage struct {
 	Count      int32            `json:"count"`
 	Data       []FirewallPolicy `json:"data"`
@@ -4137,7 +4137,7 @@ type FirewallPolicyPortFilter struct {
 	union         json.RawMessage
 }
 
-// FirewallPolicyPortReferenceFilter defines model for FirewallPolicyPortReferenceFilter.
+// FirewallPolicyPortReferenceFilter is a generated model for the UniFi Official API.
 type FirewallPolicyPortReferenceFilter struct {
 	// MatchOpposite Match on all ports except the specified ones.
 	MatchOpposite bool `json:"matchOpposite"`
@@ -4148,7 +4148,7 @@ type FirewallPolicyPortReferenceFilter struct {
 	union                 json.RawMessage
 }
 
-// FirewallPolicyPortValueFilter defines model for FirewallPolicyPortValueFilter.
+// FirewallPolicyPortValueFilter is a generated model for the UniFi Official API.
 type FirewallPolicyPortValueFilter struct {
 	// Items List of ports or port ranges to match.
 	Items *[]PortMatching `json:"items,omitempty"`
@@ -4159,21 +4159,21 @@ type FirewallPolicyPortValueFilter struct {
 	union         json.RawMessage
 }
 
-// FirewallPolicyRegionFilter defines model for FirewallPolicyRegionFilter.
+// FirewallPolicyRegionFilter is a generated model for the UniFi Official API.
 type FirewallPolicyRegionFilter struct {
 	// Regions Match traffic originating from selected regions. Regions are identified by their ISO 3166-1 alpha-2 country codes.
 	Regions []FirewallPolicyRegionFilterRegions `json:"regions"`
 }
 
-// FirewallPolicyRegionFilterRegions defines model for FirewallPolicyRegionFilter.Regions.
+// FirewallPolicyRegionFilterRegions is a generated model for the UniFi Official API.
 type FirewallPolicyRegionFilterRegions string
 
-// FirewallPolicySiteToSiteVPNTunnelFilter defines model for FirewallPolicySiteToSiteVPNTunnelFilter.
+// FirewallPolicySiteToSiteVPNTunnelFilter is a generated model for the UniFi Official API.
 type FirewallPolicySiteToSiteVPNTunnelFilter struct {
 	SiteToSiteVpnTunnelId openapi_types.UUID `json:"siteToSiteVpnTunnelId"`
 }
 
-// FirewallPolicySource defines model for FirewallPolicySource.
+// FirewallPolicySource is a generated model for the UniFi Official API.
 type FirewallPolicySource struct {
 	TrafficFilter *FirewallPolicySourceTrafficFilter `json:"trafficFilter,omitempty"`
 
@@ -4181,7 +4181,7 @@ type FirewallPolicySource struct {
 	ZoneId openapi_types.UUID `json:"zoneId"`
 }
 
-// FirewallPolicySourceIpAddressFilter defines model for FirewallPolicySourceIpAddressFilter.
+// FirewallPolicySourceIpAddressFilter is a generated model for the UniFi Official API.
 type FirewallPolicySourceIpAddressFilter struct {
 	// IpAddressFilter Match traffic originating from, or destined to selected IP addresses.
 	IpAddressFilter *FirewallPolicyIPAddressFilter `json:"ipAddressFilter,omitempty"`
@@ -4195,7 +4195,7 @@ type FirewallPolicySourceIpAddressFilter struct {
 	union      json.RawMessage
 }
 
-// FirewallPolicySourceIpv6IidFilter defines model for FirewallPolicySourceIpv6IidFilter.
+// FirewallPolicySourceIpv6IidFilter is a generated model for the UniFi Official API.
 type FirewallPolicySourceIpv6IidFilter struct {
 	Ipv6IidFilter *FirewallPolicyIPv6InterfaceIdentifierFilter `json:"ipv6IidFilter,omitempty"`
 
@@ -4208,7 +4208,7 @@ type FirewallPolicySourceIpv6IidFilter struct {
 	union      json.RawMessage
 }
 
-// FirewallPolicySourceMacAddressFilter defines model for FirewallPolicySourceMacAddressFilter.
+// FirewallPolicySourceMacAddressFilter is a generated model for the UniFi Official API.
 type FirewallPolicySourceMacAddressFilter struct {
 	MacAddressFilter *FirewallPolicyMACAddressFilter `json:"macAddressFilter,omitempty"`
 
@@ -4218,7 +4218,7 @@ type FirewallPolicySourceMacAddressFilter struct {
 	union      json.RawMessage
 }
 
-// FirewallPolicySourceNetworkFilter defines model for FirewallPolicySourceNetworkFilter.
+// FirewallPolicySourceNetworkFilter is a generated model for the UniFi Official API.
 type FirewallPolicySourceNetworkFilter struct {
 	// MacAddressFilter Match source traffic additionally by a MAC address. If null, match all MAC addresses.
 	MacAddressFilter *string                      `json:"macAddressFilter,omitempty"`
@@ -4230,7 +4230,7 @@ type FirewallPolicySourceNetworkFilter struct {
 	union      json.RawMessage
 }
 
-// FirewallPolicySourcePortFilter defines model for FirewallPolicySourcePortFilter.
+// FirewallPolicySourcePortFilter is a generated model for the UniFi Official API.
 type FirewallPolicySourcePortFilter struct {
 	// PortFilter Defines rules for matching traffic by port.
 	PortFilter *FirewallPolicyPortFilter `json:"portFilter,omitempty"`
@@ -4238,7 +4238,7 @@ type FirewallPolicySourcePortFilter struct {
 	union      json.RawMessage
 }
 
-// FirewallPolicySourceRegionFilter defines model for FirewallPolicySourceRegionFilter.
+// FirewallPolicySourceRegionFilter is a generated model for the UniFi Official API.
 type FirewallPolicySourceRegionFilter struct {
 	// PortFilter Defines rules for matching traffic by port.
 	PortFilter   *FirewallPolicyPortFilter   `json:"portFilter,omitempty"`
@@ -4247,7 +4247,7 @@ type FirewallPolicySourceRegionFilter struct {
 	union        json.RawMessage
 }
 
-// FirewallPolicySourceSiteToSiteVpnTunnelFilter defines model for FirewallPolicySourceSiteToSiteVpnTunnelFilter.
+// FirewallPolicySourceSiteToSiteVpnTunnelFilter is a generated model for the UniFi Official API.
 type FirewallPolicySourceSiteToSiteVpnTunnelFilter struct {
 	// PortFilter Defines rules for matching traffic by port.
 	PortFilter                *FirewallPolicyPortFilter                `json:"portFilter,omitempty"`
@@ -4256,13 +4256,13 @@ type FirewallPolicySourceSiteToSiteVpnTunnelFilter struct {
 	union                     json.RawMessage
 }
 
-// FirewallPolicySourceTrafficFilter defines model for FirewallPolicySourceTrafficFilter.
+// FirewallPolicySourceTrafficFilter is a generated model for the UniFi Official API.
 type FirewallPolicySourceTrafficFilter struct {
 	Type  string `json:"type"`
 	union json.RawMessage
 }
 
-// FirewallPolicySourceVpnServerFilter defines model for FirewallPolicySourceVpnServerFilter.
+// FirewallPolicySourceVpnServerFilter is a generated model for the UniFi Official API.
 type FirewallPolicySourceVpnServerFilter struct {
 	// PortFilter Defines rules for matching traffic by port.
 	PortFilter      *FirewallPolicyPortFilter      `json:"portFilter,omitempty"`
@@ -4271,7 +4271,7 @@ type FirewallPolicySourceVpnServerFilter struct {
 	union           json.RawMessage
 }
 
-// FirewallPolicySpecificDomainFilter defines model for FirewallPolicySpecificDomainFilter.
+// FirewallPolicySpecificDomainFilter is a generated model for the UniFi Official API.
 type FirewallPolicySpecificDomainFilter struct {
 	// Domains List of domains to match.
 	Domains *[]string `json:"domains,omitempty"`
@@ -4279,7 +4279,7 @@ type FirewallPolicySpecificDomainFilter struct {
 	union   json.RawMessage
 }
 
-// FirewallPolicySpecificIpAddressFilter defines model for FirewallPolicySpecificIpAddressFilter.
+// FirewallPolicySpecificIpAddressFilter is a generated model for the UniFi Official API.
 type FirewallPolicySpecificIpAddressFilter struct {
 	// Items List of IP addresses, IP address ranges, or IP subnets to match.
 	Items *[]IPMatching `json:"items,omitempty"`
@@ -4290,7 +4290,7 @@ type FirewallPolicySpecificIpAddressFilter struct {
 	union         json.RawMessage
 }
 
-// FirewallPolicyVPNServerFilter defines model for FirewallPolicyVPNServerFilter.
+// FirewallPolicyVPNServerFilter is a generated model for the UniFi Official API.
 type FirewallPolicyVPNServerFilter struct {
 	MatchOpposite bool                 `json:"matchOpposite"`
 	VpnServerIds  []openapi_types.UUID `json:"vpnServerIds"`
@@ -4302,7 +4302,7 @@ type FirewallSchedule struct {
 	union json.RawMessage
 }
 
-// FirewallScheduleCustom defines model for FirewallScheduleCustom.
+// FirewallScheduleCustom is a generated model for the UniFi Official API.
 type FirewallScheduleCustom struct {
 	Mode         string                                `json:"mode"`
 	RepeatOnDays *[]FirewallScheduleCustomRepeatOnDays `json:"repeatOnDays,omitempty"`
@@ -4318,10 +4318,10 @@ type FirewallScheduleCustom struct {
 	union      json.RawMessage
 }
 
-// FirewallScheduleCustomRepeatOnDays defines model for FirewallScheduleCustom.RepeatOnDays.
+// FirewallScheduleCustomRepeatOnDays is a generated model for the UniFi Official API.
 type FirewallScheduleCustomRepeatOnDays string
 
-// FirewallScheduleEveryDay defines model for FirewallScheduleEveryDay.
+// FirewallScheduleEveryDay is a generated model for the UniFi Official API.
 type FirewallScheduleEveryDay struct {
 	Mode string `json:"mode"`
 
@@ -4330,7 +4330,7 @@ type FirewallScheduleEveryDay struct {
 	union      json.RawMessage
 }
 
-// FirewallScheduleEveryWeek defines model for FirewallScheduleEveryWeek.
+// FirewallScheduleEveryWeek is a generated model for the UniFi Official API.
 type FirewallScheduleEveryWeek struct {
 	Mode         string                                   `json:"mode"`
 	RepeatOnDays *[]FirewallScheduleEveryWeekRepeatOnDays `json:"repeatOnDays,omitempty"`
@@ -4340,10 +4340,10 @@ type FirewallScheduleEveryWeek struct {
 	union      json.RawMessage
 }
 
-// FirewallScheduleEveryWeekRepeatOnDays defines model for FirewallScheduleEveryWeek.RepeatOnDays.
+// FirewallScheduleEveryWeekRepeatOnDays is a generated model for the UniFi Official API.
 type FirewallScheduleEveryWeekRepeatOnDays string
 
-// FirewallScheduleOneTimeOnly defines model for FirewallScheduleOneTimeOnly.
+// FirewallScheduleOneTimeOnly is a generated model for the UniFi Official API.
 type FirewallScheduleOneTimeOnly struct {
 	// Date Date in YYYY-MM-DD format. ISO 8601 compliant.
 	Date *openapi_types.Date `json:"date,omitempty"`
@@ -4363,7 +4363,7 @@ type FirewallScheduleTime struct {
 	StopTime string `json:"stopTime"`
 }
 
-// FirewallZone defines model for FirewallZone.
+// FirewallZone is a generated model for the UniFi Official API.
 type FirewallZone struct {
 	Id       openapi_types.UUID                `json:"id"`
 	Metadata UserOrSystemDefinedEntityMetadata `json:"metadata"`
@@ -4375,7 +4375,7 @@ type FirewallZone struct {
 	NetworkIds []openapi_types.UUID `json:"networkIds"`
 }
 
-// FirewallZoneCreateOrUpdate defines model for FirewallZoneCreateOrUpdate.
+// FirewallZoneCreateOrUpdate is a generated model for the UniFi Official API.
 type FirewallZoneCreateOrUpdate struct {
 	// Name Name of a firewall zone
 	Name string `json:"name"`
@@ -4384,7 +4384,7 @@ type FirewallZoneCreateOrUpdate struct {
 	NetworkIds []openapi_types.UUID `json:"networkIds"`
 }
 
-// FirewallZonesPage defines model for FirewallZonesPage.
+// FirewallZonesPage is a generated model for the UniFi Official API.
 type FirewallZonesPage struct {
 	Count      int32          `json:"count"`
 	Data       []FirewallZone `json:"data"`
@@ -4393,7 +4393,7 @@ type FirewallZonesPage struct {
 	TotalCount int64          `json:"totalCount"`
 }
 
-// GatewayManagedIPv4Configuration defines model for GatewayManagedIPv4Configuration.
+// GatewayManagedIPv4Configuration is a generated model for the UniFi Official API.
 type GatewayManagedIPv4Configuration struct {
 	// AdditionalHostIpSubnets Additional host IP subnets assigned to this VLAN.
 	AdditionalHostIpSubnets *[]string `json:"additionalHostIpSubnets,omitempty"`
@@ -4408,13 +4408,13 @@ type GatewayManagedIPv4Configuration struct {
 	PrefixLength                      int32                          `json:"prefixLength"`
 }
 
-// GatewayManagedIPv4DHCPConfiguration defines model for GatewayManagedIPv4DHCPConfiguration.
+// GatewayManagedIPv4DHCPConfiguration is a generated model for the UniFi Official API.
 type GatewayManagedIPv4DHCPConfiguration struct {
 	Mode  string `json:"mode"`
 	union json.RawMessage
 }
 
-// GatewayManagedIPv4DHCPServerConfiguration defines model for GatewayManagedIPv4DHCPServerConfiguration.
+// GatewayManagedIPv4DHCPServerConfiguration is a generated model for the UniFi Official API.
 type GatewayManagedIPv4DHCPServerConfiguration struct {
 	// DnsServerIpAddressesOverride List of DNS servers assigned to client devices by the DHCP server. If none are specified, they will be selected automatically.
 	DnsServerIpAddressesOverride *[]string `json:"dnsServerIpAddressesOverride,omitempty"`
@@ -4452,7 +4452,7 @@ type GatewayManagedIPv4DHCPServerConfiguration struct {
 	union   json.RawMessage
 }
 
-// GatewayManagedNetworkCreateUpdate defines model for GatewayManagedNetworkCreateUpdate.
+// GatewayManagedNetworkCreateUpdate is a generated model for the UniFi Official API.
 type GatewayManagedNetworkCreateUpdate struct {
 	// CellularBackupEnabled Whether this network is allowed to use cellular data when WAN connection(s) are down.
 	CellularBackupEnabled *bool `json:"cellularBackupEnabled,omitempty"`
@@ -4482,7 +4482,7 @@ type GatewayManagedNetworkCreateUpdate struct {
 	union  json.RawMessage
 }
 
-// GatewayManagedNetworkDetails defines model for GatewayManagedNetworkDetails.
+// GatewayManagedNetworkDetails is a generated model for the UniFi Official API.
 type GatewayManagedNetworkDetails struct {
 	// CellularBackupEnabled Whether this network is allowed to use cellular data when WAN connection(s) are down.
 	CellularBackupEnabled *bool `json:"cellularBackupEnabled,omitempty"`
@@ -4515,7 +4515,7 @@ type GatewayManagedNetworkDetails struct {
 	union  json.RawMessage
 }
 
-// GatewayManagedNetworkOverview defines model for GatewayManagedNetworkOverview.
+// GatewayManagedNetworkOverview is a generated model for the UniFi Official API.
 type GatewayManagedNetworkOverview struct {
 	Default    bool                                            `json:"default"`
 	Enabled    bool                                            `json:"enabled"`
@@ -4530,7 +4530,7 @@ type GatewayManagedNetworkOverview struct {
 	union  json.RawMessage
 }
 
-// GuestAccessAuthorizationRequest defines model for GuestAccessAuthorizationRequest.
+// GuestAccessAuthorizationRequest is a generated model for the UniFi Official API.
 type GuestAccessAuthorizationRequest struct {
 	Action string `json:"action"`
 
@@ -4549,7 +4549,7 @@ type GuestAccessAuthorizationRequest struct {
 	union           json.RawMessage
 }
 
-// GuestAccessAuthorizationResponse defines model for GuestAccessAuthorizationResponse.
+// GuestAccessAuthorizationResponse is a generated model for the UniFi Official API.
 type GuestAccessAuthorizationResponse struct {
 	Action               string                     `json:"action"`
 	GrantedAuthorization *GuestAuthorizationDetails `json:"grantedAuthorization,omitempty"`
@@ -4557,7 +4557,7 @@ type GuestAccessAuthorizationResponse struct {
 	union                json.RawMessage
 }
 
-// GuestAccessDetails defines model for GuestAccessDetails.
+// GuestAccessDetails is a generated model for the UniFi Official API.
 type GuestAccessDetails struct {
 	Authorization *GuestAuthorizationDetails `json:"authorization,omitempty"`
 	Authorized    *bool                      `json:"authorized,omitempty"`
@@ -4565,24 +4565,24 @@ type GuestAccessDetails struct {
 	union         json.RawMessage
 }
 
-// GuestAccessOverview defines model for GuestAccessOverview.
+// GuestAccessOverview is a generated model for the UniFi Official API.
 type GuestAccessOverview struct {
 	Authorized *bool  `json:"authorized,omitempty"`
 	Type       string `json:"type"`
 	union      json.RawMessage
 }
 
-// GuestAccessUnauthorizationRequest defines model for GuestAccessUnauthorizationRequest.
+// GuestAccessUnauthorizationRequest is a generated model for the UniFi Official API.
 type GuestAccessUnauthorizationRequest = ClientActionRequest
 
-// GuestAccessUnauthorizationResponse defines model for GuestAccessUnauthorizationResponse.
+// GuestAccessUnauthorizationResponse is a generated model for the UniFi Official API.
 type GuestAccessUnauthorizationResponse struct {
 	Action               string                     `json:"action"`
 	RevokedAuthorization *GuestAuthorizationDetails `json:"revokedAuthorization,omitempty"`
 	union                json.RawMessage
 }
 
-// GuestAuthorizationDetails defines model for GuestAuthorizationDetails.
+// GuestAuthorizationDetails is a generated model for the UniFi Official API.
 type GuestAuthorizationDetails struct {
 	// AuthorizationMethod Guest authorization method (API, Voucher etc)
 	AuthorizationMethod GuestAuthorizationDetailsAuthorizationMethod `json:"authorizationMethod"`
@@ -4607,7 +4607,7 @@ type GuestAuthorizationDetails struct {
 // GuestAuthorizationDetailsAuthorizationMethod Guest authorization method (API, Voucher etc)
 type GuestAuthorizationDetailsAuthorizationMethod string
 
-// GuestAuthorizationUsageDetails defines model for GuestAuthorizationUsageDetails.
+// GuestAuthorizationUsageDetails is a generated model for the UniFi Official API.
 type GuestAuthorizationUsageDetails struct {
 	Bytes       int64 `json:"bytes"`
 	DurationSec int64 `json:"durationSec"`
@@ -4615,7 +4615,7 @@ type GuestAuthorizationUsageDetails struct {
 	TxBytes     int64 `json:"txBytes"`
 }
 
-// HotspotVoucherCreationRequest defines model for HotspotVoucherCreationRequest.
+// HotspotVoucherCreationRequest is a generated model for the UniFi Official API.
 type HotspotVoucherCreationRequest struct {
 	// AuthorizedGuestLimit (Optional) limit for how many different guests can use the same voucher to authorize network access
 	AuthorizedGuestLimit *int64 `json:"authorizedGuestLimit,omitempty"`
@@ -4640,7 +4640,7 @@ type HotspotVoucherCreationRequest struct {
 	TxRateLimitKbps *int64 `json:"txRateLimitKbps,omitempty"`
 }
 
-// HotspotVoucherDetailPage defines model for HotspotVoucherDetailPage.
+// HotspotVoucherDetailPage is a generated model for the UniFi Official API.
 type HotspotVoucherDetailPage struct {
 	Count      int32                   `json:"count"`
 	Data       []HotspotVoucherDetails `json:"data"`
@@ -4649,7 +4649,7 @@ type HotspotVoucherDetailPage struct {
 	TotalCount int64                   `json:"totalCount"`
 }
 
-// HotspotVoucherDetails defines model for HotspotVoucherDetails.
+// HotspotVoucherDetails is a generated model for the UniFi Official API.
 type HotspotVoucherDetails struct {
 	// ActivatedAt (Optional) timestamp when the voucher has been activated (authorization time of the first guest)
 	ActivatedAt *time.Time `json:"activatedAt,omitempty"`
@@ -4688,19 +4688,19 @@ type HotspotVoucherDetails struct {
 	TxRateLimitKbps *int64 `json:"txRateLimitKbps,omitempty"`
 }
 
-// IPACLRuleEndpoint defines model for IPACLRuleEndpoint.
+// IPACLRuleEndpoint is a generated model for the UniFi Official API.
 type IPACLRuleEndpoint struct {
 	Type  string `json:"type"`
 	union json.RawMessage
 }
 
-// IPAddressRange defines model for IPAddressRange.
+// IPAddressRange is a generated model for the UniFi Official API.
 type IPAddressRange struct {
 	Start string `json:"start"`
 	Stop  string `json:"stop"`
 }
 
-// IPAddressRangeSelector defines model for IPAddressRangeSelector.
+// IPAddressRangeSelector is a generated model for the UniFi Official API.
 type IPAddressRangeSelector struct {
 	Start *string `json:"start,omitempty"`
 	Stop  *string `json:"stop,omitempty"`
@@ -4708,19 +4708,19 @@ type IPAddressRangeSelector struct {
 	union json.RawMessage
 }
 
-// IPAddressSelector defines model for IPAddressSelector.
+// IPAddressSelector is a generated model for the UniFi Official API.
 type IPAddressSelector struct {
 	Type  string `json:"type"`
 	union json.RawMessage
 }
 
-// IPMatching defines model for IPMatching.
+// IPMatching is a generated model for the UniFi Official API.
 type IPMatching struct {
 	Type  string `json:"type"`
 	union json.RawMessage
 }
 
-// IPv4DHCPRelayConfiguration defines model for IPv4DHCPRelayConfiguration.
+// IPv4DHCPRelayConfiguration is a generated model for the UniFi Official API.
 type IPv4DHCPRelayConfiguration struct {
 	// DhcpServerIpAddresses DHCP Server IP addresses
 	DhcpServerIpAddresses *[]string `json:"dhcpServerIpAddresses,omitempty"`
@@ -4728,7 +4728,7 @@ type IPv4DHCPRelayConfiguration struct {
 	union                 json.RawMessage
 }
 
-// IPv4DHCPServerConfiguration defines model for IPv4DHCPServerConfiguration.
+// IPv4DHCPServerConfiguration is a generated model for the UniFi Official API.
 type IPv4DHCPServerConfiguration struct {
 	// DnsServerIpAddressesOverride List of DNS servers assigned to client devices by the DHCP server. If none are specified, they will be selected automatically.
 	DnsServerIpAddressesOverride *[]string `json:"dnsServerIpAddressesOverride,omitempty"`
@@ -4746,13 +4746,13 @@ type IPv4DHCPServerConfiguration struct {
 	union            json.RawMessage
 }
 
-// IPv4Matching defines model for IPv4Matching.
+// IPv4Matching is a generated model for the UniFi Official API.
 type IPv4Matching struct {
 	Type  string `json:"type"`
 	union json.RawMessage
 }
 
-// IPv6ClientAddressAssignment defines model for IPv6ClientAddressAssignment.
+// IPv6ClientAddressAssignment is a generated model for the UniFi Official API.
 type IPv6ClientAddressAssignment struct {
 	DhcpConfiguration *DHCPConfigurationForIPv6Network `json:"dhcpConfiguration,omitempty"`
 
@@ -4760,13 +4760,13 @@ type IPv6ClientAddressAssignment struct {
 	SlaacEnabled bool `json:"slaacEnabled"`
 }
 
-// IPv6Matching defines model for IPv6Matching.
+// IPv6Matching is a generated model for the UniFi Official API.
 type IPv6Matching struct {
 	Type  string `json:"type"`
 	union json.RawMessage
 }
 
-// IPv6StaticConfiguration defines model for IPv6StaticConfiguration.
+// IPv6StaticConfiguration is a generated model for the UniFi Official API.
 type IPv6StaticConfiguration struct {
 	// AdditionalHostIpSubnets Additional host IP subnets assigned to this VLAN.
 	AdditionalHostIpSubnets *[]string                   `json:"additionalHostIpSubnets,omitempty"`
@@ -4783,16 +4783,16 @@ type IPv6StaticConfiguration struct {
 	union               json.RawMessage
 }
 
-// IotOptimizedWifiBroadcastCreateUpdate defines model for IotOptimizedWifiBroadcastCreateUpdate.
+// IotOptimizedWifiBroadcastCreateUpdate is a generated model for the UniFi Official API.
 type IotOptimizedWifiBroadcastCreateUpdate = WifiBroadcastCreateOrUpdate
 
-// IotOptimizedWifiBroadcastDetail defines model for IotOptimizedWifiBroadcastDetail.
+// IotOptimizedWifiBroadcastDetail is a generated model for the UniFi Official API.
 type IotOptimizedWifiBroadcastDetail = WifiBroadcastDetails
 
-// IotOptimizedWifiBroadcastOverview defines model for IotOptimizedWifiBroadcastOverview.
+// IotOptimizedWifiBroadcastOverview is a generated model for the UniFi Official API.
 type IotOptimizedWifiBroadcastOverview = WifiBroadcastOverview
 
-// IpAclRule defines model for IpAclRule.
+// IpAclRule is a generated model for the UniFi Official API.
 type IpAclRule struct {
 	// Action ACL rule action
 	Action ACLRuleAction `json:"action"`
@@ -4822,7 +4822,7 @@ type IpAclRule struct {
 	union        json.RawMessage
 }
 
-// IpAclRuleCreateUpdate defines model for IpAclRuleCreateUpdate.
+// IpAclRuleCreateUpdate is a generated model for the UniFi Official API.
 type IpAclRuleCreateUpdate struct {
 	// Action ACL rule action
 	Action ACLRuleAction `json:"action"`
@@ -4847,7 +4847,7 @@ type IpAclRuleCreateUpdate struct {
 	union          json.RawMessage
 }
 
-// IpAclRuleNetworkEndpointFilter defines model for IpAclRuleNetworkEndpointFilter.
+// IpAclRuleNetworkEndpointFilter is a generated model for the UniFi Official API.
 type IpAclRuleNetworkEndpointFilter struct {
 	// NetworkIds Network IDs
 	NetworkIds *[]openapi_types.UUID `json:"networkIds,omitempty"`
@@ -4855,10 +4855,10 @@ type IpAclRuleNetworkEndpointFilter struct {
 	union      json.RawMessage
 }
 
-// IpAclRuleProtocolFilter defines model for IpAclRuleProtocolFilter.
+// IpAclRuleProtocolFilter is a generated model for the UniFi Official API.
 type IpAclRuleProtocolFilter string
 
-// IpAclRuleSubnetEndpointFilter defines model for IpAclRuleSubnetEndpointFilter.
+// IpAclRuleSubnetEndpointFilter is a generated model for the UniFi Official API.
 type IpAclRuleSubnetEndpointFilter struct {
 	// IpAddressesOrSubnets IP addresses or subnets
 	IpAddressesOrSubnets *[]string `json:"ipAddressesOrSubnets,omitempty"`
@@ -4869,7 +4869,7 @@ type IpAclRuleSubnetEndpointFilter struct {
 	union      json.RawMessage
 }
 
-// IpV4TrafficMatchingList defines model for IpV4TrafficMatchingList.
+// IpV4TrafficMatchingList is a generated model for the UniFi Official API.
 type IpV4TrafficMatchingList struct {
 	Id    openapi_types.UUID `json:"id"`
 	Items *[]IPv4Matching    `json:"items,omitempty"`
@@ -4878,7 +4878,7 @@ type IpV4TrafficMatchingList struct {
 	union json.RawMessage
 }
 
-// IpV4TrafficMatchingListCreateUpdate defines model for IpV4TrafficMatchingListCreateUpdate.
+// IpV4TrafficMatchingListCreateUpdate is a generated model for the UniFi Official API.
 type IpV4TrafficMatchingListCreateUpdate struct {
 	Items *[]IPv4Matching `json:"items,omitempty"`
 	Name  string          `json:"name"`
@@ -4886,7 +4886,7 @@ type IpV4TrafficMatchingListCreateUpdate struct {
 	union json.RawMessage
 }
 
-// IpV6TrafficMatchingList defines model for IpV6TrafficMatchingList.
+// IpV6TrafficMatchingList is a generated model for the UniFi Official API.
 type IpV6TrafficMatchingList struct {
 	Id    openapi_types.UUID `json:"id"`
 	Items *[]IPv6Matching    `json:"items,omitempty"`
@@ -4895,7 +4895,7 @@ type IpV6TrafficMatchingList struct {
 	union json.RawMessage
 }
 
-// IpV6TrafficMatchingListCreateUpdate defines model for IpV6TrafficMatchingListCreateUpdate.
+// IpV6TrafficMatchingListCreateUpdate is a generated model for the UniFi Official API.
 type IpV6TrafficMatchingListCreateUpdate struct {
 	Items *[]IPv6Matching `json:"items,omitempty"`
 	Name  string          `json:"name"`
@@ -4903,7 +4903,7 @@ type IpV6TrafficMatchingListCreateUpdate struct {
 	union json.RawMessage
 }
 
-// Ipv6AddressSuffixRangeSelector defines model for Ipv6AddressSuffixRangeSelector.
+// Ipv6AddressSuffixRangeSelector is a generated model for the UniFi Official API.
 type Ipv6AddressSuffixRangeSelector struct {
 	// Start Start suffix of the DHCPv6 address pool.
 	Start string `json:"start"`
@@ -4912,10 +4912,10 @@ type Ipv6AddressSuffixRangeSelector struct {
 	Stop string `json:"stop"`
 }
 
-// L2tpServerOverview defines model for L2tpServerOverview.
+// L2tpServerOverview is a generated model for the UniFi Official API.
 type L2tpServerOverview = VPNServerOverview
 
-// LatestStatisticsForADevice defines model for LatestStatisticsForADevice.
+// LatestStatisticsForADevice is a generated model for the UniFi Official API.
 type LatestStatisticsForADevice struct {
 	CpuUtilizationPct    *float64                                   `json:"cpuUtilizationPct,omitempty"`
 	Interfaces           LatestStatisticsForDeviceInterfaces        `json:"interfaces"`
@@ -4929,24 +4929,24 @@ type LatestStatisticsForADevice struct {
 	UptimeSec            *int64                                     `json:"uptimeSec,omitempty"`
 }
 
-// LatestStatisticsForADeviceUplinkInterface defines model for LatestStatisticsForADeviceUplinkInterface.
+// LatestStatisticsForADeviceUplinkInterface is a generated model for the UniFi Official API.
 type LatestStatisticsForADeviceUplinkInterface struct {
 	RxRateBps *int64 `json:"rxRateBps,omitempty"`
 	TxRateBps *int64 `json:"txRateBps,omitempty"`
 }
 
-// LatestStatisticsForDeviceInterfaces defines model for LatestStatisticsForDeviceInterfaces.
+// LatestStatisticsForDeviceInterfaces is a generated model for the UniFi Official API.
 type LatestStatisticsForDeviceInterfaces struct {
 	Radios *[]LatestStatisticsForWirelessRadio `json:"radios,omitempty"`
 }
 
-// LatestStatisticsForWirelessRadio defines model for LatestStatisticsForWirelessRadio.
+// LatestStatisticsForWirelessRadio is a generated model for the UniFi Official API.
 type LatestStatisticsForWirelessRadio struct {
 	FrequencyGHz LatestStatisticsForWirelessRadioFrequencyGHz `json:"frequencyGHz"`
 	TxRetriesPct *float64                                     `json:"txRetriesPct,omitempty"`
 }
 
-// LatestStatisticsForWirelessRadioFrequencyGHz defines model for LatestStatisticsForWirelessRadio.FrequencyGHz.
+// LatestStatisticsForWirelessRadioFrequencyGHz is a generated model for the UniFi Official API.
 type LatestStatisticsForWirelessRadioFrequencyGHz float32
 
 // LocalClientAccessDetails Represents the type of network access and/or any applicable authorization status the client is using.
@@ -4981,32 +4981,32 @@ type LocalClientAccessOverview struct {
 	union json.RawMessage
 }
 
-// MACACLRuleEndpoint defines model for MACACLRuleEndpoint.
+// MACACLRuleEndpoint is a generated model for the UniFi Official API.
 type MACACLRuleEndpoint struct {
 	Type  string `json:"type"`
 	union json.RawMessage
 }
 
-// MDNSFilteringConfiguration defines model for MDNSFilteringConfiguration.
+// MDNSFilteringConfiguration is a generated model for the UniFi Official API.
 type MDNSFilteringConfiguration struct {
 	Mode  string `json:"mode"`
 	union json.RawMessage
 }
 
-// MDNSProxyPolicy defines model for MDNSProxyPolicy.
+// MDNSProxyPolicy is a generated model for the UniFi Official API.
 type MDNSProxyPolicy struct {
 	Action       string                    `json:"action"`
 	DeviceFilter *BroadcastingDeviceFilter `json:"deviceFilter,omitempty"`
 	union        json.RawMessage
 }
 
-// MDNSService defines model for MDNSService.
+// MDNSService is a generated model for the UniFi Official API.
 type MDNSService struct {
 	Type  string `json:"type"`
 	union json.RawMessage
 }
 
-// MacAclRule defines model for MacAclRule.
+// MacAclRule is a generated model for the UniFi Official API.
 type MacAclRule struct {
 	// Action ACL rule action
 	Action ACLRuleAction `json:"action"`
@@ -5036,7 +5036,7 @@ type MacAclRule struct {
 	union        json.RawMessage
 }
 
-// MacAclRuleCreateUpdate defines model for MacAclRuleCreateUpdate.
+// MacAclRuleCreateUpdate is a generated model for the UniFi Official API.
 type MacAclRuleCreateUpdate struct {
 	// Action ACL rule action
 	Action ACLRuleAction `json:"action"`
@@ -5061,7 +5061,7 @@ type MacAclRuleCreateUpdate struct {
 	union           json.RawMessage
 }
 
-// MacAclRuleMacAddressEndpointFilter defines model for MacAclRuleMacAddressEndpointFilter.
+// MacAclRuleMacAddressEndpointFilter is a generated model for the UniFi Official API.
 type MacAclRuleMacAddressEndpointFilter struct {
 	// MacAddresses Source/destination MAC addresses this ACL rule will apply to.
 	MacAddresses *[]string `json:"macAddresses,omitempty"`
@@ -5072,13 +5072,13 @@ type MacAclRuleMacAddressEndpointFilter struct {
 	union        json.RawMessage
 }
 
-// MulticastFilteringPolicy defines model for MulticastFilteringPolicy.
+// MulticastFilteringPolicy is a generated model for the UniFi Official API.
 type MulticastFilteringPolicy struct {
 	Action string `json:"action"`
 	union  json.RawMessage
 }
 
-// NATOutboundAutoConfiguration defines model for NATOutboundAutoConfiguration.
+// NATOutboundAutoConfiguration is a generated model for the UniFi Official API.
 type NATOutboundAutoConfiguration struct {
 	// IpAddressSelectionMode IP address selection mode which determines how the IP address will be selected from the group of IP addresses to translate the traffic on network using NAT.
 	IpAddressSelectionMode *NATOutboundAutoConfigurationIpAddressSelectionMode `json:"ipAddressSelectionMode,omitempty"`
@@ -5090,7 +5090,7 @@ type NATOutboundAutoConfiguration struct {
 // NATOutboundAutoConfigurationIpAddressSelectionMode IP address selection mode which determines how the IP address will be selected from the group of IP addresses to translate the traffic on network using NAT.
 type NATOutboundAutoConfigurationIpAddressSelectionMode string
 
-// NATOutboundStaticConfiguration defines model for NATOutboundStaticConfiguration.
+// NATOutboundStaticConfiguration is a generated model for the UniFi Official API.
 type NATOutboundStaticConfiguration struct {
 	// IpAddressSelectors List of IP addresses or address ranges which determines which IP addresses will be used to translate the traffic on network using NAT.
 	IpAddressSelectors *[]IPAddressSelector `json:"ipAddressSelectors,omitempty"`
@@ -5099,7 +5099,7 @@ type NATOutboundStaticConfiguration struct {
 	union              json.RawMessage
 }
 
-// NetworkCreateOrUpdate defines model for NetworkCreateOrUpdate.
+// NetworkCreateOrUpdate is a generated model for the UniFi Official API.
 type NetworkCreateOrUpdate struct {
 	// DhcpGuarding Details about DHCP Guarding settings for this Network.
 	DhcpGuarding *NetworkDHCPGuarding `json:"dhcpGuarding,omitempty"`
@@ -5118,7 +5118,7 @@ type NetworkDHCPGuarding struct {
 	TrustedDhcpServerIpAddresses []string `json:"trustedDhcpServerIpAddresses"`
 }
 
-// NetworkDetails defines model for NetworkDetails.
+// NetworkDetails is a generated model for the UniFi Official API.
 type NetworkDetails struct {
 	Default bool `json:"default"`
 
@@ -5135,7 +5135,7 @@ type NetworkDetails struct {
 	union  json.RawMessage
 }
 
-// NetworkIPv6Configuration defines model for NetworkIPv6Configuration.
+// NetworkIPv6Configuration is a generated model for the UniFi Official API.
 type NetworkIPv6Configuration struct {
 	// AdditionalHostIpSubnets Additional host IP subnets assigned to this VLAN.
 	AdditionalHostIpSubnets *[]string                   `json:"additionalHostIpSubnets,omitempty"`
@@ -5148,7 +5148,7 @@ type NetworkIPv6Configuration struct {
 	union                        json.RawMessage
 }
 
-// NetworkOverview defines model for NetworkOverview.
+// NetworkOverview is a generated model for the UniFi Official API.
 type NetworkOverview struct {
 	Default    bool                                            `json:"default"`
 	Enabled    bool                                            `json:"enabled"`
@@ -5162,7 +5162,7 @@ type NetworkOverview struct {
 	union  json.RawMessage
 }
 
-// NetworkOverviewPage defines model for NetworkOverviewPage.
+// NetworkOverviewPage is a generated model for the UniFi Official API.
 type NetworkOverviewPage struct {
 	Count      int32             `json:"count"`
 	Data       []NetworkOverview `json:"data"`
@@ -5171,12 +5171,12 @@ type NetworkOverviewPage struct {
 	TotalCount int64             `json:"totalCount"`
 }
 
-// NetworkReferenceDetail defines model for NetworkReferenceDetail.
+// NetworkReferenceDetail is a generated model for the UniFi Official API.
 type NetworkReferenceDetail struct {
 	ReferenceId openapi_types.UUID `json:"referenceId"`
 }
 
-// NetworkReferenceResource defines model for NetworkReferenceResource.
+// NetworkReferenceResource is a generated model for the UniFi Official API.
 type NetworkReferenceResource struct {
 	// ReferenceCount Number of references of this type
 	ReferenceCount int32 `json:"referenceCount"`
@@ -5186,16 +5186,16 @@ type NetworkReferenceResource struct {
 	ResourceType NetworkReferenceResourceResourceType `json:"resourceType"`
 }
 
-// NetworkReferenceResourceResourceType defines model for NetworkReferenceResource.ResourceType.
+// NetworkReferenceResourceResourceType is a generated model for the UniFi Official API.
 type NetworkReferenceResourceResourceType string
 
-// NetworkReferences defines model for NetworkReferences.
+// NetworkReferences is a generated model for the UniFi Official API.
 type NetworkReferences struct {
 	// ReferenceResources List of network reference resources
 	ReferenceResources []NetworkReferenceResource `json:"referenceResources"`
 }
 
-// NumberPortMatching defines model for NumberPortMatching.
+// NumberPortMatching is a generated model for the UniFi Official API.
 type NumberPortMatching struct {
 	Type string `json:"type"`
 
@@ -5204,7 +5204,7 @@ type NumberPortMatching struct {
 	union json.RawMessage
 }
 
-// NumberRangePortMatching defines model for NumberRangePortMatching.
+// NumberRangePortMatching is a generated model for the UniFi Official API.
 type NumberRangePortMatching struct {
 	// Start Start port number
 	Start *int32 `json:"start,omitempty"`
@@ -5215,42 +5215,42 @@ type NumberRangePortMatching struct {
 	union json.RawMessage
 }
 
-// OpenVpnServerOverview defines model for OpenVpnServerOverview.
+// OpenVpnServerOverview is a generated model for the UniFi Official API.
 type OpenVpnServerOverview = VPNServerOverview
 
-// OrchestratedEntityMetadata defines model for OrchestratedEntityMetadata.
+// OrchestratedEntityMetadata is a generated model for the UniFi Official API.
 type OrchestratedEntityMetadata = EntityMetadata
 
-// OrderedFirewallPolicyIDs defines model for OrderedFirewallPolicyIDs.
+// OrderedFirewallPolicyIDs is a generated model for the UniFi Official API.
 type OrderedFirewallPolicyIDs struct {
 	AfterSystemDefined  []openapi_types.UUID `json:"afterSystemDefined"`
 	BeforeSystemDefined []openapi_types.UUID `json:"beforeSystemDefined"`
 }
 
-// PXEConfiguration defines model for PXEConfiguration.
+// PXEConfiguration is a generated model for the UniFi Official API.
 type PXEConfiguration struct {
 	Filename        string `json:"filename"`
 	ServerIpAddress string `json:"serverIpAddress"`
 }
 
-// PatchFirewallPolicy defines model for PatchFirewallPolicy.
+// PatchFirewallPolicy is a generated model for the UniFi Official API.
 type PatchFirewallPolicy struct {
 	LoggingEnabled *bool `json:"loggingEnabled,omitempty"`
 }
 
-// PortActionRequest defines model for PortActionRequest.
+// PortActionRequest is a generated model for the UniFi Official API.
 type PortActionRequest struct {
 	Action string `json:"action"`
 	union  json.RawMessage
 }
 
-// PortMatching defines model for PortMatching.
+// PortMatching is a generated model for the UniFi Official API.
 type PortMatching struct {
 	Type  string `json:"type"`
 	union json.RawMessage
 }
 
-// PortOverview defines model for PortOverview.
+// PortOverview is a generated model for the UniFi Official API.
 type PortOverview struct {
 	Connector    PortOverviewConnector `json:"connector"`
 	Idx          int32                 `json:"idx"`
@@ -5260,13 +5260,13 @@ type PortOverview struct {
 	State        PortOverviewState     `json:"state"`
 }
 
-// PortOverviewConnector defines model for PortOverview.Connector.
+// PortOverviewConnector is a generated model for the UniFi Official API.
 type PortOverviewConnector string
 
-// PortOverviewState defines model for PortOverview.State.
+// PortOverviewState is a generated model for the UniFi Official API.
 type PortOverviewState string
 
-// PortPoEOverview defines model for PortPoEOverview.
+// PortPoEOverview is a generated model for the UniFi Official API.
 type PortPoEOverview struct {
 	// Enabled Whether the PoE feature is enabled on the port
 	Enabled  bool                    `json:"enabled"`
@@ -5277,19 +5277,19 @@ type PortPoEOverview struct {
 	Type  PortPoEOverviewType  `json:"type"`
 }
 
-// PortPoEOverviewStandard defines model for PortPoEOverview.Standard.
+// PortPoEOverviewStandard is a generated model for the UniFi Official API.
 type PortPoEOverviewStandard string
 
 // PortPoEOverviewState Whether the port currently supplies power to the (connected) device.
 type PortPoEOverviewState string
 
-// PortPoEOverviewType defines model for PortPoEOverview.Type.
+// PortPoEOverviewType is a generated model for the UniFi Official API.
 type PortPoEOverviewType int32
 
-// PortPoEPowerCycleRequest defines model for PortPoEPowerCycleRequest.
+// PortPoEPowerCycleRequest is a generated model for the UniFi Official API.
 type PortPoEPowerCycleRequest = PortActionRequest
 
-// PortTrafficMatchingList defines model for PortTrafficMatchingList.
+// PortTrafficMatchingList is a generated model for the UniFi Official API.
 type PortTrafficMatchingList struct {
 	Id    openapi_types.UUID `json:"id"`
 	Items *[]PortMatching    `json:"items,omitempty"`
@@ -5298,7 +5298,7 @@ type PortTrafficMatchingList struct {
 	union json.RawMessage
 }
 
-// PortTrafficMatchingListCreateUpdate defines model for PortTrafficMatchingListCreateUpdate.
+// PortTrafficMatchingListCreateUpdate is a generated model for the UniFi Official API.
 type PortTrafficMatchingListCreateUpdate struct {
 	Items *[]PortMatching `json:"items,omitempty"`
 	Name  string          `json:"name"`
@@ -5306,10 +5306,10 @@ type PortTrafficMatchingListCreateUpdate struct {
 	union json.RawMessage
 }
 
-// PptpServerOverview defines model for PptpServerOverview.
+// PptpServerOverview is a generated model for the UniFi Official API.
 type PptpServerOverview = VPNServerOverview
 
-// PrefixDelegationIPv6Configuration defines model for PrefixDelegationIPv6Configuration.
+// PrefixDelegationIPv6Configuration is a generated model for the UniFi Official API.
 type PrefixDelegationIPv6Configuration struct {
 	// AdditionalHostIpSubnets Additional host IP subnets assigned to this VLAN.
 	AdditionalHostIpSubnets *[]string                   `json:"additionalHostIpSubnets,omitempty"`
@@ -5325,14 +5325,14 @@ type PrefixDelegationIPv6Configuration struct {
 	union                          json.RawMessage
 }
 
-// RadiusProfileOverview defines model for RadiusProfileOverview.
+// RadiusProfileOverview is a generated model for the UniFi Official API.
 type RadiusProfileOverview struct {
 	Id       openapi_types.UUID                         `json:"id"`
 	Metadata UserOrSystemDefinedOrDerivedEntityMetadata `json:"metadata"`
 	Name     string                                     `json:"name"`
 }
 
-// RadiusProfileOverviewPage defines model for RadiusProfileOverviewPage.
+// RadiusProfileOverviewPage is a generated model for the UniFi Official API.
 type RadiusProfileOverviewPage struct {
 	Count      int32                   `json:"count"`
 	Data       []RadiusProfileOverview `json:"data"`
@@ -5341,7 +5341,7 @@ type RadiusProfileOverviewPage struct {
 	TotalCount int64                   `json:"totalCount"`
 }
 
-// RouterAdvertisementConfiguration defines model for RouterAdvertisementConfiguration.
+// RouterAdvertisementConfiguration is a generated model for the UniFi Official API.
 type RouterAdvertisementConfiguration struct {
 	// Priority Router advertisement priority.
 	Priority RouterAdvertisementConfigurationPriority `json:"priority"`
@@ -5350,7 +5350,7 @@ type RouterAdvertisementConfiguration struct {
 // RouterAdvertisementConfigurationPriority Router advertisement priority.
 type RouterAdvertisementConfigurationPriority string
 
-// SiteOverviewPage defines model for SiteOverviewPage.
+// SiteOverviewPage is a generated model for the UniFi Official API.
 type SiteOverviewPage struct {
 	Count      int32          `json:"count"`
 	Data       []SiteOverview `json:"data"`
@@ -5359,19 +5359,19 @@ type SiteOverviewPage struct {
 	TotalCount int64          `json:"totalCount"`
 }
 
-// SiteToSiteIpsecTunnelOverview defines model for SiteToSiteIpsecTunnelOverview.
+// SiteToSiteIpsecTunnelOverview is a generated model for the UniFi Official API.
 type SiteToSiteIpsecTunnelOverview = SiteToSiteVPNTunnelOverview
 
-// SiteToSiteOpenVpnTunnelOverview defines model for SiteToSiteOpenVpnTunnelOverview.
+// SiteToSiteOpenVpnTunnelOverview is a generated model for the UniFi Official API.
 type SiteToSiteOpenVpnTunnelOverview = SiteToSiteVPNTunnelOverview
 
-// SiteToSiteVPNTunnelMetadata defines model for SiteToSiteVPNTunnelMetadata.
+// SiteToSiteVPNTunnelMetadata is a generated model for the UniFi Official API.
 type SiteToSiteVPNTunnelMetadata struct {
 	Origin string `json:"origin"`
 	union  json.RawMessage
 }
 
-// SiteToSiteVPNTunnelOverview defines model for SiteToSiteVPNTunnelOverview.
+// SiteToSiteVPNTunnelOverview is a generated model for the UniFi Official API.
 type SiteToSiteVPNTunnelOverview struct {
 	Id       openapi_types.UUID          `json:"id"`
 	Metadata SiteToSiteVPNTunnelMetadata `json:"metadata"`
@@ -5380,7 +5380,7 @@ type SiteToSiteVPNTunnelOverview struct {
 	union    json.RawMessage
 }
 
-// SiteToSiteVpnTunnelOverviewPage defines model for SiteToSiteVpnTunnelOverviewPage.
+// SiteToSiteVpnTunnelOverviewPage is a generated model for the UniFi Official API.
 type SiteToSiteVpnTunnelOverviewPage struct {
 	Count      int32                         `json:"count"`
 	Data       []SiteToSiteVPNTunnelOverview `json:"data"`
@@ -5389,17 +5389,17 @@ type SiteToSiteVpnTunnelOverviewPage struct {
 	TotalCount int64                         `json:"totalCount"`
 }
 
-// SiteToSiteWireguardTunnelOverview defines model for SiteToSiteWireguardTunnelOverview.
+// SiteToSiteWireguardTunnelOverview is a generated model for the UniFi Official API.
 type SiteToSiteWireguardTunnelOverview = SiteToSiteVPNTunnelOverview
 
-// SpecificIPAddressSelector defines model for SpecificIPAddressSelector.
+// SpecificIPAddressSelector is a generated model for the UniFi Official API.
 type SpecificIPAddressSelector struct {
 	Type  string  `json:"type"`
 	Value *string `json:"value,omitempty"`
 	union json.RawMessage
 }
 
-// StandardWifiBroadcastCreateUpdate defines model for StandardWifiBroadcastCreateUpdate.
+// StandardWifiBroadcastCreateUpdate is a generated model for the UniFi Official API.
 type StandardWifiBroadcastCreateUpdate struct {
 	// AdvertiseDeviceName Indicates whether the device name is advertised in beacon frames.
 	AdvertiseDeviceName                 *bool                                                          `json:"advertiseDeviceName,omitempty"`
@@ -5430,10 +5430,10 @@ type StandardWifiBroadcastCreateUpdate struct {
 	union        json.RawMessage
 }
 
-// StandardWifiBroadcastCreateUpdateBroadcastingFrequenciesGHz defines model for StandardWifiBroadcastCreateUpdate.BroadcastingFrequenciesGHz.
+// StandardWifiBroadcastCreateUpdateBroadcastingFrequenciesGHz is a generated model for the UniFi Official API.
 type StandardWifiBroadcastCreateUpdateBroadcastingFrequenciesGHz float32
 
-// StandardWifiBroadcastDetail defines model for StandardWifiBroadcastDetail.
+// StandardWifiBroadcastDetail is a generated model for the UniFi Official API.
 type StandardWifiBroadcastDetail struct {
 	// AdvertiseDeviceName Indicates whether the device name is advertised in beacon frames.
 	AdvertiseDeviceName                 *bool                                                    `json:"advertiseDeviceName,omitempty"`
@@ -5466,10 +5466,10 @@ type StandardWifiBroadcastDetail struct {
 	union        json.RawMessage
 }
 
-// StandardWifiBroadcastDetailBroadcastingFrequenciesGHz defines model for StandardWifiBroadcastDetail.BroadcastingFrequenciesGHz.
+// StandardWifiBroadcastDetailBroadcastingFrequenciesGHz is a generated model for the UniFi Official API.
 type StandardWifiBroadcastDetailBroadcastingFrequenciesGHz float32
 
-// StandardWifiBroadcastOverview defines model for StandardWifiBroadcastOverview.
+// StandardWifiBroadcastOverview is a generated model for the UniFi Official API.
 type StandardWifiBroadcastOverview struct {
 	BroadcastingDeviceFilter   *BroadcastingDeviceFilter                                  `json:"broadcastingDeviceFilter,omitempty"`
 	BroadcastingFrequenciesGHz *[]StandardWifiBroadcastOverviewBroadcastingFrequenciesGHz `json:"broadcastingFrequenciesGHz,omitempty"`
@@ -5484,10 +5484,10 @@ type StandardWifiBroadcastOverview struct {
 	union                      json.RawMessage
 }
 
-// StandardWifiBroadcastOverviewBroadcastingFrequenciesGHz defines model for StandardWifiBroadcastOverview.BroadcastingFrequenciesGHz.
+// StandardWifiBroadcastOverviewBroadcastingFrequenciesGHz is a generated model for the UniFi Official API.
 type StandardWifiBroadcastOverviewBroadcastingFrequenciesGHz float32
 
-// SubnetIPv4Matching defines model for SubnetIPv4Matching.
+// SubnetIPv4Matching is a generated model for the UniFi Official API.
 type SubnetIPv4Matching struct {
 	Type string `json:"type"`
 
@@ -5496,7 +5496,7 @@ type SubnetIPv4Matching struct {
 	union json.RawMessage
 }
 
-// SubnetIPv6Matching defines model for SubnetIPv6Matching.
+// SubnetIPv6Matching is a generated model for the UniFi Official API.
 type SubnetIPv6Matching struct {
 	Type string `json:"type"`
 
@@ -5505,10 +5505,10 @@ type SubnetIPv6Matching struct {
 	union json.RawMessage
 }
 
-// SwitchFeatureOverview defines model for SwitchFeatureOverview.
+// SwitchFeatureOverview is a generated model for the UniFi Official API.
 type SwitchFeatureOverview = interface{}
 
-// SwitchManagedIPv4Configuration defines model for SwitchManagedIPv4Configuration.
+// SwitchManagedIPv4Configuration is a generated model for the UniFi Official API.
 type SwitchManagedIPv4Configuration struct {
 	// AdditionalHostIpSubnets Additional host IP subnets assigned to this VLAN.
 	AdditionalHostIpSubnets *[]string `json:"additionalHostIpSubnets,omitempty"`
@@ -5520,13 +5520,13 @@ type SwitchManagedIPv4Configuration struct {
 	PrefixLength      int32                               `json:"prefixLength"`
 }
 
-// SwitchManagedIPv4DHCPConfiguration defines model for SwitchManagedIPv4DHCPConfiguration.
+// SwitchManagedIPv4DHCPConfiguration is a generated model for the UniFi Official API.
 type SwitchManagedIPv4DHCPConfiguration struct {
 	Mode  string `json:"mode"`
 	union json.RawMessage
 }
 
-// SwitchManagedNetworkCreateUpdate defines model for SwitchManagedNetworkCreateUpdate.
+// SwitchManagedNetworkCreateUpdate is a generated model for the UniFi Official API.
 type SwitchManagedNetworkCreateUpdate struct {
 	// CellularBackupEnabled Whether this network is allowed to use cellular data when WAN connection(s) are down.
 	CellularBackupEnabled *bool `json:"cellularBackupEnabled,omitempty"`
@@ -5549,7 +5549,7 @@ type SwitchManagedNetworkCreateUpdate struct {
 	union  json.RawMessage
 }
 
-// SwitchManagedNetworkDetails defines model for SwitchManagedNetworkDetails.
+// SwitchManagedNetworkDetails is a generated model for the UniFi Official API.
 type SwitchManagedNetworkDetails struct {
 	// CellularBackupEnabled Whether this network is allowed to use cellular data when WAN connection(s) are down.
 	CellularBackupEnabled *bool `json:"cellularBackupEnabled,omitempty"`
@@ -5575,7 +5575,7 @@ type SwitchManagedNetworkDetails struct {
 	union  json.RawMessage
 }
 
-// SwitchManagedNetworkOverview defines model for SwitchManagedNetworkOverview.
+// SwitchManagedNetworkOverview is a generated model for the UniFi Official API.
 type SwitchManagedNetworkOverview struct {
 	Default bool `json:"default"`
 
@@ -5592,7 +5592,7 @@ type SwitchManagedNetworkOverview struct {
 	union  json.RawMessage
 }
 
-// SystemDefinedEntityMetadata defines model for SystemDefinedEntityMetadata.
+// SystemDefinedEntityMetadata is a generated model for the UniFi Official API.
 type SystemDefinedEntityMetadata = EntityMetadata
 
 // TeleportClientAccessDetails Represents the type of network access and/or any applicable authorization status the client is using.
@@ -5627,7 +5627,7 @@ type TeleportClientAccessOverview struct {
 	union json.RawMessage
 }
 
-// TeleportClientConnectionDetails defines model for TeleportClientConnectionDetails.
+// TeleportClientConnectionDetails is a generated model for the UniFi Official API.
 type TeleportClientConnectionDetails struct {
 	// Access Represents the type of network access and/or any applicable authorization status the client is using.
 	//
@@ -5647,7 +5647,7 @@ type TeleportClientConnectionDetails struct {
 	Name        string                      `json:"name"`
 }
 
-// TeleportClientConnectionOverview defines model for TeleportClientConnectionOverview.
+// TeleportClientConnectionOverview is a generated model for the UniFi Official API.
 type TeleportClientConnectionOverview struct {
 	// Access Represents the type of network access and/or any applicable authorization status the client is using.
 	//
@@ -5669,7 +5669,7 @@ type TeleportClientConnectionOverview struct {
 	union       json.RawMessage
 }
 
-// TrafficMatchingList defines model for TrafficMatchingList.
+// TrafficMatchingList is a generated model for the UniFi Official API.
 type TrafficMatchingList struct {
 	Id    openapi_types.UUID `json:"id"`
 	Name  string             `json:"name"`
@@ -5677,14 +5677,14 @@ type TrafficMatchingList struct {
 	union json.RawMessage
 }
 
-// TrafficMatchingListCreateOrUpdate defines model for TrafficMatchingListCreateOrUpdate.
+// TrafficMatchingListCreateOrUpdate is a generated model for the UniFi Official API.
 type TrafficMatchingListCreateOrUpdate struct {
 	Name  string `json:"name"`
 	Type  string `json:"type"`
 	union json.RawMessage
 }
 
-// TrafficMatchingListsPage defines model for TrafficMatchingListsPage.
+// TrafficMatchingListsPage is a generated model for the UniFi Official API.
 type TrafficMatchingListsPage struct {
 	Count      int32                 `json:"count"`
 	Data       []TrafficMatchingList `json:"data"`
@@ -5693,55 +5693,55 @@ type TrafficMatchingListsPage struct {
 	TotalCount int64                 `json:"totalCount"`
 }
 
-// UidVpnServerOverview defines model for UidVpnServerOverview.
+// UidVpnServerOverview is a generated model for the UniFi Official API.
 type UidVpnServerOverview = VPNServerOverview
 
-// UnmanagedNetworkCreateUpdate defines model for UnmanagedNetworkCreateUpdate.
+// UnmanagedNetworkCreateUpdate is a generated model for the UniFi Official API.
 type UnmanagedNetworkCreateUpdate = NetworkCreateOrUpdate
 
-// UnmanagedNetworkDetails defines model for UnmanagedNetworkDetails.
+// UnmanagedNetworkDetails is a generated model for the UniFi Official API.
 type UnmanagedNetworkDetails = NetworkDetails
 
-// UnmanagedNetworkOverview defines model for UnmanagedNetworkOverview.
+// UnmanagedNetworkOverview is a generated model for the UniFi Official API.
 type UnmanagedNetworkOverview = NetworkOverview
 
-// UserDefinedEntityMetadata defines model for UserDefinedEntityMetadata.
+// UserDefinedEntityMetadata is a generated model for the UniFi Official API.
 type UserDefinedEntityMetadata struct {
 	Origin string `json:"origin"`
 	union  json.RawMessage
 }
 
-// UserDefinedOrDerivedEntityMetadata defines model for UserDefinedOrDerivedEntityMetadata.
+// UserDefinedOrDerivedEntityMetadata is a generated model for the UniFi Official API.
 type UserDefinedOrDerivedEntityMetadata struct {
 	Origin string `json:"origin"`
 	union  json.RawMessage
 }
 
-// UserOrDerivedOrOrchestratedEntityMetadata defines model for UserOrDerivedOrOrchestratedEntityMetadata.
+// UserOrDerivedOrOrchestratedEntityMetadata is a generated model for the UniFi Official API.
 type UserOrDerivedOrOrchestratedEntityMetadata struct {
 	Origin string `json:"origin"`
 	union  json.RawMessage
 }
 
-// UserOrOrchestratedEntityMetadata defines model for UserOrOrchestratedEntityMetadata.
+// UserOrOrchestratedEntityMetadata is a generated model for the UniFi Official API.
 type UserOrOrchestratedEntityMetadata struct {
 	Origin string `json:"origin"`
 	union  json.RawMessage
 }
 
-// UserOrSystemDefinedEntityMetadata defines model for UserOrSystemDefinedEntityMetadata.
+// UserOrSystemDefinedEntityMetadata is a generated model for the UniFi Official API.
 type UserOrSystemDefinedEntityMetadata struct {
 	Origin string `json:"origin"`
 	union  json.RawMessage
 }
 
-// UserOrSystemDefinedOrDerivedEntityMetadata defines model for UserOrSystemDefinedOrDerivedEntityMetadata.
+// UserOrSystemDefinedOrDerivedEntityMetadata is a generated model for the UniFi Official API.
 type UserOrSystemDefinedOrDerivedEntityMetadata struct {
 	Origin string `json:"origin"`
 	union  json.RawMessage
 }
 
-// UserOrSystemDefinedOrOrchestratedEntityMetadata defines model for UserOrSystemDefinedOrOrchestratedEntityMetadata.
+// UserOrSystemDefinedOrOrchestratedEntityMetadata is a generated model for the UniFi Official API.
 type UserOrSystemDefinedOrOrchestratedEntityMetadata struct {
 	Origin string `json:"origin"`
 	union  json.RawMessage
@@ -5779,7 +5779,7 @@ type VPNClientAccessOverview struct {
 	union json.RawMessage
 }
 
-// VPNClientConnectionDetails defines model for VPNClientConnectionDetails.
+// VPNClientConnectionDetails is a generated model for the UniFi Official API.
 type VPNClientConnectionDetails struct {
 	// Access Represents the type of network access and/or any applicable authorization status the client is using.
 	//
@@ -5801,7 +5801,7 @@ type VPNClientConnectionDetails struct {
 	union       json.RawMessage
 }
 
-// VPNClientConnectionOverview defines model for VPNClientConnectionOverview.
+// VPNClientConnectionOverview is a generated model for the UniFi Official API.
 type VPNClientConnectionOverview struct {
 	// Access Represents the type of network access and/or any applicable authorization status the client is using.
 	//
@@ -5823,7 +5823,7 @@ type VPNClientConnectionOverview struct {
 	union       json.RawMessage
 }
 
-// VPNServerOverview defines model for VPNServerOverview.
+// VPNServerOverview is a generated model for the UniFi Official API.
 type VPNServerOverview struct {
 	Enabled  bool                               `json:"enabled"`
 	Id       openapi_types.UUID                 `json:"id"`
@@ -5833,17 +5833,17 @@ type VPNServerOverview struct {
 	union    json.RawMessage
 }
 
-// VoucherCreationResult defines model for VoucherCreationResult.
+// VoucherCreationResult is a generated model for the UniFi Official API.
 type VoucherCreationResult struct {
 	Vouchers *[]HotspotVoucherDetails `json:"vouchers,omitempty"`
 }
 
-// VoucherDeletionResults defines model for VoucherDeletionResults.
+// VoucherDeletionResults is a generated model for the UniFi Official API.
 type VoucherDeletionResults struct {
 	VouchersDeleted *int64 `json:"vouchersDeleted,omitempty"`
 }
 
-// VpnServerOverviewPage defines model for VpnServerOverviewPage.
+// VpnServerOverviewPage is a generated model for the UniFi Official API.
 type VpnServerOverviewPage struct {
 	Count      int32               `json:"count"`
 	Data       []VPNServerOverview `json:"data"`
@@ -5852,20 +5852,20 @@ type VpnServerOverviewPage struct {
 	TotalCount int64               `json:"totalCount"`
 }
 
-// WANNATOutboundConfiguration defines model for WANNATOutboundConfiguration.
+// WANNATOutboundConfiguration is a generated model for the UniFi Official API.
 type WANNATOutboundConfiguration struct {
 	Type           string             `json:"type"`
 	WanInterfaceId openapi_types.UUID `json:"wanInterfaceId"`
 	union          json.RawMessage
 }
 
-// WANOverview defines model for WANOverview.
+// WANOverview is a generated model for the UniFi Official API.
 type WANOverview struct {
 	Id   openapi_types.UUID `json:"id"`
 	Name string             `json:"name"`
 }
 
-// WANOverviewPage defines model for WANOverviewPage.
+// WANOverviewPage is a generated model for the UniFi Official API.
 type WANOverviewPage struct {
 	Count      int32         `json:"count"`
 	Data       []WANOverview `json:"data"`
@@ -5874,22 +5874,22 @@ type WANOverviewPage struct {
 	TotalCount int64         `json:"totalCount"`
 }
 
-// WifiBasicDataRateConfiguration defines model for WifiBasicDataRateConfiguration.
+// WifiBasicDataRateConfiguration is a generated model for the UniFi Official API.
 type WifiBasicDataRateConfiguration struct {
 	N24 WifiBasicDataRateConfiguration24 `json:"2.4"`
 	N5  WifiBasicDataRateConfiguration5  `json:"5"`
 }
 
-// WifiBasicDataRateConfiguration24 defines model for WifiBasicDataRateConfiguration.24.
+// WifiBasicDataRateConfiguration24 is a generated model for the UniFi Official API.
 type WifiBasicDataRateConfiguration24 int32
 
-// WifiBasicDataRateConfiguration5 defines model for WifiBasicDataRateConfiguration.5.
+// WifiBasicDataRateConfiguration5 is a generated model for the UniFi Official API.
 type WifiBasicDataRateConfiguration5 int32
 
-// WifiBlackoutScheduleConfigurationPerAllDay defines model for WifiBlackoutScheduleConfigurationPerAllDay.
+// WifiBlackoutScheduleConfigurationPerAllDay is a generated model for the UniFi Official API.
 type WifiBlackoutScheduleConfigurationPerAllDay = BlackoutScheduleConfigurationPerDay
 
-// WifiBlackoutScheduleConfigurationPerDayWithTimeRange defines model for WifiBlackoutScheduleConfigurationPerDayWithTimeRange.
+// WifiBlackoutScheduleConfigurationPerDayWithTimeRange is a generated model for the UniFi Official API.
 type WifiBlackoutScheduleConfigurationPerDayWithTimeRange struct {
 	Day        WifiBlackoutScheduleConfigurationPerDayWithTimeRangeDay `json:"day"`
 	TimeRanges *[]WifiBlackoutScheduleConfigurationTimeRange           `json:"timeRanges,omitempty"`
@@ -5897,10 +5897,10 @@ type WifiBlackoutScheduleConfigurationPerDayWithTimeRange struct {
 	union      json.RawMessage
 }
 
-// WifiBlackoutScheduleConfigurationPerDayWithTimeRangeDay defines model for WifiBlackoutScheduleConfigurationPerDayWithTimeRange.Day.
+// WifiBlackoutScheduleConfigurationPerDayWithTimeRangeDay is a generated model for the UniFi Official API.
 type WifiBlackoutScheduleConfigurationPerDayWithTimeRangeDay string
 
-// WifiBlackoutScheduleConfigurationTimeRange defines model for WifiBlackoutScheduleConfigurationTimeRange.
+// WifiBlackoutScheduleConfigurationTimeRange is a generated model for the UniFi Official API.
 type WifiBlackoutScheduleConfigurationTimeRange struct {
 	// EndTime End time in 24-hour format (HH:mm)
 	EndTime string `json:"endTime"`
@@ -5909,7 +5909,7 @@ type WifiBlackoutScheduleConfigurationTimeRange struct {
 	StartTime string `json:"startTime"`
 }
 
-// WifiBroadcastCreateOrUpdate defines model for WifiBroadcastCreateOrUpdate.
+// WifiBroadcastCreateOrUpdate is a generated model for the UniFi Official API.
 type WifiBroadcastCreateOrUpdate struct {
 	BasicDataRateKbpsByFrequencyGHz     *WifiBasicDataRateConfiguration       `json:"basicDataRateKbpsByFrequencyGHz,omitempty"`
 	BlackoutScheduleConfiguration       *BlackoutScheduleConfiguration        `json:"blackoutScheduleConfiguration,omitempty"`
@@ -5931,7 +5931,7 @@ type WifiBroadcastCreateOrUpdate struct {
 	union        json.RawMessage
 }
 
-// WifiBroadcastDetails defines model for WifiBroadcastDetails.
+// WifiBroadcastDetails is a generated model for the UniFi Official API.
 type WifiBroadcastDetails struct {
 	BasicDataRateKbpsByFrequencyGHz     *WifiBasicDataRateConfiguration           `json:"basicDataRateKbpsByFrequencyGHz,omitempty"`
 	BlackoutScheduleConfiguration       *BlackoutScheduleConfiguration            `json:"blackoutScheduleConfiguration,omitempty"`
@@ -5955,7 +5955,7 @@ type WifiBroadcastDetails struct {
 	union        json.RawMessage
 }
 
-// WifiBroadcastOverview defines model for WifiBroadcastOverview.
+// WifiBroadcastOverview is a generated model for the UniFi Official API.
 type WifiBroadcastOverview struct {
 	BroadcastingDeviceFilter *BroadcastingDeviceFilter                 `json:"broadcastingDeviceFilter,omitempty"`
 	Enabled                  bool                                      `json:"enabled"`
@@ -5968,7 +5968,7 @@ type WifiBroadcastOverview struct {
 	union                    json.RawMessage
 }
 
-// WifiBroadcastPage defines model for WifiBroadcastPage.
+// WifiBroadcastPage is a generated model for the UniFi Official API.
 type WifiBroadcastPage struct {
 	Count      int32                   `json:"count"`
 	Data       []WifiBroadcastOverview `json:"data"`
@@ -5977,36 +5977,36 @@ type WifiBroadcastPage struct {
 	TotalCount int64                   `json:"totalCount"`
 }
 
-// WifiCaptivePortalConfigurationDetail defines model for WifiCaptivePortalConfigurationDetail.
+// WifiCaptivePortalConfigurationDetail is a generated model for the UniFi Official API.
 type WifiCaptivePortalConfigurationDetail = WifiHotspotConfiguration
 
-// WifiClientFilteringPolicy defines model for WifiClientFilteringPolicy.
+// WifiClientFilteringPolicy is a generated model for the UniFi Official API.
 type WifiClientFilteringPolicy struct {
 	Action           WifiClientFilteringPolicyAction `json:"action"`
 	MacAddressFilter []string                        `json:"macAddressFilter"`
 }
 
-// WifiClientFilteringPolicyAction defines model for WifiClientFilteringPolicy.Action.
+// WifiClientFilteringPolicyAction is a generated model for the UniFi Official API.
 type WifiClientFilteringPolicyAction string
 
-// WifiDerivedNasId defines model for WifiDerivedNasId.
+// WifiDerivedNasId is a generated model for the UniFi Official API.
 type WifiDerivedNasId struct {
 	Source *WifiDerivedNasIdSource `json:"source,omitempty"`
 	Type   string                  `json:"type"`
 	union  json.RawMessage
 }
 
-// WifiDerivedNasIdSource defines model for WifiDerivedNasId.Source.
+// WifiDerivedNasIdSource is a generated model for the UniFi Official API.
 type WifiDerivedNasIdSource string
 
-// WifiDeviceTagsFilter defines model for WifiDeviceTagsFilter.
+// WifiDeviceTagsFilter is a generated model for the UniFi Official API.
 type WifiDeviceTagsFilter struct {
 	DeviceTagIds *[]openapi_types.UUID `json:"deviceTagIds,omitempty"`
 	Type         string                `json:"type"`
 	union        json.RawMessage
 }
 
-// WifiDevicesFilter defines model for WifiDevicesFilter.
+// WifiDevicesFilter is a generated model for the UniFi Official API.
 type WifiDevicesFilter struct {
 	// DeviceIds List of Access Point capable device IDs to which the WiFi broadcast applies.
 	DeviceIds *[]openapi_types.UUID `json:"deviceIds,omitempty"`
@@ -6014,35 +6014,35 @@ type WifiDevicesFilter struct {
 	union     json.RawMessage
 }
 
-// WifiDtimPeriodConfiguration defines model for WifiDtimPeriodConfiguration.
+// WifiDtimPeriodConfiguration is a generated model for the UniFi Official API.
 type WifiDtimPeriodConfiguration struct {
 	N24 int32 `json:"2.4"`
 	N5  int32 `json:"5"`
 	N6  int32 `json:"6"`
 }
 
-// WifiEnterpriseRadiusConfiguration defines model for WifiEnterpriseRadiusConfiguration.
+// WifiEnterpriseRadiusConfiguration is a generated model for the UniFi Official API.
 type WifiEnterpriseRadiusConfiguration struct {
 	MacAuthenticationConfiguration *WifiRadiusMacAuthenticationConfiguration `json:"macAuthenticationConfiguration,omitempty"`
 	NasId                          WifiRadiusNASIDConfiguration              `json:"nasId"`
 	ProfileId                      openapi_types.UUID                        `json:"profileId"`
 }
 
-// WifiHotspotConfiguration defines model for WifiHotspotConfiguration.
+// WifiHotspotConfiguration is a generated model for the UniFi Official API.
 type WifiHotspotConfiguration struct {
 	Type  string `json:"type"`
 	union json.RawMessage
 }
 
-// WifiHotspotConfigurationOverview defines model for WifiHotspotConfigurationOverview.
+// WifiHotspotConfigurationOverview is a generated model for the UniFi Official API.
 type WifiHotspotConfigurationOverview struct {
 	Type WifiHotspotConfigurationOverviewType `json:"type"`
 }
 
-// WifiHotspotConfigurationOverviewType defines model for WifiHotspotConfigurationOverview.Type.
+// WifiHotspotConfigurationOverviewType is a generated model for the UniFi Official API.
 type WifiHotspotConfigurationOverviewType string
 
-// WifiMdnsProxyAllowPolicy defines model for WifiMdnsProxyAllowPolicy.
+// WifiMdnsProxyAllowPolicy is a generated model for the UniFi Official API.
 type WifiMdnsProxyAllowPolicy struct {
 	Action             string                    `json:"action"`
 	BridgingNetworkIds *[]openapi_types.UUID     `json:"bridgingNetworkIds,omitempty"`
@@ -6051,20 +6051,20 @@ type WifiMdnsProxyAllowPolicy struct {
 	union              json.RawMessage
 }
 
-// WifiMdnsProxyAutoConfiguration defines model for WifiMdnsProxyAutoConfiguration.
+// WifiMdnsProxyAutoConfiguration is a generated model for the UniFi Official API.
 type WifiMdnsProxyAutoConfiguration = MDNSFilteringConfiguration
 
-// WifiMdnsProxyBlockPolicy defines model for WifiMdnsProxyBlockPolicy.
+// WifiMdnsProxyBlockPolicy is a generated model for the UniFi Official API.
 type WifiMdnsProxyBlockPolicy = MDNSProxyPolicy
 
-// WifiMdnsProxyCustomConfiguration defines model for WifiMdnsProxyCustomConfiguration.
+// WifiMdnsProxyCustomConfiguration is a generated model for the UniFi Official API.
 type WifiMdnsProxyCustomConfiguration struct {
 	Mode     string             `json:"mode"`
 	Policies *[]MDNSProxyPolicy `json:"policies,omitempty"`
 	union    json.RawMessage
 }
 
-// WifiMdnsProxyCustomService defines model for WifiMdnsProxyCustomService.
+// WifiMdnsProxyCustomService is a generated model for the UniFi Official API.
 type WifiMdnsProxyCustomService struct {
 	Name       *string `json:"name,omitempty"`
 	Type       string  `json:"type"`
@@ -6072,17 +6072,17 @@ type WifiMdnsProxyCustomService struct {
 	union      json.RawMessage
 }
 
-// WifiMdnsProxyPredefinedService defines model for WifiMdnsProxyPredefinedService.
+// WifiMdnsProxyPredefinedService is a generated model for the UniFi Official API.
 type WifiMdnsProxyPredefinedService struct {
 	Name  *WifiMdnsProxyPredefinedServiceName `json:"name,omitempty"`
 	Type  string                              `json:"type"`
 	union json.RawMessage
 }
 
-// WifiMdnsProxyPredefinedServiceName defines model for WifiMdnsProxyPredefinedService.Name.
+// WifiMdnsProxyPredefinedServiceName is a generated model for the UniFi Official API.
 type WifiMdnsProxyPredefinedServiceName string
 
-// WifiMulticastFilteringAllowPolicy defines model for WifiMulticastFilteringAllowPolicy.
+// WifiMulticastFilteringAllowPolicy is a generated model for the UniFi Official API.
 type WifiMulticastFilteringAllowPolicy struct {
 	Action string `json:"action"`
 
@@ -6091,92 +6091,92 @@ type WifiMulticastFilteringAllowPolicy struct {
 	union                  json.RawMessage
 }
 
-// WifiMulticastFilteringBlockPolicy defines model for WifiMulticastFilteringBlockPolicy.
+// WifiMulticastFilteringBlockPolicy is a generated model for the UniFi Official API.
 type WifiMulticastFilteringBlockPolicy = MulticastFilteringPolicy
 
-// WifiNativeNetwork defines model for WifiNativeNetwork.
+// WifiNativeNetwork is a generated model for the UniFi Official API.
 type WifiNativeNetwork = WifiNetworkReference
 
-// WifiNetworkReference defines model for WifiNetworkReference.
+// WifiNetworkReference is a generated model for the UniFi Official API.
 type WifiNetworkReference struct {
 	Type  string `json:"type"`
 	union json.RawMessage
 }
 
-// WifiNonEnterpriseRadiusConfiguration defines model for WifiNonEnterpriseRadiusConfiguration.
+// WifiNonEnterpriseRadiusConfiguration is a generated model for the UniFi Official API.
 type WifiNonEnterpriseRadiusConfiguration struct {
 	MacAuthenticationConfiguration WifiRadiusMacAuthenticationConfiguration `json:"macAuthenticationConfiguration"`
 	NasId                          WifiRadiusNASIDConfiguration             `json:"nasId"`
 	ProfileId                      openapi_types.UUID                       `json:"profileId"`
 }
 
-// WifiOpenSecurityConfigurationDetail defines model for WifiOpenSecurityConfigurationDetail.
+// WifiOpenSecurityConfigurationDetail is a generated model for the UniFi Official API.
 type WifiOpenSecurityConfigurationDetail struct {
 	RadiusConfiguration *WifiNonEnterpriseRadiusConfiguration `json:"radiusConfiguration,omitempty"`
 	Type                string                                `json:"type"`
 	union               json.RawMessage
 }
 
-// WifiOpenSecurityConfigurationOverview defines model for WifiOpenSecurityConfigurationOverview.
+// WifiOpenSecurityConfigurationOverview is a generated model for the UniFi Official API.
 type WifiOpenSecurityConfigurationOverview = WifiSecurityConfigurationOverview
 
-// WifiPasspointConfigurationDetail defines model for WifiPasspointConfigurationDetail.
+// WifiPasspointConfigurationDetail is a generated model for the UniFi Official API.
 type WifiPasspointConfigurationDetail = WifiHotspotConfiguration
 
-// WifiPresharedKey defines model for WifiPresharedKey.
+// WifiPresharedKey is a generated model for the UniFi Official API.
 type WifiPresharedKey struct {
 	Network    WifiNetworkReference `json:"network"`
 	Passphrase string               `json:"passphrase"`
 }
 
-// WifiRadiusMacAuthenticationConfiguration defines model for WifiRadiusMacAuthenticationConfiguration.
+// WifiRadiusMacAuthenticationConfiguration is a generated model for the UniFi Official API.
 type WifiRadiusMacAuthenticationConfiguration struct {
 	MacAddressFormat WifiRadiusMacAuthenticationConfigurationMacAddressFormat `json:"macAddressFormat"`
 }
 
-// WifiRadiusMacAuthenticationConfigurationMacAddressFormat defines model for WifiRadiusMacAuthenticationConfiguration.MacAddressFormat.
+// WifiRadiusMacAuthenticationConfigurationMacAddressFormat is a generated model for the UniFi Official API.
 type WifiRadiusMacAuthenticationConfigurationMacAddressFormat string
 
-// WifiRadiusNASIDConfiguration defines model for WifiRadiusNASIDConfiguration.
+// WifiRadiusNASIDConfiguration is a generated model for the UniFi Official API.
 type WifiRadiusNASIDConfiguration struct {
 	Type  string `json:"type"`
 	union json.RawMessage
 }
 
-// WifiSaeConfiguration defines model for WifiSaeConfiguration.
+// WifiSaeConfiguration is a generated model for the UniFi Official API.
 type WifiSaeConfiguration struct {
 	AnticloggingThresholdSeconds int32 `json:"anticloggingThresholdSeconds"`
 	SyncTimeSeconds              int32 `json:"syncTimeSeconds"`
 }
 
-// WifiSecurityConfigurationDetailObject defines model for WifiSecurityConfigurationDetailObject.
+// WifiSecurityConfigurationDetailObject is a generated model for the UniFi Official API.
 type WifiSecurityConfigurationDetailObject struct {
 	RadiusConfiguration interface{} `json:"radiusConfiguration,omitempty"`
 	Type                string      `json:"type"`
 	union               json.RawMessage
 }
 
-// WifiSecurityConfigurationOverview defines model for WifiSecurityConfigurationOverview.
+// WifiSecurityConfigurationOverview is a generated model for the UniFi Official API.
 type WifiSecurityConfigurationOverview struct {
 	Type  string `json:"type"`
 	union json.RawMessage
 }
 
-// WifiSpecificNetwork defines model for WifiSpecificNetwork.
+// WifiSpecificNetwork is a generated model for the UniFi Official API.
 type WifiSpecificNetwork struct {
 	NetworkId *openapi_types.UUID `json:"networkId,omitempty"`
 	Type      string              `json:"type"`
 	union     json.RawMessage
 }
 
-// WifiUserDefinedNasId defines model for WifiUserDefinedNasId.
+// WifiUserDefinedNasId is a generated model for the UniFi Official API.
 type WifiUserDefinedNasId struct {
 	Type  string  `json:"type"`
 	Value *string `json:"value,omitempty"`
 	union json.RawMessage
 }
 
-// WifiWpa2EnterpriseSecurityConfigurationDetail defines model for WifiWpa2EnterpriseSecurityConfigurationDetail.
+// WifiWpa2EnterpriseSecurityConfigurationDetail is a generated model for the UniFi Official API.
 type WifiWpa2EnterpriseSecurityConfigurationDetail struct {
 	// CoaEnabled Indicates whether Change of Authorization (COA) is enabled
 	CoaEnabled *bool `json:"coaEnabled,omitempty"`
@@ -6197,10 +6197,10 @@ type WifiWpa2EnterpriseSecurityConfigurationDetail struct {
 // WifiWpa2EnterpriseSecurityConfigurationDetailPmfMode Protected Management Frames mode. If null, then it is disabled. This feature is not available for IoT configuration.
 type WifiWpa2EnterpriseSecurityConfigurationDetailPmfMode string
 
-// WifiWpa2EnterpriseSecurityConfigurationOverview defines model for WifiWpa2EnterpriseSecurityConfigurationOverview.
+// WifiWpa2EnterpriseSecurityConfigurationOverview is a generated model for the UniFi Official API.
 type WifiWpa2EnterpriseSecurityConfigurationOverview = WifiSecurityConfigurationOverview
 
-// WifiWpa2PersonalSecurityConfigurationDetail defines model for WifiWpa2PersonalSecurityConfigurationDetail.
+// WifiWpa2PersonalSecurityConfigurationDetail is a generated model for the UniFi Official API.
 type WifiWpa2PersonalSecurityConfigurationDetail struct {
 	// FastRoamingEnabled Fast roaming enabled flag. This feature is not available for IoT configuration.
 	FastRoamingEnabled *bool `json:"fastRoamingEnabled,omitempty"`
@@ -6220,14 +6220,14 @@ type WifiWpa2PersonalSecurityConfigurationDetail struct {
 // WifiWpa2PersonalSecurityConfigurationDetailPmfMode Protected Management Frames mode. If null, then it is disabled. This feature is not available for IoT configuration.
 type WifiWpa2PersonalSecurityConfigurationDetailPmfMode string
 
-// WifiWpa2PersonalSecurityConfigurationOverview defines model for WifiWpa2PersonalSecurityConfigurationOverview.
+// WifiWpa2PersonalSecurityConfigurationOverview is a generated model for the UniFi Official API.
 type WifiWpa2PersonalSecurityConfigurationOverview struct {
 	PresharedKeyNetworkIds *[]WifiNetworkReference `json:"presharedKeyNetworkIds,omitempty"`
 	Type                   string                  `json:"type"`
 	union                  json.RawMessage
 }
 
-// WifiWpa2Wpa3EnterpriseSecurityConfigurationDetail defines model for WifiWpa2Wpa3EnterpriseSecurityConfigurationDetail.
+// WifiWpa2Wpa3EnterpriseSecurityConfigurationDetail is a generated model for the UniFi Official API.
 type WifiWpa2Wpa3EnterpriseSecurityConfigurationDetail struct {
 	// CoaEnabled Indicates whether Change of Authorization (COA) is enabled
 	CoaEnabled *bool `json:"coaEnabled,omitempty"`
@@ -6251,10 +6251,10 @@ type WifiWpa2Wpa3EnterpriseSecurityConfigurationDetail struct {
 // WifiWpa2Wpa3EnterpriseSecurityConfigurationDetailPmfMode Protected Management Frames mode. If null, then it is disabled. This feature is not available for IoT configuration.
 type WifiWpa2Wpa3EnterpriseSecurityConfigurationDetailPmfMode string
 
-// WifiWpa2Wpa3EnterpriseSecurityConfigurationOverview defines model for WifiWpa2Wpa3EnterpriseSecurityConfigurationOverview.
+// WifiWpa2Wpa3EnterpriseSecurityConfigurationOverview is a generated model for the UniFi Official API.
 type WifiWpa2Wpa3EnterpriseSecurityConfigurationOverview = WifiSecurityConfigurationOverview
 
-// WifiWpa2Wpa3PersonalSecurityConfigurationDetail defines model for WifiWpa2Wpa3PersonalSecurityConfigurationDetail.
+// WifiWpa2Wpa3PersonalSecurityConfigurationDetail is a generated model for the UniFi Official API.
 type WifiWpa2Wpa3PersonalSecurityConfigurationDetail struct {
 	// FastRoamingEnabled Fast roaming enabled flag. This feature is not available for IoT configuration.
 	FastRoamingEnabled *bool `json:"fastRoamingEnabled,omitempty"`
@@ -6277,10 +6277,10 @@ type WifiWpa2Wpa3PersonalSecurityConfigurationDetail struct {
 // WifiWpa2Wpa3PersonalSecurityConfigurationDetailPmfMode Protected Management Frames mode. If null, then it is disabled. This feature is not available for IoT configuration.
 type WifiWpa2Wpa3PersonalSecurityConfigurationDetailPmfMode string
 
-// WifiWpa2Wpa3PersonalSecurityConfigurationOverview defines model for WifiWpa2Wpa3PersonalSecurityConfigurationOverview.
+// WifiWpa2Wpa3PersonalSecurityConfigurationOverview is a generated model for the UniFi Official API.
 type WifiWpa2Wpa3PersonalSecurityConfigurationOverview = WifiSecurityConfigurationOverview
 
-// WifiWpa3EnterpriseSecurityConfigurationDetail defines model for WifiWpa3EnterpriseSecurityConfigurationDetail.
+// WifiWpa3EnterpriseSecurityConfigurationDetail is a generated model for the UniFi Official API.
 type WifiWpa3EnterpriseSecurityConfigurationDetail struct {
 	// CoaEnabled Indicates whether Change of Authorization (COA) is enabled
 	CoaEnabled *bool `json:"coaEnabled,omitempty"`
@@ -6296,13 +6296,13 @@ type WifiWpa3EnterpriseSecurityConfigurationDetail struct {
 	union                     json.RawMessage
 }
 
-// WifiWpa3EnterpriseSecurityConfigurationDetailSecurityMode defines model for WifiWpa3EnterpriseSecurityConfigurationDetail.SecurityMode.
+// WifiWpa3EnterpriseSecurityConfigurationDetailSecurityMode is a generated model for the UniFi Official API.
 type WifiWpa3EnterpriseSecurityConfigurationDetailSecurityMode string
 
-// WifiWpa3EnterpriseSecurityConfigurationOverview defines model for WifiWpa3EnterpriseSecurityConfigurationOverview.
+// WifiWpa3EnterpriseSecurityConfigurationOverview is a generated model for the UniFi Official API.
 type WifiWpa3EnterpriseSecurityConfigurationOverview = WifiSecurityConfigurationOverview
 
-// WifiWpa3PersonalSecurityConfigurationDetail defines model for WifiWpa3PersonalSecurityConfigurationDetail.
+// WifiWpa3PersonalSecurityConfigurationDetail is a generated model for the UniFi Official API.
 type WifiWpa3PersonalSecurityConfigurationDetail struct {
 	// FastRoamingEnabled Fast roaming enabled flag. This feature is not available for IoT configuration.
 	FastRoamingEnabled *bool `json:"fastRoamingEnabled,omitempty"`
@@ -6316,10 +6316,10 @@ type WifiWpa3PersonalSecurityConfigurationDetail struct {
 	union                     json.RawMessage
 }
 
-// WifiWpa3PersonalSecurityConfigurationOverview defines model for WifiWpa3PersonalSecurityConfigurationOverview.
+// WifiWpa3PersonalSecurityConfigurationOverview is a generated model for the UniFi Official API.
 type WifiWpa3PersonalSecurityConfigurationOverview = WifiSecurityConfigurationOverview
 
-// WiredClientDetails defines model for WiredClientDetails.
+// WiredClientDetails is a generated model for the UniFi Official API.
 type WiredClientDetails struct {
 	// Access Represents the type of network access and/or any applicable authorization status the client is using.
 	//
@@ -6343,7 +6343,7 @@ type WiredClientDetails struct {
 	union          json.RawMessage
 }
 
-// WiredClientOverview defines model for WiredClientOverview.
+// WiredClientOverview is a generated model for the UniFi Official API.
 type WiredClientOverview struct {
 	// Access Represents the type of network access and/or any applicable authorization status the client is using.
 	//
@@ -6367,10 +6367,10 @@ type WiredClientOverview struct {
 	union          json.RawMessage
 }
 
-// WireguardServerOverview defines model for WireguardServerOverview.
+// WireguardServerOverview is a generated model for the UniFi Official API.
 type WireguardServerOverview = VPNServerOverview
 
-// WirelessClientDetails defines model for WirelessClientDetails.
+// WirelessClientDetails is a generated model for the UniFi Official API.
 type WirelessClientDetails struct {
 	// Access Represents the type of network access and/or any applicable authorization status the client is using.
 	//
@@ -6394,7 +6394,7 @@ type WirelessClientDetails struct {
 	union          json.RawMessage
 }
 
-// WirelessClientOverview defines model for WirelessClientOverview.
+// WirelessClientOverview is a generated model for the UniFi Official API.
 type WirelessClientOverview struct {
 	// Access Represents the type of network access and/or any applicable authorization status the client is using.
 	//
@@ -6418,7 +6418,7 @@ type WirelessClientOverview struct {
 	union          json.RawMessage
 }
 
-// WirelessRadioOverview defines model for WirelessRadioOverview.
+// WirelessRadioOverview is a generated model for the UniFi Official API.
 type WirelessRadioOverview struct {
 	Channel         *int32                            `json:"channel,omitempty"`
 	ChannelWidthMHz int32                             `json:"channelWidthMHz"`
@@ -6426,242 +6426,242 @@ type WirelessRadioOverview struct {
 	WlanStandard    WirelessRadioOverviewWlanStandard `json:"wlanStandard"`
 }
 
-// WirelessRadioOverviewFrequencyGHz defines model for WirelessRadioOverview.FrequencyGHz.
+// WirelessRadioOverviewFrequencyGHz is a generated model for the UniFi Official API.
 type WirelessRadioOverviewFrequencyGHz float32
 
-// WirelessRadioOverviewWlanStandard defines model for WirelessRadioOverview.WlanStandard.
+// WirelessRadioOverviewWlanStandard is a generated model for the UniFi Official API.
 type WirelessRadioOverviewWlanStandard string
 
-// GetCountriesParams defines parameters for GetCountries.
+// GetCountriesParams holds query parameters for the UniFi Official API.
 type GetCountriesParams struct {
 	Offset *int32  `form:"offset,omitempty" json:"offset,omitempty"`
 	Limit  *int32  `form:"limit,omitempty" json:"limit,omitempty"`
 	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 }
 
-// GetDpiApplicationsParams defines parameters for GetDpiApplications.
+// GetDpiApplicationsParams holds query parameters for the UniFi Official API.
 type GetDpiApplicationsParams struct {
 	Offset *int32  `form:"offset,omitempty" json:"offset,omitempty"`
 	Limit  *int32  `form:"limit,omitempty" json:"limit,omitempty"`
 	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 }
 
-// GetDpiApplicationCategoriesParams defines parameters for GetDpiApplicationCategories.
+// GetDpiApplicationCategoriesParams holds query parameters for the UniFi Official API.
 type GetDpiApplicationCategoriesParams struct {
 	Offset *int32  `form:"offset,omitempty" json:"offset,omitempty"`
 	Limit  *int32  `form:"limit,omitempty" json:"limit,omitempty"`
 	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 }
 
-// GetPendingDevicePageParams defines parameters for GetPendingDevicePage.
+// GetPendingDevicePageParams holds query parameters for the UniFi Official API.
 type GetPendingDevicePageParams struct {
 	Offset *int32  `form:"offset,omitempty" json:"offset,omitempty"`
 	Limit  *int32  `form:"limit,omitempty" json:"limit,omitempty"`
 	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 }
 
-// GetSiteOverviewPageParams defines parameters for GetSiteOverviewPage.
+// GetSiteOverviewPageParams holds query parameters for the UniFi Official API.
 type GetSiteOverviewPageParams struct {
 	Offset *int32  `form:"offset,omitempty" json:"offset,omitempty"`
 	Limit  *int32  `form:"limit,omitempty" json:"limit,omitempty"`
 	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 }
 
-// GetAclRulePageParams defines parameters for GetAclRulePage.
+// GetAclRulePageParams holds query parameters for the UniFi Official API.
 type GetAclRulePageParams struct {
 	Offset *int32  `form:"offset,omitempty" json:"offset,omitempty"`
 	Limit  *int32  `form:"limit,omitempty" json:"limit,omitempty"`
 	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 }
 
-// GetConnectedClientOverviewPageParams defines parameters for GetConnectedClientOverviewPage.
+// GetConnectedClientOverviewPageParams holds query parameters for the UniFi Official API.
 type GetConnectedClientOverviewPageParams struct {
 	Offset *int32  `form:"offset,omitempty" json:"offset,omitempty"`
 	Limit  *int32  `form:"limit,omitempty" json:"limit,omitempty"`
 	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 }
 
-// GetDeviceTagPageParams defines parameters for GetDeviceTagPage.
+// GetDeviceTagPageParams holds query parameters for the UniFi Official API.
 type GetDeviceTagPageParams struct {
 	Offset *int32            `form:"offset,omitempty" json:"offset,omitempty"`
 	Limit  *int32            `form:"limit,omitempty" json:"limit,omitempty"`
 	Filter *FilterExpression `form:"filter,omitempty" json:"filter,omitempty"`
 }
 
-// GetAdoptedDeviceOverviewPageParams defines parameters for GetAdoptedDeviceOverviewPage.
+// GetAdoptedDeviceOverviewPageParams holds query parameters for the UniFi Official API.
 type GetAdoptedDeviceOverviewPageParams struct {
 	Offset *int32  `form:"offset,omitempty" json:"offset,omitempty"`
 	Limit  *int32  `form:"limit,omitempty" json:"limit,omitempty"`
 	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 }
 
-// GetDnsPolicyPageParams defines parameters for GetDnsPolicyPage.
+// GetDnsPolicyPageParams holds query parameters for the UniFi Official API.
 type GetDnsPolicyPageParams struct {
 	Offset *int32  `form:"offset,omitempty" json:"offset,omitempty"`
 	Limit  *int32  `form:"limit,omitempty" json:"limit,omitempty"`
 	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 }
 
-// GetFirewallPoliciesParams defines parameters for GetFirewallPolicies.
+// GetFirewallPoliciesParams holds query parameters for the UniFi Official API.
 type GetFirewallPoliciesParams struct {
 	Offset *int32  `form:"offset,omitempty" json:"offset,omitempty"`
 	Limit  *int32  `form:"limit,omitempty" json:"limit,omitempty"`
 	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 }
 
-// GetFirewallPolicyOrderingParams defines parameters for GetFirewallPolicyOrdering.
+// GetFirewallPolicyOrderingParams holds query parameters for the UniFi Official API.
 type GetFirewallPolicyOrderingParams struct {
 	SourceFirewallZoneId      openapi_types.UUID `form:"sourceFirewallZoneId" json:"sourceFirewallZoneId"`
 	DestinationFirewallZoneId openapi_types.UUID `form:"destinationFirewallZoneId" json:"destinationFirewallZoneId"`
 }
 
-// UpdateFirewallPolicyOrderingParams defines parameters for UpdateFirewallPolicyOrdering.
+// UpdateFirewallPolicyOrderingParams holds query parameters for the UniFi Official API.
 type UpdateFirewallPolicyOrderingParams struct {
 	SourceFirewallZoneId      openapi_types.UUID `form:"sourceFirewallZoneId" json:"sourceFirewallZoneId"`
 	DestinationFirewallZoneId openapi_types.UUID `form:"destinationFirewallZoneId" json:"destinationFirewallZoneId"`
 }
 
-// GetFirewallZonesParams defines parameters for GetFirewallZones.
+// GetFirewallZonesParams holds query parameters for the UniFi Official API.
 type GetFirewallZonesParams struct {
 	Offset *int32  `form:"offset,omitempty" json:"offset,omitempty"`
 	Limit  *int32  `form:"limit,omitempty" json:"limit,omitempty"`
 	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 }
 
-// DeleteVouchersParams defines parameters for DeleteVouchers.
+// DeleteVouchersParams holds query parameters for the UniFi Official API.
 type DeleteVouchersParams struct {
 	Filter string `form:"filter" json:"filter"`
 }
 
-// GetVouchersParams defines parameters for GetVouchers.
+// GetVouchersParams holds query parameters for the UniFi Official API.
 type GetVouchersParams struct {
 	Offset *int32  `form:"offset,omitempty" json:"offset,omitempty"`
 	Limit  *int32  `form:"limit,omitempty" json:"limit,omitempty"`
 	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 }
 
-// GetNetworksOverviewPageParams defines parameters for GetNetworksOverviewPage.
+// GetNetworksOverviewPageParams holds query parameters for the UniFi Official API.
 type GetNetworksOverviewPageParams struct {
 	Offset *int32  `form:"offset,omitempty" json:"offset,omitempty"`
 	Limit  *int32  `form:"limit,omitempty" json:"limit,omitempty"`
 	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 }
 
-// DeleteNetworkParams defines parameters for DeleteNetwork.
+// DeleteNetworkParams holds query parameters for the UniFi Official API.
 type DeleteNetworkParams struct {
 	Force *bool `form:"force,omitempty" json:"force,omitempty"`
 }
 
-// GetRadiusProfileOverviewPageParams defines parameters for GetRadiusProfileOverviewPage.
+// GetRadiusProfileOverviewPageParams holds query parameters for the UniFi Official API.
 type GetRadiusProfileOverviewPageParams struct {
 	Offset *int32  `form:"offset,omitempty" json:"offset,omitempty"`
 	Limit  *int32  `form:"limit,omitempty" json:"limit,omitempty"`
 	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 }
 
-// GetTrafficMatchingListsParams defines parameters for GetTrafficMatchingLists.
+// GetTrafficMatchingListsParams holds query parameters for the UniFi Official API.
 type GetTrafficMatchingListsParams struct {
 	Offset *int32  `form:"offset,omitempty" json:"offset,omitempty"`
 	Limit  *int32  `form:"limit,omitempty" json:"limit,omitempty"`
 	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 }
 
-// GetVpnServerPageParams defines parameters for GetVpnServerPage.
+// GetVpnServerPageParams holds query parameters for the UniFi Official API.
 type GetVpnServerPageParams struct {
 	Offset *int32  `form:"offset,omitempty" json:"offset,omitempty"`
 	Limit  *int32  `form:"limit,omitempty" json:"limit,omitempty"`
 	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 }
 
-// GetSiteToSiteVpnTunnelPageParams defines parameters for GetSiteToSiteVpnTunnelPage.
+// GetSiteToSiteVpnTunnelPageParams holds query parameters for the UniFi Official API.
 type GetSiteToSiteVpnTunnelPageParams struct {
 	Offset *int32  `form:"offset,omitempty" json:"offset,omitempty"`
 	Limit  *int32  `form:"limit,omitempty" json:"limit,omitempty"`
 	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 }
 
-// GetWansOverviewPageParams defines parameters for GetWansOverviewPage.
+// GetWansOverviewPageParams holds query parameters for the UniFi Official API.
 type GetWansOverviewPageParams struct {
 	Offset *int32 `form:"offset,omitempty" json:"offset,omitempty"`
 	Limit  *int32 `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
-// GetWifiBroadcastPageParams defines parameters for GetWifiBroadcastPage.
+// GetWifiBroadcastPageParams holds query parameters for the UniFi Official API.
 type GetWifiBroadcastPageParams struct {
 	Offset *int32  `form:"offset,omitempty" json:"offset,omitempty"`
 	Limit  *int32  `form:"limit,omitempty" json:"limit,omitempty"`
 	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 }
 
-// DeleteWifiBroadcastParams defines parameters for DeleteWifiBroadcast.
+// DeleteWifiBroadcastParams holds query parameters for the UniFi Official API.
 type DeleteWifiBroadcastParams struct {
 	Force *bool `form:"force,omitempty" json:"force,omitempty"`
 }
 
-// CreateAclRuleJSONRequestBody defines body for CreateAclRule for application/json ContentType.
+// CreateAclRuleJSONRequestBody is a generated request body for the UniFi Official API.
 type CreateAclRuleJSONRequestBody = ACLRuleUpdate
 
-// UpdateAclRuleOrderingJSONRequestBody defines body for UpdateAclRuleOrdering for application/json ContentType.
+// UpdateAclRuleOrderingJSONRequestBody is a generated request body for the UniFi Official API.
 type UpdateAclRuleOrderingJSONRequestBody = ACLRuleOrdering
 
-// UpdateAclRuleJSONRequestBody defines body for UpdateAclRule for application/json ContentType.
+// UpdateAclRuleJSONRequestBody is a generated request body for the UniFi Official API.
 type UpdateAclRuleJSONRequestBody = ACLRuleUpdate
 
-// ExecuteConnectedClientActionJSONRequestBody defines body for ExecuteConnectedClientAction for application/json ContentType.
+// ExecuteConnectedClientActionJSONRequestBody is a generated request body for the UniFi Official API.
 type ExecuteConnectedClientActionJSONRequestBody = ClientActionRequest
 
-// AdoptDeviceJSONRequestBody defines body for AdoptDevice for application/json ContentType.
+// AdoptDeviceJSONRequestBody is a generated request body for the UniFi Official API.
 type AdoptDeviceJSONRequestBody = DeviceAdoptionRequest
 
-// ExecuteAdoptedDeviceActionJSONRequestBody defines body for ExecuteAdoptedDeviceAction for application/json ContentType.
+// ExecuteAdoptedDeviceActionJSONRequestBody is a generated request body for the UniFi Official API.
 type ExecuteAdoptedDeviceActionJSONRequestBody = DeviceActionRequest
 
-// ExecutePortActionJSONRequestBody defines body for ExecutePortAction for application/json ContentType.
+// ExecutePortActionJSONRequestBody is a generated request body for the UniFi Official API.
 type ExecutePortActionJSONRequestBody = PortActionRequest
 
-// CreateDnsPolicyJSONRequestBody defines body for CreateDnsPolicy for application/json ContentType.
+// CreateDnsPolicyJSONRequestBody is a generated request body for the UniFi Official API.
 type CreateDnsPolicyJSONRequestBody = DNSPolicyCreateOrUpdate
 
-// UpdateDnsPolicyJSONRequestBody defines body for UpdateDnsPolicy for application/json ContentType.
+// UpdateDnsPolicyJSONRequestBody is a generated request body for the UniFi Official API.
 type UpdateDnsPolicyJSONRequestBody = DNSPolicyCreateOrUpdate
 
-// CreateFirewallPolicyJSONRequestBody defines body for CreateFirewallPolicy for application/json ContentType.
+// CreateFirewallPolicyJSONRequestBody is a generated request body for the UniFi Official API.
 type CreateFirewallPolicyJSONRequestBody = FirewallPolicyCreateOrUpdate
 
-// UpdateFirewallPolicyOrderingJSONRequestBody defines body for UpdateFirewallPolicyOrdering for application/json ContentType.
+// UpdateFirewallPolicyOrderingJSONRequestBody is a generated request body for the UniFi Official API.
 type UpdateFirewallPolicyOrderingJSONRequestBody = FirewallPolicyOrdering
 
-// PatchFirewallPolicyJSONRequestBody defines body for PatchFirewallPolicy for application/json ContentType.
+// PatchFirewallPolicyJSONRequestBody is a generated request body for the UniFi Official API.
 type PatchFirewallPolicyJSONRequestBody = PatchFirewallPolicy
 
-// UpdateFirewallPolicyJSONRequestBody defines body for UpdateFirewallPolicy for application/json ContentType.
+// UpdateFirewallPolicyJSONRequestBody is a generated request body for the UniFi Official API.
 type UpdateFirewallPolicyJSONRequestBody = FirewallPolicyCreateOrUpdate
 
-// CreateFirewallZoneJSONRequestBody defines body for CreateFirewallZone for application/json ContentType.
+// CreateFirewallZoneJSONRequestBody is a generated request body for the UniFi Official API.
 type CreateFirewallZoneJSONRequestBody = FirewallZoneCreateOrUpdate
 
-// UpdateFirewallZoneJSONRequestBody defines body for UpdateFirewallZone for application/json ContentType.
+// UpdateFirewallZoneJSONRequestBody is a generated request body for the UniFi Official API.
 type UpdateFirewallZoneJSONRequestBody = FirewallZoneCreateOrUpdate
 
-// CreateVouchersJSONRequestBody defines body for CreateVouchers for application/json ContentType.
+// CreateVouchersJSONRequestBody is a generated request body for the UniFi Official API.
 type CreateVouchersJSONRequestBody = HotspotVoucherCreationRequest
 
-// CreateNetworkJSONRequestBody defines body for CreateNetwork for application/json ContentType.
+// CreateNetworkJSONRequestBody is a generated request body for the UniFi Official API.
 type CreateNetworkJSONRequestBody = NetworkCreateOrUpdate
 
-// UpdateNetworkJSONRequestBody defines body for UpdateNetwork for application/json ContentType.
+// UpdateNetworkJSONRequestBody is a generated request body for the UniFi Official API.
 type UpdateNetworkJSONRequestBody = NetworkCreateOrUpdate
 
-// CreateTrafficMatchingListJSONRequestBody defines body for CreateTrafficMatchingList for application/json ContentType.
+// CreateTrafficMatchingListJSONRequestBody is a generated request body for the UniFi Official API.
 type CreateTrafficMatchingListJSONRequestBody = TrafficMatchingListCreateOrUpdate
 
-// UpdateTrafficMatchingListJSONRequestBody defines body for UpdateTrafficMatchingList for application/json ContentType.
+// UpdateTrafficMatchingListJSONRequestBody is a generated request body for the UniFi Official API.
 type UpdateTrafficMatchingListJSONRequestBody = TrafficMatchingListCreateOrUpdate
 
-// CreateWifiBroadcastJSONRequestBody defines body for CreateWifiBroadcast for application/json ContentType.
+// CreateWifiBroadcastJSONRequestBody is a generated request body for the UniFi Official API.
 type CreateWifiBroadcastJSONRequestBody = WifiBroadcastCreateOrUpdate
 
-// UpdateWifiBroadcastJSONRequestBody defines body for UpdateWifiBroadcast for application/json ContentType.
+// UpdateWifiBroadcastJSONRequestBody is a generated request body for the UniFi Official API.
 type UpdateWifiBroadcastJSONRequestBody = WifiBroadcastCreateOrUpdate
 
 // AsIpAclRule returns the union data inside the ACLRule as a IpAclRule

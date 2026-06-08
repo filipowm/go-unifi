@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
@@ -121,7 +122,34 @@ func GenerateModels(raw []byte, pkgName string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("generating models: %w", err)
 	}
-	return normalizeHeader(code)
+	rewritten := rewritePlaceholderDocs(code)
+	return normalizeHeader(rewritten)
+}
+
+// rewritePlaceholderDocs replaces oapi-codegen's zero-info placeholder godoc
+// lines with short, idiomatic equivalents. Only exact machine-generated phrases
+// are matched — spec-supplied docs always start with uppercase "Defines" and
+// are therefore excluded by the lowercase-phrase anchors below.
+func rewritePlaceholderDocs(code string) string {
+	// All oapi-codegen placeholders use lowercase "defines"; spec-supplied enum
+	// docs use uppercase "Defines values for …" so they can't match these patterns.
+	// Go's RE2 engine has no backreference support; case is the safe discriminant.
+	modelRe := regexp.MustCompile(`^// (\w+) defines model for .+\.$`)
+	paramsRe := regexp.MustCompile(`^// (\w+) defines parameters for .+\.$`)
+	// Body lines carry extra content ("for application/json ContentType.").
+	bodyRe := regexp.MustCompile(`^// (\w+) defines body for .+\.$`)
+
+	lines := strings.Split(code, "\n")
+	for i, line := range lines {
+		if m := modelRe.FindStringSubmatch(line); m != nil {
+			lines[i] = "// " + m[1] + " is a generated model for the UniFi Official API."
+		} else if m := paramsRe.FindStringSubmatch(line); m != nil {
+			lines[i] = "// " + m[1] + " holds query parameters for the UniFi Official API."
+		} else if m := bodyRe.FindStringSubmatch(line); m != nil {
+			lines[i] = "// " + m[1] + " is a generated request body for the UniFi Official API."
+		}
+	}
+	return strings.Join(lines, "\n")
 }
 
 // normalizeHeader collapses oapi-codegen's "// Package X ..." doc into a bare
