@@ -116,10 +116,13 @@ func numericRules(prop map[string]any) []string {
 
 // lengthRules turns a min/max count pair (string length or array items) into
 // go-playground min/max rules, dropping the unbounded maxItems sentinel.
+// min is only emitted when N > 1: with the leading omitempty any value that
+// survives the zero-value check trivially satisfies min<=1, so those rules are
+// dead weight (omitempty,min=1 is a tautology for strings and slices).
 func lengthRules(prop map[string]any, minKey, maxKey string) []string {
 	var rules []string
-	if v, ok := intValue(prop[minKey]); ok {
-		rules = append(rules, "min="+v)
+	if n, ok := prop[minKey].(float64); ok && int64(n) > 1 {
+		rules = append(rules, "min="+strconv.FormatInt(int64(n), 10))
 	}
 	if n, ok := prop[maxKey].(float64); ok && n != maxItemsSentinel {
 		rules = append(rules, "max="+strconv.FormatInt(int64(n), 10))
@@ -129,18 +132,25 @@ func lengthRules(prop map[string]any, minKey, maxKey string) []string {
 
 // oneofRule renders an enum as a space-delimited oneof. The integer-typed
 // property with string enum values quirk (e.g. WifiBasicDataRate) is handled
-// transparently since values are formatted from their JSON form. Fails loud if a
-// value contains a space, which would silently split into bogus oneof members.
+// transparently since values are formatted from their JSON form. Returns empty
+// for "number" (float) typed nodes: go-playground's oneof only supports
+// string/int/uint and panics on float32/float64. Fails loud if a value contains
+// a space, comma, or pipe: space splits into bogus oneof members; comma corrupts
+// the whole validate tag (go-playground splits on commas); pipe is its OR-separator.
 func oneofRule(node map[string]any) (string, error) {
 	raw, ok := node["enum"].([]any)
 	if !ok {
 		return "", nil
 	}
+	// go-playground's isOneOf panics on float32/float64 — skip for number types.
+	if node["type"] == "number" {
+		return "", nil
+	}
 	vals := make([]string, 0, len(raw))
 	for _, v := range raw {
 		s := enumValue(v)
-		if strings.Contains(s, " ") {
-			return "", fmt.Errorf("enum value %q contains a space; oneof tag would be corrupted", s)
+		if strings.ContainsAny(s, " ,|") {
+			return "", fmt.Errorf("enum value %q contains a reserved tag character (space, comma, or pipe); oneof tag would be corrupted", s)
 		}
 		vals = append(vals, s)
 	}

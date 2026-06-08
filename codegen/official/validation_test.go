@@ -25,9 +25,16 @@ func validateTagOf(t *testing.T, prop map[string]any) string {
 
 func TestValidationTagInlineScalar(t *testing.T) {
 	t.Parallel()
-	// minLength/maxLength -> min/max on a string, omitempty-led.
+	// minLength=1 is dropped (omitempty,min=1 tautology); maxLength survives.
 	got := validateTagOf(t, map[string]any{"type": "string", "minLength": float64(1), "maxLength": float64(127)})
-	assert.Equal(t, "omitempty,min=1,max=127", got)
+	assert.Equal(t, "omitempty,max=127", got)
+}
+
+func TestValidationTagInlineScalarMinGt1(t *testing.T) {
+	t.Parallel()
+	// minLength > 1 is meaningful (a non-empty string can still be too short).
+	got := validateTagOf(t, map[string]any{"type": "string", "minLength": float64(8), "maxLength": float64(63)})
+	assert.Equal(t, "omitempty,min=8,max=63", got)
 }
 
 func TestValidationTagNumericRange(t *testing.T) {
@@ -49,35 +56,67 @@ func TestValidationTagIntEnumWithStringValues(t *testing.T) {
 
 func TestValidationTagArrayWithMinItems(t *testing.T) {
 	t.Parallel()
+	// minItems=1 is dropped (tautology with omitempty on slices); no rules -> no tag.
 	got := validateTagOf(t, map[string]any{
 		"type":     "array",
 		"minItems": float64(1),
 		"items":    map[string]any{"type": "string"},
 	})
-	assert.Equal(t, "omitempty,min=1", got)
+	assert.Equal(t, "", got)
 }
 
-func TestValidationTagArrayOfEnumDives(t *testing.T) {
+func TestValidationTagArrayWithMinItemsGt1(t *testing.T) {
 	t.Parallel()
-	// minItems then dive into the items' oneof; number enum keeps plain decimals.
+	// minItems > 1 is meaningful: a non-empty slice can still have too few elements.
+	got := validateTagOf(t, map[string]any{
+		"type":     "array",
+		"minItems": float64(2),
+		"items":    map[string]any{"type": "string"},
+	})
+	assert.Equal(t, "omitempty,min=2", got)
+}
+
+func TestValidationTagArrayOfNumberEnumNoOneof(t *testing.T) {
+	t.Parallel()
+	// Float (number) enum items: oneof suppressed (go-playground oneof panics on
+	// float32/float64); minItems=1 also dropped -> no tag emitted.
 	got := validateTagOf(t, map[string]any{
 		"type":     "array",
 		"minItems": float64(1),
 		"items":    map[string]any{"type": "number", "enum": []any{2.4, float64(5), float64(6)}},
 	})
-	assert.Equal(t, "omitempty,min=1,dive,oneof=2.4 5 6", got)
+	assert.Equal(t, "", got)
+}
+
+func TestValidationTagArrayOfStringEnumDives(t *testing.T) {
+	t.Parallel()
+	// String enum items: oneof emitted and reachable via dive.
+	got := validateTagOf(t, map[string]any{
+		"type":     "array",
+		"minItems": float64(1),
+		"items":    map[string]any{"type": "string", "enum": []any{"a", "b", "c"}},
+	})
+	assert.Equal(t, "omitempty,dive,oneof=a b c", got)
+}
+
+func TestValidationTagFloatEnumNoOneof(t *testing.T) {
+	t.Parallel()
+	// A float-typed scalar with an enum: oneof is suppressed because go-playground's
+	// isOneOf panics on float32/float64; no other rules either -> no tag.
+	got := validateTagOf(t, map[string]any{"type": "number", "enum": []any{2.4, float64(5), float64(6)}})
+	assert.Equal(t, "", got)
 }
 
 func TestValidationTagMaxItemsSentinelFiltered(t *testing.T) {
 	t.Parallel()
-	// The math.MaxInt32 "unbounded" sentinel must not become a max= rule.
+	// maxItems sentinel dropped; minItems=1 also dropped; no remaining rules -> no tag.
 	got := validateTagOf(t, map[string]any{
 		"type":     "array",
 		"minItems": float64(1),
 		"maxItems": float64(maxItemsSentinel),
 		"items":    map[string]any{"type": "string"},
 	})
-	assert.Equal(t, "omitempty,min=1", got)
+	assert.Equal(t, "", got)
 }
 
 func TestValidationTagAllOfNestedField(t *testing.T) {
@@ -108,7 +147,38 @@ func TestValidationTagFailsOnSpaceEnum(t *testing.T) {
 	}}
 	err := injectValidationTags(schemas)
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "contains a space")
+	assert.Contains(t, err.Error(), "reserved tag character")
+}
+
+// TestValidationTagFailsOnCommaEnum asserts a comma in an enum value is rejected:
+// go-playground splits the whole validate tag on commas, so a comma would turn
+// oneof=A,B into rules ["oneof=A","B"] and "B" is an undefined validator -> panic.
+func TestValidationTagFailsOnCommaEnum(t *testing.T) {
+	t.Parallel()
+	schemas := map[string]any{"S": map[string]any{
+		"type": "object",
+		"properties": map[string]any{
+			"p": map[string]any{"type": "string", "enum": []any{"OK", "BAD,VALUE"}},
+		},
+	}}
+	err := injectValidationTags(schemas)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "reserved tag character")
+}
+
+// TestValidationTagFailsOnPipeEnum asserts a pipe in an enum value is rejected:
+// the pipe is go-playground's OR-separator and corrupts the oneof rule.
+func TestValidationTagFailsOnPipeEnum(t *testing.T) {
+	t.Parallel()
+	schemas := map[string]any{"S": map[string]any{
+		"type": "object",
+		"properties": map[string]any{
+			"p": map[string]any{"type": "string", "enum": []any{"OK", "BAD|VALUE"}},
+		},
+	}}
+	err := injectValidationTags(schemas)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "reserved tag character")
 }
 
 func TestValidationRequiredAndFormatNotEmitted(t *testing.T) {

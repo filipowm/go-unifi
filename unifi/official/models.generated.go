@@ -2965,7 +2965,7 @@ type ACLRule struct {
 	Metadata UserDefinedOrDerivedEntityMetadata `json:"metadata"`
 
 	// Name ACL rule name
-	Name string `json:"name" validate:"omitempty,min=1"`
+	Name string `json:"name"`
 
 	// SourceFilter Traffic source filter
 	SourceFilter interface{} `json:"sourceFilter,omitempty"`
@@ -3001,7 +3001,7 @@ type ACLRuleObject struct {
 	Metadata UserDefinedOrDerivedEntityMetadata `json:"metadata"`
 
 	// Name ACL rule name
-	Name string `json:"name" validate:"omitempty,min=1"`
+	Name string `json:"name"`
 
 	// SourceFilter Traffic source filter
 	SourceFilter interface{} `json:"sourceFilter,omitempty"`
@@ -3032,7 +3032,7 @@ type ACLRuleUpdate struct {
 	Index *int32 `json:"index,omitempty" validate:"omitempty,gte=0"`
 
 	// Name ACL rule name
-	Name string `json:"name" validate:"omitempty,min=1"`
+	Name string `json:"name"`
 
 	// SourceFilter Traffic source filter
 	SourceFilter interface{} `json:"sourceFilter,omitempty"`
@@ -3046,7 +3046,7 @@ type AccessPointFeatureOverview = interface{}
 // AclRuleDevicesFilter is a generated model for the UniFi Official API.
 type AclRuleDevicesFilter struct {
 	// DeviceIds List of Switch capable device IDs to which the ACL rule will be provisioned.
-	DeviceIds *[]openapi_types.UUID `json:"deviceIds,omitempty" validate:"omitempty,min=1"`
+	DeviceIds *[]openapi_types.UUID `json:"deviceIds,omitempty"`
 	Type      string                `json:"type"`
 	union     json.RawMessage
 }
@@ -3151,7 +3151,7 @@ type ApplicationInfo = Info
 
 // BlackoutScheduleConfiguration is a generated model for the UniFi Official API.
 type BlackoutScheduleConfiguration struct {
-	Days []BlackoutScheduleConfigurationPerDay `json:"days" validate:"omitempty,min=1"`
+	Days []BlackoutScheduleConfigurationPerDay `json:"days"`
 }
 
 // BlackoutScheduleConfigurationPerDay is a generated model for the UniFi Official API.
@@ -3371,10 +3371,10 @@ type DeviceRestartRequest = DeviceActionRequest
 
 // DeviceTag is a generated model for the UniFi Official API.
 type DeviceTag struct {
-	DeviceIds []openapi_types.UUID             `json:"deviceIds" validate:"omitempty,min=1"`
+	DeviceIds []openapi_types.UUID             `json:"deviceIds"`
 	Id        openapi_types.UUID               `json:"id"`
 	Metadata  UserOrOrchestratedEntityMetadata `json:"metadata"`
-	Name      string                           `json:"name" validate:"omitempty,min=1"`
+	Name      string                           `json:"name"`
 }
 
 // DeviceTagPage is a generated model for the UniFi Official API.
@@ -3393,7 +3393,7 @@ type DeviceUplinkInterfaceOverview struct {
 
 // DnsARecord is a generated model for the UniFi Official API.
 type DnsARecord struct {
-	Domain      *string                   `json:"domain,omitempty" validate:"omitempty,min=1,max=127"`
+	Domain      *string                   `json:"domain,omitempty" validate:"omitempty,max=127"`
 	Enabled     bool                      `json:"enabled"`
 	Id          openapi_types.UUID        `json:"id"`
 	Ipv4Address *string                   `json:"ipv4Address,omitempty"`
@@ -3407,7 +3407,7 @@ type DnsARecord struct {
 
 // DnsARecordCreateUpdate is a generated model for the UniFi Official API.
 type DnsARecordCreateUpdate struct {
-	Domain      *string `json:"domain,omitempty" validate:"omitempty,min=1,max=127"`
+	Domain      *string `json:"domain,omitempty" validate:"omitempty,max=127"`
 	Enabled     bool    `json:"enabled"`
 	Ipv4Address *string `json:"ipv4Address,omitempty"`
 
@@ -3419,7 +3419,7 @@ type DnsARecordCreateUpdate struct {
 
 // DnsAaaaRecord is a generated model for the UniFi Official API.
 type DnsAaaaRecord struct {
-	Domain      *string                   `json:"domain,omitempty" validate:"omitempty,min=1,max=127"`
+	Domain      *string                   `json:"domain,omitempty" validate:"omitempty,max=127"`
 	Enabled     bool                      `json:"enabled"`
 	Id          openapi_types.UUID        `json:"id"`
 	Ipv6Address *string                   `json:"ipv6Address,omitempty"`
@@ -3433,7 +3433,7 @@ type DnsAaaaRecord struct {
 
 // DnsAaaaRecordCreateUpdate is a generated model for the UniFi Official API.
 type DnsAaaaRecordCreateUpdate struct {
-	Domain      *string `json:"domain,omitempty" validate:"omitempty,min=1,max=127"`
+	Domain      *string `json:"domain,omitempty" validate:"omitempty,max=127"`
 	Enabled     bool    `json:"enabled"`
 	Ipv6Address *string `json:"ipv6Address,omitempty"`
 
@@ -3445,11 +3445,11 @@ type DnsAaaaRecordCreateUpdate struct {
 
 // DnsCnameRecord is a generated model for the UniFi Official API.
 type DnsCnameRecord struct {
-	Domain       *string                   `json:"domain,omitempty" validate:"omitempty,min=1,max=127"`
+	Domain       *string                   `json:"domain,omitempty" validate:"omitempty,max=127"`
 	Enabled      bool                      `json:"enabled"`
 	Id           openapi_types.UUID        `json:"id"`
 	Metadata     UserDefinedEntityMetadata `json:"metadata"`
-	TargetDomain *string                   `json:"targetDomain,omitempty" validate:"omitempty,min=1,max=127"`
+	TargetDomain *string                   `json:"targetDomain,omitempty" validate:"omitempty,max=127"`
 
 	// TtlSeconds Time to live in seconds.
 	TtlSeconds *int32 `json:"ttlSeconds,omitempty" validate:"omitempty,gte=0,lte=604800"`
@@ -3459,9 +3459,9 @@ type DnsCnameRecord struct {
 
 // DnsCnameRecordCreateUpdate is a generated model for the UniFi Official API.
 type DnsCnameRecordCreateUpdate struct {
-	Domain       *string `json:"domain,omitempty" validate:"omitempty,min=1,max=127"`
+	Domain       *string `json:"domain,omitempty" validate:"omitempty,max=127"`
 	Enabled      bool    `json:"enabled"`
-	TargetDomain *string `json:"targetDomain,omitempty" validate:"omitempty,min=1,max=127"`
+	TargetDomain *string `json:"targetDomain,omitempty" validate:"omitempty,max=127"`
 
 	// TtlSeconds Time to live in seconds.
 	TtlSeconds *int32 `json:"ttlSeconds,omitempty" validate:"omitempty,gte=0,lte=604800"`
@@ -3471,7 +3471,7 @@ type DnsCnameRecordCreateUpdate struct {
 
 // DnsForwardDomainPolicy is a generated model for the UniFi Official API.
 type DnsForwardDomainPolicy struct {
-	Domain  *string            `json:"domain,omitempty" validate:"omitempty,min=1,max=127"`
+	Domain  *string            `json:"domain,omitempty" validate:"omitempty,max=127"`
 	Enabled bool               `json:"enabled"`
 	Id      openapi_types.UUID `json:"id"`
 
@@ -3484,7 +3484,7 @@ type DnsForwardDomainPolicy struct {
 
 // DnsForwardDomainPolicyCreateUpdate is a generated model for the UniFi Official API.
 type DnsForwardDomainPolicyCreateUpdate struct {
-	Domain  *string `json:"domain,omitempty" validate:"omitempty,min=1,max=127"`
+	Domain  *string `json:"domain,omitempty" validate:"omitempty,max=127"`
 	Enabled bool    `json:"enabled"`
 
 	// IpAddress IP address of the DNS Server that the DNS query is forwarded to.
@@ -3495,10 +3495,10 @@ type DnsForwardDomainPolicyCreateUpdate struct {
 
 // DnsMxRecord is a generated model for the UniFi Official API.
 type DnsMxRecord struct {
-	Domain           *string                   `json:"domain,omitempty" validate:"omitempty,min=1,max=127"`
+	Domain           *string                   `json:"domain,omitempty" validate:"omitempty,max=127"`
 	Enabled          bool                      `json:"enabled"`
 	Id               openapi_types.UUID        `json:"id"`
-	MailServerDomain *string                   `json:"mailServerDomain,omitempty" validate:"omitempty,min=1,max=127"`
+	MailServerDomain *string                   `json:"mailServerDomain,omitempty" validate:"omitempty,max=127"`
 	Metadata         UserDefinedEntityMetadata `json:"metadata"`
 
 	// Priority Priority. A lower number is preferred.
@@ -3509,9 +3509,9 @@ type DnsMxRecord struct {
 
 // DnsMxRecordCreateUpdate is a generated model for the UniFi Official API.
 type DnsMxRecordCreateUpdate struct {
-	Domain           *string `json:"domain,omitempty" validate:"omitempty,min=1,max=127"`
+	Domain           *string `json:"domain,omitempty" validate:"omitempty,max=127"`
 	Enabled          bool    `json:"enabled"`
-	MailServerDomain *string `json:"mailServerDomain,omitempty" validate:"omitempty,min=1,max=127"`
+	MailServerDomain *string `json:"mailServerDomain,omitempty" validate:"omitempty,max=127"`
 
 	// Priority Priority. A lower number is preferred.
 	Priority *int32 `json:"priority,omitempty" validate:"omitempty,gte=0,lte=65535"`
@@ -3530,7 +3530,7 @@ type DnsPolicyPage struct {
 
 // DnsSrvRecord is a generated model for the UniFi Official API.
 type DnsSrvRecord struct {
-	Domain   *string                   `json:"domain,omitempty" validate:"omitempty,min=1,max=127"`
+	Domain   *string                   `json:"domain,omitempty" validate:"omitempty,max=127"`
 	Enabled  bool                      `json:"enabled"`
 	Id       openapi_types.UUID        `json:"id"`
 	Metadata UserDefinedEntityMetadata `json:"metadata"`
@@ -3543,7 +3543,7 @@ type DnsSrvRecord struct {
 	Protocol *string `json:"protocol,omitempty"`
 
 	// ServerDomain Domain of the server that is running the service.
-	ServerDomain *string `json:"serverDomain,omitempty" validate:"omitempty,min=1,max=127"`
+	ServerDomain *string `json:"serverDomain,omitempty" validate:"omitempty,max=127"`
 
 	// Service Service associated with this SRV record.
 	Service *string `json:"service,omitempty"`
@@ -3556,7 +3556,7 @@ type DnsSrvRecord struct {
 
 // DnsSrvRecordCreateUpdate is a generated model for the UniFi Official API.
 type DnsSrvRecordCreateUpdate struct {
-	Domain  *string `json:"domain,omitempty" validate:"omitempty,min=1,max=127"`
+	Domain  *string `json:"domain,omitempty" validate:"omitempty,max=127"`
 	Enabled bool    `json:"enabled"`
 	Port    *int32  `json:"port,omitempty" validate:"omitempty,gte=0,lte=65535"`
 
@@ -3567,7 +3567,7 @@ type DnsSrvRecordCreateUpdate struct {
 	Protocol *string `json:"protocol,omitempty"`
 
 	// ServerDomain Domain of the server that is running the service.
-	ServerDomain *string `json:"serverDomain,omitempty" validate:"omitempty,min=1,max=127"`
+	ServerDomain *string `json:"serverDomain,omitempty" validate:"omitempty,max=127"`
 
 	// Service Service associated with this SRV record.
 	Service *string `json:"service,omitempty"`
@@ -3580,24 +3580,24 @@ type DnsSrvRecordCreateUpdate struct {
 
 // DnsTxtRecord is a generated model for the UniFi Official API.
 type DnsTxtRecord struct {
-	Domain   *string                   `json:"domain,omitempty" validate:"omitempty,min=1,max=127"`
+	Domain   *string                   `json:"domain,omitempty" validate:"omitempty,max=127"`
 	Enabled  bool                      `json:"enabled"`
 	Id       openapi_types.UUID        `json:"id"`
 	Metadata UserDefinedEntityMetadata `json:"metadata"`
 
 	// Text The text value associated with this TXT DNS record. Text can contain up to four 255-character strings. Lines containing commas must be enclosed in double quotes (").
-	Text  *string `json:"text,omitempty" validate:"omitempty,min=1,max=1024"`
+	Text  *string `json:"text,omitempty" validate:"omitempty,max=1024"`
 	Type  string  `json:"type"`
 	union json.RawMessage
 }
 
 // DnsTxtRecordCreateUpdate is a generated model for the UniFi Official API.
 type DnsTxtRecordCreateUpdate struct {
-	Domain  *string `json:"domain,omitempty" validate:"omitempty,min=1,max=127"`
+	Domain  *string `json:"domain,omitempty" validate:"omitempty,max=127"`
 	Enabled bool    `json:"enabled"`
 
 	// Text The text value associated with this TXT DNS record. Text can contain up to four 255-character strings. Lines containing commas must be enclosed in double quotes (").
-	Text  *string `json:"text,omitempty" validate:"omitempty,min=1,max=1024"`
+	Text  *string `json:"text,omitempty" validate:"omitempty,max=1024"`
 	Type  string  `json:"type"`
 	union json.RawMessage
 }
@@ -3617,7 +3617,7 @@ type FirewallPolicy struct {
 	Action FirewallPolicyAction `json:"action"`
 
 	// ConnectionStateFilter Match on firewall connection state. If null, matches all connection states.
-	ConnectionStateFilter *[]FirewallPolicyConnectionStateFilter `json:"connectionStateFilter,omitempty" validate:"omitempty,min=1,dive,oneof=NEW INVALID ESTABLISHED RELATED"`
+	ConnectionStateFilter *[]FirewallPolicyConnectionStateFilter `json:"connectionStateFilter,omitempty" validate:"omitempty,dive,oneof=NEW INVALID ESTABLISHED RELATED"`
 	Description           *string                                `json:"description,omitempty"`
 	Destination           FirewallPolicyDestination              `json:"destination"`
 	Enabled               bool                                   `json:"enabled"`
@@ -3663,13 +3663,13 @@ type FirewallPolicyActionReject = FirewallPolicyAction
 // FirewallPolicyApplicationCategoryFilter is a generated model for the UniFi Official API.
 type FirewallPolicyApplicationCategoryFilter struct {
 	// ApplicationCategoryIds Array of DPI Category IDs to match.
-	ApplicationCategoryIds []int32 `json:"applicationCategoryIds" validate:"omitempty,min=1"`
+	ApplicationCategoryIds []int32 `json:"applicationCategoryIds"`
 }
 
 // FirewallPolicyApplicationFilter is a generated model for the UniFi Official API.
 type FirewallPolicyApplicationFilter struct {
 	// ApplicationIds Array of DPI Application IDs to match.
-	ApplicationIds []int32 `json:"applicationIds" validate:"omitempty,min=1,max=100"`
+	ApplicationIds []int32 `json:"applicationIds" validate:"omitempty,max=100"`
 }
 
 // FirewallPolicyConnectionStateFilter is a generated model for the UniFi Official API.
@@ -3681,7 +3681,7 @@ type FirewallPolicyCreateOrUpdate struct {
 	Action FirewallPolicyAction `json:"action"`
 
 	// ConnectionStateFilter Match on firewall connection state. If null, matches all connection states.
-	ConnectionStateFilter *[]FirewallPolicyConnectionStateFilter `json:"connectionStateFilter,omitempty" validate:"omitempty,min=1,dive,oneof=NEW INVALID ESTABLISHED RELATED"`
+	ConnectionStateFilter *[]FirewallPolicyConnectionStateFilter `json:"connectionStateFilter,omitempty" validate:"omitempty,dive,oneof=NEW INVALID ESTABLISHED RELATED"`
 	Description           *string                                `json:"description,omitempty"`
 	Destination           FirewallPolicyDestination              `json:"destination"`
 	Enabled               bool                                   `json:"enabled"`
@@ -3694,7 +3694,7 @@ type FirewallPolicyCreateOrUpdate struct {
 
 	// LoggingEnabled Generate syslog entries when traffic is matched. Such entries are sent to a remote syslog server.
 	LoggingEnabled bool   `json:"loggingEnabled"`
-	Name           string `json:"name" validate:"omitempty,min=1"`
+	Name           string `json:"name"`
 
 	// Schedule Defines date and time when the entity is active. If null, the entity is always active.
 	Schedule *FirewallSchedule    `json:"schedule,omitempty"`
@@ -3898,7 +3898,7 @@ type FirewallPolicyIPv4ProtocolPreset struct {
 // FirewallPolicyIPv6InterfaceIdentifierFilter is a generated model for the UniFi Official API.
 type FirewallPolicyIPv6InterfaceIdentifierFilter struct {
 	// Ipv6Iid IPv6 Interface Identifier.
-	Ipv6Iid string `json:"ipv6Iid" validate:"omitempty,min=1"`
+	Ipv6Iid string `json:"ipv6Iid"`
 
 	// MatchOpposite Match on all IPv6 IIDs except the specified one.
 	MatchOpposite bool `json:"matchOpposite"`
@@ -4103,7 +4103,7 @@ type FirewallPolicyIpv6ProtocolScope struct {
 // FirewallPolicyMACAddressFilter is a generated model for the UniFi Official API.
 type FirewallPolicyMACAddressFilter struct {
 	// MacAddresses Array of MAC addresses to match.
-	MacAddresses []string `json:"macAddresses" validate:"omitempty,min=1"`
+	MacAddresses []string `json:"macAddresses"`
 }
 
 // FirewallPolicyNetworkFilter is a generated model for the UniFi Official API.
@@ -4112,7 +4112,7 @@ type FirewallPolicyNetworkFilter struct {
 	MatchOpposite bool `json:"matchOpposite"`
 
 	// NetworkIds Array of Network IDs to match.
-	NetworkIds []openapi_types.UUID `json:"networkIds" validate:"omitempty,min=1"`
+	NetworkIds []openapi_types.UUID `json:"networkIds"`
 }
 
 // FirewallPolicyOrdering is a generated model for the UniFi Official API.
@@ -4151,7 +4151,7 @@ type FirewallPolicyPortReferenceFilter struct {
 // FirewallPolicyPortValueFilter is a generated model for the UniFi Official API.
 type FirewallPolicyPortValueFilter struct {
 	// Items List of ports or port ranges to match.
-	Items *[]PortMatching `json:"items,omitempty" validate:"omitempty,min=1"`
+	Items *[]PortMatching `json:"items,omitempty"`
 
 	// MatchOpposite Match on all ports except the specified ones.
 	MatchOpposite bool   `json:"matchOpposite"`
@@ -4162,7 +4162,7 @@ type FirewallPolicyPortValueFilter struct {
 // FirewallPolicyRegionFilter is a generated model for the UniFi Official API.
 type FirewallPolicyRegionFilter struct {
 	// Regions Match traffic originating from selected regions. Regions are identified by their ISO 3166-1 alpha-2 country codes.
-	Regions []FirewallPolicyRegionFilterRegions `json:"regions" validate:"omitempty,min=1,dive,oneof=AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BW BY BZ CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FM FO FR GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GS GT GU GW GY HK HN HR HT HU ID IE IL IM IN IO IQ IR IS IT JE JM JO JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP MQ MR MS MT MU MV MW MX MY MZ NA NC NE NF NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PW PY QA RE RO RS RU RW SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS XK YE YT ZA ZM ZW"`
+	Regions []FirewallPolicyRegionFilterRegions `json:"regions" validate:"omitempty,dive,oneof=AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BW BY BZ CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FM FO FR GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GS GT GU GW GY HK HN HR HT HU ID IE IL IM IN IO IQ IR IS IT JE JM JO JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP MQ MR MS MT MU MV MW MX MY MZ NA NC NE NF NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PW PY QA RE RO RS RU RW SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS XK YE YT ZA ZM ZW"`
 }
 
 // FirewallPolicyRegionFilterRegions is a generated model for the UniFi Official API.
@@ -4274,7 +4274,7 @@ type FirewallPolicySourceVpnServerFilter struct {
 // FirewallPolicySpecificDomainFilter is a generated model for the UniFi Official API.
 type FirewallPolicySpecificDomainFilter struct {
 	// Domains List of domains to match.
-	Domains *[]string `json:"domains,omitempty" validate:"omitempty,min=1"`
+	Domains *[]string `json:"domains,omitempty"`
 	Type    string    `json:"type"`
 	union   json.RawMessage
 }
@@ -4282,7 +4282,7 @@ type FirewallPolicySpecificDomainFilter struct {
 // FirewallPolicySpecificIpAddressFilter is a generated model for the UniFi Official API.
 type FirewallPolicySpecificIpAddressFilter struct {
 	// Items List of IP addresses, IP address ranges, or IP subnets to match.
-	Items *[]IPMatching `json:"items,omitempty" validate:"omitempty,min=1"`
+	Items *[]IPMatching `json:"items,omitempty"`
 
 	// MatchOpposite Match on all IP addresses except the specified ones.
 	MatchOpposite bool   `json:"matchOpposite"`
@@ -4293,7 +4293,7 @@ type FirewallPolicySpecificIpAddressFilter struct {
 // FirewallPolicyVPNServerFilter is a generated model for the UniFi Official API.
 type FirewallPolicyVPNServerFilter struct {
 	MatchOpposite bool                 `json:"matchOpposite"`
-	VpnServerIds  []openapi_types.UUID `json:"vpnServerIds" validate:"omitempty,min=1"`
+	VpnServerIds  []openapi_types.UUID `json:"vpnServerIds"`
 }
 
 // FirewallSchedule Defines date and time when the entity is active. If null, the entity is always active.
@@ -4305,7 +4305,7 @@ type FirewallSchedule struct {
 // FirewallScheduleCustom is a generated model for the UniFi Official API.
 type FirewallScheduleCustom struct {
 	Mode         string                                `json:"mode"`
-	RepeatOnDays *[]FirewallScheduleCustomRepeatOnDays `json:"repeatOnDays,omitempty" validate:"omitempty,min=1,dive,oneof=MONDAY TUESDAY WEDNESDAY THURSDAY FRIDAY SATURDAY SUNDAY"`
+	RepeatOnDays *[]FirewallScheduleCustomRepeatOnDays `json:"repeatOnDays,omitempty" validate:"omitempty,dive,oneof=MONDAY TUESDAY WEDNESDAY THURSDAY FRIDAY SATURDAY SUNDAY"`
 
 	// StartDate Date in YYYY-MM-DD format. ISO 8601 compliant.
 	StartDate *openapi_types.Date `json:"startDate,omitempty"`
@@ -4333,7 +4333,7 @@ type FirewallScheduleEveryDay struct {
 // FirewallScheduleEveryWeek is a generated model for the UniFi Official API.
 type FirewallScheduleEveryWeek struct {
 	Mode         string                                   `json:"mode"`
-	RepeatOnDays *[]FirewallScheduleEveryWeekRepeatOnDays `json:"repeatOnDays,omitempty" validate:"omitempty,min=1,dive,oneof=MONDAY TUESDAY WEDNESDAY THURSDAY FRIDAY SATURDAY SUNDAY"`
+	RepeatOnDays *[]FirewallScheduleEveryWeekRepeatOnDays `json:"repeatOnDays,omitempty" validate:"omitempty,dive,oneof=MONDAY TUESDAY WEDNESDAY THURSDAY FRIDAY SATURDAY SUNDAY"`
 
 	// TimeFilter Defines the time range when the entity is active. If null, the entity is active all day.
 	TimeFilter *FirewallScheduleTime `json:"timeFilter,omitempty"`
@@ -4372,7 +4372,7 @@ type FirewallZone struct {
 	Name string `json:"name"`
 
 	// NetworkIds List of Network IDs
-	NetworkIds []openapi_types.UUID `json:"networkIds" validate:"omitempty,min=0"`
+	NetworkIds []openapi_types.UUID `json:"networkIds"`
 }
 
 // FirewallZoneCreateOrUpdate is a generated model for the UniFi Official API.
@@ -4381,7 +4381,7 @@ type FirewallZoneCreateOrUpdate struct {
 	Name string `json:"name"`
 
 	// NetworkIds List of Network IDs
-	NetworkIds []openapi_types.UUID `json:"networkIds" validate:"omitempty,min=0"`
+	NetworkIds []openapi_types.UUID `json:"networkIds"`
 }
 
 // FirewallZonesPage is a generated model for the UniFi Official API.
@@ -4396,7 +4396,7 @@ type FirewallZonesPage struct {
 // GatewayManagedIPv4Configuration is a generated model for the UniFi Official API.
 type GatewayManagedIPv4Configuration struct {
 	// AdditionalHostIpSubnets Additional host IP subnets assigned to this VLAN.
-	AdditionalHostIpSubnets *[]string `json:"additionalHostIpSubnets,omitempty" validate:"omitempty,min=1,max=64"`
+	AdditionalHostIpSubnets *[]string `json:"additionalHostIpSubnets,omitempty" validate:"omitempty,max=64"`
 
 	// AutoScaleEnabled Whether the Network can automatically scale its subnet size based on the number of active DHCP leases.
 	AutoScaleEnabled  bool                                 `json:"autoScaleEnabled"`
@@ -4404,7 +4404,7 @@ type GatewayManagedIPv4Configuration struct {
 	HostIpAddress     string                               `json:"hostIpAddress"`
 
 	// NatOutboundIpAddressConfiguration List of NAT Outbound Configurations defining which IP addresses are used for NAT translation. This array must contain all WAN interfaces with `static` or `PPPoE` IPv4 connection configuration.
-	NatOutboundIpAddressConfiguration *[]WANNATOutboundConfiguration `json:"natOutboundIpAddressConfiguration,omitempty" validate:"omitempty,min=1"`
+	NatOutboundIpAddressConfiguration *[]WANNATOutboundConfiguration `json:"natOutboundIpAddressConfiguration,omitempty"`
 	PrefixLength                      int32                          `json:"prefixLength" validate:"omitempty,gte=8,lte=30"`
 }
 
@@ -4417,7 +4417,7 @@ type GatewayManagedIPv4DHCPConfiguration struct {
 // GatewayManagedIPv4DHCPServerConfiguration is a generated model for the UniFi Official API.
 type GatewayManagedIPv4DHCPServerConfiguration struct {
 	// DnsServerIpAddressesOverride List of DNS servers assigned to client devices by the DHCP server. If none are specified, they will be selected automatically.
-	DnsServerIpAddressesOverride *[]string `json:"dnsServerIpAddressesOverride,omitempty" validate:"omitempty,min=1,max=4"`
+	DnsServerIpAddressesOverride *[]string `json:"dnsServerIpAddressesOverride,omitempty" validate:"omitempty,max=4"`
 
 	// DomainName Domain name that can be used to access network in the browser.
 	DomainName *string `json:"domainName,omitempty"`
@@ -4431,7 +4431,7 @@ type GatewayManagedIPv4DHCPServerConfiguration struct {
 	Mode             string `json:"mode"`
 
 	// NtpServerIpAddresses Network Time Protocol (NTP) server IP addresses.
-	NtpServerIpAddresses *[]string `json:"ntpServerIpAddresses,omitempty" validate:"omitempty,min=1,max=2"`
+	NtpServerIpAddresses *[]string `json:"ntpServerIpAddresses,omitempty" validate:"omitempty,max=2"`
 
 	// Option43Value Custom DHCP option (43) — the value MUST be the UniFi Network application's host IP address.
 	Option43Value                *string           `json:"option43Value,omitempty"`
@@ -4445,7 +4445,7 @@ type GatewayManagedIPv4DHCPServerConfiguration struct {
 	TimeOffsetSeconds *int32 `json:"timeOffsetSeconds,omitempty" validate:"omitempty,gte=-86400,lte=86400"`
 
 	// WinsServerIpAddresses Windows Internet Name Service (WINS) server IP addresses.
-	WinsServerIpAddresses *[]string `json:"winsServerIpAddresses,omitempty" validate:"omitempty,min=1,max=2"`
+	WinsServerIpAddresses *[]string `json:"winsServerIpAddresses,omitempty" validate:"omitempty,max=2"`
 
 	// WpadUrl Web Proxy Auto-Discovery (WPAD) URL.
 	WpadUrl *string `json:"wpadUrl,omitempty"`
@@ -4505,7 +4505,7 @@ type GatewayManagedNetworkDetails struct {
 	// MdnsForwardingEnabled Whether this network should participate in mDNS traffic forwarding.
 	MdnsForwardingEnabled *bool                                           `json:"mdnsForwardingEnabled,omitempty"`
 	Metadata              UserOrSystemDefinedOrOrchestratedEntityMetadata `json:"metadata"`
-	Name                  string                                          `json:"name" validate:"omitempty,min=1"`
+	Name                  string                                          `json:"name"`
 
 	// VlanId VLAN ID. Must be 1 for the default network and >= 2 for additional networks.
 	VlanId int32 `json:"vlanId" validate:"omitempty,gte=1,lte=4009"`
@@ -4627,7 +4627,7 @@ type HotspotVoucherCreationRequest struct {
 	DataUsageLimitMBytes *int64 `json:"dataUsageLimitMBytes,omitempty" validate:"omitempty,gte=1,lte=1048576"`
 
 	// Name Voucher note, duplicated across all generated vouchers
-	Name string `json:"name" validate:"omitempty,min=1"`
+	Name string `json:"name"`
 
 	// RxRateLimitKbps (Optional) download rate limit in kilobits per second
 	RxRateLimitKbps *int64 `json:"rxRateLimitKbps,omitempty" validate:"omitempty,gte=2,lte=100000"`
@@ -4723,7 +4723,7 @@ type IPMatching struct {
 // IPv4DHCPRelayConfiguration is a generated model for the UniFi Official API.
 type IPv4DHCPRelayConfiguration struct {
 	// DhcpServerIpAddresses DHCP Server IP addresses
-	DhcpServerIpAddresses *[]string `json:"dhcpServerIpAddresses,omitempty" validate:"omitempty,min=1"`
+	DhcpServerIpAddresses *[]string `json:"dhcpServerIpAddresses,omitempty"`
 	Mode                  string    `json:"mode"`
 	union                 json.RawMessage
 }
@@ -4731,7 +4731,7 @@ type IPv4DHCPRelayConfiguration struct {
 // IPv4DHCPServerConfiguration is a generated model for the UniFi Official API.
 type IPv4DHCPServerConfiguration struct {
 	// DnsServerIpAddressesOverride List of DNS servers assigned to client devices by the DHCP server. If none are specified, they will be selected automatically.
-	DnsServerIpAddressesOverride *[]string `json:"dnsServerIpAddressesOverride,omitempty" validate:"omitempty,min=1,max=4"`
+	DnsServerIpAddressesOverride *[]string `json:"dnsServerIpAddressesOverride,omitempty" validate:"omitempty,max=4"`
 
 	// DomainName Domain name that can be used to access network in the browser.
 	DomainName *string `json:"domainName,omitempty"`
@@ -4769,11 +4769,11 @@ type IPv6Matching struct {
 // IPv6StaticConfiguration is a generated model for the UniFi Official API.
 type IPv6StaticConfiguration struct {
 	// AdditionalHostIpSubnets Additional host IP subnets assigned to this VLAN.
-	AdditionalHostIpSubnets *[]string                   `json:"additionalHostIpSubnets,omitempty" validate:"omitempty,min=1,max=4"`
+	AdditionalHostIpSubnets *[]string                   `json:"additionalHostIpSubnets,omitempty" validate:"omitempty,max=4"`
 	ClientAddressAssignment IPv6ClientAddressAssignment `json:"clientAddressAssignment"`
 
 	// DnsServerIpAddressesOverride The IPv6 DNS server addresses assigned to this Network. If none are specified, they will be selected automatically.
-	DnsServerIpAddressesOverride *[]string `json:"dnsServerIpAddressesOverride,omitempty" validate:"omitempty,min=1,max=4"`
+	DnsServerIpAddressesOverride *[]string `json:"dnsServerIpAddressesOverride,omitempty" validate:"omitempty,max=4"`
 
 	// HostIpAddress The static IPv6 address assigned to this Network.
 	HostIpAddress       *string                           `json:"hostIpAddress,omitempty"`
@@ -4811,10 +4811,10 @@ type IpAclRule struct {
 	Metadata UserDefinedOrDerivedEntityMetadata `json:"metadata"`
 
 	// Name ACL rule name
-	Name string `json:"name" validate:"omitempty,min=1"`
+	Name string `json:"name"`
 
 	// ProtocolFilter Protocols this ACL rule will be applied to. When null, the rule will be applied to all protocols.
-	ProtocolFilter *[]IpAclRuleProtocolFilter `json:"protocolFilter,omitempty" validate:"omitempty,min=1,dive,oneof=TCP UDP"`
+	ProtocolFilter *[]IpAclRuleProtocolFilter `json:"protocolFilter,omitempty" validate:"omitempty,dive,oneof=TCP UDP"`
 
 	// SourceFilter Traffic source filter
 	SourceFilter interface{} `json:"sourceFilter,omitempty"`
@@ -4838,10 +4838,10 @@ type IpAclRuleCreateUpdate struct {
 	Index *int32 `json:"index,omitempty" validate:"omitempty,gte=0"`
 
 	// Name ACL rule name
-	Name string `json:"name" validate:"omitempty,min=1"`
+	Name string `json:"name"`
 
 	// ProtocolFilter Protocols this ACL rule will be applied to. When null, the rule will be applied to all protocols.
-	ProtocolFilter *[]IpAclRuleProtocolFilter `json:"protocolFilter,omitempty" validate:"omitempty,min=1,dive,oneof=TCP UDP"`
+	ProtocolFilter *[]IpAclRuleProtocolFilter `json:"protocolFilter,omitempty" validate:"omitempty,dive,oneof=TCP UDP"`
 	SourceFilter   *IPACLRuleEndpoint         `json:"sourceFilter,omitempty"`
 	Type           string                     `json:"type"`
 	union          json.RawMessage
@@ -4850,7 +4850,7 @@ type IpAclRuleCreateUpdate struct {
 // IpAclRuleNetworkEndpointFilter is a generated model for the UniFi Official API.
 type IpAclRuleNetworkEndpointFilter struct {
 	// NetworkIds Network IDs
-	NetworkIds *[]openapi_types.UUID `json:"networkIds,omitempty" validate:"omitempty,min=1"`
+	NetworkIds *[]openapi_types.UUID `json:"networkIds,omitempty"`
 	Type       string                `json:"type"`
 	union      json.RawMessage
 }
@@ -4861,10 +4861,10 @@ type IpAclRuleProtocolFilter string
 // IpAclRuleSubnetEndpointFilter is a generated model for the UniFi Official API.
 type IpAclRuleSubnetEndpointFilter struct {
 	// IpAddressesOrSubnets IP addresses or subnets
-	IpAddressesOrSubnets *[]string `json:"ipAddressesOrSubnets,omitempty" validate:"omitempty,min=1"`
+	IpAddressesOrSubnets *[]string `json:"ipAddressesOrSubnets,omitempty"`
 
 	// PortFilter Ports this ACL rule will be applied to. If null, all the rule will be applied to all ports.
-	PortFilter *[]int32 `json:"portFilter,omitempty" validate:"omitempty,min=1"`
+	PortFilter *[]int32 `json:"portFilter,omitempty"`
 	Type       string   `json:"type"`
 	union      json.RawMessage
 }
@@ -4872,16 +4872,16 @@ type IpAclRuleSubnetEndpointFilter struct {
 // IpV4TrafficMatchingList is a generated model for the UniFi Official API.
 type IpV4TrafficMatchingList struct {
 	Id    openapi_types.UUID `json:"id"`
-	Items *[]IPv4Matching    `json:"items,omitempty" validate:"omitempty,min=1"`
-	Name  string             `json:"name" validate:"omitempty,min=1"`
+	Items *[]IPv4Matching    `json:"items,omitempty"`
+	Name  string             `json:"name"`
 	Type  string             `json:"type"`
 	union json.RawMessage
 }
 
 // IpV4TrafficMatchingListCreateUpdate is a generated model for the UniFi Official API.
 type IpV4TrafficMatchingListCreateUpdate struct {
-	Items *[]IPv4Matching `json:"items,omitempty" validate:"omitempty,min=1"`
-	Name  string          `json:"name" validate:"omitempty,min=1"`
+	Items *[]IPv4Matching `json:"items,omitempty"`
+	Name  string          `json:"name"`
 	Type  string          `json:"type"`
 	union json.RawMessage
 }
@@ -4889,16 +4889,16 @@ type IpV4TrafficMatchingListCreateUpdate struct {
 // IpV6TrafficMatchingList is a generated model for the UniFi Official API.
 type IpV6TrafficMatchingList struct {
 	Id    openapi_types.UUID `json:"id"`
-	Items *[]IPv6Matching    `json:"items,omitempty" validate:"omitempty,min=1"`
-	Name  string             `json:"name" validate:"omitempty,min=1"`
+	Items *[]IPv6Matching    `json:"items,omitempty"`
+	Name  string             `json:"name"`
 	Type  string             `json:"type"`
 	union json.RawMessage
 }
 
 // IpV6TrafficMatchingListCreateUpdate is a generated model for the UniFi Official API.
 type IpV6TrafficMatchingListCreateUpdate struct {
-	Items *[]IPv6Matching `json:"items,omitempty" validate:"omitempty,min=1"`
-	Name  string          `json:"name" validate:"omitempty,min=1"`
+	Items *[]IPv6Matching `json:"items,omitempty"`
+	Name  string          `json:"name"`
 	Type  string          `json:"type"`
 	union json.RawMessage
 }
@@ -4942,7 +4942,7 @@ type LatestStatisticsForDeviceInterfaces struct {
 
 // LatestStatisticsForWirelessRadio is a generated model for the UniFi Official API.
 type LatestStatisticsForWirelessRadio struct {
-	FrequencyGHz LatestStatisticsForWirelessRadioFrequencyGHz `json:"frequencyGHz" validate:"omitempty,oneof=2.4 5 6 60"`
+	FrequencyGHz LatestStatisticsForWirelessRadioFrequencyGHz `json:"frequencyGHz"`
 	TxRetriesPct *float64                                     `json:"txRetriesPct,omitempty"`
 }
 
@@ -5025,7 +5025,7 @@ type MacAclRule struct {
 	Metadata UserDefinedOrDerivedEntityMetadata `json:"metadata"`
 
 	// Name ACL rule name
-	Name string `json:"name" validate:"omitempty,min=1"`
+	Name string `json:"name"`
 
 	// NetworkIdFilter Network ID to which this ACL rule applies
 	NetworkIdFilter *openapi_types.UUID `json:"networkIdFilter,omitempty"`
@@ -5052,7 +5052,7 @@ type MacAclRuleCreateUpdate struct {
 	Index *int32 `json:"index,omitempty" validate:"omitempty,gte=0"`
 
 	// Name ACL rule name
-	Name string `json:"name" validate:"omitempty,min=1"`
+	Name string `json:"name"`
 
 	// NetworkIdFilter Network ID to which this ACL rule applies
 	NetworkIdFilter *openapi_types.UUID `json:"networkIdFilter,omitempty"`
@@ -5064,7 +5064,7 @@ type MacAclRuleCreateUpdate struct {
 // MacAclRuleMacAddressEndpointFilter is a generated model for the UniFi Official API.
 type MacAclRuleMacAddressEndpointFilter struct {
 	// MacAddresses Source/destination MAC addresses this ACL rule will apply to.
-	MacAddresses *[]string `json:"macAddresses,omitempty" validate:"omitempty,min=1"`
+	MacAddresses *[]string `json:"macAddresses,omitempty"`
 
 	// PrefixLength MAC address prefix length. When null, full MAC address(-es) will be used.
 	PrefixLength *int32 `json:"prefixLength,omitempty" validate:"omitempty,gte=1,lte=48"`
@@ -5093,7 +5093,7 @@ type NATOutboundAutoConfigurationIpAddressSelectionMode string
 // NATOutboundStaticConfiguration is a generated model for the UniFi Official API.
 type NATOutboundStaticConfiguration struct {
 	// IpAddressSelectors List of IP addresses or address ranges which determines which IP addresses will be used to translate the traffic on network using NAT.
-	IpAddressSelectors *[]IPAddressSelector `json:"ipAddressSelectors,omitempty" validate:"omitempty,min=1"`
+	IpAddressSelectors *[]IPAddressSelector `json:"ipAddressSelectors,omitempty"`
 	Type               string               `json:"type"`
 	WanInterfaceId     openapi_types.UUID   `json:"wanInterfaceId"`
 	union              json.RawMessage
@@ -5115,7 +5115,7 @@ type NetworkCreateOrUpdate struct {
 // NetworkDHCPGuarding Details about DHCP Guarding settings for this Network.
 type NetworkDHCPGuarding struct {
 	// TrustedDhcpServerIpAddresses List of trusted DHCP server IP addresses.
-	TrustedDhcpServerIpAddresses []string `json:"trustedDhcpServerIpAddresses" validate:"omitempty,min=1"`
+	TrustedDhcpServerIpAddresses []string `json:"trustedDhcpServerIpAddresses"`
 }
 
 // NetworkDetails is a generated model for the UniFi Official API.
@@ -5128,7 +5128,7 @@ type NetworkDetails struct {
 	Id           openapi_types.UUID                              `json:"id"`
 	Management   string                                          `json:"management"`
 	Metadata     UserOrSystemDefinedOrOrchestratedEntityMetadata `json:"metadata"`
-	Name         string                                          `json:"name" validate:"omitempty,min=1"`
+	Name         string                                          `json:"name"`
 
 	// VlanId VLAN ID. Must be 1 for the default network and >= 2 for additional networks.
 	VlanId int32 `json:"vlanId" validate:"omitempty,gte=1,lte=4009"`
@@ -5138,11 +5138,11 @@ type NetworkDetails struct {
 // NetworkIPv6Configuration is a generated model for the UniFi Official API.
 type NetworkIPv6Configuration struct {
 	// AdditionalHostIpSubnets Additional host IP subnets assigned to this VLAN.
-	AdditionalHostIpSubnets *[]string                   `json:"additionalHostIpSubnets,omitempty" validate:"omitempty,min=1,max=4"`
+	AdditionalHostIpSubnets *[]string                   `json:"additionalHostIpSubnets,omitempty" validate:"omitempty,max=4"`
 	ClientAddressAssignment IPv6ClientAddressAssignment `json:"clientAddressAssignment"`
 
 	// DnsServerIpAddressesOverride The IPv6 DNS server addresses assigned to this Network. If none are specified, they will be selected automatically.
-	DnsServerIpAddressesOverride *[]string                         `json:"dnsServerIpAddressesOverride,omitempty" validate:"omitempty,min=1,max=4"`
+	DnsServerIpAddressesOverride *[]string                         `json:"dnsServerIpAddressesOverride,omitempty" validate:"omitempty,max=4"`
 	InterfaceType                string                            `json:"interfaceType"`
 	RouterAdvertisement          *RouterAdvertisementConfiguration `json:"routerAdvertisement,omitempty"`
 	union                        json.RawMessage
@@ -5229,7 +5229,7 @@ type OrderedFirewallPolicyIDs struct {
 
 // PXEConfiguration is a generated model for the UniFi Official API.
 type PXEConfiguration struct {
-	Filename        string `json:"filename" validate:"omitempty,min=1"`
+	Filename        string `json:"filename"`
 	ServerIpAddress string `json:"serverIpAddress"`
 }
 
@@ -5292,16 +5292,16 @@ type PortPoEPowerCycleRequest = PortActionRequest
 // PortTrafficMatchingList is a generated model for the UniFi Official API.
 type PortTrafficMatchingList struct {
 	Id    openapi_types.UUID `json:"id"`
-	Items *[]PortMatching    `json:"items,omitempty" validate:"omitempty,min=1"`
-	Name  string             `json:"name" validate:"omitempty,min=1"`
+	Items *[]PortMatching    `json:"items,omitempty"`
+	Name  string             `json:"name"`
 	Type  string             `json:"type"`
 	union json.RawMessage
 }
 
 // PortTrafficMatchingListCreateUpdate is a generated model for the UniFi Official API.
 type PortTrafficMatchingListCreateUpdate struct {
-	Items *[]PortMatching `json:"items,omitempty" validate:"omitempty,min=1"`
-	Name  string          `json:"name" validate:"omitempty,min=1"`
+	Items *[]PortMatching `json:"items,omitempty"`
+	Name  string          `json:"name"`
 	Type  string          `json:"type"`
 	union json.RawMessage
 }
@@ -5312,11 +5312,11 @@ type PptpServerOverview = VPNServerOverview
 // PrefixDelegationIPv6Configuration is a generated model for the UniFi Official API.
 type PrefixDelegationIPv6Configuration struct {
 	// AdditionalHostIpSubnets Additional host IP subnets assigned to this VLAN.
-	AdditionalHostIpSubnets *[]string                   `json:"additionalHostIpSubnets,omitempty" validate:"omitempty,min=1,max=4"`
+	AdditionalHostIpSubnets *[]string                   `json:"additionalHostIpSubnets,omitempty" validate:"omitempty,max=4"`
 	ClientAddressAssignment IPv6ClientAddressAssignment `json:"clientAddressAssignment"`
 
 	// DnsServerIpAddressesOverride The IPv6 DNS server addresses assigned to this Network. If none are specified, they will be selected automatically.
-	DnsServerIpAddressesOverride *[]string `json:"dnsServerIpAddressesOverride,omitempty" validate:"omitempty,min=1,max=4"`
+	DnsServerIpAddressesOverride *[]string `json:"dnsServerIpAddressesOverride,omitempty" validate:"omitempty,max=4"`
 	InterfaceType                string    `json:"interfaceType"`
 
 	// PrefixDelegationWanInterfaceId ID of the WAN interface from which the prefix is delegated.
@@ -5329,7 +5329,7 @@ type PrefixDelegationIPv6Configuration struct {
 type RadiusProfileOverview struct {
 	Id       openapi_types.UUID                         `json:"id"`
 	Metadata UserOrSystemDefinedOrDerivedEntityMetadata `json:"metadata"`
-	Name     string                                     `json:"name" validate:"omitempty,min=1"`
+	Name     string                                     `json:"name"`
 }
 
 // RadiusProfileOverviewPage is a generated model for the UniFi Official API.
@@ -5408,7 +5408,7 @@ type StandardWifiBroadcastCreateUpdate struct {
 	BasicDataRateKbpsByFrequencyGHz     *WifiBasicDataRateConfiguration                                `json:"basicDataRateKbpsByFrequencyGHz,omitempty"`
 	BlackoutScheduleConfiguration       *BlackoutScheduleConfiguration                                 `json:"blackoutScheduleConfiguration,omitempty"`
 	BroadcastingDeviceFilter            *BroadcastingDeviceFilter                                      `json:"broadcastingDeviceFilter,omitempty"`
-	BroadcastingFrequenciesGHz          *[]StandardWifiBroadcastCreateUpdateBroadcastingFrequenciesGHz `json:"broadcastingFrequenciesGHz,omitempty" validate:"omitempty,min=1,dive,oneof=2.4 5 6"`
+	BroadcastingFrequenciesGHz          *[]StandardWifiBroadcastCreateUpdateBroadcastingFrequenciesGHz `json:"broadcastingFrequenciesGHz,omitempty"`
 	BssTransitionEnabled                *bool                                                          `json:"bssTransitionEnabled,omitempty"`
 	ClientFilteringPolicy               *WifiClientFilteringPolicy                                     `json:"clientFilteringPolicy,omitempty"`
 	ClientIsolationEnabled              bool                                                           `json:"clientIsolationEnabled"`
@@ -5442,7 +5442,7 @@ type StandardWifiBroadcastDetail struct {
 	BasicDataRateKbpsByFrequencyGHz     *WifiBasicDataRateConfiguration                          `json:"basicDataRateKbpsByFrequencyGHz,omitempty"`
 	BlackoutScheduleConfiguration       *BlackoutScheduleConfiguration                           `json:"blackoutScheduleConfiguration,omitempty"`
 	BroadcastingDeviceFilter            *BroadcastingDeviceFilter                                `json:"broadcastingDeviceFilter,omitempty"`
-	BroadcastingFrequenciesGHz          *[]StandardWifiBroadcastDetailBroadcastingFrequenciesGHz `json:"broadcastingFrequenciesGHz,omitempty" validate:"omitempty,min=1,dive,oneof=2.4 5 6"`
+	BroadcastingFrequenciesGHz          *[]StandardWifiBroadcastDetailBroadcastingFrequenciesGHz `json:"broadcastingFrequenciesGHz,omitempty"`
 	BssTransitionEnabled                *bool                                                    `json:"bssTransitionEnabled,omitempty"`
 	ClientFilteringPolicy               *WifiClientFilteringPolicy                               `json:"clientFilteringPolicy,omitempty"`
 	ClientIsolationEnabled              bool                                                     `json:"clientIsolationEnabled"`
@@ -5472,7 +5472,7 @@ type StandardWifiBroadcastDetailBroadcastingFrequenciesGHz float32
 // StandardWifiBroadcastOverview is a generated model for the UniFi Official API.
 type StandardWifiBroadcastOverview struct {
 	BroadcastingDeviceFilter   *BroadcastingDeviceFilter                                  `json:"broadcastingDeviceFilter,omitempty"`
-	BroadcastingFrequenciesGHz *[]StandardWifiBroadcastOverviewBroadcastingFrequenciesGHz `json:"broadcastingFrequenciesGHz,omitempty" validate:"omitempty,min=1,dive,oneof=2.4 5 6"`
+	BroadcastingFrequenciesGHz *[]StandardWifiBroadcastOverviewBroadcastingFrequenciesGHz `json:"broadcastingFrequenciesGHz,omitempty"`
 	Enabled                    bool                                                       `json:"enabled"`
 	HotspotConfiguration       *WifiHotspotConfigurationOverview                          `json:"hotspotConfiguration,omitempty"`
 	Id                         openapi_types.UUID                                         `json:"id"`
@@ -5511,7 +5511,7 @@ type SwitchFeatureOverview = interface{}
 // SwitchManagedIPv4Configuration is a generated model for the UniFi Official API.
 type SwitchManagedIPv4Configuration struct {
 	// AdditionalHostIpSubnets Additional host IP subnets assigned to this VLAN.
-	AdditionalHostIpSubnets *[]string `json:"additionalHostIpSubnets,omitempty" validate:"omitempty,min=1,max=64"`
+	AdditionalHostIpSubnets *[]string `json:"additionalHostIpSubnets,omitempty" validate:"omitempty,max=64"`
 
 	// AutoScaleEnabled Whether the Network can automatically scale its subnet size based on the number of active DHCP leases.
 	AutoScaleEnabled  bool                                `json:"autoScaleEnabled"`
@@ -5568,7 +5568,7 @@ type SwitchManagedNetworkDetails struct {
 	IsolationEnabled *bool                                           `json:"isolationEnabled,omitempty"`
 	Management       string                                          `json:"management"`
 	Metadata         UserOrSystemDefinedOrOrchestratedEntityMetadata `json:"metadata"`
-	Name             string                                          `json:"name" validate:"omitempty,min=1"`
+	Name             string                                          `json:"name"`
 
 	// VlanId VLAN ID. Must be 1 for the default network and >= 2 for additional networks.
 	VlanId int32 `json:"vlanId" validate:"omitempty,gte=1,lte=4009"`
@@ -5672,14 +5672,14 @@ type TeleportClientConnectionOverview struct {
 // TrafficMatchingList is a generated model for the UniFi Official API.
 type TrafficMatchingList struct {
 	Id    openapi_types.UUID `json:"id"`
-	Name  string             `json:"name" validate:"omitempty,min=1"`
+	Name  string             `json:"name"`
 	Type  string             `json:"type"`
 	union json.RawMessage
 }
 
 // TrafficMatchingListCreateOrUpdate is a generated model for the UniFi Official API.
 type TrafficMatchingListCreateOrUpdate struct {
-	Name  string `json:"name" validate:"omitempty,min=1"`
+	Name  string `json:"name"`
 	Type  string `json:"type"`
 	union json.RawMessage
 }
@@ -5892,7 +5892,7 @@ type WifiBlackoutScheduleConfigurationPerAllDay = BlackoutScheduleConfigurationP
 // WifiBlackoutScheduleConfigurationPerDayWithTimeRange is a generated model for the UniFi Official API.
 type WifiBlackoutScheduleConfigurationPerDayWithTimeRange struct {
 	Day        WifiBlackoutScheduleConfigurationPerDayWithTimeRangeDay `json:"day" validate:"omitempty,oneof=SUN MON TUE WED THU FRI SAT"`
-	TimeRanges *[]WifiBlackoutScheduleConfigurationTimeRange           `json:"timeRanges,omitempty" validate:"omitempty,min=1"`
+	TimeRanges *[]WifiBlackoutScheduleConfigurationTimeRange           `json:"timeRanges,omitempty"`
 	Type       string                                                  `json:"type"`
 	union      json.RawMessage
 }
@@ -5983,7 +5983,7 @@ type WifiCaptivePortalConfigurationDetail = WifiHotspotConfiguration
 // WifiClientFilteringPolicy is a generated model for the UniFi Official API.
 type WifiClientFilteringPolicy struct {
 	Action           WifiClientFilteringPolicyAction `json:"action" validate:"omitempty,oneof=ALLOW BLOCK"`
-	MacAddressFilter []string                        `json:"macAddressFilter" validate:"omitempty,min=0,max=512"`
+	MacAddressFilter []string                        `json:"macAddressFilter" validate:"omitempty,max=512"`
 }
 
 // WifiClientFilteringPolicyAction is a generated model for the UniFi Official API.
@@ -6001,7 +6001,7 @@ type WifiDerivedNasIdSource string
 
 // WifiDeviceTagsFilter is a generated model for the UniFi Official API.
 type WifiDeviceTagsFilter struct {
-	DeviceTagIds *[]openapi_types.UUID `json:"deviceTagIds,omitempty" validate:"omitempty,min=1"`
+	DeviceTagIds *[]openapi_types.UUID `json:"deviceTagIds,omitempty"`
 	Type         string                `json:"type"`
 	union        json.RawMessage
 }
@@ -6009,7 +6009,7 @@ type WifiDeviceTagsFilter struct {
 // WifiDevicesFilter is a generated model for the UniFi Official API.
 type WifiDevicesFilter struct {
 	// DeviceIds List of Access Point capable device IDs to which the WiFi broadcast applies.
-	DeviceIds *[]openapi_types.UUID `json:"deviceIds,omitempty" validate:"omitempty,min=1"`
+	DeviceIds *[]openapi_types.UUID `json:"deviceIds,omitempty"`
 	Type      string                `json:"type"`
 	union     json.RawMessage
 }
@@ -6045,9 +6045,9 @@ type WifiHotspotConfigurationOverviewType string
 // WifiMdnsProxyAllowPolicy is a generated model for the UniFi Official API.
 type WifiMdnsProxyAllowPolicy struct {
 	Action             string                    `json:"action"`
-	BridgingNetworkIds *[]openapi_types.UUID     `json:"bridgingNetworkIds,omitempty" validate:"omitempty,min=1"`
+	BridgingNetworkIds *[]openapi_types.UUID     `json:"bridgingNetworkIds,omitempty"`
 	DeviceFilter       *BroadcastingDeviceFilter `json:"deviceFilter,omitempty"`
-	ServiceFilter      *[]MDNSService            `json:"serviceFilter,omitempty" validate:"omitempty,min=1"`
+	ServiceFilter      *[]MDNSService            `json:"serviceFilter,omitempty"`
 	union              json.RawMessage
 }
 
@@ -6060,15 +6060,15 @@ type WifiMdnsProxyBlockPolicy = MDNSProxyPolicy
 // WifiMdnsProxyCustomConfiguration is a generated model for the UniFi Official API.
 type WifiMdnsProxyCustomConfiguration struct {
 	Mode     string             `json:"mode"`
-	Policies *[]MDNSProxyPolicy `json:"policies,omitempty" validate:"omitempty,min=1"`
+	Policies *[]MDNSProxyPolicy `json:"policies,omitempty"`
 	union    json.RawMessage
 }
 
 // WifiMdnsProxyCustomService is a generated model for the UniFi Official API.
 type WifiMdnsProxyCustomService struct {
-	Name       *string `json:"name,omitempty" validate:"omitempty,min=1"`
+	Name       *string `json:"name,omitempty"`
 	Type       string  `json:"type"`
-	TypeDomain *string `json:"typeDomain,omitempty" validate:"omitempty,min=1"`
+	TypeDomain *string `json:"typeDomain,omitempty"`
 	union      json.RawMessage
 }
 
@@ -6087,7 +6087,7 @@ type WifiMulticastFilteringAllowPolicy struct {
 	Action string `json:"action"`
 
 	// SourceMacAddressFilter List of multicast source MAC addresses allowed. Multicast traffic from gateways is always allowed.
-	SourceMacAddressFilter *[]string `json:"sourceMacAddressFilter,omitempty" validate:"omitempty,min=0,max=256"`
+	SourceMacAddressFilter *[]string `json:"sourceMacAddressFilter,omitempty" validate:"omitempty,max=256"`
 	union                  json.RawMessage
 }
 
@@ -6211,7 +6211,7 @@ type WifiWpa2PersonalSecurityConfigurationDetail struct {
 
 	// PmfMode Protected Management Frames mode. If null, then it is disabled. This feature is not available for IoT configuration.
 	PmfMode             *WifiWpa2PersonalSecurityConfigurationDetailPmfMode `json:"pmfMode,omitempty" validate:"omitempty,oneof=REQUIRED OPTIONAL"`
-	PresharedKeys       *[]WifiPresharedKey                                 `json:"presharedKeys,omitempty" validate:"omitempty,min=1"`
+	PresharedKeys       *[]WifiPresharedKey                                 `json:"presharedKeys,omitempty"`
 	RadiusConfiguration *WifiNonEnterpriseRadiusConfiguration               `json:"radiusConfiguration,omitempty"`
 	Type                string                                              `json:"type"`
 	union               json.RawMessage
@@ -6422,7 +6422,7 @@ type WirelessClientOverview struct {
 type WirelessRadioOverview struct {
 	Channel         *int32                            `json:"channel,omitempty"`
 	ChannelWidthMHz int32                             `json:"channelWidthMHz"`
-	FrequencyGHz    WirelessRadioOverviewFrequencyGHz `json:"frequencyGHz" validate:"omitempty,oneof=2.4 5 6 60"`
+	FrequencyGHz    WirelessRadioOverviewFrequencyGHz `json:"frequencyGHz"`
 	WlanStandard    WirelessRadioOverviewWlanStandard `json:"wlanStandard" validate:"omitempty,oneof=802.11a 802.11b 802.11g 802.11n 802.11ac 802.11ax 802.11be"`
 }
 
