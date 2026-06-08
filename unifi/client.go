@@ -58,6 +58,7 @@ Fields:
 	UseLocking:    DEPRECATED and a NO-OP since 1.11.0. net/http.Client is goroutine-safe and the client no longer serializes requests; the field is retained only for source compatibility and has no effect.
 	APIStyle:      Optionally forces the controller API style (new vs old) instead of probing the controller over the network. The zero value (APIStyleAuto) keeps the auto-detection behavior. Set it to skip the network probe for offline construction.
 	ValidationMode:The mode for validating request bodies. Can be "soft", "hard", or "disable".
+	SkipSystemInfo: Skips the eager GetSystemInformation() round-trip in NewClient. Zero value (false) keeps fail-fast; true defers error surfacing to the first API call.
 */
 type ClientConfig struct {
 	URL    string `validate:"required,http_url"`
@@ -84,6 +85,12 @@ type ClientConfig struct {
 	// Official() operations then fail fast with ErrOfficialAPIDisabled and the
 	// capability probe is skipped entirely.
 	DisableOfficialAPI bool
+	// SkipSystemInfo skips the eager GetSystemInformation() call in NewClient.
+	// Zero value (false) preserves the default fail-fast behavior: a bad API key
+	// or unreachable controller surfaces at construction time. Set it to true to
+	// defer that check to the first Version()/API call — required for fully-offline
+	// construction when combined with a pinned APIStyle.
+	SkipSystemInfo bool
 }
 
 // client represents a UniFi client.
@@ -346,28 +353,24 @@ func newClientFromConfig(config *ClientConfig, v *validator) (*client, error) {
 }
 
 // NewClient creates and initializes a new UniFi client based on the provided ClientConfig.
-// It validates the configuration, determines the API style, and retrieves system information from the
-// UniFi controller. On success, it returns a pointer to a client; otherwise, it returns an error.
+// It validates the configuration, determines the API style, and — unless SkipSystemInfo is true —
+// eagerly fetches system information from the controller (fail-fast for bad credentials/unreachable host).
 func NewClient(config *ClientConfig) (Client, error) { //nolint: ireturn
 	c, err := newBareClient(config)
 	if err != nil {
 		return c, err
 	}
-	if sysInfo, err := c.GetSystemInformation(); err != nil {
-		return c, fmt.Errorf("failed getting server info: %w", err)
-	} else {
-		c.sysInfoMu.Lock()
-		c.sysInfo = sysInfo
-		c.sysInfoMu.Unlock()
-		c.Debugf("Connected to UniFi controller\nversion: %s; name: %s; build: %s; hostname: %s", sysInfo.Version, sysInfo.Name, sysInfo.Build, sysInfo.Hostname)
+	if !config.SkipSystemInfo {
+		if sysInfo, err := c.GetSystemInformation(); err != nil {
+			return c, fmt.Errorf("failed getting server info: %w", err)
+		} else {
+			c.sysInfoMu.Lock()
+			c.sysInfo = sysInfo
+			c.sysInfoMu.Unlock()
+			c.Debugf("Connected to UniFi controller\nversion: %s; name: %s; build: %s; hostname: %s", sysInfo.Version, sysInfo.Name, sysInfo.Build, sysInfo.Hostname)
+		}
 	}
 	return c, nil
-}
-
-// NewBareClient creates a new UniFi client without performing system information retrieval.
-// It validates the configuration, determines the API style, and returns a pointer to the client on success.
-func NewBareClient(config *ClientConfig) (Client, error) { //nolint: ireturn
-	return newBareClient(config)
 }
 
 func newBareClient(config *ClientConfig) (*client, error) {

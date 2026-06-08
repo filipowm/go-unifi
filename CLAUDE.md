@@ -29,7 +29,7 @@ Codegen version is overridable: `make generate-resources VERSION=9.3.45` (defaul
 
 ```
 unifi/                  Single Go package: client + all resource types
-  client.go             Client struct, config, auth (NewClient / NewBareClient)
+  client.go             Client struct, config, auth (NewClient / ClientConfig.SkipSystemInfo)
   requests.go           Do/Get/Post/Put/Delete, URL building, file upload
   interceptors.go       Request/response interceptors (API key, CSRF)
   api_paths.go          New vs old API style detection + path constants
