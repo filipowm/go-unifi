@@ -5,14 +5,15 @@ I highly recommend to use the latest version of UniFi Go SDK, as well as update 
 
 ## Prerequisites
 
-- Go 1.16 or later
+- Go 1.26 or later
+- UniFi Controller 9.0.108 or newer (new-style/UniFi-OS only; old-style controllers are unsupported)
 
 ## Installation
 
 Install the UniFi Go SDK by running:
 
 ```bash
-go get github.com/filipowm/go-unifi
+go get github.com/filipowm/go-unifi/v2
 ```
 
 If you need to regenerate the client code from the API specifications, run:
@@ -23,11 +24,9 @@ go generate unifi/codegen.go
 
 ## Initialization
 
-The client supports both API Key authentication and username/password authentication. Below are examples for both methods.
-Unifi client support both username/password and API Key authentication. It is recommended to use API Key authentication
-together with dedicated user restricted to local access only.
+The client uses API Key authentication exclusively. Username/password authentication was removed in 2.0.0.
 
-**IMPORTANT:** API Key authentication is available only since UniFi Controller version 9.0.108
+**IMPORTANT:** API Key authentication is available only since UniFi Controller version 9.0.108. Old-style (classic) controllers are unsupported.
 
 ### Obtaining an API Key
 
@@ -38,13 +37,12 @@ together with dedicated user restricted to local access only.
 5. Add a name for your API Key.
 6. Copy the key and store it securely, as it will only be displayed once.
 7. Click Done to ensure the key is hashed and securely stored.
-8. Use the API Key 🎉
 
 ### API Key Authentication
 
 ```go
 c, err := unifi.NewClient(&unifi.ClientConfig{
-    BaseURL: "https://unifi.localdomain",
+    URL:    "https://unifi.localdomain",
     APIKey: "your-api-key",
 })
 if err != nil {
@@ -52,53 +50,25 @@ if err != nil {
 }
 ```
 
-### Username/Password Authentication
+### Deferring the startup check (SkipSystemInfo)
+
+By default, `NewClient` performs an eager `GetSystemInformation()` round-trip to verify connectivity and
+credentials at construction time. If you need fully-offline client construction (e.g. in tests or when
+you know the controller is reachable at call time but not at startup), set `SkipSystemInfo: true`:
 
 ```go
 c, err := unifi.NewClient(&unifi.ClientConfig{
-    BaseURL: "https://unifi.localdomain",
-    Username: "your-username",
-    Password: "your-password",
+    URL:            "https://unifi.localdomain",
+    APIKey:         "your-api-key",
+    SkipSystemInfo: true, // skip eager sysinfo check; errors surface on first API call
 })
 if err != nil {
     log.Fatalf("Failed to create client: %v", err)
 }
 ```
 
-You can also configure `Remember Me` option, which will prolong the session validity. Might be required for long-running applications, that require authentication only once.
-
-```go
-c, err := unifi.NewClient(&unifi.ClientConfig{
-    BaseURL: "https://unifi.localdomain",
-    Username: "your-username",
-    Password: "your-password",
-    RememberMe: true,
-})
-if err != nil {
-    log.Fatalf("Failed to create client: %v", err)
-}
-```
-
-### Bare Client Initialization
-
-You can also use bare client, which creates a `unifi.Client` without initialization like logging in and getting system information. This can be useful in specific scenarios, when doing such initialization might be an uneeded overhead. To create it you can use the `NewBareClient` function provided in the SDK (see `unifi/client.go`).
-
-Example usage:
-
-```go
-c, err := unifi.NewBareClient(&unifi.ClientConfig{
-    BaseURL: "https://unifi-controller.example.com",
-    APIKey: "your-api-key", // or use Username/Password as needed
-    // Configuration for a bare client
-})
-if err != nil {
-    log.Fatalf("Error creating bare client: %v", err)
-}
-err = c.Login()
-if err != nil {
-    log.Fatalf("Error logging in: %v", err)
-}
-```
+With `SkipSystemInfo: true` a bad API key or unreachable controller will NOT cause `NewClient` to fail —
+the error surfaces on the first actual API call instead.
 
 ## Generating Client Code
 
@@ -113,7 +83,7 @@ This will update the generated models and REST methods according to the current 
 
 ## Usage
 
-Once instantiated, the Bare Client provides direct access to the generated API methods. You can perform operations without the extra layers of processing provided by interceptors or custom validations.
+Once instantiated, the client provides direct access to the generated API methods.
 If you use a default site and didn't create any new ones, you can use the `default` site ID.
 
 **Example:**
@@ -144,7 +114,7 @@ if c.IsFeatureEnabled(ctx, "default", "feature-name") {
 }
 ```
 
-Library comes with a set of predefined feature names, which can be found in `github.com/filipowm/go-unifi/unifi/features` module. You can also use custom feature names.
+Library comes with a set of predefined feature names, which can be found in `github.com/filipowm/go-unifi/v2/unifi/features` module. You can also use custom feature names.
 
 For example, you can check if the `features.ZoneBasedFirewallMigration` is available on the controller (no `unifi.ErrNotFound` raised) and enabled:
 ```go

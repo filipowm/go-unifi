@@ -13,10 +13,25 @@ by handling common tasks such as request construction, JSON marshaling of the re
 - **Get**: A convenience wrapper around **Do** that executes an HTTP GET request.
 - **Post**: A convenience wrapper to perform an HTTP POST request.
 - **Put**: Similar to Post, but for HTTP PUT requests.
+- **Patch**: A convenience wrapper to perform an HTTP PATCH request (partial update).
 - **Delete**: Performs an HTTP DELETE request.
 
 These methods are used internally by higher level functions, such as those in `unifi/device.generated.go` and `unifi/device.go`. For example, when creating a new device, the SDK calls `Post` to send
 the device data to the UniFi Controller API, while `Get` is used to retrieve device information.
+
+### Path resolution
+
+The `apiPath` argument follows a simple rule (see `unifi/requests.go` `buildRequestURL`):
+
+- **No leading slash (site-relative):** the path is prefixed with the controller's base API prefix. On
+  new-style (UniFi OS) controllers — the **only** style supported in 2.0.0 — that prefix is
+  `/proxy/network/api`. Example: `"s/default/rest/networkconf"` → `/proxy/network/api/s/default/rest/networkconf`.
+- **Leading slash or absolute URL:** used **as-is**, bypassing the prefix entirely. Use this only when
+  you deliberately need a path outside the standard API tree (e.g. `/proxy/network/integration/v1/...`).
+  The old `/api/...` form that worked on classic controllers **does not work** on new-style controllers;
+  use the site-relative form instead.
+
+### Examples
 
 Here is an example of using these methods for a custom API operation:
 
@@ -27,8 +42,8 @@ var respData struct {
     Data interface{} `json:"data"`
 }
 
-// Use the Get method to fetch data from a custom endpoint
-err := c.Get(ctx, "/api/customEndpoint", nil, &respData)
+// Use the Get method to fetch data from a custom endpoint (site-relative path)
+err := c.Get(ctx, "s/default/rest/networkconf", nil, &respData)
 if err != nil {
     log.Fatalf("Error performing GET request: %v", err)
 }
@@ -47,11 +62,29 @@ var postResp struct {
     Data interface{} `json:"data"`
 }
 
-err = c.Post(ctx, "/api/customPostEndpoint", reqPayload, &postResp)
+err = c.Post(ctx, "s/default/rest/networkconf", reqPayload, &postResp)
 if err != nil {
     log.Fatalf("Error performing POST request: %v", err)
 }
 // do something with the response
+```
+
+For a partial update (PATCH), pass only the fields you want to change:
+
+```go
+patch := struct {
+    Name string `json:"name"`
+}{Name: "updated-name"}
+
+var patchResp struct {
+    Meta Meta        `json:"meta"`
+    Data interface{} `json:"data"`
+}
+
+err = c.Patch(ctx, "s/default/rest/networkconf/<id>", patch, &patchResp)
+if err != nil {
+    log.Fatalf("Error performing PATCH request: %v", err)
+}
 ```
 
 These helper methods abstract away the boilerplate of manually constructing HTTP requests and processing responses, allowing you to focus on your application's logic while leveraging built-in
@@ -60,7 +93,7 @@ validation and error handling provided by the SDK.
 ## Interceptors and Middleware
 
 Interceptors provide hooks into the request/response cycle and can be used for logging, metrics collection, or modifying
-requests before they are sent. They implement the [ClientInterceptor](https://pkg.go.dev/github.com/filipowm/go-unifi/unifi#ClientInterceptor) interface.
+requests before they are sent. They implement the [ClientInterceptor](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#ClientInterceptor) interface.
 
 ### Example: Advanced Logging Interceptor
 
@@ -83,8 +116,8 @@ func (a *AdvancedLoggingInterceptor) InterceptResponse(resp *http.Response) erro
 }
 
 c, err := unifi.NewClient(&unifi.ClientConfig{
-    BaseURL: "https://unifi.localdomain",
-    APIKey: "your-api-key",
+    URL:          "https://unifi.localdomain",
+    APIKey:       "your-api-key",
     Interceptors: []unifi.ClientInterceptor{&AdvancedLoggingInterceptor{}},
 })
 if err != nil {

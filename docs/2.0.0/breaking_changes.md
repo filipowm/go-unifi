@@ -2,31 +2,32 @@
 
 This document is the authoritative changelog of every public-API behavior or signature change introduced
 during the 2.0.0 migration (epic [#117](https://github.com/filipowm/go-unifi/issues/117)). It is keyed to
-the 13 impact-ordered breaking changes enumerated in the epic, each carrying a verified **DONE/PENDING**
+10 breaking changes plus an additive Official surface. Each entry carries a verified **DONE/PENDING**
 status, a migration note, and a provenance link.
 
+See the [1.x → 2.0 migration guide](migration_guide.md) for a task-oriented, junior-to-senior walkthrough
+with rationale and grep hints for each change.
+
 > Status key: **DONE** = change is in the `feat/2.0.0` tree and verified against the actual code.
-> **PENDING** = planned; not yet landed.
+> **PENDING** = planned; not yet landed (see "Planned for 3.0.0" section below).
 
 ---
 
-## Breaking changes — 13-row index (epic #117)
+## Breaking changes — 10 landed + additive Official surface
 
 | # | Change | Impact | Status |
 |---|--------|--------|--------|
 | 1 | [API-key authentication only](#1-api-key-authentication-only) | High | **DONE** |
 | 2 | [TLS verify-by-default](#2-tls-verify-by-default) | High | **DONE** |
 | 3 | [Go version bump to 1.26](#3-go-version-bump-to-126) | Medium | **DONE** |
-| 4 | [OpenAPI-shaped structs](#4-openapi-shaped-structs) | Medium | **PENDING** |
-| 5 | [Occasional field renames](#5-occasional-field-renames) | Medium | **PENDING** |
-| 6 | [New `integration/v1` `APIStyle`](#6-new-integrationv1-apistyle) | Medium | **PENDING** |
-| 7 | [`Client` gains `SetSetting`](#7-client-gains-setsetting) | Medium | **DONE** |
-| 8 | [`Client` gains `*Context` variants](#8-client-gains-context-variants) | Medium | **DONE** |
-| 9 | [v1 `Create`/`Update` no longer return `ErrNotFound`](#9-v1-createupdate-no-longer-return-errnotfound) | Medium | **DONE** |
-| 10 | [`meta.rc=="error"` on HTTP 200 → `*ServerError`](#10-metarcerror-on-http-200--servererror) | Medium | **DONE** |
-| 11 | [Map 404 → `ErrNotFound`](#11-map-404--errnotfound) | Low | **DONE** |
-| 12 | [`UseLocking` is a no-op](#12-uselocking-is-a-no-op) | Low | **DONE** |
-| 13 | [Remove CSRF handling](#13-remove-csrf-handling) | Low | **DONE** |
+| 4 | [`Client` gains `SetSetting`](#4-client-gains-setsetting) | Medium | **DONE** |
+| 5 | [`Client` gains `*Context` variants](#5-client-gains-context-variants) | Medium | **DONE** |
+| 6 | [v1 `Create`/`Update` no longer return `ErrNotFound`](#6-v1-createupdate-no-longer-return-errnotfound) | Medium | **DONE** |
+| 7 | [`meta.rc=="error"` on HTTP 200 → `*ServerError`](#7-metarcerror-on-http-200--servererror) | Medium | **DONE** |
+| 8 | [Map 404 → `ErrNotFound`](#8-map-404--errnotfound) | Low | **DONE** |
+| 9 | [`UseLocking` is a no-op](#9-uselocking-is-a-no-op) | Low | **DONE** |
+| 10 | [Remove CSRF handling](#10-remove-csrf-handling) | Low | **DONE** |
+| — | [Official API surface (additive)](#official-api-surface-additive) | Additive | **DONE** |
 
 ---
 
@@ -90,56 +91,7 @@ upgrade their toolchain.
 
 ---
 
-### 4. OpenAPI-shaped structs
-
-**Status: PENDING** — no resources migrated yet; landing per-resource as part of the OpenAPI generator wave.
-
-**Type change (compile break for each migrated resource).** Resources generated from the official OpenAPI
-spec (`integration.json`) may adopt different field names, types, or nesting than the legacy reverse-engineered
-shapes. Each resource is migrated individually; the breaking surface is bounded to that resource's struct.
-
-Migration: compile against the new module version; fix any field references reported by the compiler.
-
-**Provenance:** epic #117, OpenAPI-generator wave (issues TBD).
-
----
-
-### 5. Occasional field renames
-
-**Status: PENDING** — no field renames yet; land alongside each OpenAPI-driven resource migration.
-
-**Signature change (compile break per renamed field).** Where the official spec uses a different field name
-from the legacy one, the generated struct adopts the spec name. Each rename is documented in this file when
-it lands.
-
-Migration: compile-error-driven; rename at each call site.
-
-**Provenance:** epic #117, per-resource OpenAPI migration.
-
----
-
-### 6. New `integration/v1` `APIStyle`
-
-**Status: PENDING** — routing generated resources through the official `integration/v1` API is part of
-the OpenAPI generator wave (same milestone as rows 4/5); not yet landed.
-
-**Interface change (compile break for custom `Client` implementations).** A new `APIStyle` constant will
-route code-generated resources through the UniFi official `integration/v1` API path instead of the legacy
-`/api/s/{site}/...` endpoints. The generated CRUD methods and their structs will adopt OpenAPI-derived
-shapes (see rows 4/5).
-
-The `integration/v1` path is a capability layered on the new-style API — it is not a fourth independent
-style alongside `V1`, `V2`, and `new-style`; see `unifi/api_paths.go` for the documented constraint.
-
-Note: the `Official()` accessor and the `integration/v1` info/sites vertical that **did** land in PR #119
-are documented in entries [D](#d-client-interface-split-into-internalclient--internalofficial-accessors-119)
-and [E](#e-official-api-unavailable-on-classicold-style-controllers-119) of the provenance index below.
-
-**Provenance:** epic #117, OpenAPI generator wave (issues TBD, same milestone as rows 4/5).
-
----
-
-### 7. `Client` gains `SetSetting`
+### 4. `Client` gains `SetSetting`
 
 **Status: DONE** — landed in Wave 1 (ARCH-08).
 
@@ -157,7 +109,7 @@ type that implements `unifi.Client` must add this method; the moq `ClientMock` i
 
 ---
 
-### 8. `Client` gains `*Context` variants
+### 5. `Client` gains `*Context` variants
 
 **Status: DONE** — landed in Wave 2 (TEST-15); `Login`/`Logout` ctx variants superseded by #125.
 
@@ -177,7 +129,7 @@ The no-ctx `Version`/`GetSystemInformation` remain source-compatible. Any third-
 
 ---
 
-### 9. v1 `Create`/`Update` no longer return `ErrNotFound`
+### 6. v1 `Create`/`Update` no longer return `ErrNotFound`
 
 **Status: DONE** — landed in Wave 2 (ARCH-13).
 
@@ -198,7 +150,7 @@ branch was always incorrect. Treat any non-nil error from `Create<X>`/`Update<X>
 
 ---
 
-### 10. `meta.rc=="error"` on HTTP 200 → `*ServerError`
+### 7. `meta.rc=="error"` on HTTP 200 → `*ServerError`
 
 **Status: DONE** — landed in Wave 2 (ARCH-10).
 
@@ -220,7 +172,7 @@ It is **not** `ErrNotFound` (`errors.Is(err, ErrNotFound) == false`), so genuine
 
 ---
 
-### 11. Map 404 → `ErrNotFound`
+### 8. Map 404 → `ErrNotFound`
 
 **Status: DONE** — landed in Wave 1 (ARCH-05).
 
@@ -234,7 +186,7 @@ sentinel now sees them as equal.
 
 ---
 
-### 12. `UseLocking` is a no-op
+### 9. `UseLocking` is a no-op
 
 **Status: DONE** — landed in Wave 1 (ARCH-04).
 
@@ -247,7 +199,7 @@ config.
 
 ---
 
-### 13. Remove CSRF handling
+### 10. Remove CSRF handling
 
 **Status: DONE** — landed in issue #125 (API-key-only auth).
 
@@ -261,14 +213,31 @@ authentication.
 
 ---
 
+### Official API surface (additive)
+
+**Status: DONE** — landed in PR #119.
+
+The `Client` interface gains `Internal()` and `Official()` accessors. `Internal()` returns the full
+`InternalClient` (all resource CRUD, identical to calling methods directly on the client). `Official()`
+returns the fluent Official OpenAPI client (`integration/v1`), gated behind `ErrOfficialAPIUnavailable`
+on unsupported controllers.
+
+This is additive in 2.0.0 — existing code using resource methods directly on the client is unaffected.
+The default is expected to flip to `Official()` in 3.0.0.
+
+See entries [D](#d-client-interface-split-into-internalclient--internalofficial-accessors-119) and
+[E](#e-official-api-unavailable-on-classicold-style-controllers-119) in the provenance index for details.
+
+---
+
 ## Additional changes — provenance index
 
-Changes already documented in earlier waves that complement the 13-row table. Nothing here is new;
+Changes already documented in earlier waves that complement the 10-row table. Nothing here is new;
 entries are relocated from the prior wave-by-wave structure for traceability.
 
 ### A. `CSRFInterceptor.CSRFToken`: exported field → accessor method (ARCH-04, Wave 1) — superseded by #125
 
-**Superseded by row [#13](#13-remove-csrf-handling).** `CSRFInterceptor` is now entirely removed. This Wave 1
+**Superseded by row [#10](#10-remove-csrf-handling).** `CSRFInterceptor` is now entirely removed. This Wave 1
 intermediate step (field → accessor) is moot; the type is gone. Any code referencing `CSRFInterceptor` in
 any form fails to compile.
 
@@ -299,12 +268,9 @@ interface, so consumers using the `Client` interface are unaffected.
 
 ### D. `Client` interface split into `InternalClient` + `Internal()`/`Official()` accessors (#119)
 
-See [#6 — New `integration/v1` `APIStyle`](#6-new-integrationv1-apistyle) above for the full entry. The
-`InternalClient` embedded interface and the `Internal()`/`Official()` accessors are the structural
-implementation of that row.
-
-This is the **2.0.0-canonical-Internal** step: in 2.0.0 the embedded Internal surface stays the default, so
-existing code is untouched; 3.0.0 is expected to flip the default to the Official client (the **3.0.0-flip**).
+The `InternalClient` embedded interface and the `Internal()`/`Official()` accessors implement the
+2.0.0-canonical-Internal step: in 2.0.0 the embedded Internal surface stays the default, so existing
+code is untouched; 3.0.0 is expected to flip the default to the Official client (the **3.0.0-flip**).
 
 ### E. Official API unavailable on classic/old-style controllers (#119)
 
@@ -324,3 +290,102 @@ These affect only forks of the generator:
 
 - `DownloadAndExtract` gained a leading `*http.Client` parameter (TEST-07, Wave 1).
 - `DownloadAndExtract`/`downloadJar` gained a leading `context.Context` parameter (ARCH-15, Wave 2).
+
+### G. `Device.QOSProfile` value → pointer
+
+**Status: DONE** — landed in generated code (device.generated.go).
+
+**Type change (compile break for direct field access).** `Device.QOSProfile` changed from `DeviceQOSProfile`
+(value) to `*DeviceQOSProfile` (pointer). Code that reads the field without a nil check will panic at
+runtime if the field is absent from the API response (nil pointer).
+
+```go
+// before
+mode := device.QOSProfile.QOSProfileMode // direct access on value type
+// after
+if device.QOSProfile != nil {
+    mode := device.QOSProfile.QOSProfileMode // pointer; check nil first
+}
+```
+
+**Provenance:** device.generated.go; delegated from epic #117, issue #148.
+
+### H. `NewBareClient` replaced by `NewClient` + `SkipSystemInfo`
+
+**Status: DONE** — landed; `NewBareClient` removed.
+
+**Signature change (compile break).** The `NewBareClient` constructor is removed. Use `NewClient` with
+`SkipSystemInfo: true` to achieve the same behaviour (skip the eager `GetSystemInformation()` call).
+
+```go
+// before
+c, err := unifi.NewBareClient(&unifi.ClientConfig{BaseURL: "...", APIKey: "..."})
+// after
+c, err := unifi.NewClient(&unifi.ClientConfig{URL: "...", APIKey: "...", SkipSystemInfo: true})
+```
+
+**Provenance:** unifi/client.go; delegated from epic #117, issue #148.
+
+### I. New `Patch` method on `Client`
+
+**Status: DONE** — landed in unifi/requests.go.
+
+**Additive change (no compile break).** The `Client` interface and concrete `*client` expose a `Patch`
+method for HTTP PATCH requests, alongside the existing `Do`/`Get`/`Post`/`Put`/`Delete`.
+
+```go
+// new in 2.0.0
+err := c.Patch(ctx, "s/default/rest/networkconf/<id>", patchBody, &resp)
+```
+
+**Provenance:** unifi/requests.go; delegated from epic #117, issue #148.
+
+---
+
+## Planned for 3.0.0
+
+The following changes from the original epic #117 13-row index are **not** landing in 2.0.0. They are
+deferred to the next major version.
+
+### 4. OpenAPI-shaped structs (deferred to 3.0.0)
+
+**Status: PENDING** — no resources migrated yet; landing per-resource as part of the OpenAPI generator wave.
+
+**Type change (compile break for each migrated resource).** Resources generated from the official OpenAPI
+spec (`integration.json`) may adopt different field names, types, or nesting than the legacy reverse-engineered
+shapes. Each resource is migrated individually; the breaking surface is bounded to that resource's struct.
+
+Migration: compile against the new module version; fix any field references reported by the compiler.
+
+**Provenance:** epic #117, OpenAPI-generator wave (issues TBD).
+
+### 5. Occasional field renames (deferred to 3.0.0)
+
+**Status: PENDING** — no field renames yet; land alongside each OpenAPI-driven resource migration.
+
+**Signature change (compile break per renamed field).** Where the official spec uses a different field name
+from the legacy one, the generated struct adopts the spec name. Each rename is documented in this file when
+it lands.
+
+Migration: compile-error-driven; rename at each call site.
+
+**Provenance:** epic #117, per-resource OpenAPI migration.
+
+### 6. New `integration/v1` `APIStyle` (deferred to 3.0.0)
+
+**Status: PENDING** — routing generated resources through the official `integration/v1` API is part of
+the OpenAPI generator wave (same milestone as rows 4/5); not yet landed.
+
+**Interface change (compile break for custom `Client` implementations).** A new `APIStyle` constant will
+route code-generated resources through the UniFi official `integration/v1` API path instead of the legacy
+`/api/s/{site}/...` endpoints. The generated CRUD methods and their structs will adopt OpenAPI-derived
+shapes (see rows 4/5).
+
+The `integration/v1` path is a capability layered on the new-style API — it is not a fourth independent
+style alongside `V1`, `V2`, and `new-style`; see `unifi/api_paths.go` for the documented constraint.
+
+Note: the `Official()` accessor and the `integration/v1` info/sites vertical that **did** land in PR #119
+are documented in entries [D](#d-client-interface-split-into-internalclient--internalofficial-accessors-119)
+and [E](#e-official-api-unavailable-on-classicold-style-controllers-119) of the provenance index above.
+
+**Provenance:** epic #117, OpenAPI generator wave (issues TBD, same milestone as rows 4/5).

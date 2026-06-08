@@ -22,15 +22,14 @@ import (
 	"context"
 	"log"
 
-	"github.com/filipowm/go-unifi/unifi"
+	"github.com/filipowm/go-unifi/v2/unifi"
 )
 
 func main() {
 	// Create a client
 	client, err := unifi.NewClient(&unifi.ClientConfig{
-		URL:      "https://your-unifi-controller:8443",
-		User:     "your-username",
-		Password: "your-password",
+		URL:    "https://your-unifi-controller:8443",
+		APIKey: "your-api-key",
 	})
 	if err != nil {
 		log.Fatalf("Error creating client: %v", err)
@@ -45,7 +44,7 @@ func main() {
 	var response map[string]interface{} // Adjust this type based on the expected response
 	err = client.UploadFile(
 		context.Background(),
-		"/api/s/default/upload", // The API endpoint to upload to
+		"s/default/upload", // The API endpoint path (site-relative; prefixed with /proxy/network/api)
 		"/path/to/your/file.txt", // Path to the file on disk
 		"file", // Form field name for the file
 		formFields, // Additional form fields
@@ -69,15 +68,14 @@ import (
 	"context"
 	"log"
 
-	"github.com/paultyng/go-unifi/unifi"
+	"github.com/filipowm/go-unifi/v2/unifi"
 )
 
 func main() {
 	// Create a client
 	client, err := unifi.NewClient(&unifi.ClientConfig{
-		URL:      "https://your-unifi-controller:8443",
-		User:     "your-username",
-		Password: "your-password",
+		URL:    "https://your-unifi-controller:8443",
+		APIKey: "your-api-key",
 	})
 	if err != nil {
 		log.Fatalf("Error creating client: %v", err)
@@ -91,7 +89,7 @@ func main() {
 	var response map[string]interface{} // Adjust this type based on the expected response
 	err = client.UploadFileFromReader(
 		context.Background(),
-		"/api/s/default/upload", // The API endpoint to upload to
+		"s/default/upload", // The API endpoint path (site-relative; prefixed with /proxy/network/api)
 		reader, // Reader with the file content
 		"myfile.txt", // Filename to use in the upload
 		"file", // Form field name for the file
