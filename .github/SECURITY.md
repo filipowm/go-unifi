@@ -23,9 +23,9 @@ No email address is published for security reports — GitHub Advisories is the 
 
 | Milestone | Target |
 | --------- | ------ |
-| Acknowledge receipt | ≤ 3 business days |
-| Status update | Every 7 business days until resolved |
-| Public disclosure | After a patch is released, coordinated with the reporter |
+| Acknowledge receipt | Within 3 days |
+| Status update | Roughly every 2 weeks until resolved |
+| Public disclosure | Coordinated with the reporter, after a patch is released — no fixed deadline |
 
 We follow a coordinated-disclosure model: a fix is prepared and released before public
 disclosure. If you need a CVE, we will assist in requesting one via GitHub's advisory process.
