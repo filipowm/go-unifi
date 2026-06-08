@@ -30,8 +30,21 @@ grep -oE '^\t[A-Z][A-Za-z]+\(\) [A-Z][A-Za-z]+Client$' unifi/official/client.gen
 ```
 
 Each matched name (the part before `()`) is one official group. For each group,
-inspect its `<group>.generated.go` file in `unifi/official/` to understand what
-operations it exposes (full CRUD vs. read-only vs. actions-only).
+**enumerate the concrete operations** it exposes — do not eyeball the file. List
+every exported method on the group's client so the coverage call in Step 4 is
+backed by real signatures:
+
+```bash
+# e.g. group "Firewall" → type firewallClient → file firewall.generated.go
+grep -oE 'func \(c [a-zA-Z]+Client\) [A-Z][A-Za-z]+\(' unifi/official/firewall.generated.go \
+  | sed -E 's/func \(c [a-zA-Z]+Client\) //; s/\($//' | sort -u
+```
+
+Record the verb set per official resource. Treat `ListXAll`/`ListXPage` pairs as
+a single **List** capability, and classify the rest as **Create / Get / Update /
+Delete** or named **actions** (e.g. `Adopt`, `Restart`, `UpdateRuleOrdering`). A
+group may expose several distinct resources (e.g. `Firewall` → Policy + Zone);
+enumerate the verbs **per resource noun**, not per group.
 
 **IMPORTANT — Supporting is intentionally excluded.** The `Supporting` group is
 a shared enum/lookup helper (countries, DPI categories, device tags, etc.), not
@@ -48,7 +61,19 @@ grep '==== client methods for' unifi/client.generated.go \
 ```
 
 Each named type is a legacy resource backed by a `*.generated.go` file in
-`unifi/`.
+`unifi/`. As with the Official side, **enumerate the concrete operations** per
+type rather than assuming uniform CRUD — the generator omits verbs a resource
+does not support:
+
+```bash
+# replace FirewallZone with the resource type name
+grep -oE 'func \(c \*client\) (get|list|create|update|delete)FirewallZone\(' unifi/*.generated.go \
+  | sed -E 's/.*\) //; s/FirewallZone\(//' | sort -u
+```
+
+Record the verb set (`get`/`list`/`create`/`update`/`delete`) per legacy
+resource. A type missing `create`/`update`/`delete` is read-only on the legacy
+surface, which Step 4 must reflect.
 
 ### Step 3 — Curate the resource union
 
@@ -70,19 +95,35 @@ Build a UNION of meaningful resource concepts across both surfaces. Rules:
   resources in the CRUD sense; omit them unless a direct Official counterpart
   exists.
 
-### Step 4 — Assess coverage honestly
+### Step 4 — Assess coverage from the enumerated operations
 
-For each row, apply the following judgment per surface:
+Coverage is **not** a vibe. Decide each surface's mark by comparing the verb
+sets you enumerated in Steps 1–2, not by skimming. For every row, first write
+down the operation evidence, then map it to a mark:
 
-| Mark | Meaning |
-|------|---------|
-| ✅   | Covered — full CRUD or the natural scope of this resource is accessible |
-| ⚠️   | Partially covered — some operations exist but the surface is incomplete |
-| ❌   | Not covered — no equivalent on this surface |
+1. **Build the per-surface operation set.** From Steps 1–2 you have the exact
+   verbs each surface exposes for the resource (e.g. legacy
+   `{get,list,create,update,delete}`; Official `{Create,Get,List,Update,Delete}`
+   plus actions). If a surface has **zero** matching methods, it is ❌ — full
+   stop.
+2. **Define the resource's expected lifecycle.** For a managed resource that is
+   normally create/read/update/delete. Read-only or action-only resources
+   (e.g. `Info`, connected-`Clients`, `Sites`) have a narrower natural scope —
+   listing/reading IS the full surface there.
+3. **Map evidence → mark** using this rubric:
 
-Coverage is the skill's honest, grounded judgment based on the actual method
-signatures found in Steps 1–2. Do not assert full coverage if significant
-operations are missing.
+| Mark | Precise meaning |
+|------|-----------------|
+| ✅   | Every operation in the resource's expected lifecycle is present on this surface (full CRUD for a managed resource; the complete read/action set for a read-only resource). |
+| ⚠️   | At least one operation is present but the set is incomplete vs. the expected lifecycle, OR the surface exposes a materially narrower model than its counterpart (e.g. read/list only, or actions without full configuration). |
+| ❌   | No method on this surface targets the resource at all. |
+
+Cross-check the two surfaces against each other: if one surface has full CRUD
+and the other only `list`/`get`, the thin side is ⚠️ (with the gap named in the
+Comments column per Step 5), **never** ✅. When in doubt between ✅ and ⚠️, the
+deciding question is concrete: *"Which CRUD/lifecycle verb is missing?"* If you
+can name a missing verb, it is ⚠️; if you cannot, it is ✅. Capture that reason —
+it becomes the Comments text for ⚠️ rows.
 
 ### Step 5 — Write the Comments column
 
