@@ -84,11 +84,11 @@ func sysinfoRoute(version string) route {
 	}}
 }
 
-// clientWith builds a new-style client pointed at the mock server, constructed
-// fully offline via the APIStyle override (no network probe, no login), applying
-// opts to the config before construction. client() is clientWith with no options.
-func (cs *controllerServer) clientWith(opts ...func(*ClientConfig)) *client {
-	cs.t.Helper()
+// clientConfig returns a ClientConfig pointed at the mock server with
+// offline-friendly defaults — pinned new-style API (no network probe), dummy
+// creds — then applies opts. It is the shared config half of clientWith and
+// newClientWith, so a test only has to state the fields it actually varies.
+func (cs *controllerServer) clientConfig(opts ...func(*ClientConfig)) *ClientConfig {
 	cfg := &ClientConfig{
 		URL:      cs.srv.URL,
 		APIKey:   "test-key",
@@ -97,9 +97,27 @@ func (cs *controllerServer) clientWith(opts ...func(*ClientConfig)) *client {
 	for _, opt := range opts {
 		opt(cfg)
 	}
-	c, err := newClient(cfg)
+	return cfg
+}
+
+// clientWith builds a new-style client pointed at the mock server, constructed
+// fully offline via the APIStyle override (no network probe, no login), applying
+// opts to the config before construction. client() is clientWith with no options.
+func (cs *controllerServer) clientWith(opts ...func(*ClientConfig)) *client {
+	cs.t.Helper()
+	c, err := newClient(cs.clientConfig(opts...))
 	require.NoError(cs.t, err)
 	return c
+}
+
+// newClientWith builds a client through the PUBLIC NewClient constructor pointed
+// at the mock server, with the same offline defaults as clientWith, applying opts
+// before construction. Unlike clientWith (private newClient), this exercises
+// NewClient's eager-sysinfo path, so it returns the (Client, error) pair for the
+// caller to assert on (e.g. SkipSystemInfo deferring an error to the first call).
+func (cs *controllerServer) newClientWith(opts ...func(*ClientConfig)) (Client, error) {
+	cs.t.Helper()
+	return NewClient(cs.clientConfig(opts...))
 }
 
 // client builds a new-style client pointed at the mock server, constructed fully

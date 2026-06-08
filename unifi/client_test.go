@@ -419,12 +419,7 @@ func TestNewClientSkipSystemInfoNoRoundTrip(t *testing.T) {
 
 	cs := newControllerServer(t, sysinfoRoute("9.9.9"))
 
-	_, err := NewClient(&ClientConfig{
-		URL:            cs.srv.URL,
-		APIKey:         "dummy",
-		APIStyle:       APIStyleNew, // pinned: no style probe either
-		SkipSystemInfo: true,
-	})
+	_, err := cs.newClientWith(func(cfg *ClientConfig) { cfg.SkipSystemInfo = true })
 	require.NoError(t, err)
 	assert.Zero(t, cs.countRequestsTo(apiV1Path("s/default/stat/sysinfo")), "NewClient with SkipSystemInfo:true must not fetch sysinfo at construction")
 }
@@ -458,11 +453,9 @@ func TestNewClientSkipSystemInfoDeferredError(t *testing.T) {
 			w.WriteHeader(http.StatusUnauthorized)
 		}})
 
-		c, err := NewClient(&ClientConfig{
-			URL:            cs.srv.URL,
-			APIKey:         "bad-key",
-			APIStyle:       APIStyleNew, // pinned: no style probe
-			SkipSystemInfo: true,
+		c, err := cs.newClientWith(func(cfg *ClientConfig) {
+			cfg.APIKey = "bad-key"
+			cfg.SkipSystemInfo = true
 		})
 		require.NoError(t, err, "NewClient with SkipSystemInfo:true must succeed even with a bad API key")
 
