@@ -17,7 +17,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/filipowm/go-unifi/codegen/internal"
+	"github.com/filipowm/go-unifi/v2/codegen/internal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/ulikunitz/xz"

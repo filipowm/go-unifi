@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/filipowm/go-unifi/unifi/official"
+	"github.com/filipowm/go-unifi/v2/unifi/official"
 )
 
 // ValidationMode represents the mode for request validation.

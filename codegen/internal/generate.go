@@ -7,7 +7,7 @@ package internal
 import (
 	"fmt"
 
-	"github.com/filipowm/go-unifi/codegen/shared"
+	"github.com/filipowm/go-unifi/v2/codegen/shared"
 )
 
 // Generate runs the Internal-API code generation pass: builds resources from

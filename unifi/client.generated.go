@@ -7,7 +7,7 @@ import (
 	"context"
 	"io"
 
-	"github.com/filipowm/go-unifi/unifi/official"
+	"github.com/filipowm/go-unifi/v2/unifi/official"
 )
 
 // InternalClient is the legacy UniFi Network ("Internal") API surface: every

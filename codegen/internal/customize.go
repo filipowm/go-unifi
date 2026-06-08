@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/filipowm/go-unifi/codegen/shared"
+	"github.com/filipowm/go-unifi/v2/codegen/shared"
 	"gopkg.in/yaml.v3"
 )
 

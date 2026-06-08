@@ -12,8 +12,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/filipowm/go-unifi/codegen/internal"
-	"github.com/filipowm/go-unifi/codegen/shared"
+	"github.com/filipowm/go-unifi/v2/codegen/internal"
+	"github.com/filipowm/go-unifi/v2/codegen/shared"
 	"github.com/sirupsen/logrus"
 )
 
