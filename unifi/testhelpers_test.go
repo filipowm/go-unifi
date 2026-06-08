@@ -2,6 +2,7 @@ package unifi //nolint: testpackage
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -73,17 +74,39 @@ func newControllerServer(t *testing.T, routes ...route) *controllerServer {
 	return cs
 }
 
+// sysinfoRoute serves the new-style sysinfo endpoint with the given controller
+// version — the route the client hits behind Version()/GetSystemInformation().
+// It is the network-API counterpart of infoRoute (official /v1/info).
+func sysinfoRoute(version string) route {
+	return route{apiV1Path("s/default/stat/sysinfo"), func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, `{"data": [{"version": %q}]}`, version)
+	}}
+}
+
+// clientWith builds a new-style client pointed at the mock server, constructed
+// fully offline via the APIStyle override (no network probe, no login), applying
+// opts to the config before construction. client() is clientWith with no options.
+func (cs *controllerServer) clientWith(opts ...func(*ClientConfig)) *client {
+	cs.t.Helper()
+	cfg := &ClientConfig{
+		URL:      cs.srv.URL,
+		APIKey:   "test-key",
+		APIStyle: APIStyleNew,
+	}
+	for _, opt := range opts {
+		opt(cfg)
+	}
+	c, err := newClient(cfg)
+	require.NoError(cs.t, err)
+	return c
+}
+
 // client builds a new-style client pointed at the mock server, constructed fully
 // offline via the APIStyle override (no network probe, no login).
 func (cs *controllerServer) client() *client {
 	cs.t.Helper()
-	c, err := newClient(&ClientConfig{
-		URL:      cs.srv.URL,
-		APIKey:   "test-key",
-		APIStyle: APIStyleNew,
-	})
-	require.NoError(cs.t, err)
-	return c
+	return cs.clientWith()
 }
 
 // newOfflineClient builds a *client from cfg WITHOUT a swallowed construction

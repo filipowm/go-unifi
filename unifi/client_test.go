@@ -8,7 +8,6 @@ import (
 	"net/http/httptest"
 	"reflect"
 	"sync"
-	"sync/atomic"
 	"testing"
 	"time"
 
@@ -270,28 +269,11 @@ func TestVersionWithLockingNoDeadlock(t *testing.T) {
 	t.Parallel()
 
 	const wantVersion = "9.9.9-test"
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case "", "/":
-			// 200 at the root makes determineApiStyle pick the new-style API.
-			w.WriteHeader(http.StatusOK)
-		case "/proxy/network/api/s/default/stat/sysinfo":
-			w.WriteHeader(http.StatusOK)
-			fmt.Fprintf(w, `{"data": [{"version": "%s"}]}`, wantVersion)
-		default:
-			http.NotFound(w, r)
-		}
-	}))
-	defer ts.Close()
+	cs := newControllerServer(t, sysinfoRoute(wantVersion))
 
-	// newClient leaves sysInfo uncached, so Version() takes the fetch path —
-	// the exact path that previously deadlocked under UseLocking.
-	c, err := newClient(&ClientConfig{
-		URL:        ts.URL,
-		APIKey:     "dummy",
-		UseLocking: true,
-	})
-	require.NoError(t, err)
+	// The offline client leaves sysInfo uncached, so Version() takes the fetch
+	// path — the exact path that previously deadlocked under UseLocking.
+	c := cs.clientWith(func(cfg *ClientConfig) { cfg.UseLocking = true })
 
 	done := make(chan string, 1)
 	go func() {
@@ -321,29 +303,11 @@ func TestVersionConcurrentCachedFetch(t *testing.T) {
 		goroutines  = 50
 	)
 
-	var sysInfoHits atomic.Int32
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case "", "/":
-			// 200 at the root makes determineApiStyle pick the new-style API.
-			w.WriteHeader(http.StatusOK)
-		case "/proxy/network/api/s/default/stat/sysinfo":
-			sysInfoHits.Add(1)
-			w.WriteHeader(http.StatusOK)
-			fmt.Fprintf(w, `{"data": [{"version": "%s"}]}`, wantVersion)
-		default:
-			http.NotFound(w, r)
-		}
-	}))
-	defer ts.Close()
+	sysinfoPath := apiV1Path("s/default/stat/sysinfo")
+	cs := newControllerServer(t, sysinfoRoute(wantVersion))
 
-	// newClient leaves sysInfo uncached, so the first Version() fetches.
-	c, err := newClient(&ClientConfig{
-		URL:        ts.URL,
-		APIKey:     "dummy",
-		UseLocking: true,
-	})
-	require.NoError(t, err)
+	// The offline client leaves sysInfo uncached, so the first Version() fetches.
+	c := cs.clientWith(func(cfg *ClientConfig) { cfg.UseLocking = true })
 
 	results := make([]string, goroutines)
 	start := make(chan struct{})
@@ -369,11 +333,11 @@ func TestVersionConcurrentCachedFetch(t *testing.T) {
 	// only de-dupes the cache WRITE, not the fetch), so we only require >=1.
 	// What MUST hold once the dust settles is that the cache is populated: a
 	// post-burst Version() must serve from c.sysInfo without any new round-trip.
-	burstHits := sysInfoHits.Load()
-	assert.GreaterOrEqual(t, burstHits, int32(1), "at least one sysInfo fetch must occur")
+	burstHits := cs.countRequestsTo(sysinfoPath)
+	assert.GreaterOrEqual(t, burstHits, 1, "at least one sysInfo fetch must occur")
 
 	assert.Equal(t, wantVersion, c.Version(), "post-burst Version() must serve the cached version")
-	assert.Equal(t, burstHits, sysInfoHits.Load(), "cached Version() must not trigger another sysInfo fetch")
+	assert.Equal(t, burstHits, cs.countRequestsTo(sysinfoPath), "cached Version() must not trigger another sysInfo fetch")
 }
 
 // TestBareClientDoesNotMutateConfig is the end-to-end guard: building a
@@ -385,18 +349,14 @@ func TestBareClientDoesNotMutateConfig(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
 
-	var gotPath string
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		gotPath = r.URL.Path
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, `{"meta":{"rc":"ok"},"data":[{"version":"9.9.9"}]}`)
-	}))
-	defer srv.Close()
+	cs := newControllerServer(t, sysinfoRoute("9.9.9"))
 
 	// Trailing slash on the URL and an EMPTY UserAgent: both are the fields
 	// newClientFromConfig/buildInterceptors used to rewrite through the pointer.
+	// The config itself is the subject under test, so build the client directly
+	// from it rather than via the cs helper.
 	config := &ClientConfig{
-		URL:      srv.URL + "/",
+		URL:      cs.srv.URL + "/",
 		APIKey:   "test-key",
 		APIStyle: APIStyleNew, // offline: skip the network probe
 	}
@@ -413,10 +373,10 @@ func TestBareClientDoesNotMutateConfig(t *testing.T) {
 
 	// The client itself is normalized: baseURL has no trailing slash and requests
 	// reach the trimmed URL.
-	a.Equal(srv.URL, c.BaseURL(), "client baseURL must be the trimmed URL")
+	a.Equal(cs.srv.URL, c.BaseURL(), "client baseURL must be the trimmed URL")
 	_, err = c.GetSystemInformation()
 	require.NoError(t, err)
-	a.Equal(apiV1Path("s/default/stat/sysinfo"), gotPath, "request must reach the normalized (trimmed) URL path")
+	a.Equal(apiV1Path("s/default/stat/sysinfo"), cs.lastRequest().Path, "request must reach the normalized (trimmed) URL path")
 }
 
 // TestVersion pins the two Version() branches: the cached fast path
@@ -457,30 +417,16 @@ func TestVersion(t *testing.T) {
 func TestNewClientSkipSystemInfoNoRoundTrip(t *testing.T) {
 	t.Parallel()
 
-	var sysInfoHits atomic.Int32
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case "", "/":
-			// Style probe — allowed.
-			w.WriteHeader(http.StatusOK)
-		case "/proxy/network/api/s/default/stat/sysinfo":
-			sysInfoHits.Add(1)
-			w.WriteHeader(http.StatusOK)
-			fmt.Fprintf(w, `{"data": [{"version": "9.9.9"}]}`)
-		default:
-			http.NotFound(w, r)
-		}
-	}))
-	defer ts.Close()
+	cs := newControllerServer(t, sysinfoRoute("9.9.9"))
 
 	_, err := NewClient(&ClientConfig{
-		URL:            ts.URL,
+		URL:            cs.srv.URL,
 		APIKey:         "dummy",
 		APIStyle:       APIStyleNew, // pinned: no style probe either
 		SkipSystemInfo: true,
 	})
 	require.NoError(t, err)
-	assert.Zero(t, sysInfoHits.Load(), "NewClient with SkipSystemInfo:true must not fetch sysinfo at construction")
+	assert.Zero(t, cs.countRequestsTo(apiV1Path("s/default/stat/sysinfo")), "NewClient with SkipSystemInfo:true must not fetch sysinfo at construction")
 }
 
 // TestNewClientSkipSystemInfoDeferredError verifies the core SkipSystemInfo contract:
@@ -491,14 +437,10 @@ func TestNewClientSkipSystemInfoDeferredError(t *testing.T) {
 
 	t.Run("unreachable controller defers error to first API call", func(t *testing.T) {
 		t.Parallel()
-		// Close immediately so every connection attempt gets "connection refused".
-		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-			w.WriteHeader(http.StatusOK)
-		}))
-		ts.Close()
-
+		// localUrl points at an unreachable port, so every connection attempt gets
+		// "connection refused".
 		c, err := NewClient(&ClientConfig{
-			URL:            ts.URL,
+			URL:            localUrl,
 			APIKey:         "dummy",
 			APIStyle:       APIStyleNew, // pinned: no style probe
 			SkipSystemInfo: true,
@@ -511,13 +453,13 @@ func TestNewClientSkipSystemInfoDeferredError(t *testing.T) {
 
 	t.Run("bad API key defers auth error to first API call", func(t *testing.T) {
 		t.Parallel()
-		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		// The sysinfo endpoint 401s, so the deferred fetch on the first API call fails.
+		cs := newControllerServer(t, route{apiV1Path("s/default/stat/sysinfo"), func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(http.StatusUnauthorized)
-		}))
-		defer ts.Close()
+		}})
 
 		c, err := NewClient(&ClientConfig{
-			URL:            ts.URL,
+			URL:            cs.srv.URL,
 			APIKey:         "bad-key",
 			APIStyle:       APIStyleNew, // pinned: no style probe
 			SkipSystemInfo: true,
