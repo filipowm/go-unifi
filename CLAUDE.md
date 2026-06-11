@@ -51,5 +51,5 @@ docs/                   Documentation
 
 - Go files use **tabs**; max line length 200. Formatting enforced by `gofumpt` + `goimports` + `gci` (run `golangci-lint run`).
 - All client methods take `context.Context` as the first argument.
-- Wrap returned errors with context using `%w`.
+- Wrap returned errors with context using `%w`. Never return a "bare" error from a caller that adds no context — name what failed: `fmt.Errorf("injecting validation tags: %w", err)`. The exception: if the callee already wraps the error with sufficient context, bubbling it up verbatim is fine.
 - See `.claude/rules/` for hand-written client conventions and test patterns.
