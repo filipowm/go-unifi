@@ -48,7 +48,7 @@ Fields:
 
 	URL:           The base URL of the UniFi controller. Must be a valid URL and should not include the `/api` suffix.
 	APIKey:        API key for authentication. Required. Obtain one from the UniFi Network controller.
-	Timeout:       The maximum duration to wait for responses; default is no timeout.
+	Timeout:       The maximum duration to wait for responses; default is no timeout. Consider 30s for most deployments — a zero Timeout allows requests to hang indefinitely against a slow or hostile controller, and a WARN is logged at build time when it is unset.
 	SkipVerifySSL: Controls TLS certificate verification. SECURE BY DEFAULT: the zero value (false) verifies certificates. Set it to true (SkipVerifySSL: true) to DISABLE verification — required for the common case of a self-signed controller certificate. Disabling verification is logged at WARN level on every client build.
 	Interceptors:  A slice of ClientInterceptor implementations that can modify requests and responses.
 	HttpTransportCustomizer:  An optional function to customize the HTTP transport (e.g., for custom TLS settings).
@@ -64,7 +64,11 @@ type ClientConfig struct {
 	URL    string `validate:"required,https_url"`
 	APIKey string `validate:"required"`
 
-	Timeout time.Duration // How long to wait for replies, default: forever.
+	// Timeout is the maximum duration to wait for a controller response.
+	// Zero (the default) means no timeout — requests can hang indefinitely if the
+	// controller is unreachable or slow. Consider 30s for most deployments.
+	// A WARN log is emitted at client build time when Timeout is not set.
+	Timeout time.Duration
 	// SkipVerifySSL controls TLS certificate verification. The zero value (false)
 	// verifies certificates (secure by default); set it to true to disable
 	// verification, e.g. SkipVerifySSL: true for a self-signed controller certificate.
@@ -339,6 +343,9 @@ func newClientFromConfig(config *ClientConfig, v *validator) (*client, error) {
 	cfg.URL = strings.TrimRight(cfg.URL, "/")
 	log.Debugf("Connecting to UniFi controller at %s", cfg.URL)
 
+	if cfg.Timeout == 0 {
+		log.Warn("ClientConfig.Timeout is not set: requests can hang indefinitely; consider setting a timeout (e.g. 30s)")
+	}
 	httpClient, err := buildHTTPClient(&cfg, log)
 	if err != nil {
 		return nil, err
