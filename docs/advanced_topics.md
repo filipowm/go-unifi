@@ -51,7 +51,7 @@ Here is an example of using these methods for a custom API operation:
 ```go
 // Define a custom response structure
 var respData struct {
-    Meta Meta        `json:"meta"`
+    Meta unifi.Meta  `json:"meta"`
     Data interface{} `json:"data"`
 }
 
@@ -71,7 +71,7 @@ reqPayload := struct {
 }
 
 var postResp struct {
-    Meta Meta        `json:"meta"`
+    Meta unifi.Meta  `json:"meta"`
     Data interface{} `json:"data"`
 }
 
@@ -92,7 +92,7 @@ patch := struct {
 }{Name: "updated-name"}
 
 var patchResp struct {
-    Meta Meta        `json:"meta"`
+    Meta unifi.Meta  `json:"meta"`
     Data interface{} `json:"data"`
 }
 
@@ -235,19 +235,20 @@ Available logging levels are:
 - `unifi.WarnLevel` - warning messages
 - `unifi.ErrorLevel` - error messages only
 
-Then `Logger` methods are available to be used within the client:
+The `Logger` interface is embedded directly in `Client`, so logging methods are promoted and callable
+on the client itself:
 
 ```go
-client.Logger.Trace("Trace message")
-client.Logger.Tracef("Trace message with %s", "formatting")
-client.Logger.Debug("Debug message")
-client.Logger.Debugf("Debug message with %s", "formatting")
-client.Logger.Info("Info message")
-client.Logger.Infof("Info message with %s", "formatting")
-client.Logger.Warn("Warn message")
-client.Logger.Warnf("Warn message with %s", "formatting")
-client.Logger.Error("Error message")
-client.Logger.Errorf("Error message with %s", "formatting")
+client.Trace("Trace message")
+client.Tracef("Trace message with %s", "formatting")
+client.Debug("Debug message")
+client.Debugf("Debug message with %s", "formatting")
+client.Info("Info message")
+client.Infof("Info message with %s", "formatting")
+client.Warn("Warn message")
+client.Warnf("Warn message with %s", "formatting")
+client.Error("Error message")
+client.Errorf("Error message with %s", "formatting")
 ```
 
 ### Custom Logger Implementation

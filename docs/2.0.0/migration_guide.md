@@ -222,7 +222,7 @@ callers make explicit decisions.
 
 ```go
 // before — rc=="error" 200 swallowed silently for most resources
-err := c.CreateNetwork(ctx, "default", n)
+_, err := c.CreateNetwork(ctx, "default", n)
 // err could be nil even when the controller reported an application error
 
 // after — same code; rc=="error" now produces *ServerError
