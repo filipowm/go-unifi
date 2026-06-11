@@ -361,14 +361,16 @@ func newClientFromConfig(config *ClientConfig, v *validator) (*client, error) {
 // NewClient creates and initializes a new UniFi client based on the provided ClientConfig.
 // It validates the configuration, determines the API style, and — unless SkipSystemInfo is true —
 // eagerly fetches system information from the controller (fail-fast for bad credentials/unreachable host).
+// On any error, nil is returned as the Client so callers can safely check err != nil without risking
+// a nil-panic on the first API call.
 func NewClient(config *ClientConfig) (Client, error) { //nolint: ireturn
 	c, err := newClient(config)
 	if err != nil {
-		return c, err
+		return nil, err
 	}
 	if !config.SkipSystemInfo {
 		if sysInfo, err := c.GetSystemInformation(); err != nil {
-			return c, fmt.Errorf("failed getting server info: %w", err)
+			return nil, fmt.Errorf("failed getting server info: %w", err)
 		} else {
 			c.sysInfoMu.Lock()
 			c.sysInfo = sysInfo
@@ -396,15 +398,15 @@ func newClient(config *ClientConfig) (*client, error) {
 	switch config.APIStyle {
 	case APIStyleAuto:
 		if err = c.determineApiStyle(); err != nil {
-			return c, fmt.Errorf("failed determining API style: %w", err)
+			return nil, fmt.Errorf("failed determining API style: %w", err)
 		}
 	case APIStyleNew:
 		c.apiPaths = &NewStyleAPI
 		c.Debugf("Using explicitly configured API style (skipping probe): %d", config.APIStyle)
 	case APIStyleOld:
-		return c, ErrOldStyleUnsupported
+		return nil, ErrOldStyleUnsupported
 	default:
-		return c, fmt.Errorf("unsupported API style: %d", config.APIStyle)
+		return nil, fmt.Errorf("unsupported API style: %d", config.APIStyle)
 	}
 	return c, nil
 }

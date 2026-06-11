@@ -40,20 +40,19 @@ func verifyInterceptorPresence(a *assert.Assertions, c *client, interceptors []a
 
 func TestBareClientConstructor(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
+	// A reachable URL that passes validation but fails at the API style probe
+	// (connection refused) must return a nil client alongside the error.
 	c, err := newClient(&ClientConfig{
 		URL:    localUrl,
 		APIKey: "test-key",
 	})
 	require.Error(t, err)
-	a.Equal(localUrl, c.BaseURL())
-	a.Contains(err.Error(), "connection refused", "an invalid destination should produce a connection error.")
-	verifyInterceptorPresence(a, c, []any{&APIKeyAuthInterceptor{}, &DefaultHeadersInterceptor{}}, true)
+	require.Nil(t, c, "newClient must return nil client when construction fails")
+	require.Contains(t, err.Error(), "connection refused", "an invalid destination should produce a connection error.")
 }
 
 func TestNewClientWithApiKey(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 	// when
 	c, err := newClient(&ClientConfig{
 		URL:    localUrl,
@@ -62,9 +61,8 @@ func TestNewClientWithApiKey(t *testing.T) {
 
 	// then
 	require.Error(t, err)
-	a.Equal(localUrl, c.BaseURL())
-	a.Contains(err.Error(), "connection refused", "an invalid destination should produce a connection error.")
-	verifyInterceptorPresence(a, c, []any{&APIKeyAuthInterceptor{}, &DefaultHeadersInterceptor{}}, true)
+	require.Nil(t, c, "newClient must return nil client when construction fails")
+	require.Contains(t, err.Error(), "connection refused", "an invalid destination should produce a connection error.")
 }
 
 func TestCustomizeHttpClient(t *testing.T) {
