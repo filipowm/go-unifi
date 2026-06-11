@@ -88,7 +88,8 @@ func TestTLSVerificationDisabled(t *testing.T) {
 
 // TestBuildHTTPClientCustomRoundTripperBypassesTLS ensures that a custom
 // round-tripper provider takes precedence and the default TLS transport (and
-// its warning) is not constructed.
+// its SkipVerifySSL warning) is not constructed. The provider itself emits its
+// own warning reminding the caller that TLS is entirely caller-managed.
 func TestBuildHTTPClientCustomRoundTripperBypassesTLS(t *testing.T) {
 	t.Parallel()
 	log := &capturingLogger{}
@@ -103,7 +104,11 @@ func TestBuildHTTPClientCustomRoundTripperBypassesTLS(t *testing.T) {
 	require.NoError(t, err)
 	// The provided transport is used verbatim; no insecure default applied.
 	assert.False(t, transportInsecureSkipVerify(t, httpClient))
-	assert.Empty(t, log.warns, "custom round tripper must not trigger the insecure-default warning")
+	// A warn IS emitted — but it is the "caller-managed TLS" notice, NOT the
+	// "InsecureSkipVerify disabled" warn that SkipVerifySSL would produce.
+	require.NotEmpty(t, log.warns, "HttpRoundTripperProvider must emit a TLS-ownership warning")
+	assert.True(t, containsAny(log.warns, "caller-managed"), "warn must mention caller-managed TLS")
+	assert.False(t, containsAny(log.warns, "verification is DISABLED"), "insecure-default warn must NOT appear when custom RT is used")
 }
 
 func containsAny(haystack []string, needle string) bool {
