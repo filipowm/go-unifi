@@ -261,6 +261,10 @@ func createFormFile(w *multipart.Writer, mimeType, fieldname, filename string) (
 	return w.CreatePart(h)
 }
 
+// maxUploadSize caps how much content buildMultipartUpload buffers from the
+// caller's reader, preventing OOM on unexpectedly large uploads (512 MiB).
+const maxUploadSize = 512 * 1024 * 1024 // 512 MiB
+
 // buildMultipartUpload assembles a multipart/form-data body for a file upload from
 // reader. It is the pure (no filesystem, no network) heart of UploadFileFromReader,
 // extracted so the field-name defaulting, MIME detection and Content-Disposition
@@ -273,10 +277,16 @@ func createFormFile(w *multipart.Writer, mimeType, fieldname, filename string) (
 // workaround). It returns the assembled body buffer and the matching multipart
 // Content-Type (writer.FormDataContentType()).
 func buildMultipartUpload(reader io.Reader, filename, fieldName string) (*bytes.Buffer, string, error) {
-	// Read the entire content into a buffer first to avoid deadlock. I tied using TeeReader and Pipe but ended up in deadlock.
+	// Buffer content with a size cap to avoid OOM on runaway uploads.
+	// Read one byte past the limit so an over-size source is detected rather than silently truncated.
 	var buf bytes.Buffer
-	if _, err := io.Copy(&buf, reader); err != nil {
+	limited := io.LimitReader(reader, maxUploadSize+1)
+	n, err := io.Copy(&buf, limited)
+	if err != nil {
 		return nil, "", fmt.Errorf("unable to read file content into buffer: %w", err)
+	}
+	if n > maxUploadSize {
+		return nil, "", fmt.Errorf("upload exceeds maximum size of %d bytes", maxUploadSize)
 	}
 	contentReader := bytes.NewReader(buf.Bytes())
 
