@@ -151,6 +151,21 @@ Operations on `c.Official()` return `ErrOfficialAPIUnavailable` if the controlle
 is old-style, or uses non-API-key auth. Set `DisableOfficialAPI: true` in `ClientConfig` to opt out
 entirely (operations then fail fast with `ErrOfficialAPIDisabled`).
 
+**Error handling.** The Official surface uses the same error types as the Internal surface. Errors
+returned through the default transport are `*unifi.ServerError`, and HTTP 404 responses satisfy
+`errors.Is(err, unifi.ErrNotFound)`:
+
+```go
+id, err := c.Official().Sites().ResolveID(ctx, "default")
+if errors.Is(err, unifi.ErrNotFound) {
+    // site not found
+}
+var serverErr *unifi.ServerError
+if errors.As(err, &serverErr) {
+    log.Printf("controller error %d: %s", serverErr.StatusCode, serverErr.Message)
+}
+```
+
 In 2.0.0 the Internal surface remains the default — calling a resource method directly on `c` is
 identical to calling it on `c.Internal()`. The default is expected to flip to Official in 3.0.0.
 
