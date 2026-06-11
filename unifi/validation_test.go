@@ -222,6 +222,38 @@ func TestNewValidatorExtraValidators(t *testing.T) {
 	}, "the one-off tag must not leak into a freshly built validator (no global mutation)")
 }
 
+// TestClientConfigCustomValidators verifies that validators registered via
+// ClientConfig.CustomValidators are actually invoked during request validation.
+func TestClientConfigCustomValidators(t *testing.T) {
+	t.Parallel()
+
+	// A struct whose only_digits tag is only known when the custom validator is wired in.
+	type payload struct {
+		Code string `json:"code" validate:"only_digits"`
+	}
+
+	extra := NewCustomRegexValidator("only_digits", `^[0-9]+$`)
+
+	// Use the unreachable testUrl with HardValidation: a valid payload passes
+	// the custom validator and proceeds to the network (failing with dial error),
+	// while an invalid payload is stopped at validation before any network call.
+	c := newOfflineClient(t, &ClientConfig{
+		URL:            testUrl,
+		APIKey:         "test-key",
+		ValidationMode: HardValidation,
+		CustomValidators: []CustomValidator{extra},
+	})
+
+	// A valid code passes the custom validator and reaches the network (dial error).
+	err := c.Post(context.Background(), "resource", payload{Code: "12345"}, nil)
+	require.Error(t, err)
+	require.NotContains(t, err.Error(), "validation failed", "a valid code must not fail validation")
+
+	// An invalid code must be stopped by the custom validator before the network call.
+	err = c.Post(context.Background(), "resource", payload{Code: "12x45"}, nil)
+	require.ErrorContains(t, err, "validation failed", "invalid code must fail the custom validator")
+}
+
 type validateableBody struct {
 	Data string `json:"data" validate:"required"`
 }
