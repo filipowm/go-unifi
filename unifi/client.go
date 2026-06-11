@@ -104,6 +104,10 @@ type ClientConfig struct {
 	// defer that check to the first Version()/API call — required for fully-offline
 	// construction when combined with a pinned APIStyle.
 	SkipSystemInfo bool
+	// CustomValidators registers additional validation rules beyond the built-in set.
+	// Each CustomValidator's Tag is used as the go-playground/validator tag name.
+	// See NewCustomRegexValidator for building regex-based validators.
+	CustomValidators []CustomValidator
 }
 
 // client represents a UniFi client.
@@ -401,7 +405,7 @@ func NewClient(config *ClientConfig) (Client, error) { //nolint: ireturn
 }
 
 func newClient(config *ClientConfig) (*client, error) {
-	v, err := newValidator()
+	v, err := newValidator(config.CustomValidators...)
 	if err != nil {
 		return nil, fmt.Errorf("failed creating validator: %w", err)
 	}
