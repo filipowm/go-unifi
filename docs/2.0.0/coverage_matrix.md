@@ -94,7 +94,7 @@ and the resource types in `unifi/*.generated.go` at the time of last regeneratio
 | Controller Info | ✅ | ❌ | Official provides a dedicated controller info endpoint (`Info.Get`); legacy has no equivalent resource. |
 | Dashboard | ❌ | ✅ | |
 | Schedule Tasks | ❌ | ✅ | |
-| Sites | ✅ | ❌ | Official exposes site listing and name-to-UUID resolution; legacy treats site names as implicit context parameters rather than managed resources. |
+| Sites | ✅ | ✅ | Both surfaces cover sites; Legacy `InternalClient` provides full Sites CRUD (`CreateSite`, `DeleteSite`, `GetSite`, `ListSites`, `UpdateSite`). Official uses UUIDs as identifiers while Legacy uses site names; use `Sites().ResolveID` to map name→UUID when working across both surfaces. |
 | Tags | ❌ | ✅ | |
 
 ## Settings (singleton configuration)
