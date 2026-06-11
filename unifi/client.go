@@ -52,7 +52,7 @@ Fields:
 	SkipVerifySSL: Controls TLS certificate verification. SECURE BY DEFAULT: the zero value (false) verifies certificates. Set it to true (SkipVerifySSL: true) to DISABLE verification — required for the common case of a self-signed controller certificate. Disabling verification is logged at WARN level on every client build.
 	Interceptors:  A slice of ClientInterceptor implementations that can modify requests and responses.
 	HttpTransportCustomizer:  An optional function to customize the HTTP transport (e.g., for custom TLS settings).
-	HttpRoundTripperProvider: A function that returns a http.RoundTripper for customizing the HTTP client. If both HttpTransportCustomizer and HttpRoundTripperProvider are provided, HttpRoundTripperProvider takes precedence.
+	HttpRoundTripperProvider: A function that returns a http.RoundTripper for customizing the HTTP client. If both HttpTransportCustomizer and HttpRoundTripperProvider are provided, HttpRoundTripperProvider takes precedence. TLS configuration is entirely the caller's responsibility; the client emits a WARN log at build time as a reminder.
 	UserAgent:     The User-Agent header string for outgoing HTTP requests.
 	ErrorHandler:  A custom handler for processing HTTP response errors.
 	UseLocking:    DEPRECATED and a NO-OP since 1.11.0. net/http.Client is goroutine-safe and the client no longer serializes requests; the field is retained only for source compatibility and has no effect.
@@ -71,6 +71,11 @@ type ClientConfig struct {
 	SkipVerifySSL            bool
 	Interceptors             []ClientInterceptor
 	HttpTransportCustomizer  HttpTransportCustomizer
+	// HttpRoundTripperProvider, when set, replaces the entire HTTP transport with
+	// the returned RoundTripper. TLS configuration is entirely the caller's
+	// responsibility: the client performs no TLS validation and the SkipVerifySSL
+	// flag is ignored. Setting this field causes a WARN log at client build time as
+	// a reminder that TLS is caller-managed.
 	HttpRoundTripperProvider func() http.RoundTripper
 	UserAgent                string
 	ErrorHandler             ResponseErrorHandler
@@ -253,6 +258,7 @@ func buildHTTPClient(config *ClientConfig, log Logger) (*http.Client, error) {
 	if config.HttpRoundTripperProvider != nil {
 		log.Debug("Using custom HTTP round tripper provider")
 		rt = config.HttpRoundTripperProvider()
+		log.Warn("HttpRoundTripperProvider is set: TLS configuration is entirely caller-managed and cannot be validated by the client")
 	}
 	if rt == nil {
 		insecure := tlsVerificationDisabled(config)
