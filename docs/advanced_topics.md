@@ -31,6 +31,19 @@ The `apiPath` argument follows a simple rule (see `unifi/requests.go` `buildRequ
   The old `/api/...` form that worked on classic controllers **does not work** on new-style controllers;
   use the site-relative form instead.
 
+**v2 API tree.** Some newer resources (firewall zones, zone policies, AP groups, etc.) live under the
+v2 API tree at `/proxy/network/v2/api`. The exported `unifi.NewStyleAPI.ApiV2Path` constant gives you
+that base path so you don't need to hard-code it:
+
+```go
+// Access a resource under the v2 API tree
+var out struct{ /* ... */ }
+err = c.Get(ctx, unifi.NewStyleAPI.ApiV2Path+"/site/default/firewall/zone", nil, &out)
+if err != nil {
+    log.Fatalf("Error: %v", err)
+}
+```
+
 ### Examples
 
 Here is an example of using these methods for a custom API operation:
