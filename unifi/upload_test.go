@@ -124,11 +124,35 @@ func TestBuildMultipartUploadReadError(t *testing.T) {
 	require.ErrorContains(t, err, "unable to read file content into buffer")
 }
 
+// TestBuildMultipartUploadSizeLimit verifies that a reader exceeding maxUploadSize
+// returns an explicit "exceeds maximum size" error rather than silently buffering
+// an arbitrarily large payload.
+func TestBuildMultipartUploadSizeLimit(t *testing.T) {
+	t.Parallel()
+
+	// Synthesize a reader that reports more bytes than the limit without actually
+	// allocating maxUploadSize bytes: LimitReader(zeros, limit+2) yields limit+2
+	// zero bytes cheaply via io.LimitReader over a zero-byte source.
+	overSize := io.LimitReader(zeroReader{}, maxUploadSize+2)
+	_, _, err := buildMultipartUpload(overSize, "big.bin", "file")
+	require.ErrorContains(t, err, "exceeds maximum size")
+}
+
 // errReader always fails on Read, simulating an io.Reader that errors mid-stream.
 type errReader struct{}
 
 func (errReader) Read(_ []byte) (int, error) {
 	return 0, io.ErrUnexpectedEOF
+}
+
+// zeroReader is an infinite source of zero bytes, used to simulate large uploads cheaply.
+type zeroReader struct{}
+
+func (zeroReader) Read(p []byte) (int, error) {
+	for i := range p {
+		p[i] = 0
+	}
+	return len(p), nil
 }
 
 // parseSingleMultipartPart parses a multipart body (as produced by
