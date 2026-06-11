@@ -50,7 +50,7 @@ Fields:
 	APIKey:        API key for authentication. Required. Obtain one from the UniFi Network controller.
 	Timeout:       The maximum duration to wait for responses; default is no timeout. Consider 30s for most deployments — a zero Timeout allows requests to hang indefinitely against a slow or hostile controller, and a WARN is logged at build time when it is unset.
 	SkipVerifySSL: Controls TLS certificate verification. SECURE BY DEFAULT: the zero value (false) verifies certificates. Set it to true (SkipVerifySSL: true) to DISABLE verification — required for the common case of a self-signed controller certificate. Disabling verification is logged at WARN level on every client build.
-	Interceptors:  A slice of ClientInterceptor implementations that can modify requests and responses.
+	Interceptors:  A slice of ClientInterceptor implementations that can modify requests and responses. Interceptors are deduplicated by concrete type; a duplicate triggers a WARN log.
 	HttpTransportCustomizer:  An optional function to customize the HTTP transport (e.g., for custom TLS settings).
 	HttpRoundTripperProvider: A function that returns a http.RoundTripper for customizing the HTTP client. If both HttpTransportCustomizer and HttpRoundTripperProvider are provided, HttpRoundTripperProvider takes precedence. TLS configuration is entirely the caller's responsibility; the client emits a WARN log at build time as a reminder.
 	UserAgent:     The User-Agent header string for outgoing HTTP requests.
@@ -73,6 +73,10 @@ type ClientConfig struct {
 	// verifies certificates (secure by default); set it to true to disable
 	// verification, e.g. SkipVerifySSL: true for a self-signed controller certificate.
 	SkipVerifySSL            bool
+	// Interceptors is a list of ClientInterceptor implementations applied to every
+	// request and response. Interceptors are deduplicated by concrete type: if two
+	// interceptors share the same concrete type, the second is silently dropped and
+	// a WARN log is emitted.
 	Interceptors             []ClientInterceptor
 	HttpTransportCustomizer  HttpTransportCustomizer
 	// HttpRoundTripperProvider, when set, replaces the entire HTTP transport with
@@ -317,6 +321,8 @@ func buildInterceptors(config *ClientConfig, log Logger, auth []ClientIntercepto
 	for _, interceptor := range config.Interceptors {
 		if !containsInterceptorType(interceptors, interceptor) {
 			interceptors = append(interceptors, interceptor)
+		} else {
+			log.Warnf("interceptor of type %T skipped: an interceptor of the same concrete type is already registered; each concrete type may only appear once", interceptor)
 		}
 	}
 	return interceptors
