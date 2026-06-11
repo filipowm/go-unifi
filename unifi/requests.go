@@ -341,6 +341,11 @@ func (c *client) UploadFileFromReader(ctx context.Context, apiPath string, reade
 // Do performs an HTTP request using the given method, apiPath, request body, and decodes the response into respBody.
 // It validates the request body, applies interceptors, and decodes the HTTP response into respBody if provided.
 // It returns an error if the request or response handling fails.
+//
+// Path resolution: a relative path (no leading slash) is joined under the controller's primary API
+// base (/proxy/network/api for v1, /proxy/network/v2/api for v2-style resources). A leading slash
+// or absolute URL is used as-is. Use NewStyleAPI.ApiV2Path for the v2 API tree (firewall zones,
+// zone policies, AP groups, etc.).
 func (c *client) Do(ctx context.Context, method, apiPath string, reqBody any, respBody any) error {
 	c.Tracef("Performing request: %s %s", method, apiPath)
 
