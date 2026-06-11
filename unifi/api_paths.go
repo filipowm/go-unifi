@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"runtime/debug"
 )
 
 const (
@@ -25,13 +26,33 @@ const (
 	uploadPath    = "/upload"
 	uploadPathNew = "/proxy/network/upload"
 
-	defaultUserAgent = "go-unifi/0.0.1"
-
 	ApiKeyHeader      = "X-Api-Key" //nolint:gosec
 	UserAgentHeader   = "User-Agent"
 	AcceptHeader      = "Accept"
 	ContentTypeHeader = "Content-Type"
 )
+
+var defaultUserAgent = buildUserAgent()
+
+// buildUserAgent returns a User-Agent string derived from the module version
+// reported by debug.ReadBuildInfo. When used as a dependency, it reads the
+// version from the dep entry; when built as the main module during development
+// it reads info.Main.Version. Falls back to "go-unifi/2" when no version is
+// available.
+func buildUserAgent() string {
+	if info, ok := debug.ReadBuildInfo(); ok {
+		for _, dep := range info.Deps {
+			if dep.Path == "github.com/filipowm/go-unifi/v2" {
+				return "go-unifi/" + dep.Version
+			}
+		}
+		// When built as the main module (e.g. during development), use the main module version.
+		if info.Main.Path == "github.com/filipowm/go-unifi/v2" && info.Main.Version != "" && info.Main.Version != "(devel)" {
+			return "go-unifi/" + info.Main.Version
+		}
+	}
+	return "go-unifi/2"
+}
 
 // APIPaths defines the URL paths used by the client.
 type APIPaths struct {
