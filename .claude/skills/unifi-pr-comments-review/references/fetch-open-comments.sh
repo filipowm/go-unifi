@@ -155,7 +155,7 @@ query($owner:String!,$repo:String!,$pr:Int!){
   # RAW body before denoising). Callers skip 👀-reacting on, and skip re-processing, our own past replies.
   # KEEP THIS MARKER IN SYNC with MARKER in unifi-pr-comments-review/references/review-pr.workflow.js.
   def generated: ((.body // "") | test("claude-pr-review-marker"));
-  # isUnread = a built comment we've NEITHER 👀'd (seen) NOR authored (generated). Drives --unread filtering.
+  # isUnread = a built comment weve NEITHER 👀d (seen) NOR authored (generated). Drives --unread filtering.
   def isUnread: (.seen | not) and (.generated | not);
   {
   pr: $d.repository.pullRequest.number,
