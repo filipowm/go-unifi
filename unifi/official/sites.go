@@ -41,6 +41,9 @@ func (c sitesClient) ListAll(ctx context.Context, filter string) iter.Seq2[SiteO
 // ResolveID maps a legacy site name (the Internal-API identifier, carried as
 // internalReference) to its Official-API site UUID. The full site list is cached
 // on first miss so repeated lookups avoid a round-trip.
+//
+// The returned string is the siteId UUID required by all resource-group methods
+// (Networks, Firewall, Devices, etc.). Pass it directly as the siteId argument.
 func (c sitesClient) ResolveID(ctx context.Context, name string) (string, error) {
 	if id, ok := c.cachedSiteID(name); ok {
 		return id, nil

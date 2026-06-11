@@ -11,6 +11,13 @@
 // errors.Is(err, unifi.ErrNotFound) to detect 404s and
 // errors.As(err, &serverErr) for structured error details.
 // A custom Doer is responsible for its own error types; this package makes no guarantee.
+//
+// Site IDs: all resource-group methods accept a siteId parameter that must be the
+// Official-API site UUID (not the legacy site name). Use Sites().ResolveID(ctx, name)
+// to obtain the UUID from a legacy name:
+//
+//	id, err := c.Official().Sites().ResolveID(ctx, "default")
+//	networks, err := c.Official().Networks().ListPage(ctx, id, nil)
 package official
 
 import (
