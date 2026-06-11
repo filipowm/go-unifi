@@ -19,12 +19,14 @@ This table maps `go-unifi` library releases to the range of UniFi Network Contro
 **2.0.0 notes:**
 - The **minimum** controller version (9.0.114) is set by API-key authentication — the only supported auth.
   Old-style (classic) controllers are unsupported (`ErrOldStyleUnsupported`).
-- The **Internal API** is frozen at `9.5.21` for 2.0.0. The daily version bump moves the `.unifi-version`
-  marker forward but the generated shapes won't diverge until the next major.
+- The **Internal API** is frozen at `9.5.21` for 2.0.0. The daily CI run is a deterministic no-op for the
+  internal half — the resolver in `codegen/version.go` clamps to `9.5.21`, so `.unifi-version` does not
+  move forward during the 2.0.0 lifecycle.
 - The **Official OpenAPI** surface (`c.Official()`) requires controller ≥ `10.1.78`. The spec version
-  (`.unifi-version-official`) tracks the latest committed snapshot and updates daily.
+  (`.unifi-version-official`) tracks the latest committed snapshot and may update when the Official spec changes.
 
-The library is updated daily to track the latest UniFi Controller releases, so the "Latest" value moves forward over time.
+Only the Official API spec may update daily — the `.unifi-version-official` marker tracks the latest committed
+OpenAPI snapshot. The Internal (legacy) resources are frozen at `9.5.21` and do not change during the 2.0.0 lifecycle.
 Two plain-text version markers are written at the repo root by `go generate`:
 
 - [`.unifi-version`](../.unifi-version) — the Internal (legacy) API controller version
