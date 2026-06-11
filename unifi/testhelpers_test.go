@@ -55,7 +55,7 @@ func newControllerServer(t *testing.T, routes ...route) *controllerServer {
 	t.Helper()
 	cs := &controllerServer{t: t}
 	mux := http.NewServeMux()
-	cs.srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	cs.srv = httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Record every request (body is fully buffered for later assertions). The
 		// append runs on the per-request server goroutine, so guard it with mu.
 		body, _ := io.ReadAll(r.Body)
@@ -88,11 +88,17 @@ func sysinfoRoute(version string) route {
 // offline-friendly defaults — pinned new-style API (no network probe), dummy
 // creds — then applies opts. It is the shared config half of clientWith and
 // newClientWith, so a test only has to state the fields it actually varies.
+//
+// The HttpRoundTripperProvider is pre-wired to the TLS test server's own client
+// transport so that clients trust its self-signed certificate without disabling
+// verification globally (no SkipVerifySSL).
 func (cs *controllerServer) clientConfig(opts ...func(*ClientConfig)) *ClientConfig {
+	srvTransport := cs.srv.Client().Transport
 	cfg := &ClientConfig{
-		URL:      cs.srv.URL,
-		APIKey:   "test-key",
-		APIStyle: APIStyleNew,
+		URL:                      cs.srv.URL,
+		APIKey:                   "test-key",
+		APIStyle:                 APIStyleNew,
+		HttpRoundTripperProvider: func() http.RoundTripper { return srvTransport },
 	}
 	for _, opt := range opts {
 		opt(cfg)

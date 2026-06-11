@@ -685,7 +685,7 @@ func TestOverrideUserAgent(t *testing.T) {
 
 func TestDoInvalidJsonResponse(t *testing.T) {
 	t.Parallel()
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// For API style determination.
 		if r.URL.Path == "/" {
 			w.WriteHeader(http.StatusOK)
@@ -704,9 +704,11 @@ func TestDoInvalidJsonResponse(t *testing.T) {
 	}))
 	defer ts.Close()
 
+	srvTransport := ts.Client().Transport
 	c, err := newClient(&ClientConfig{
-		URL:    ts.URL,
-		APIKey: "test-key",
+		URL:                      ts.URL,
+		APIKey:                   "test-key",
+		HttpRoundTripperProvider: func() http.RoundTripper { return srvTransport },
 	})
 	require.NoError(t, err)
 
@@ -723,7 +725,7 @@ func (f *failingErrorHandler) HandleError(resp *http.Response) error {
 
 func TestErrorHandlerCustom(t *testing.T) {
 	t.Parallel()
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// For API style determination.
 		if r.URL.Path == "/" {
 			w.WriteHeader(http.StatusOK)
@@ -742,11 +744,13 @@ func TestErrorHandlerCustom(t *testing.T) {
 	}))
 	defer ts.Close()
 
+	srvTransport := ts.Client().Transport
 	customErrorHandler := &failingErrorHandler{}
 	c, err := newClient(&ClientConfig{
-		URL:          ts.URL,
-		APIKey:       "test-key",
-		ErrorHandler: customErrorHandler,
+		URL:                      ts.URL,
+		APIKey:                   "test-key",
+		ErrorHandler:             customErrorHandler,
+		HttpRoundTripperProvider: func() http.RoundTripper { return srvTransport },
 	})
 	require.NoError(t, err)
 
