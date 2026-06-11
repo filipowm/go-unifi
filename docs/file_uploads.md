@@ -4,10 +4,10 @@ This document describes how to use the file upload functionality in the go-unifi
 
 ## Overview
 
-The go-unifi client provides two methods for uploading files to the UniFi controller:
+The go-unifi client provides two methods for uploading portal files to the UniFi controller:
 
-1. `UploadFile` - Upload a file from a file path on disk
-2. `UploadFileFromReader` - Upload a file from an `io.Reader` (e.g., from memory, network stream, etc.)
+1. `UploadPortalFile` - Upload a portal file from a file path on disk
+2. `UploadPortalFileFromReader` - Upload a portal file from an `io.Reader` (e.g., from memory, network stream, etc.)
 
 Both methods use the `multipart/form-data` format for file uploads, which is required by the UniFi controller.
 
@@ -35,26 +35,15 @@ func main() {
 		log.Fatalf("Error creating client: %v", err)
 	}
 
-	// Prepare any additional form fields if needed
-	formFields := map[string]string{
-		"description": "My uploaded file",
-	}
+	ctx := context.Background()
 
-	// Upload the file to the controller
-	var response map[string]interface{} // Adjust this type based on the expected response
-	err = client.UploadFile(
-		context.Background(),
-		"/proxy/network/upload/s/default/portalfile", // Upload endpoint (leading slash ⇒ sent as-is; uploads live under /proxy/network/upload, outside the /proxy/network/api tree)
-		"/path/to/your/file.txt", // Path to the file on disk
-		"file", // Form field name for the file
-		formFields, // Additional form fields
-		&response, // Response structure to capture the result
-	)
+	// Upload the portal file to the controller for the "default" site
+	portalFile, err := client.UploadPortalFile(ctx, "default", "/path/to/your/file.png")
 	if err != nil {
 		log.Fatalf("Error uploading file: %v", err)
 	}
 
-	log.Printf("Upload successful: %v", response)
+	log.Printf("Upload successful: id=%s url=%s", portalFile.ID, portalFile.URL)
 }
 ```
 
@@ -81,67 +70,60 @@ func main() {
 		log.Fatalf("Error creating client: %v", err)
 	}
 
+	ctx := context.Background()
+
 	// Create file content in memory
-	fileContent := []byte("This is some test content to upload")
+	fileContent := []byte("...image or HTML content...")
 	reader := bytes.NewReader(fileContent)
 
-	// Upload the file from the reader
-	var response map[string]interface{} // Adjust this type based on the expected response
-	err = client.UploadFileFromReader(
-		context.Background(),
-		"/proxy/network/upload/s/default/portalfile", // Upload endpoint (leading slash ⇒ sent as-is; uploads live under /proxy/network/upload, outside the /proxy/network/api tree)
-		reader, // Reader with the file content
-		"myfile.txt", // Filename to use in the upload
-		"file", // Form field name for the file
-		nil, // No additional form fields
-		&response, // Response structure to capture the result
-	)
+	// Upload the portal file from the reader for the "default" site
+	portalFile, err := client.UploadPortalFileFromReader(ctx, "default", reader, "myfile.png")
 	if err != nil {
 		log.Fatalf("Error uploading file: %v", err)
 	}
 
-	log.Printf("Upload successful: %v", response)
+	log.Printf("Upload successful: id=%s url=%s", portalFile.ID, portalFile.URL)
 }
 ```
 
 ## API Reference
 
-### UploadFile
+### UploadPortalFile
 
 ```go
-func (c *client) UploadFile(ctx context.Context, apiPath, filePath, fieldName string, formFields map[string]string, respBody interface{}) error
+func (c *client) UploadPortalFile(ctx context.Context, site string, filepath string) (*PortalFile, error)
 ```
 
-Uploads a file to the UniFi controller from a file path.
+Uploads a portal file to the UniFi controller from a file path on disk.
 
 Parameters:
 - `ctx`: The context for the request
-- `apiPath`: The API endpoint path to upload the file to
-- `filePath`: Path to the file on disk
-- `fieldName`: Form field name for the file (defaults to "file" if empty)
-- `formFields`: Additional form fields to include in the upload (can be nil)
-- `respBody`: Structure to decode the response into (can be nil)
+- `site`: The site name (e.g. `"default"`)
+- `filepath`: Path to the file on disk
 
-### UploadFileFromReader
+Returns the uploaded `*PortalFile` (with `ID`, `URL`, `Filename`, etc.) or an error.
+
+### UploadPortalFileFromReader
 
 ```go
-func (c *client) UploadFileFromReader(ctx context.Context, apiPath string, reader io.Reader, filename, fieldName string, formFields map[string]string, respBody interface{}) error
+func (c *client) UploadPortalFileFromReader(ctx context.Context, site string, reader io.Reader, filename string) (*PortalFile, error)
 ```
 
-Uploads a file to the UniFi controller from an io.Reader.
+Uploads a portal file to the UniFi controller from an `io.Reader`.
 
 Parameters:
 - `ctx`: The context for the request
-- `apiPath`: The API endpoint path to upload the file to
+- `site`: The site name (e.g. `"default"`)
 - `reader`: Reader with the file content
 - `filename`: Name of the file to use in the upload
-- `fieldName`: Form field name for the file (defaults to "file" if empty)
-- `formFields`: Additional form fields to include in the upload (can be nil)
-- `respBody`: Structure to decode the response into (can be nil)
+
+Returns the uploaded `*PortalFile` or an error.
 
 ## Notes
 
-- These methods use `POST` requests for file uploads
-- The UniFi controller typically expects files to be uploaded with the field name "file", but this can be changed as needed
-- The content type for the request is automatically set to "multipart/form-data" with the correct boundary
-- All existing client features like interceptors, error handling, and request validation are preserved
+- These methods use `POST` requests for file uploads under the portal-file endpoint.
+- The content type for the request is automatically detected from the file content.
+- All existing client features like interceptors, error handling, and request validation are preserved.
+- For lower-level file uploads to custom endpoints, use the internal `UploadFile`/`UploadFileFromReader`
+  methods via the raw-call surface (`c.Do`/`c.Post`), but note these are not part of the public `Client`
+  interface.

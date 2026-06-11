@@ -107,7 +107,11 @@ This can be useful when you want to check if a feature is available before using
 **Example:**
 
 ```go
-if c.IsFeatureEnabled(ctx, "default", "feature-name") {
+enabled, err := c.IsFeatureEnabled(ctx, "default", "feature-name")
+if err != nil {
+    log.Fatalf("Error checking feature: %v", err)
+}
+if enabled {
     // Feature is enabled
 } else {
     // Feature is disabled

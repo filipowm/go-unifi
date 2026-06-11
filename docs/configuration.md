@@ -79,7 +79,7 @@ c, err := unifi.NewClient(&unifi.ClientConfig{
     APIKey: "your-api-key",
     HttpRoundTripperProvider: func() http.RoundTripper {
         // Create a custom HTTP Round Tripper instance
-        return &http.Transport{}, nil
+        return &http.Transport{}
     },
 })
 ```
@@ -130,7 +130,6 @@ initializing the client with `unifi.NewClient`:
 package main
 
 import (
-	"context"
 	"crypto/tls"
 	"fmt"
 	"log"
