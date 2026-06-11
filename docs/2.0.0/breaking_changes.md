@@ -17,6 +17,7 @@ with rationale and grep hints for each change.
 
 | # | Change | Impact | Status |
 |---|--------|--------|--------|
+| 0 | [Module path bumped to `/v2`](#0-module-path-bumped-to-v2) | **High** | **DONE** |
 | 1 | [API-key authentication only](#1-api-key-authentication-only) | High | **DONE** |
 | 2 | [TLS verify-by-default](#2-tls-verify-by-default) | High | **DONE** |
 | 3 | [Go version bump to 1.26](#3-go-version-bump-to-126) | Medium | **DONE** |
@@ -28,6 +29,29 @@ with rationale and grep hints for each change.
 | 9 | [`UseLocking` is a no-op](#9-uselocking-is-a-no-op) | Low | **DONE** |
 | 10 | [Remove CSRF handling](#10-remove-csrf-handling) | Low | **DONE** |
 | — | [Official API surface (additive)](#official-api-surface-additive) | Additive | **DONE** |
+
+---
+
+### 0. Module path bumped to `/v2`
+
+**Status: DONE** — `go.mod` declares `module github.com/filipowm/go-unifi/v2`.
+
+**Import-path change (compile break).** All import paths change from
+`github.com/filipowm/go-unifi/unifi` to `github.com/filipowm/go-unifi/v2/unifi`. Update `go.mod`
+with `go get github.com/filipowm/go-unifi/v2` and run a global find-and-replace on your import
+statements.
+
+```go
+// before
+import "github.com/filipowm/go-unifi/unifi"
+// after
+import "github.com/filipowm/go-unifi/v2/unifi"
+```
+
+Migration: `go get github.com/filipowm/go-unifi/v2` then
+`find . -name '*.go' | xargs sed -i 's|filipowm/go-unifi/unifi|filipowm/go-unifi/v2/unifi|g'`.
+
+**Provenance:** `go.mod`, module major-version bump convention.
 
 ---
 
@@ -167,6 +191,10 @@ if errors.As(err, &serverErr) { /* ... */ }
 
 It is **not** `ErrNotFound` (`errors.Is(err, ErrNotFound) == false`), so genuine empty-data 200s and real
 404s are unaffected. `CreateUser` retains its nested per-object meta check.
+
+> **Note:** Requests that pass `nil` as the response body (all generated deletes and fire-and-forget
+> `cmd/` operations) do not perform this check — the response body is not inspected when no response
+> struct is expected.
 
 **Provenance:** ARCH-10, Wave 2.
 
