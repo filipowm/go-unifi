@@ -103,6 +103,7 @@ func TestEmptyStringIntUnmarshal(t *testing.T) {
 		want    int
 		wantErr bool
 	}{
+		"null":                   {input: `null`, want: 0},
 		"empty string":           {input: `""`, want: 0},
 		"bare zero":              {input: `0`, want: 0},
 		"bare positive":          {input: `42`, want: 42},
