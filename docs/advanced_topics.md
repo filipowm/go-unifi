@@ -175,6 +175,40 @@ if err != nil {
 }
 ```
 
+### Interceptor ordering and response-body hazard
+
+Interceptors run in this order on every request:
+
+1. Built-in API-key auth interceptor.
+2. Built-in default-headers interceptor.
+3. User-supplied interceptors, in registration order (via `ClientConfig.Interceptors` or `AddInterceptor`).
+
+Response interceptors (`InterceptResponse`) run **before** error handling and response decoding.
+
+**Do not read or consume `resp.Body` inside `InterceptResponse`.** The body is decoded _after_ all
+interceptors run; if an interceptor drains the body, the caller receives a zero-valued response struct
+with no error — a silent, hard-to-debug failure.
+
+If you need to observe or modify the body (e.g. for logging, tracing, or body rewriting), use
+`ClientConfig.HttpRoundTripperProvider` instead. A `http.RoundTripper` wrapper can buffer and restore
+the body safely, before the SDK touches it:
+
+```go
+type bodyLoggingTransport struct{ wrapped http.RoundTripper }
+
+func (t bodyLoggingTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+    resp, err := t.wrapped.RoundTrip(req)
+    if err != nil || resp == nil {
+        return resp, err
+    }
+    body, _ := io.ReadAll(resp.Body)
+    resp.Body.Close()
+    log.Printf("response body: %s", body)
+    resp.Body = io.NopCloser(bytes.NewReader(body)) // restore for the SDK to decode
+    return resp, nil
+}
+```
+
 ## Debugging and Logging
 
 The SDK provides flexible logging capabilities through the `Logger` interface. You can either use the default logger or implement your own custom logger.

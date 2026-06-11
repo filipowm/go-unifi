@@ -6,6 +6,16 @@ import (
 
 // ClientInterceptor defines the interface for interceptors.
 // An interceptor can modify HTTP requests and responses.
+//
+// Execution order: built-in auth interceptor, built-in default-headers interceptor,
+// then user-supplied interceptors in registration order.
+// Response interceptors run before error handling and response decoding.
+//
+// IMPORTANT: Do not read or consume resp.Body in InterceptResponse — the body
+// is decoded after interceptors run; consuming it will cause silent decode failures
+// (the caller receives a zero-valued response with nil error).
+// For timing and tracing use ClientConfig.HttpRoundTripperProvider which wraps
+// the transport and can properly read and replace the response body.
 type ClientInterceptor interface {
 	InterceptRequest(req *http.Request) error
 	InterceptResponse(resp *http.Response) error
