@@ -5,6 +5,12 @@
 // (unifi -> official). *unifi.client satisfies Doer through its public
 // Get/Post/Put/Delete methods, and the capability check is injected as a Gate so
 // the version/auth gating policy stays in the parent package.
+//
+// Errors: operations return errors from the injected Doer. When using the default
+// unifi.Client transport, errors are *unifi.ServerError values — use
+// errors.Is(err, unifi.ErrNotFound) to detect 404s and
+// errors.As(err, &serverErr) for structured error details.
+// A custom Doer is responsible for its own error types; this package makes no guarantee.
 package official
 
 import (
