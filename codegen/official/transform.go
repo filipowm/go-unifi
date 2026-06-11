@@ -31,31 +31,31 @@ func Transform(doc map[string]any) ([]string, error) {
 		return nil, fmt.Errorf("downconverting OpenAPI document: %w", err)
 	}
 	if err := assertUpperSnakeMappings(schemas); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("asserting discriminator mappings: %w", err)
 	}
 	// Before dedupeEnums so inline enum values are still readable; dedup then
 	// carries the x-* tag through enumRef.
 	if err := injectValidationTags(schemas); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("injecting validation tags: %w", err)
 	}
 	if err := dedupeEnums(schemas); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("deduplicating enums: %w", err)
 	}
 	if err := fixDiamonds(schemas); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("fixing diamond inheritance: %w", err)
 	}
 	synthesizeOneOf(schemas)
 
 	renames, err := buildRenameMap(schemas)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("building rename map: %w", err)
 	}
 	applyRenames(doc, renames)
 	// applyRenames swaps in a fresh, renamed schemas map; re-fetch so the
 	// post-rename steps below mutate the live document, not the orphaned old map.
 	schemas, _ = schemasOf(doc)
 	if err := assertNoOneOfCycles(schemas); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("asserting no oneOf cycles: %w", err)
 	}
 
 	// Hand-written collisions: package official already declares these models, so
