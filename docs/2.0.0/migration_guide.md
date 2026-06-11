@@ -37,7 +37,7 @@ Mechanical checklist — tick each off in order:
 
 - [ ] Update the import path to `/v2`: `github.com/filipowm/go-unifi/v2/unifi`
 - [ ] Update `go get`: `go get github.com/filipowm/go-unifi/v2`
-- [ ] Replace `ClientConfig.User`/`Username`/`Password`/`RememberMe` with `APIKey:`
+- [ ] Replace `ClientConfig.User`/`Password`/`RememberMe` with `APIKey:`
 - [ ] Remove any calls to `.Login()`, `.LoginContext()`, `.Logout()`, `.LogoutContext()`
 - [ ] Rename `VerifySSL: false` → `SkipVerifySSL: true` (and double-check the logic flip — verify is now ON by default)
 - [ ] Update your Go toolchain to Go 1.26 or newer
@@ -53,7 +53,7 @@ Mechanical checklist — tick each off in order:
 ### API key replaces username/password
 
 **What changed.** Username/password authentication is gone. The `ClientConfig` fields
-`User`/`Username`/`Password`/`RememberMe` and the type `UserPassCredentials` no longer exist. The
+`User`/`Password`/`RememberMe` and the type `UserPassCredentials` no longer exist. The
 `Login`/`LoginContext`/`Logout`/`LogoutContext` methods are removed from the `Client` interface.
 Old-style (classic) controllers — which only ever supported user/pass — are also unsupported; constructing
 a client against one returns `ErrOldStyleUnsupported` immediately.
@@ -64,7 +64,7 @@ the path Ubiquiti is investing in. Removing the fallback keeps the auth surface 
 ```go
 // before
 cfg := &unifi.ClientConfig{
-    BaseURL:  "https://unifi.localdomain",
+    URL:      "https://unifi.localdomain", // the field was always URL:, never BaseURL:
     User:     "admin",
     Password: "secret",
 }
@@ -76,7 +76,7 @@ cfg := &unifi.ClientConfig{
 ```
 
 **Check your code.**
-- `grep -r 'User:\|Username:\|Password:\|RememberMe:\|UserPassCredentials' .`
+- `grep -r 'User:\|Password:\|RememberMe:\|UserPassCredentials' .`
 - `grep -r '\.Login(\|\.Logout(' .`
 
 API keys require UniFi Network 9.0.114 or newer on a UniFi OS (new-style) controller.
@@ -284,8 +284,8 @@ the same behaviour without the duplication.
 ```go
 // before
 c, err := unifi.NewBareClient(&unifi.ClientConfig{
-    BaseURL: "https://unifi.localdomain",
-    APIKey:  "your-api-key",
+    URL:    "https://unifi.localdomain", // the field was always URL:, never BaseURL:
+    APIKey: "your-api-key",
 })
 // after
 c, err := unifi.NewClient(&unifi.ClientConfig{

@@ -328,7 +328,7 @@ These affect only forks of the generator:
 
 ```go
 // before
-c, err := unifi.NewBareClient(&unifi.ClientConfig{BaseURL: "...", APIKey: "..."})
+c, err := unifi.NewBareClient(&unifi.ClientConfig{URL: "...", APIKey: "..."})
 // after
 c, err := unifi.NewClient(&unifi.ClientConfig{URL: "...", APIKey: "...", SkipSystemInfo: true})
 ```
