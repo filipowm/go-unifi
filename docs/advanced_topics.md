@@ -111,30 +111,64 @@ validation and error handling provided by the SDK.
 Interceptors provide hooks into the request/response cycle and can be used for logging, metrics collection, or modifying
 requests before they are sent. They implement the [ClientInterceptor](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#ClientInterceptor) interface.
 
-### Example: Advanced Logging Interceptor
+### Example: Timing transport via HttpRoundTripperProvider
+
+For timing and tracing, use `ClientConfig.HttpRoundTripperProvider` which wraps the transport and can
+properly observe request/response without consuming the response body:
 
 ```go
-// AdvancedLoggingInterceptor logs HTTP details and measures request time
-type AdvancedLoggingInterceptor struct {}
+import (
+    "log"
+    "net/http"
+    "time"
 
-func (a *AdvancedLoggingInterceptor) InterceptRequest(req *http.Request) error {
+    "github.com/filipowm/go-unifi/v2/unifi"
+)
+
+// timingTransport wraps an http.RoundTripper and logs request duration.
+type timingTransport struct {
+    wrapped http.RoundTripper
+}
+
+func (t timingTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+    start := time.Now()
+    resp, err := t.wrapped.RoundTrip(req)
+    log.Printf("request to %s took %s", req.URL.Path, time.Since(start))
+    return resp, err
+}
+
+c, err := unifi.NewClient(&unifi.ClientConfig{
+    URL:    "https://unifi.localdomain",
+    APIKey: "your-api-key",
+    HttpRoundTripperProvider: func() http.RoundTripper {
+        return timingTransport{wrapped: http.DefaultTransport}
+    },
+})
+if err != nil {
+    log.Fatalf("Error creating client: %v", err)
+}
+```
+
+### Example: Simple logging interceptor
+
+```go
+// LoggingInterceptor logs request method and URL.
+type LoggingInterceptor struct{}
+
+func (l *LoggingInterceptor) InterceptRequest(req *http.Request) error {
     log.Printf("[Request] %s %s", req.Method, req.URL)
-    req = req.WithContext(context.WithValue(req.Context(), "start", time.Now()))
     return nil
 }
 
-func (a *AdvancedLoggingInterceptor) InterceptResponse(resp *http.Response) error {
-    if start, ok := resp.Request.Context().Value("start").(time.Time); ok {
-        duration := time.Since(start)
-        log.Printf("[Response] %s %s in %v", resp.Request.Method, resp.Request.URL, duration)
-    }
+func (l *LoggingInterceptor) InterceptResponse(resp *http.Response) error {
+    log.Printf("[Response] %d %s", resp.StatusCode, resp.Request.URL)
     return nil
 }
 
 c, err := unifi.NewClient(&unifi.ClientConfig{
     URL:          "https://unifi.localdomain",
     APIKey:       "your-api-key",
-    Interceptors: []unifi.ClientInterceptor{&AdvancedLoggingInterceptor{}},
+    Interceptors: []unifi.ClientInterceptor{&LoggingInterceptor{}},
 })
 if err != nil {
     log.Fatalf("Error creating client: %v", err)
@@ -233,7 +267,7 @@ if err != nil {
     var validationErr *unifi.ValidationError
     if errors.As(err, &validationErr) {
         // Process detailed validation errors
-        for field, errMsg := range validationErr.Root {
+        for field, errMsg := range validationErr.Messages {
             log.Printf("Validation error on %s: %s", field, errMsg)
         }
     } else {
