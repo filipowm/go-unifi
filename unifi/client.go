@@ -61,7 +61,7 @@ Fields:
 	SkipSystemInfo: Skips the eager GetSystemInformation() round-trip in NewClient. Zero value (false) keeps fail-fast; true defers error surfacing to the first API call.
 */
 type ClientConfig struct {
-	URL    string `validate:"required,http_url"`
+	URL    string `validate:"required,https_url"`
 	APIKey string `validate:"required"`
 
 	Timeout time.Duration // How long to wait for replies, default: forever.
@@ -173,6 +173,12 @@ func parseBaseURL(base string) (*url.URL, error) {
 	baseURL, err := url.Parse(base)
 	if err != nil {
 		return nil, err
+	}
+	// Defence-in-depth: the validate tag already enforces https, but reject any
+	// non-https scheme here too so a caller who bypasses validation can't silently
+	// send an API key over plaintext.
+	if baseURL.Scheme != "https" {
+		return nil, fmt.Errorf("controller URL must use https://; got %q scheme", baseURL.Scheme)
 	}
 	// Check if base URL's path is "/api" (deprecated usage now in api_paths.go)
 	if strings.TrimSuffix(baseURL.Path, "/") == "/api" {

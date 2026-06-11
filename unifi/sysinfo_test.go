@@ -20,7 +20,7 @@ type sysInfoTestCase struct {
 }
 
 func setupSysInfoTestServer(tc sysInfoTestCase) *httptest.Server {
-	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "", "/":
 			w.WriteHeader(http.StatusOK)
@@ -68,10 +68,17 @@ func TestGetSystemInformation(t *testing.T) {
 			ts := setupSysInfoTestServer(tc)
 			defer ts.Close()
 
-			c, _ := NewClient(&ClientConfig{
-				URL:    ts.URL,
-				APIKey: "dummy",
+			// Use the TLS server's own client transport so the self-signed cert is trusted.
+			srvTransport := ts.Client().Transport
+			// Use SkipSystemInfo so NewClient's eager fetch does not mask the test-case
+			// assertion — the test itself drives GetSystemInformation.
+			c, err := NewClient(&ClientConfig{
+				URL:                      ts.URL,
+				APIKey:                   "dummy",
+				SkipSystemInfo:           true,
+				HttpRoundTripperProvider: func() http.RoundTripper { return srvTransport },
 			})
+			require.NoError(t, err)
 
 			sysInfo, err := c.GetSystemInformation()
 

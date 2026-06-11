@@ -100,22 +100,39 @@ func TestClientConfigValidationExecutedOnNewClient(t *testing.T) {
 	a.Nil(c)
 }
 
+// TestClientRejectsHTTPUrl verifies that NewClient rejects a plain http:// URL.
+// An API key must never travel over plaintext; only https:// is accepted.
+func TestClientRejectsHTTPUrl(t *testing.T) {
+	t.Parallel()
+	c, err := NewClient(&ClientConfig{
+		URL:    "http://192.0.2.1",
+		APIKey: "test-key",
+	})
+	require.Error(t, err)
+	require.Nil(t, c)
+	assert.Contains(t, err.Error(), "validation failed")
+}
+
 func TestParseBaseUrl(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
 
-	// Valid URL without /api in the path.
-	base, err := parseBaseURL("http://localhost")
+	// Valid HTTPS URL without /api in the path.
+	base, err := parseBaseURL("https://localhost")
 	require.NoError(t, err)
-	a.Equal("http", base.Scheme)
+	a.Equal("https", base.Scheme)
 	a.Empty(base.Path)
 
+	// http:// scheme is rejected (API key would be sent over plaintext).
+	_, err = parseBaseURL("http://localhost")
+	require.ErrorContains(t, err, "must use https://")
+
 	// URL with trailing slash /api/
-	_, err = parseBaseURL("http://localhost/api/")
+	_, err = parseBaseURL("https://localhost/api/")
 	require.ErrorContains(t, err, "expected a base URL without the `/api`")
 
 	// URL with /api in path (no trailing slash).
-	_, err = parseBaseURL("http://localhost/api")
+	_, err = parseBaseURL("https://localhost/api")
 	require.ErrorContains(t, err, "expected a base URL without the `/api`")
 }
 
@@ -355,10 +372,12 @@ func TestBareClientDoesNotMutateConfig(t *testing.T) {
 	// newClientFromConfig/buildInterceptors used to rewrite through the pointer.
 	// The config itself is the subject under test, so build the client directly
 	// from it rather than via the cs helper.
+	srvTransport := cs.srv.Client().Transport
 	config := &ClientConfig{
-		URL:      cs.srv.URL + "/",
-		APIKey:   "test-key",
-		APIStyle: APIStyleNew, // offline: skip the network probe
+		URL:                      cs.srv.URL + "/",
+		APIKey:                   "test-key",
+		APIStyle:                 APIStyleNew, // offline: skip the network probe
+		HttpRoundTripperProvider: func() http.RoundTripper { return srvTransport },
 	}
 	origURL := config.URL
 	origUserAgent := config.UserAgent

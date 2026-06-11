@@ -53,14 +53,14 @@ func TestUrlValidation(t *testing.T) {
 		errorString string
 	}{
 		{"", true, "required"},
-		{"http://test.url", false, ""},
-		{"http://test.url:3999", false, ""},
+		{"http://test.url", true, "https"},
+		{"http://test.url:3999", true, "https"},
 		{"https://test.url:3999", false, ""},
-		{"ftp://test.url", true, "http"},
-		{"test.url", true, "http"},
-		{"http://127.0.0.1", false, ""},
-		{"http://127.0.0.1:3999", false, ""},
-		{"test", true, "http"},
+		{"ftp://test.url", true, "https"},
+		{"test.url", true, "https"},
+		{"https://127.0.0.1", false, ""},
+		{"https://127.0.0.1:3999", false, ""},
+		{"test", true, "https"},
 	}
 
 	for _, tc := range testCases {

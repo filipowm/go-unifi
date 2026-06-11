@@ -11,15 +11,17 @@ import (
 
 func TestDetermineApiStyle_InvalidStatus(t *testing.T) {
 	t.Parallel()
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Return an unexpected status code.
 		w.WriteHeader(http.StatusInternalServerError)
 	}))
 	defer ts.Close()
 
+	srvTransport := ts.Client().Transport
 	_, err := NewClient(&ClientConfig{
-		URL:    ts.URL,
-		APIKey: "test",
+		URL:                      ts.URL,
+		APIKey:                   "test",
+		HttpRoundTripperProvider: func() http.RoundTripper { return srvTransport },
 	})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "expected 200 or 302 status code")
@@ -146,7 +148,7 @@ func TestApiStyleOverrideRejectsUnknown(t *testing.T) {
 // probe must NOT follow the redirect and must return an error.
 func TestDetermineApiStyle_OldStyleIsUnsupported(t *testing.T) {
 	t.Parallel()
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {
 			http.Redirect(w, r, "/manage", http.StatusFound)
 			return
@@ -155,9 +157,11 @@ func TestDetermineApiStyle_OldStyleIsUnsupported(t *testing.T) {
 	}))
 	defer ts.Close()
 
+	srvTransport := ts.Client().Transport
 	_, err := newClient(&ClientConfig{
-		URL:    ts.URL,
-		APIKey: "test-key",
+		URL:                      ts.URL,
+		APIKey:                   "test-key",
+		HttpRoundTripperProvider: func() http.RoundTripper { return srvTransport },
 	})
 	require.Error(t, err)
 	assert.ErrorIs(t, err, ErrOldStyleUnsupported, "callers must be able to match the sentinel with errors.Is")

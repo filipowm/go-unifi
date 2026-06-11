@@ -31,7 +31,7 @@ func TestConcurrentRequestsAPIKeyReplayNoRace(t *testing.T) {
 		total atomic.Int64
 	)
 
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {
 			w.WriteHeader(http.StatusOK)
 			return
@@ -45,9 +45,11 @@ func TestConcurrentRequestsAPIKeyReplayNoRace(t *testing.T) {
 	}))
 	defer ts.Close()
 
+	srvTransport := ts.Client().Transport
 	c, err := newClient(&ClientConfig{
-		URL:    ts.URL,
-		APIKey: wantKey,
+		URL:                      ts.URL,
+		APIKey:                   wantKey,
+		HttpRoundTripperProvider: func() http.RoundTripper { return srvTransport },
 	})
 	require.NoError(t, err)
 
