@@ -3,6 +3,8 @@ extends: 'default'
 
 ignore: |-
   /dist/
+  # generated dependency lockfiles, not hand-authored YAML
+  pnpm-lock.yaml
 
 rules:
   empty-values: 'enable'
