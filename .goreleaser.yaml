@@ -27,7 +27,6 @@ changelog:
       - "^fix\\(review\\)"
       - "^fix\\(skill\\)"
       - "^fix\\(tests\\)"
-      - "^feat\\(codegen\\)"
       - "Merge pull request"
       - "Merge branch"
       - "^WIP"
