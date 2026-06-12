@@ -54,7 +54,7 @@ func TestMethodName(t *testing.T) {
 		{"DNSPolicies", "GetDnsPolicy", "GET", "", "Get"},
 		{"DNSPolicies", "GetDnsPolicyPage", "GET", "DNSPolicy", "List"},
 		{"ACLs", "CreateAclRule", "POST", "", "CreateRule"},
-		{"ACLs", "GetAclRulePage", "GET", "ACLRuleObject", "ListRule"},
+		{"ACLs", "GetAclRulePage", "GET", "ACLRuleObject", "ListRules"},
 		{"ACLs", "GetAclRuleOrdering", "GET", "", "GetRuleOrdering"},
 		{"ACLs", "GetAclRule", "GET", "", "GetRule"},
 		{"TrafficMatchingLists", "CreateTrafficMatchingList", "POST", "", "Create"},
@@ -64,7 +64,7 @@ func TestMethodName(t *testing.T) {
 		{"WifiBroadcasts", "GetWifiBroadcastDetails", "GET", "", "Get"},
 		{"Hotspot", "GetVouchers", "GET", "HotspotVoucherDetails", "ListVouchers"}, // no stem token
 		{"Hotspot", "GetVoucher", "GET", "", "GetVoucher"},
-		{"Supporting", "GetDeviceTagPage", "GET", "DeviceTag", "ListDeviceTag"}, // "Device" kept: not Supporting's stem
+		{"Supporting", "GetDeviceTagPage", "GET", "DeviceTag", "ListDeviceTags"}, // "Device" kept: not Supporting's stem
 	}
 	for _, c := range cases {
 		op := operation{Group: c.group, Name: c.op, HTTPMethod: c.method, ItemType: c.item}
@@ -136,6 +136,36 @@ func TestBuildGroupsCollisionFailsLoud(t *testing.T) {
 	_, err := buildGroups(ops)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "duplicate method name")
+}
+
+// TestPluralise covers the pluralise helper's suffix rules.
+func TestPluralise(t *testing.T) {
+	t.Parallel()
+	cases := map[string]string{
+		// Already ends in "s" — unchanged.
+		"Policies":  "Policies",
+		"Vouchers":  "Vouchers",
+		"Zones":     "Zones",
+		"Countries": "Countries",
+		"Wans":      "Wans",
+		// Participial adjectives (-ed, -ing) — unchanged.
+		"Adopted":  "Adopted",
+		"Pending":  "Pending",
+		"Connected": "Connected",
+		// Nouns that need a plain "s".
+		"Rule":    "Rules",
+		"Tag":     "Tags",
+		"Server":  "Servers",
+		"Profile": "Profiles",
+		"Tunnel":  "Tunnels",
+		// Nouns ending in "y" not preceded by a vowel.
+		"Country": "Countries",
+		// Nouns ending in "ch" or "sh".
+		"Branch": "Branches",
+	}
+	for in, want := range cases {
+		assert.Equalf(t, want, pluralise(in), "pluralise(%q)", in)
+	}
 }
 
 // requireMethod asserts a group contains a method, optionally hand-written (op nil).
