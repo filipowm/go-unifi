@@ -99,6 +99,39 @@ func TestHandWrittenOperationsSkipped(t *testing.T) {
 	}
 }
 
+// TestOptionalQueryExprByType locks the per-type emit logic for optional query
+// params, including the float64 branch (no number-typed optional query param
+// exists in the committed spec yet, so this guards the generator directly).
+func TestOptionalQueryExprByType(t *testing.T) {
+	t.Parallel()
+	cases := map[string]struct {
+		goType string
+		want   string
+	}{
+		"bool":    {"bool", `if opts.Flag {`},
+		"int32":   {"int32", `path += "?flag=" + strconv.FormatInt(int64(opts.Flag), 10)`},
+		"int64":   {"int64", `path += "?flag=" + strconv.FormatInt(int64(opts.Flag), 10)`},
+		"float64": {"float64", `path += "?flag=" + strconv.FormatFloat(opts.Flag, 'f', -1, 64)`},
+		"string":  {"string", `path += "?flag=" + url.QueryEscape(opts.Flag)`},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			op := operation{
+				Name:              "DoThing",
+				SubPath:           "/things",
+				OptionalQueryArgs: []optionalParam{{Name: "flag", GoType: tc.goType}},
+			}
+			got := optionalQueryExpr(op)
+			assert.Contains(t, got, tc.want, "emitted body:\n%s", got)
+			// The string default must never swallow a numeric type.
+			if tc.goType != "string" {
+				assert.NotContains(t, got, `url.QueryEscape(opts.Flag)`)
+			}
+		})
+	}
+}
+
 // TestNonCRUDClassification spot-checks the headline non-CRUD shapes: list
 // pagination, PATCH, required-filter bulk delete, ordering query params,
 // references and statistics.
