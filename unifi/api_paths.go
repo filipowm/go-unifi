@@ -112,7 +112,7 @@ type APIStyle int
 const (
 	// APIStyleAuto auto-detects the API style by probing the controller (default).
 	APIStyleAuto APIStyle = iota
-	// APIStyleNew forces the new (UniFi OS / proxy) API style without probing.
+	// APIStyleNew forces the new (UniFi OS / proxy) API style without probing -- it's NOT Official API.
 	APIStyleNew
 	// APIStyleOld forces the legacy (classic controller) API style without probing.
 	APIStyleOld
