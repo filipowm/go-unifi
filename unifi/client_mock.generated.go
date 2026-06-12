@@ -134,12 +134,6 @@ var _ Client = &ClientMock{}
 //			CreateWLANGroupFunc: func(ctx context.Context, site string, w *WLANGroup) (*WLANGroup, error) {
 //				panic("mock out the CreateWLANGroup method")
 //			},
-//			DebugFunc: func(format string)  {
-//				panic("mock out the Debug method")
-//			},
-//			DebugfFunc: func(format string, args ...any)  {
-//				panic("mock out the Debugf method")
-//			},
 //			DeleteFunc: func(ctx context.Context, apiPath string, reqBody any, respBody any) error {
 //				panic("mock out the Delete method")
 //			},
@@ -256,12 +250,6 @@ var _ Client = &ClientMock{}
 //			},
 //			DoFunc: func(ctx context.Context, method string, apiPath string, reqBody any, respBody any) error {
 //				panic("mock out the Do method")
-//			},
-//			ErrorFunc: func(format string)  {
-//				panic("mock out the Error method")
-//			},
-//			ErrorfFunc: func(format string, args ...any)  {
-//				panic("mock out the Errorf method")
 //			},
 //			ForgetDeviceFunc: func(ctx context.Context, site string, mac string) error {
 //				panic("mock out the ForgetDevice method")
@@ -527,12 +515,6 @@ var _ Client = &ClientMock{}
 //			GetWLANGroupFunc: func(ctx context.Context, site string, id string) (*WLANGroup, error) {
 //				panic("mock out the GetWLANGroup method")
 //			},
-//			InfoFunc: func(format string)  {
-//				panic("mock out the Info method")
-//			},
-//			InfofFunc: func(format string, args ...any)  {
-//				panic("mock out the Infof method")
-//			},
 //			InternalFunc: func() InternalClient {
 //				panic("mock out the Internal method")
 //			},
@@ -656,6 +638,9 @@ var _ Client = &ClientMock{}
 //			ListWLANGroupFunc: func(ctx context.Context, site string) ([]WLANGroup, error) {
 //				panic("mock out the ListWLANGroup method")
 //			},
+//			LoggerFunc: func() Logger {
+//				panic("mock out the Logger method")
+//			},
 //			OfficialFunc: func() official.Client {
 //				panic("mock out the Official method")
 //			},
@@ -679,12 +664,6 @@ var _ Client = &ClientMock{}
 //			},
 //			SetSettingFunc: func(ctx context.Context, site string, key string, reqBody any) (any, error) {
 //				panic("mock out the SetSetting method")
-//			},
-//			TraceFunc: func(format string)  {
-//				panic("mock out the Trace method")
-//			},
-//			TracefFunc: func(format string, args ...any)  {
-//				panic("mock out the Tracef method")
 //			},
 //			UnblockUserByMACFunc: func(ctx context.Context, site string, mac string) error {
 //				panic("mock out the UnblockUserByMAC method")
@@ -935,12 +914,6 @@ var _ Client = &ClientMock{}
 //			VersionContextFunc: func(ctx context.Context) (string, error) {
 //				panic("mock out the VersionContext method")
 //			},
-//			WarnFunc: func(format string)  {
-//				panic("mock out the Warn method")
-//			},
-//			WarnfFunc: func(format string, args ...any)  {
-//				panic("mock out the Warnf method")
-//			},
 //		}
 //
 //		// use mockedClient in code that requires Client
@@ -1062,12 +1035,6 @@ type ClientMock struct {
 	// CreateWLANGroupFunc mocks the CreateWLANGroup method.
 	CreateWLANGroupFunc func(ctx context.Context, site string, w *WLANGroup) (*WLANGroup, error)
 
-	// DebugFunc mocks the Debug method.
-	DebugFunc func(format string)
-
-	// DebugfFunc mocks the Debugf method.
-	DebugfFunc func(format string, args ...any)
-
 	// DeleteFunc mocks the Delete method.
 	DeleteFunc func(ctx context.Context, apiPath string, reqBody any, respBody any) error
 
@@ -1184,12 +1151,6 @@ type ClientMock struct {
 
 	// DoFunc mocks the Do method.
 	DoFunc func(ctx context.Context, method string, apiPath string, reqBody any, respBody any) error
-
-	// ErrorFunc mocks the Error method.
-	ErrorFunc func(format string)
-
-	// ErrorfFunc mocks the Errorf method.
-	ErrorfFunc func(format string, args ...any)
 
 	// ForgetDeviceFunc mocks the ForgetDevice method.
 	ForgetDeviceFunc func(ctx context.Context, site string, mac string) error
@@ -1455,12 +1416,6 @@ type ClientMock struct {
 	// GetWLANGroupFunc mocks the GetWLANGroup method.
 	GetWLANGroupFunc func(ctx context.Context, site string, id string) (*WLANGroup, error)
 
-	// InfoFunc mocks the Info method.
-	InfoFunc func(format string)
-
-	// InfofFunc mocks the Infof method.
-	InfofFunc func(format string, args ...any)
-
 	// InternalFunc mocks the Internal method.
 	InternalFunc func() InternalClient
 
@@ -1584,6 +1539,9 @@ type ClientMock struct {
 	// ListWLANGroupFunc mocks the ListWLANGroup method.
 	ListWLANGroupFunc func(ctx context.Context, site string) ([]WLANGroup, error)
 
+	// LoggerFunc mocks the Logger method.
+	LoggerFunc func() Logger
+
 	// OfficialFunc mocks the Official method.
 	OfficialFunc func() official.Client
 
@@ -1607,12 +1565,6 @@ type ClientMock struct {
 
 	// SetSettingFunc mocks the SetSetting method.
 	SetSettingFunc func(ctx context.Context, site string, key string, reqBody any) (any, error)
-
-	// TraceFunc mocks the Trace method.
-	TraceFunc func(format string)
-
-	// TracefFunc mocks the Tracef method.
-	TracefFunc func(format string, args ...any)
 
 	// UnblockUserByMACFunc mocks the UnblockUserByMAC method.
 	UnblockUserByMACFunc func(ctx context.Context, site string, mac string) error
@@ -1862,12 +1814,6 @@ type ClientMock struct {
 
 	// VersionContextFunc mocks the VersionContext method.
 	VersionContextFunc func(ctx context.Context) (string, error)
-
-	// WarnFunc mocks the Warn method.
-	WarnFunc func(format string)
-
-	// WarnfFunc mocks the Warnf method.
-	WarnfFunc func(format string, args ...any)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -2204,18 +2150,6 @@ type ClientMock struct {
 			Site string
 			// W is the w argument value.
 			W *WLANGroup
-		}
-		// Debug holds details about calls to the Debug method.
-		Debug []struct {
-			// Format is the format argument value.
-			Format string
-		}
-		// Debugf holds details about calls to the Debugf method.
-		Debugf []struct {
-			// Format is the format argument value.
-			Format string
-			// Args is the args argument value.
-			Args []any
 		}
 		// Delete holds details about calls to the Delete method.
 		Delete []struct {
@@ -2571,18 +2505,6 @@ type ClientMock struct {
 			ReqBody any
 			// RespBody is the respBody argument value.
 			RespBody any
-		}
-		// Error holds details about calls to the Error method.
-		Error []struct {
-			// Format is the format argument value.
-			Format string
-		}
-		// Errorf holds details about calls to the Errorf method.
-		Errorf []struct {
-			// Format is the format argument value.
-			Format string
-			// Args is the args argument value.
-			Args []any
 		}
 		// ForgetDevice holds details about calls to the ForgetDevice method.
 		ForgetDevice []struct {
@@ -3278,18 +3200,6 @@ type ClientMock struct {
 			// ID is the id argument value.
 			ID string
 		}
-		// Info holds details about calls to the Info method.
-		Info []struct {
-			// Format is the format argument value.
-			Format string
-		}
-		// Infof holds details about calls to the Infof method.
-		Infof []struct {
-			// Format is the format argument value.
-			Format string
-			// Args is the args argument value.
-			Args []any
-		}
 		// Internal holds details about calls to the Internal method.
 		Internal []struct {
 		}
@@ -3575,6 +3485,9 @@ type ClientMock struct {
 			// Site is the site argument value.
 			Site string
 		}
+		// Logger holds details about calls to the Logger method.
+		Logger []struct {
+		}
 		// Official holds details about calls to the Official method.
 		Official []struct {
 		}
@@ -3652,18 +3565,6 @@ type ClientMock struct {
 			Key string
 			// ReqBody is the reqBody argument value.
 			ReqBody any
-		}
-		// Trace holds details about calls to the Trace method.
-		Trace []struct {
-			// Format is the format argument value.
-			Format string
-		}
-		// Tracef holds details about calls to the Tracef method.
-		Tracef []struct {
-			// Format is the format argument value.
-			Format string
-			// Args is the args argument value.
-			Args []any
 		}
 		// UnblockUserByMAC holds details about calls to the UnblockUserByMAC method.
 		UnblockUserByMAC []struct {
@@ -4404,18 +4305,6 @@ type ClientMock struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 		}
-		// Warn holds details about calls to the Warn method.
-		Warn []struct {
-			// Format is the format argument value.
-			Format string
-		}
-		// Warnf holds details about calls to the Warnf method.
-		Warnf []struct {
-			// Format is the format argument value.
-			Format string
-			// Args is the args argument value.
-			Args []any
-		}
 	}
 	lockAdoptDevice                      sync.RWMutex
 	lockBaseURL                          sync.RWMutex
@@ -4455,8 +4344,6 @@ type ClientMock struct {
 	lockCreateVirtualDevice              sync.RWMutex
 	lockCreateWLAN                       sync.RWMutex
 	lockCreateWLANGroup                  sync.RWMutex
-	lockDebug                            sync.RWMutex
-	lockDebugf                           sync.RWMutex
 	lockDelete                           sync.RWMutex
 	lockDeleteAPGroup                    sync.RWMutex
 	lockDeleteAccount                    sync.RWMutex
@@ -4496,8 +4383,6 @@ type ClientMock struct {
 	lockDeleteWLAN                       sync.RWMutex
 	lockDeleteWLANGroup                  sync.RWMutex
 	lockDo                               sync.RWMutex
-	lockError                            sync.RWMutex
-	lockErrorf                           sync.RWMutex
 	lockForgetDevice                     sync.RWMutex
 	lockGet                              sync.RWMutex
 	lockGetAPGroup                       sync.RWMutex
@@ -4586,8 +4471,6 @@ type ClientMock struct {
 	lockGetVirtualDevice                 sync.RWMutex
 	lockGetWLAN                          sync.RWMutex
 	lockGetWLANGroup                     sync.RWMutex
-	lockInfo                             sync.RWMutex
-	lockInfof                            sync.RWMutex
 	lockInternal                         sync.RWMutex
 	lockIsFeatureEnabled                 sync.RWMutex
 	lockKickUserByMAC                    sync.RWMutex
@@ -4629,6 +4512,7 @@ type ClientMock struct {
 	lockListVirtualDevice                sync.RWMutex
 	lockListWLAN                         sync.RWMutex
 	lockListWLANGroup                    sync.RWMutex
+	lockLogger                           sync.RWMutex
 	lockOfficial                         sync.RWMutex
 	lockOverrideUserFingerprint          sync.RWMutex
 	lockPatch                            sync.RWMutex
@@ -4637,8 +4521,6 @@ type ClientMock struct {
 	lockReorderFirewallPolicies          sync.RWMutex
 	lockReorderFirewallRules             sync.RWMutex
 	lockSetSetting                       sync.RWMutex
-	lockTrace                            sync.RWMutex
-	lockTracef                           sync.RWMutex
 	lockUnblockUserByMAC                 sync.RWMutex
 	lockUpdateAPGroup                    sync.RWMutex
 	lockUpdateAccount                    sync.RWMutex
@@ -4722,8 +4604,6 @@ type ClientMock struct {
 	lockUploadPortalFileFromReader       sync.RWMutex
 	lockVersion                          sync.RWMutex
 	lockVersionContext                   sync.RWMutex
-	lockWarn                             sync.RWMutex
-	lockWarnf                            sync.RWMutex
 }
 
 // AdoptDevice calls AdoptDeviceFunc.
@@ -6226,74 +6106,6 @@ func (mock *ClientMock) CreateWLANGroupCalls() []struct {
 	mock.lockCreateWLANGroup.RLock()
 	calls = mock.calls.CreateWLANGroup
 	mock.lockCreateWLANGroup.RUnlock()
-	return calls
-}
-
-// Debug calls DebugFunc.
-func (mock *ClientMock) Debug(format string) {
-	if mock.DebugFunc == nil {
-		panic("ClientMock.DebugFunc: method is nil but Client.Debug was just called")
-	}
-	callInfo := struct {
-		Format string
-	}{
-		Format: format,
-	}
-	mock.lockDebug.Lock()
-	mock.calls.Debug = append(mock.calls.Debug, callInfo)
-	mock.lockDebug.Unlock()
-	mock.DebugFunc(format)
-}
-
-// DebugCalls gets all the calls that were made to Debug.
-// Check the length with:
-//
-//	len(mockedClient.DebugCalls())
-func (mock *ClientMock) DebugCalls() []struct {
-	Format string
-} {
-	var calls []struct {
-		Format string
-	}
-	mock.lockDebug.RLock()
-	calls = mock.calls.Debug
-	mock.lockDebug.RUnlock()
-	return calls
-}
-
-// Debugf calls DebugfFunc.
-func (mock *ClientMock) Debugf(format string, args ...any) {
-	if mock.DebugfFunc == nil {
-		panic("ClientMock.DebugfFunc: method is nil but Client.Debugf was just called")
-	}
-	callInfo := struct {
-		Format string
-		Args   []any
-	}{
-		Format: format,
-		Args:   args,
-	}
-	mock.lockDebugf.Lock()
-	mock.calls.Debugf = append(mock.calls.Debugf, callInfo)
-	mock.lockDebugf.Unlock()
-	mock.DebugfFunc(format, args...)
-}
-
-// DebugfCalls gets all the calls that were made to Debugf.
-// Check the length with:
-//
-//	len(mockedClient.DebugfCalls())
-func (mock *ClientMock) DebugfCalls() []struct {
-	Format string
-	Args   []any
-} {
-	var calls []struct {
-		Format string
-		Args   []any
-	}
-	mock.lockDebugf.RLock()
-	calls = mock.calls.Debugf
-	mock.lockDebugf.RUnlock()
 	return calls
 }
 
@@ -7862,74 +7674,6 @@ func (mock *ClientMock) DoCalls() []struct {
 	mock.lockDo.RLock()
 	calls = mock.calls.Do
 	mock.lockDo.RUnlock()
-	return calls
-}
-
-// Error calls ErrorFunc.
-func (mock *ClientMock) Error(format string) {
-	if mock.ErrorFunc == nil {
-		panic("ClientMock.ErrorFunc: method is nil but Client.Error was just called")
-	}
-	callInfo := struct {
-		Format string
-	}{
-		Format: format,
-	}
-	mock.lockError.Lock()
-	mock.calls.Error = append(mock.calls.Error, callInfo)
-	mock.lockError.Unlock()
-	mock.ErrorFunc(format)
-}
-
-// ErrorCalls gets all the calls that were made to Error.
-// Check the length with:
-//
-//	len(mockedClient.ErrorCalls())
-func (mock *ClientMock) ErrorCalls() []struct {
-	Format string
-} {
-	var calls []struct {
-		Format string
-	}
-	mock.lockError.RLock()
-	calls = mock.calls.Error
-	mock.lockError.RUnlock()
-	return calls
-}
-
-// Errorf calls ErrorfFunc.
-func (mock *ClientMock) Errorf(format string, args ...any) {
-	if mock.ErrorfFunc == nil {
-		panic("ClientMock.ErrorfFunc: method is nil but Client.Errorf was just called")
-	}
-	callInfo := struct {
-		Format string
-		Args   []any
-	}{
-		Format: format,
-		Args:   args,
-	}
-	mock.lockErrorf.Lock()
-	mock.calls.Errorf = append(mock.calls.Errorf, callInfo)
-	mock.lockErrorf.Unlock()
-	mock.ErrorfFunc(format, args...)
-}
-
-// ErrorfCalls gets all the calls that were made to Errorf.
-// Check the length with:
-//
-//	len(mockedClient.ErrorfCalls())
-func (mock *ClientMock) ErrorfCalls() []struct {
-	Format string
-	Args   []any
-} {
-	var calls []struct {
-		Format string
-		Args   []any
-	}
-	mock.lockErrorf.RLock()
-	calls = mock.calls.Errorf
-	mock.lockErrorf.RUnlock()
 	return calls
 }
 
@@ -11256,74 +11000,6 @@ func (mock *ClientMock) GetWLANGroupCalls() []struct {
 	return calls
 }
 
-// Info calls InfoFunc.
-func (mock *ClientMock) Info(format string) {
-	if mock.InfoFunc == nil {
-		panic("ClientMock.InfoFunc: method is nil but Client.Info was just called")
-	}
-	callInfo := struct {
-		Format string
-	}{
-		Format: format,
-	}
-	mock.lockInfo.Lock()
-	mock.calls.Info = append(mock.calls.Info, callInfo)
-	mock.lockInfo.Unlock()
-	mock.InfoFunc(format)
-}
-
-// InfoCalls gets all the calls that were made to Info.
-// Check the length with:
-//
-//	len(mockedClient.InfoCalls())
-func (mock *ClientMock) InfoCalls() []struct {
-	Format string
-} {
-	var calls []struct {
-		Format string
-	}
-	mock.lockInfo.RLock()
-	calls = mock.calls.Info
-	mock.lockInfo.RUnlock()
-	return calls
-}
-
-// Infof calls InfofFunc.
-func (mock *ClientMock) Infof(format string, args ...any) {
-	if mock.InfofFunc == nil {
-		panic("ClientMock.InfofFunc: method is nil but Client.Infof was just called")
-	}
-	callInfo := struct {
-		Format string
-		Args   []any
-	}{
-		Format: format,
-		Args:   args,
-	}
-	mock.lockInfof.Lock()
-	mock.calls.Infof = append(mock.calls.Infof, callInfo)
-	mock.lockInfof.Unlock()
-	mock.InfofFunc(format, args...)
-}
-
-// InfofCalls gets all the calls that were made to Infof.
-// Check the length with:
-//
-//	len(mockedClient.InfofCalls())
-func (mock *ClientMock) InfofCalls() []struct {
-	Format string
-	Args   []any
-} {
-	var calls []struct {
-		Format string
-		Args   []any
-	}
-	mock.lockInfof.RLock()
-	calls = mock.calls.Infof
-	mock.lockInfof.RUnlock()
-	return calls
-}
-
 // Internal calls InternalFunc.
 func (mock *ClientMock) Internal() InternalClient {
 	if mock.InternalFunc == nil {
@@ -12795,6 +12471,33 @@ func (mock *ClientMock) ListWLANGroupCalls() []struct {
 	return calls
 }
 
+// Logger calls LoggerFunc.
+func (mock *ClientMock) Logger() Logger {
+	if mock.LoggerFunc == nil {
+		panic("ClientMock.LoggerFunc: method is nil but Client.Logger was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockLogger.Lock()
+	mock.calls.Logger = append(mock.calls.Logger, callInfo)
+	mock.lockLogger.Unlock()
+	return mock.LoggerFunc()
+}
+
+// LoggerCalls gets all the calls that were made to Logger.
+// Check the length with:
+//
+//	len(mockedClient.LoggerCalls())
+func (mock *ClientMock) LoggerCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockLogger.RLock()
+	calls = mock.calls.Logger
+	mock.lockLogger.RUnlock()
+	return calls
+}
+
 // Official calls OfficialFunc.
 func (mock *ClientMock) Official() official.Client {
 	if mock.OfficialFunc == nil {
@@ -13123,74 +12826,6 @@ func (mock *ClientMock) SetSettingCalls() []struct {
 	mock.lockSetSetting.RLock()
 	calls = mock.calls.SetSetting
 	mock.lockSetSetting.RUnlock()
-	return calls
-}
-
-// Trace calls TraceFunc.
-func (mock *ClientMock) Trace(format string) {
-	if mock.TraceFunc == nil {
-		panic("ClientMock.TraceFunc: method is nil but Client.Trace was just called")
-	}
-	callInfo := struct {
-		Format string
-	}{
-		Format: format,
-	}
-	mock.lockTrace.Lock()
-	mock.calls.Trace = append(mock.calls.Trace, callInfo)
-	mock.lockTrace.Unlock()
-	mock.TraceFunc(format)
-}
-
-// TraceCalls gets all the calls that were made to Trace.
-// Check the length with:
-//
-//	len(mockedClient.TraceCalls())
-func (mock *ClientMock) TraceCalls() []struct {
-	Format string
-} {
-	var calls []struct {
-		Format string
-	}
-	mock.lockTrace.RLock()
-	calls = mock.calls.Trace
-	mock.lockTrace.RUnlock()
-	return calls
-}
-
-// Tracef calls TracefFunc.
-func (mock *ClientMock) Tracef(format string, args ...any) {
-	if mock.TracefFunc == nil {
-		panic("ClientMock.TracefFunc: method is nil but Client.Tracef was just called")
-	}
-	callInfo := struct {
-		Format string
-		Args   []any
-	}{
-		Format: format,
-		Args:   args,
-	}
-	mock.lockTracef.Lock()
-	mock.calls.Tracef = append(mock.calls.Tracef, callInfo)
-	mock.lockTracef.Unlock()
-	mock.TracefFunc(format, args...)
-}
-
-// TracefCalls gets all the calls that were made to Tracef.
-// Check the length with:
-//
-//	len(mockedClient.TracefCalls())
-func (mock *ClientMock) TracefCalls() []struct {
-	Format string
-	Args   []any
-} {
-	var calls []struct {
-		Format string
-		Args   []any
-	}
-	mock.lockTracef.RLock()
-	calls = mock.calls.Tracef
-	mock.lockTracef.RUnlock()
 	return calls
 }
 
@@ -16494,73 +16129,5 @@ func (mock *ClientMock) VersionContextCalls() []struct {
 	mock.lockVersionContext.RLock()
 	calls = mock.calls.VersionContext
 	mock.lockVersionContext.RUnlock()
-	return calls
-}
-
-// Warn calls WarnFunc.
-func (mock *ClientMock) Warn(format string) {
-	if mock.WarnFunc == nil {
-		panic("ClientMock.WarnFunc: method is nil but Client.Warn was just called")
-	}
-	callInfo := struct {
-		Format string
-	}{
-		Format: format,
-	}
-	mock.lockWarn.Lock()
-	mock.calls.Warn = append(mock.calls.Warn, callInfo)
-	mock.lockWarn.Unlock()
-	mock.WarnFunc(format)
-}
-
-// WarnCalls gets all the calls that were made to Warn.
-// Check the length with:
-//
-//	len(mockedClient.WarnCalls())
-func (mock *ClientMock) WarnCalls() []struct {
-	Format string
-} {
-	var calls []struct {
-		Format string
-	}
-	mock.lockWarn.RLock()
-	calls = mock.calls.Warn
-	mock.lockWarn.RUnlock()
-	return calls
-}
-
-// Warnf calls WarnfFunc.
-func (mock *ClientMock) Warnf(format string, args ...any) {
-	if mock.WarnfFunc == nil {
-		panic("ClientMock.WarnfFunc: method is nil but Client.Warnf was just called")
-	}
-	callInfo := struct {
-		Format string
-		Args   []any
-	}{
-		Format: format,
-		Args:   args,
-	}
-	mock.lockWarnf.Lock()
-	mock.calls.Warnf = append(mock.calls.Warnf, callInfo)
-	mock.lockWarnf.Unlock()
-	mock.WarnfFunc(format, args...)
-}
-
-// WarnfCalls gets all the calls that were made to Warnf.
-// Check the length with:
-//
-//	len(mockedClient.WarnfCalls())
-func (mock *ClientMock) WarnfCalls() []struct {
-	Format string
-	Args   []any
-} {
-	var calls []struct {
-		Format string
-		Args   []any
-	}
-	mock.lockWarnf.RLock()
-	calls = mock.calls.Warnf
-	mock.lockWarnf.RUnlock()
 	return calls
 }

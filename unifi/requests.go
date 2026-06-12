@@ -46,12 +46,12 @@ func (c *client) buildRequestURL(apiPath string) (*url.URL, error) {
 // validateRequestBody validates the request body if validation is enabled.
 func (c *client) validateRequestBody(reqBody any) error {
 	if reqBody != nil && c.validationMode != DisableValidation {
-		c.Trace("Validating request body")
+		c.log.Trace("Validating request body")
 		if err := c.validator.Validate(reqBody); err != nil {
 			if c.validationMode == HardValidation {
 				return fmt.Errorf("failed validating request body: %w", err)
 			} else {
-				c.Warnf("failed validating request body: %s", err)
+				c.log.Warnf("failed validating request body: %s", err)
 			}
 		}
 	}
@@ -70,7 +70,7 @@ func (c *client) newRequestContext() (context.Context, context.CancelFunc) {
 // applyRequestInterceptors runs the request interceptors against the given request,
 // returning the first error encountered.
 func (c *client) applyRequestInterceptors(req *http.Request) error {
-	c.Trace("Executing request interceptors")
+	c.log.Trace("Executing request interceptors")
 	for _, interceptor := range c.interceptors {
 		if err := interceptor.InterceptRequest(req); err != nil {
 			return err
@@ -92,13 +92,13 @@ func overrideHeaders(req *http.Request, headers http.Header) {
 // handleResponse runs the response interceptors, checks for errors, and decodes the response
 // body into respBody if one is expected. Returns an error if any step fails.
 func (c *client) handleResponse(resp *http.Response, respBody any, method, apiPath string) error {
-	c.Trace("Executing response interceptors")
+	c.log.Trace("Executing response interceptors")
 	for _, interceptor := range c.interceptors {
 		if err := interceptor.InterceptResponse(resp); err != nil {
 			return err
 		}
 	}
-	c.Trace("Checking for errors in response")
+	c.log.Trace("Checking for errors in response")
 	if err := c.errorHandler.HandleError(resp); err != nil {
 		return err
 	}
@@ -108,7 +108,7 @@ func (c *client) handleResponse(resp *http.Response, respBody any, method, apiPa
 	// ContentLength==0 (or -1 for chunked), which would silently leave respBody
 	// zero-valued. Decide on the body itself instead.
 	if respBody == nil {
-		c.Trace("No response body to decode")
+		c.log.Trace("No response body to decode")
 		return nil
 	}
 	return c.decodeResponseBody(resp, respBody, method, apiPath)
@@ -135,16 +135,16 @@ func (c *client) decodeResponseBody(resp *http.Response, respBody any, method, a
 	}
 
 	if metaErr := metaEnvelopeError(resp, body); metaErr != nil {
-		c.Trace("Response carries a meta rc:error envelope")
+		c.log.Trace("Response carries a meta rc:error envelope")
 		return metaErr
 	}
 
-	c.Trace("Decoding response body")
+	c.log.Trace("Decoding response body")
 	// Decode from the buffered bytes. A genuinely empty body yields io.EOF, which
 	// we treat as "no content": leave respBody untouched and return nil.
 	if err := json.NewDecoder(bytes.NewReader(body)).Decode(respBody); err != nil {
 		if errors.Is(err, io.EOF) {
-			c.Trace("Empty response body, nothing to decode")
+			c.log.Trace("Empty response body, nothing to decode")
 			return nil
 		}
 		return fmt.Errorf("unable to decode body: %s %s %w", method, apiPath, err)
@@ -204,7 +204,7 @@ func (c *client) executeRequest(ctx context.Context, method, apiPath string, bod
 	if err != nil {
 		return fmt.Errorf("unable to create request URL: %w", err)
 	}
-	c.Debugf("Executing request: %s %s", method, url.String())
+	c.log.Debugf("Executing request: %s %s", method, url.String())
 
 	req, err := http.NewRequestWithContext(ctx, method, url.String(), body)
 	if err != nil {
@@ -237,7 +237,7 @@ func (c *client) executeRequest(ctx context.Context, method, apiPath string, bod
 // The file is uploaded as multipart/form-data.
 // It returns the response body and an error if the operation fails.
 func (c *client) UploadFile(ctx context.Context, apiPath, filePath, fieldName string, respBody any) error {
-	c.Tracef("Uploading file: %s to %s", filePath, apiPath)
+	c.log.Tracef("Uploading file: %s to %s", filePath, apiPath)
 
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -324,7 +324,7 @@ func buildMultipartUpload(reader io.Reader, filename, fieldName string) (*bytes.
 // It takes a context, API path, reader, filename, field name, and additional form fields.
 // The file is uploaded as multipart/form-data.
 func (c *client) UploadFileFromReader(ctx context.Context, apiPath string, reader io.Reader, filename, fieldName string, respBody any) error {
-	c.Tracef("Uploading file: %s to %s", filename, apiPath)
+	c.log.Tracef("Uploading file: %s to %s", filename, apiPath)
 
 	body, contentType, err := buildMultipartUpload(reader, filename, fieldName)
 	if err != nil {
@@ -347,7 +347,7 @@ func (c *client) UploadFileFromReader(ctx context.Context, apiPath string, reade
 // or absolute URL is used as-is. Use NewStyleAPI.ApiV2Path for the v2 API tree (firewall zones,
 // zone policies, AP groups, etc.).
 func (c *client) Do(ctx context.Context, method, apiPath string, reqBody any, respBody any) error {
-	c.Tracef("Performing request: %s %s", method, apiPath)
+	c.log.Tracef("Performing request: %s %s", method, apiPath)
 
 	if err := c.validateRequestBody(reqBody); err != nil {
 		return err

@@ -128,7 +128,7 @@ func (c *client) GetSystemInformation() (*SysInfo, error) {
 // The passed ctx is threaded through to the underlying HTTP calls so a cancelled or expired
 // context aborts the request.
 func (c *client) GetSystemInformationContext(ctx context.Context) (*SysInfo, error) {
-	c.Trace("Reading system information")
+	c.log.Trace("Reading system information")
 
 	var resultingError error
 	info, err := c.GetSystemInfo(ctx, "default")

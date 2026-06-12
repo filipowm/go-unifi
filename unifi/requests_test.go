@@ -20,7 +20,7 @@ import (
 // extracted request helpers, with a noop logger and the default error handler.
 func newRequestHelperClient() *client {
 	return &client{
-		Logger:       &noopLogger{},
+		log:          &noopLogger{},
 		errorHandler: &DefaultResponseErrorHandler{},
 	}
 }

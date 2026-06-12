@@ -26,7 +26,7 @@ Never edit `*.generated.go`. These rules apply to hand-written `.go` files.
 - Surface API failures as `ServerError` (status, method, URL, code, validation details). Wrap with `%w` when adding context.
 
 ## Logging
-- The client embeds a `Logger`; use `c.Debugf(...)`, `c.Trace(...)`, etc. Don't import logrus directly in resource code.
+- The client does NOT embed `Logger`; it holds a named `log Logger` field and exposes a `Logger() Logger` accessor on the interface. Internally use `c.log.Debugf(...)`, `c.log.Trace(...)`; externally use `c.Logger().Debugf(...)`. The default logger is `log/slog`-backed — don't import logrus.
 
 ## JSON edge cases
 - For fields that may be empty-string-or-int / string-or-number / enabled-disabled, use the helpers in `json.go` (`emptyStringInt`, `numberOrString`,

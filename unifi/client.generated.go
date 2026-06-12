@@ -1168,7 +1168,10 @@ type InternalClient interface {
 // resource API), adds transport/lifecycle methods, and exposes the Internal()
 // and Official() API-surface accessors.
 type Client interface {
-	Logger
+
+	// Logger returns the client's logger. It is decoupled from the client
+	// interface so consumers and mocks do not have to satisfy the logging surface.
+	Logger() Logger
 
 	InternalClient
 

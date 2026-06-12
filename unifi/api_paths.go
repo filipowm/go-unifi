@@ -145,7 +145,7 @@ func apiStyleFromStatus(status int) (*APIPaths, error) {
 // override) so it shares the same transport, timeout and cookie jar as every
 // other request, rather than a throwaway *http.Client.
 func (c *client) determineApiStyle() error {
-	c.Debug("Determining API style")
+	c.log.Debug("Determining API style")
 	ctx, cancel := c.newRequestContext()
 	defer cancel()
 
@@ -175,9 +175,9 @@ func (c *client) determineApiStyle() error {
 		return err
 	}
 	if paths == &NewStyleAPI {
-		c.Debug("Using new style API")
+		c.log.Debug("Using new style API")
 	} else {
-		c.Debug("Using old style API")
+		c.log.Debug("Using old style API")
 	}
 	c.apiPaths = paths
 	return nil
