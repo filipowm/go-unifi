@@ -17,8 +17,8 @@ export default function HomePage() {
       <Image
         src="/logo.png"
         alt="go-unifi logo"
-        width={112}
-        height={112}
+        width={150}
+        height={150}
         priority
         className="mb-6 drop-shadow-[0_8px_30px_rgba(0,173,216,0.35)]"
       />
@@ -41,7 +41,7 @@ export default function HomePage() {
           Get started
         </Link>
         <Link
-          href="/docs/reference/official-api/api"
+          href="/docs/reference"
           className="rounded-lg border px-5 py-2.5 text-sm font-medium transition-colors hover:bg-fd-accent"
         >
           API reference
