@@ -135,7 +135,7 @@ The client exposes two API surfaces:
 ```go
 sites, err := c.Internal().ListSites(ctx)                     // legacy API (same as c.ListSites(ctx))
 info, err := c.Official().Info().Get(ctx)                     // official OpenAPI
-id, err := c.Official().Sites().ResolveID(ctx, "default")     // map a legacy site name to its official UUID
+id, err := c.Official().Sites().ResolveID(ctx, "default")     // map a legacy site name to its official UUID (returns uuid.UUID)
 
 page, err := c.Official().Networks().ListPage(ctx, id, nil)   // ONE bounded page (the safe default)
 page, err = c.Official().Networks().ListPage(ctx, id, &official.ListOptions{Limit: 50, Filter: "name.eq('lan')"}) // bounded + filtered
@@ -158,8 +158,9 @@ default to the Official client.** The Official client is gated: operations retur
 `unifi.ErrOfficialAPIUnavailable` on a classic/old-style controller, non-API-key auth, or a controller
 below `10.1.78`, and `unifi.ErrOfficialAPIDisabled` when `ClientConfig.DisableOfficialAPI` is set. Match
 either with `errors.Is`. Site identifiers differ between the surfaces — the Internal API uses the site
-**name** while the Official API uses a **UUID** — so `Official().Sites().ResolveID` maps the familiar name
-to the UUID for you.
+**name** while the Official API uses a **`uuid.UUID`** (from `github.com/google/uuid`) — so
+`Official().Sites().ResolveID` maps the familiar name to the UUID for you. If you already have a
+UUID string, use `uuid.Parse("…")` to convert it.
 
 ### Low-level API calls
 

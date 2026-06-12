@@ -140,12 +140,18 @@ use it without touching the Internal API.
 
 ```go
 // Official API — new in 2.0.0; requires controller ≥ 10.1.78 with API-key auth
+import "github.com/google/uuid" // resource-group methods accept uuid.UUID for siteId
+
 info, err := c.Official().Info().Get(ctx)
-id, err := c.Official().Sites().ResolveID(ctx, "default") // legacy name → UUID
+id, err := c.Official().Sites().ResolveID(ctx, "default") // returns uuid.UUID for the site
 
 page, err := c.Official().Networks().ListPage(ctx, id, nil)
 pol, err := c.Official().Firewall().CreatePolicy(ctx, id, body)
 ```
+
+All resource-group methods (Networks, Firewall, Devices, …) accept `siteId uuid.UUID` as their first
+argument. `Sites().ResolveID` maps a familiar site name (`"default"`, `"lab"`, …) to the required
+UUID. If you already have a UUID string, use `uuid.Parse("xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx")`.
 
 Operations on `c.Official()` return `ErrOfficialAPIUnavailable` if the controller is below `10.1.78`,
 is old-style, or uses non-API-key auth. Set `DisableOfficialAPI: true` in `ClientConfig` to opt out
