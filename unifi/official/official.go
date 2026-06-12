@@ -12,12 +12,18 @@
 // errors.As(err, &serverErr) for structured error details.
 // A custom Doer is responsible for its own error types; this package makes no guarantee.
 //
-// Site IDs: all resource-group methods accept a siteId parameter that must be the
-// Official-API site UUID (not the legacy site name). Use Sites().ResolveID(ctx, name)
-// to obtain the UUID from a legacy name:
+// Site IDs: all resource-group methods accept a siteId parameter of type
+// [uuid.UUID] (from github.com/google/uuid) — not the legacy site name string.
+// Use Sites().ResolveID to obtain the UUID from a familiar name:
 //
-//	id, err := c.Official().Sites().ResolveID(ctx, "default")
+//	import "github.com/google/uuid"
+//
+//	id, err := c.Official().Sites().ResolveID(ctx, "default") // returns uuid.UUID
 //	networks, err := c.Official().Networks().ListPage(ctx, id, nil)
+//
+// If you already have a UUID string, parse it with [uuid.Parse] or [uuid.MustParse]:
+//
+//	id, err := uuid.Parse("xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx")
 package official
 
 import (
