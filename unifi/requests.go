@@ -262,8 +262,8 @@ func createFormFile(w *multipart.Writer, mimeType, fieldname, filename string) (
 }
 
 // maxUploadSize caps how much content buildMultipartUpload buffers from the
-// caller's reader, preventing OOM on unexpectedly large uploads (512 MiB).
-const maxUploadSize = 512 * 1024 * 1024 // 512 MiB
+// caller's reader, preventing OOM on unexpectedly large uploads (10 MiB).
+const maxUploadSize = 10 * 1024 * 1024 // 10 MiB
 
 // buildMultipartUpload assembles a multipart/form-data body for a file upload from
 // reader. It is the pure (no filesystem, no network) heart of UploadFileFromReader,
