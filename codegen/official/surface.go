@@ -551,13 +551,16 @@ func optionalQueryExpr(op operation) string {
 			b.WriteString(fmt.Sprintf("\t\t\tpath += %q\n", actualSep+o.Name+"=true"))
 			b.WriteString("\t\t}\n")
 		case "int32", "int64":
-			intType := "int"
-			if o.GoType == "int64" {
-				intType = "int64"
-			}
+			// strconv.FormatInt takes an int64; int32 widens losslessly so a
+			// single cast covers both widths.
 			b.WriteString(fmt.Sprintf("\t\tif opts.%s != 0 {\n", upperFirst(o.Name)))
-			b.WriteString(fmt.Sprintf("\t\t\tpath += %q + strconv.Format%s(%s(opts.%s), 10)\n",
-				actualSep+o.Name+"=", upperFirst(intType), o.GoType, upperFirst(o.Name)))
+			b.WriteString(fmt.Sprintf("\t\t\tpath += %q + strconv.FormatInt(int64(opts.%s), 10)\n",
+				actualSep+o.Name+"=", upperFirst(o.Name)))
+			b.WriteString("\t\t}\n")
+		case "float64":
+			b.WriteString(fmt.Sprintf("\t\tif opts.%s != 0 {\n", upperFirst(o.Name)))
+			b.WriteString(fmt.Sprintf("\t\t\tpath += %q + strconv.FormatFloat(opts.%s, 'f', -1, 64)\n",
+				actualSep+o.Name+"=", upperFirst(o.Name)))
 			b.WriteString("\t\t}\n")
 		default:
 			b.WriteString(fmt.Sprintf("\t\tif opts.%s != \"\" {\n", upperFirst(o.Name)))
