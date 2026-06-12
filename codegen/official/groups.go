@@ -101,6 +101,8 @@ var listEnvelope = map[string]bool{"Page": true, "Overview": true, "List": true,
 // becomes List<Qualifier> (Get->List, trailing envelope words dropped) and a
 // single-item GET drops a trailing Details qualifier (Get<Qualifier>). Non-read
 // verbs (Create/Update/Delete/Patch/Execute/...) pass through untouched.
+// For list operations with a resource-qualifier last token, the last token is
+// pluralised so List<Resource> reads naturally (ListRules, ListDeviceTags, …).
 func normalizeReadVerb(tokens []string, op operation) []string {
 	switch {
 	case op.IsList():
@@ -110,10 +112,57 @@ func normalizeReadVerb(tokens []string, op operation) []string {
 		for len(tokens) > 1 && listEnvelope[tokens[len(tokens)-1]] {
 			tokens = tokens[:len(tokens)-1]
 		}
+		// Pluralise the last token (the resource qualifier) when there is one:
+		// the verb token ("List") is not pluralised; only a trailing noun is.
+		if len(tokens) > 1 {
+			tokens[len(tokens)-1] = pluralise(tokens[len(tokens)-1])
+		}
 	case op.HTTPMethod == "GET" && len(tokens) > 1 && tokens[len(tokens)-1] == "Details":
 		tokens = tokens[:len(tokens)-1]
 	}
 	return tokens
+}
+
+// vowels is the set of English vowels used by pluralise to detect y-preceded-by-vowel.
+const vowels = "aeiouAEIOU"
+
+// pluralise returns the English plural of a PascalCase noun token, using simple suffix
+// rules. It returns the token unchanged when it already ends in "s" or looks like a
+// participial adjective (-ed, -ing), since those are used as noun-modifiers and the
+// stem-strip already conveys the resource without an "s" suffix:
+//
+//   - already ends in "s": return unchanged (Policies, Vouchers, Zones — already plural)
+//   - ends in "-ed" or "-ing": return unchanged (Adopted, Pending — participial adjectives)
+//   - ends in "ch" or "sh": add "es" (Branch → Branches)
+//   - ends in "x" or "z": add "es"
+//   - ends in "y" not preceded by a vowel: replace "y" with "ies" (Country → Countries)
+//   - otherwise: add "s" (Rule → Rules, Tag → Tags, Server → Servers, Profile → Profiles)
+func pluralise(s string) string {
+	if s == "" {
+		return s
+	}
+	// Already ends in "s" — treat as already plural (Policies, Zones, Vouchers, …).
+	if s[len(s)-1] == 's' {
+		return s
+	}
+	// Participial adjectives (-ed, -ing) are used as noun-modifiers in method names
+	// (ListAdopted, ListPending) and must not gain a spurious "s" suffix.
+	if strings.HasSuffix(s, "ed") || strings.HasSuffix(s, "ing") {
+		return s
+	}
+	// Ends in "ch" or "sh" → add "es"
+	if strings.HasSuffix(s, "ch") || strings.HasSuffix(s, "sh") {
+		return s + "es"
+	}
+	// Ends in "x" or "z" → add "es"
+	if s[len(s)-1] == 'x' || s[len(s)-1] == 'z' {
+		return s + "es"
+	}
+	// Ends in "y" not preceded by a vowel → replace "y" with "ies"
+	if s[len(s)-1] == 'y' && len(s) > 1 && !strings.ContainsRune(vowels, rune(s[len(s)-2])) {
+		return s[:len(s)-1] + "ies"
+	}
+	return s + "s"
 }
 
 // matchesStem reports whether a token matches any stem word, comparing
