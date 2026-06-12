@@ -7,9 +7,13 @@ import { join } from 'node:path';
 const SPEC_DIR = join(process.cwd(), '..', 'codegen', 'openapi');
 
 export function resolveSpecFile(): string {
+  // Natural (numeric) sort so the highest version wins: a plain lexicographic
+  // sort would rank integration-9.x after integration-10.x, and 10.1.9 after
+  // 10.1.78 — silently selecting an older spec.
+  const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
   const file = readdirSync(SPEC_DIR)
     .filter((f) => /^integration-.*\.json$/.test(f))
-    .sort()
+    .sort((a, b) => collator.compare(a, b))
     .at(-1);
   if (!file) throw new Error(`No integration-*.json OpenAPI spec found in ${SPEC_DIR}`);
   return join(SPEC_DIR, file);
