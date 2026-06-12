@@ -538,7 +538,7 @@ func optionalQueryExpr(op operation) string {
 	if len(op.QueryArgs) > 0 {
 		sep = "&"
 	}
-	b.WriteString("\tvar path = " + pathExpr(op) + "\n")
+	b.WriteString("\tpath := " + pathExpr(op) + "\n")
 	b.WriteString("\tif opts != nil {\n")
 	for i, o := range op.OptionalQueryArgs {
 		actualSep := sep

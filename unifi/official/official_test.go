@@ -2,6 +2,7 @@ package official //nolint:testpackage
 
 import (
 	"context"
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -70,12 +71,10 @@ var (
 // testSiteOverview creates a SiteOverview with a sequential UUID ID derived from
 // the index, so pagination tests can build large fixture sets deterministically.
 func testSiteOverview(i int) SiteOverview {
-	// Encode the index in the last 4 bytes of a zero UUID.
+	// Encode the index in the last 4 bytes of a zero UUID using binary.BigEndian
+	// to avoid integer-overflow lint noise from manual bit-shifts.
 	var id uuid.UUID
-	id[12] = byte(i >> 24)
-	id[13] = byte(i >> 16)
-	id[14] = byte(i >> 8)
-	id[15] = byte(i)
+	binary.BigEndian.PutUint32(id[12:], uint32(i)) //nolint:gosec // test index fits uint32
 	return SiteOverview{ID: id, InternalReference: fmt.Sprintf("site%d", i), Name: fmt.Sprintf("Site %d", i)}
 }
 
