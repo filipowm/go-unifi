@@ -6,19 +6,20 @@ import (
 	"context"
 	"fmt"
 	"iter"
-	"net/url"
+
+	"github.com/google/uuid"
 )
 
 // ClientsClient is the Clients resource group of the Official UniFi OpenAPI surface.
 type ClientsClient interface {
 	// ExecuteConnectedAction maps to POST /v1/sites/%s/clients/%s/actions on the Official API.
-	ExecuteConnectedAction(ctx context.Context, siteId string, clientId string, body ClientActionRequest) (*ClientActionResponse, error)
+	ExecuteConnectedAction(ctx context.Context, siteId uuid.UUID, clientId uuid.UUID, body ClientActionRequest) (*ClientActionResponse, error)
 	// GetConnected maps to GET /v1/sites/%s/clients/%s on the Official API.
-	GetConnected(ctx context.Context, siteId string, clientId string) (*ClientDetails, error)
+	GetConnected(ctx context.Context, siteId uuid.UUID, clientId uuid.UUID) (*ClientDetails, error)
 	// ListConnectedAll lazily drains every item from GET /v1/sites/%s/clients, paging on demand; pass "" filter to drain unfiltered; range it and break to stop early.
-	ListConnectedAll(ctx context.Context, siteId string, filter string) iter.Seq2[ClientOverview, error]
+	ListConnectedAll(ctx context.Context, siteId uuid.UUID, filter string) iter.Seq2[ClientOverview, error]
 	// ListConnectedPage returns one page from GET /v1/sites/%s/clients; nil opts fetches the first page at the default size.
-	ListConnectedPage(ctx context.Context, siteId string, opts *ListOptions) (Page[ClientOverview], error)
+	ListConnectedPage(ctx context.Context, siteId uuid.UUID, opts *ListOptions) (Page[ClientOverview], error)
 }
 
 // clientsClient wraps the shared apiClient so transport, gate and site cache stay single-sourced.
@@ -32,40 +33,40 @@ func (c *apiClient) Clients() ClientsClient {
 }
 
 // ExecuteConnectedAction maps to POST /v1/sites/%s/clients/%s/actions on the Official API.
-func (c clientsClient) ExecuteConnectedAction(ctx context.Context, siteId string, clientId string, body ClientActionRequest) (*ClientActionResponse, error) {
+func (c clientsClient) ExecuteConnectedAction(ctx context.Context, siteId uuid.UUID, clientId uuid.UUID, body ClientActionRequest) (*ClientActionResponse, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
 	}
 	var out ClientActionResponse
-	if err := c.doer.Post(ctx, c.path(fmt.Sprintf("/sites/%s/clients/%s/actions", url.PathEscape(siteId), url.PathEscape(clientId))), body, &out); err != nil {
+	if err := c.doer.Post(ctx, c.path(fmt.Sprintf("/sites/%s/clients/%s/actions", siteId.String(), clientId.String())), body, &out); err != nil {
 		return nil, fmt.Errorf("failed ExecuteConnectedAction: %w", err)
 	}
 	return &out, nil
 }
 
 // GetConnected maps to GET /v1/sites/%s/clients/%s on the Official API.
-func (c clientsClient) GetConnected(ctx context.Context, siteId string, clientId string) (*ClientDetails, error) {
+func (c clientsClient) GetConnected(ctx context.Context, siteId uuid.UUID, clientId uuid.UUID) (*ClientDetails, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
 	}
 	var out ClientDetails
-	if err := c.doer.Get(ctx, c.path(fmt.Sprintf("/sites/%s/clients/%s", url.PathEscape(siteId), url.PathEscape(clientId))), nil, &out); err != nil {
+	if err := c.doer.Get(ctx, c.path(fmt.Sprintf("/sites/%s/clients/%s", siteId.String(), clientId.String())), nil, &out); err != nil {
 		return nil, fmt.Errorf("failed GetConnected: %w", err)
 	}
 	return &out, nil
 }
 
 // ListConnectedAll lazily drains every item from GET /v1/sites/%s/clients, paging on demand; pass "" filter to drain unfiltered; range it and break to stop early.
-func (c clientsClient) ListConnectedAll(ctx context.Context, siteId string, filter string) iter.Seq2[ClientOverview, error] {
-	return listSeq[ClientOverview](ctx, c.apiClient, c.path(fmt.Sprintf("/sites/%s/clients", url.PathEscape(siteId))), filter)
+func (c clientsClient) ListConnectedAll(ctx context.Context, siteId uuid.UUID, filter string) iter.Seq2[ClientOverview, error] {
+	return listSeq[ClientOverview](ctx, c.apiClient, c.path(fmt.Sprintf("/sites/%s/clients", siteId.String())), filter)
 }
 
 // ListConnectedPage returns one page from GET /v1/sites/%s/clients; nil opts fetches the first page at the default size.
-func (c clientsClient) ListConnectedPage(ctx context.Context, siteId string, opts *ListOptions) (Page[ClientOverview], error) {
+func (c clientsClient) ListConnectedPage(ctx context.Context, siteId uuid.UUID, opts *ListOptions) (Page[ClientOverview], error) {
 	if err := c.check(ctx); err != nil {
 		return Page[ClientOverview]{}, err
 	}
-	p, err := listPage[ClientOverview](ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/clients", url.PathEscape(siteId))), opts)
+	p, err := listPage[ClientOverview](ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/clients", siteId.String())), opts)
 	if err != nil {
 		return Page[ClientOverview]{}, fmt.Errorf("failed ListConnectedPage: %w", err)
 	}
@@ -75,26 +76,26 @@ func (c clientsClient) ListConnectedPage(ctx context.Context, siteId string, opt
 // ClientsClientMock is a func-field test double implementing ClientsClient. A nil field
 // panics on call, surfacing an un-stubbed method in tests.
 type ClientsClientMock struct {
-	ExecuteConnectedActionFunc func(context.Context, string, string, ClientActionRequest) (*ClientActionResponse, error)
-	GetConnectedFunc           func(context.Context, string, string) (*ClientDetails, error)
-	ListConnectedAllFunc       func(context.Context, string, string) iter.Seq2[ClientOverview, error]
-	ListConnectedPageFunc      func(context.Context, string, *ListOptions) (Page[ClientOverview], error)
+	ExecuteConnectedActionFunc func(context.Context, uuid.UUID, uuid.UUID, ClientActionRequest) (*ClientActionResponse, error)
+	GetConnectedFunc           func(context.Context, uuid.UUID, uuid.UUID) (*ClientDetails, error)
+	ListConnectedAllFunc       func(context.Context, uuid.UUID, string) iter.Seq2[ClientOverview, error]
+	ListConnectedPageFunc      func(context.Context, uuid.UUID, *ListOptions) (Page[ClientOverview], error)
 }
 
 var _ ClientsClient = (*ClientsClientMock)(nil)
 
-func (m *ClientsClientMock) ExecuteConnectedAction(ctx context.Context, siteId string, clientId string, body ClientActionRequest) (*ClientActionResponse, error) {
+func (m *ClientsClientMock) ExecuteConnectedAction(ctx context.Context, siteId uuid.UUID, clientId uuid.UUID, body ClientActionRequest) (*ClientActionResponse, error) {
 	return m.ExecuteConnectedActionFunc(ctx, siteId, clientId, body)
 }
 
-func (m *ClientsClientMock) GetConnected(ctx context.Context, siteId string, clientId string) (*ClientDetails, error) {
+func (m *ClientsClientMock) GetConnected(ctx context.Context, siteId uuid.UUID, clientId uuid.UUID) (*ClientDetails, error) {
 	return m.GetConnectedFunc(ctx, siteId, clientId)
 }
 
-func (m *ClientsClientMock) ListConnectedAll(ctx context.Context, siteId string, filter string) iter.Seq2[ClientOverview, error] {
+func (m *ClientsClientMock) ListConnectedAll(ctx context.Context, siteId uuid.UUID, filter string) iter.Seq2[ClientOverview, error] {
 	return m.ListConnectedAllFunc(ctx, siteId, filter)
 }
 
-func (m *ClientsClientMock) ListConnectedPage(ctx context.Context, siteId string, opts *ListOptions) (Page[ClientOverview], error) {
+func (m *ClientsClientMock) ListConnectedPage(ctx context.Context, siteId uuid.UUID, opts *ListOptions) (Page[ClientOverview], error) {
 	return m.ListConnectedPageFunc(ctx, siteId, opts)
 }

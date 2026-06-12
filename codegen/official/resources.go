@@ -29,8 +29,9 @@ var paginationParams = map[string]bool{"offset": true, "limit": true}
 
 // param is one method argument sourced from a path or required query parameter.
 type param struct {
-	Name  string // Go identifier (the spec parameter name is already lowerCamel)
-	Query bool   // true when sourced from a (required) query parameter
+	Name   string // Go identifier (the spec parameter name is already lowerCamel)
+	Query  bool   // true when sourced from a (required) query parameter
+	GoType string // Go type for path params: "uuid.UUID", "int32", or "string" (default)
 }
 
 // optionalParam is one optional (non-required) query parameter that is surfaced
@@ -138,7 +139,7 @@ func buildOperation(path, method string, raw, schemas map[string]any) (operation
 		Group:             group,
 		HTTPMethod:        strings.ToUpper(method),
 		SubPath:           subPath(path),
-		PathArgs:          pathArgs(path),
+		PathArgs:          pathArgs(path, raw),
 		QueryArgs:         requiredQueryArgs(raw),
 		OptionalQueryArgs: optionalQueryArgs(raw),
 		BodyType:          bodyType(raw),
@@ -182,15 +183,56 @@ func subPath(path string) string {
 	return b.String()
 }
 
-// pathArgs returns the {param} names in URL order, the canonical argument order.
-func pathArgs(path string) []param {
+// pathArgs returns the {param} names in URL order, resolved against the operation's
+// parameter list to determine the Go type (uuid.UUID for format:uuid, int32 for
+// format:int32, string otherwise).
+func pathArgs(path string, raw map[string]any) []param {
+	// Build a name->schema map from the operation's parameter declarations.
+	paramSchemas := map[string]map[string]any{}
+	if params, ok := raw["parameters"].([]any); ok {
+		for _, p := range params {
+			pm, ok := p.(map[string]any)
+			if !ok {
+				continue
+			}
+			if pm["in"] != "path" {
+				continue
+			}
+			name, _ := pm["name"].(string)
+			schema, _ := pm["schema"].(map[string]any)
+			paramSchemas[name] = schema
+		}
+	}
 	var out []param
 	for seg := range strings.SplitSeq(path, "/") {
 		if strings.HasPrefix(seg, "{") && strings.HasSuffix(seg, "}") {
-			out = append(out, param{Name: seg[1 : len(seg)-1]})
+			name := seg[1 : len(seg)-1]
+			schema := paramSchemas[name]
+			out = append(out, param{Name: name, GoType: pathParamGoType(schema)})
 		}
 	}
 	return out
+}
+
+// pathParamGoType maps a path parameter's schema to its Go type.
+// UUID-format strings become uuid.UUID; integer int32 become int32; everything
+// else stays string (the safe default for unknown or missing schemas).
+func pathParamGoType(schema map[string]any) string {
+	if schema == nil {
+		return "string"
+	}
+	t, _ := schema["type"].(string)
+	format, _ := schema["format"].(string)
+	switch {
+	case t == "string" && format == "uuid":
+		return "uuid.UUID"
+	case t == "integer" && format == "int32":
+		return "int32"
+	case t == "integer" && format == "int64":
+		return "int64"
+	default:
+		return "string"
+	}
 }
 
 // requiredQueryArgs returns the required non-pagination query parameters in
@@ -216,8 +258,15 @@ func requiredQueryArgs(raw map[string]any) []param {
 	return out
 }
 
+// paginationAndFilterParams are the query params owned by the pagination layer
+// (ListOptions.Offset/Limit/Filter); they must not surface as individual method
+// arguments or as optional param struct fields.
+var paginationAndFilterParams = map[string]bool{"offset": true, "limit": true, "filter": true}
+
 // optionalQueryArgs returns the non-required, non-pagination query parameters in
 // source order; these surface as fields in a trailing *<MethodName>Options struct.
+// Pagination params (offset, limit) and the pagination-layer filter are excluded
+// because they are handled by ListOptions and never surface as direct args.
 func optionalQueryArgs(raw map[string]any) []optionalParam {
 	params, _ := raw["parameters"].([]any)
 	var out []optionalParam
@@ -231,7 +280,7 @@ func optionalQueryArgs(raw map[string]any) []optionalParam {
 		}
 		required, _ := pm["required"].(bool)
 		name, _ := pm["name"].(string)
-		if required || paginationParams[name] {
+		if required || paginationAndFilterParams[name] {
 			continue
 		}
 		schema, _ := pm["schema"].(map[string]any)

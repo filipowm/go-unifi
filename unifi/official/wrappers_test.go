@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -47,18 +48,31 @@ func (d *cannedDoer) serve(method, apiPath string, respBody any) error {
 	return encode(v, respBody)
 }
 
+// Stable UUIDs for wrapper tests. Each literal is a distinct v4-format UUID so
+// test helpers can verify that the generated wrappers embed them verbatim in the
+// request path.
+var (
+	wSiteID    = uuid.MustParse("10000000-0000-0000-0000-000000000001") // "s1" site
+	wNetworkID = uuid.MustParse("20000000-0000-0000-0000-000000000001") // "n1" network
+	wPolicyID  = uuid.MustParse("30000000-0000-0000-0000-000000000001") // "p1" policy
+	wHotspotID = uuid.MustParse("40000000-0000-0000-0000-000000000001") // hotspot site
+)
+
+// sitePath returns the /sites/<id> path prefix for a UUID.
+func sitePath(id uuid.UUID) string { return base + "/sites/" + id.String() }
+
 // TestGeneratedGetWrapper exercises a single-resource GET wrapper.
 func TestGeneratedGetWrapper(t *testing.T) {
 	t.Parallel()
 	d := &cannedDoer{responses: map[string]any{
-		base + "/sites/s1/networks/n1": map[string]any{"name": "lan"},
+		sitePath(wSiteID) + "/networks/" + wNetworkID.String(): map[string]any{"name": "lan"},
 	}}
 	c := New(d, base, nil)
 
-	net, err := c.Networks().Get(context.Background(), "s1", "n1")
+	net, err := c.Networks().Get(context.Background(), wSiteID, wNetworkID)
 	require.NoError(t, err)
 	assert.Equal(t, "lan", net.Name)
-	assert.Equal(t, []string{"GET " + base + "/sites/s1/networks/n1"}, d.calls)
+	assert.Equal(t, []string{"GET " + sitePath(wSiteID) + "/networks/" + wNetworkID.String()}, d.calls)
 }
 
 // TestGeneratedListAllWrapperDrains proves the ListXxxAll iterator walks the
@@ -66,14 +80,14 @@ func TestGeneratedGetWrapper(t *testing.T) {
 func TestGeneratedListAllWrapperDrains(t *testing.T) {
 	t.Parallel()
 	d := &cannedDoer{responses: map[string]any{
-		base + "/sites/s1/networks": map[string]any{
+		sitePath(wSiteID) + "/networks": map[string]any{
 			"data":       []map[string]any{{"name": "a"}, {"name": "b"}},
 			"totalCount": 2,
 		},
 	}}
 	c := New(d, base, nil)
 
-	nets, err := Collect(c.Networks().ListAll(context.Background(), "s1", ""))
+	nets, err := Collect(c.Networks().ListAll(context.Background(), wSiteID, ""))
 	require.NoError(t, err)
 	require.Len(t, nets, 2)
 	assert.Equal(t, "a", nets[0].Name)
@@ -84,14 +98,14 @@ func TestGeneratedListAllWrapperDrains(t *testing.T) {
 func TestGeneratedListPageWrapperBounded(t *testing.T) {
 	t.Parallel()
 	d := &cannedDoer{responses: map[string]any{
-		base + "/sites/s1/networks": map[string]any{
+		sitePath(wSiteID) + "/networks": map[string]any{
 			"data":       []map[string]any{{"name": "a"}, {"name": "b"}},
 			"totalCount": 99, // far more remain, yet a single page must not paginate.
 		},
 	}}
 	c := New(d, base, nil)
 
-	page, err := c.Networks().ListPage(context.Background(), "s1", &ListOptions{Offset: 0, Limit: 2, Filter: "name.eq('a')"})
+	page, err := c.Networks().ListPage(context.Background(), wSiteID, &ListOptions{Offset: 0, Limit: 2, Filter: "name.eq('a')"})
 	require.NoError(t, err)
 	require.Len(t, page.Items, 2)
 	assert.Equal(t, 99, page.TotalCount)
@@ -105,13 +119,13 @@ func TestGeneratedListPageWrapperBounded(t *testing.T) {
 func TestGeneratedPatchWrapper(t *testing.T) {
 	t.Parallel()
 	d := &cannedDoer{responses: map[string]any{
-		base + "/sites/s1/firewall/policies/p1": map[string]any{"name": "policy"},
+		sitePath(wSiteID) + "/firewall/policies/" + wPolicyID.String(): map[string]any{"name": "policy"},
 	}}
 	c := New(d, base, nil)
 
-	_, err := c.Firewall().PatchPolicy(context.Background(), "s1", "p1", PatchFirewallPolicy{})
+	_, err := c.Firewall().PatchPolicy(context.Background(), wSiteID, wPolicyID, PatchFirewallPolicy{})
 	require.NoError(t, err)
-	assert.Equal(t, []string{"PATCH " + base + "/sites/s1/firewall/policies/p1"}, d.calls)
+	assert.Equal(t, []string{"PATCH " + sitePath(wSiteID) + "/firewall/policies/" + wPolicyID.String()}, d.calls)
 }
 
 // TestDeleteVouchersGuardsEmptyFilter asserts the required-filter guard fires
@@ -121,11 +135,11 @@ func TestDeleteVouchersGuardsEmptyFilter(t *testing.T) {
 	d := &cannedDoer{}
 	c := New(d, base, nil)
 
-	_, err := c.Hotspot().DeleteVouchers(context.Background(), "s1", "")
+	_, err := c.Hotspot().DeleteVouchers(context.Background(), wHotspotID, "")
 	require.Error(t, err)
 	assert.Empty(t, d.calls, "empty filter must short-circuit before transport")
 
-	_, err = c.Hotspot().DeleteVouchers(context.Background(), "s1", "expired")
+	_, err = c.Hotspot().DeleteVouchers(context.Background(), wHotspotID, "expired")
 	require.NoError(t, err)
 	require.Len(t, d.calls, 1)
 	assert.Contains(t, d.calls[0], "filter=expired")
@@ -149,11 +163,11 @@ func TestClientMockSatisfiesInterface(t *testing.T) {
 func TestGroupMockStandalone(t *testing.T) {
 	t.Parallel()
 	var fw FirewallClient = &FirewallClientMock{
-		GetPolicyFunc: func(_ context.Context, _, _ string) (*FirewallPolicy, error) {
+		GetPolicyFunc: func(_ context.Context, _ uuid.UUID, _ uuid.UUID) (*FirewallPolicy, error) {
 			return &FirewallPolicy{Name: "allow-all"}, nil
 		},
 	}
-	p, err := fw.GetPolicy(context.Background(), "s1", "p1")
+	p, err := fw.GetPolicy(context.Background(), wSiteID, wPolicyID)
 	require.NoError(t, err)
 	assert.Equal(t, "allow-all", p.Name)
 }

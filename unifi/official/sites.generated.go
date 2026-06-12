@@ -5,6 +5,8 @@ package official
 import (
 	"context"
 	"iter"
+
+	"github.com/google/uuid"
 )
 
 // SitesClient is the Sites resource group of the Official UniFi OpenAPI surface.
@@ -14,7 +16,7 @@ type SitesClient interface {
 	// ListPage returns one page of local sites; nil opts fetches the first page at the default size.
 	ListPage(ctx context.Context, opts *ListOptions) (Page[SiteOverview], error)
 	// ResolveID maps a legacy site name to its Official-API site UUID, caching the lookup.
-	ResolveID(ctx context.Context, name string) (string, error)
+	ResolveID(ctx context.Context, name string) (uuid.UUID, error)
 }
 
 // sitesClient wraps the shared apiClient so transport, gate and site cache stay single-sourced.
@@ -32,7 +34,7 @@ func (c *apiClient) Sites() SitesClient {
 type SitesClientMock struct {
 	ListAllFunc   func(context.Context, string) iter.Seq2[SiteOverview, error]
 	ListPageFunc  func(context.Context, *ListOptions) (Page[SiteOverview], error)
-	ResolveIDFunc func(context.Context, string) (string, error)
+	ResolveIDFunc func(context.Context, string) (uuid.UUID, error)
 }
 
 var _ SitesClient = (*SitesClientMock)(nil)
@@ -45,6 +47,6 @@ func (m *SitesClientMock) ListPage(ctx context.Context, opts *ListOptions) (Page
 	return m.ListPageFunc(ctx, opts)
 }
 
-func (m *SitesClientMock) ResolveID(ctx context.Context, name string) (string, error) {
+func (m *SitesClientMock) ResolveID(ctx context.Context, name string) (uuid.UUID, error) {
 	return m.ResolveIDFunc(ctx, name)
 }

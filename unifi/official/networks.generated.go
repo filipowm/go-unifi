@@ -6,25 +6,26 @@ import (
 	"context"
 	"fmt"
 	"iter"
-	"net/url"
+
+	"github.com/google/uuid"
 )
 
 // NetworksClient is the Networks resource group of the Official UniFi OpenAPI surface.
 type NetworksClient interface {
 	// Create maps to POST /v1/sites/%s/networks on the Official API.
-	Create(ctx context.Context, siteId string, body NetworkCreateOrUpdate) (*NetworkDetails, error)
+	Create(ctx context.Context, siteId uuid.UUID, body NetworkCreateOrUpdate) (*NetworkDetails, error)
 	// Delete maps to DELETE /v1/sites/%s/networks/%s on the Official API.
-	Delete(ctx context.Context, siteId string, networkId string, opts *DeleteNetworkOptions) error
+	Delete(ctx context.Context, siteId uuid.UUID, networkId uuid.UUID, opts *DeleteNetworkOptions) error
 	// Get maps to GET /v1/sites/%s/networks/%s on the Official API.
-	Get(ctx context.Context, siteId string, networkId string) (*NetworkDetails, error)
+	Get(ctx context.Context, siteId uuid.UUID, networkId uuid.UUID) (*NetworkDetails, error)
 	// GetReferences maps to GET /v1/sites/%s/networks/%s/references on the Official API.
-	GetReferences(ctx context.Context, siteId string, networkId string) (*NetworkReferences, error)
+	GetReferences(ctx context.Context, siteId uuid.UUID, networkId uuid.UUID) (*NetworkReferences, error)
 	// ListAll lazily drains every item from GET /v1/sites/%s/networks, paging on demand; pass "" filter to drain unfiltered; range it and break to stop early.
-	ListAll(ctx context.Context, siteId string, filter string) iter.Seq2[NetworkOverview, error]
+	ListAll(ctx context.Context, siteId uuid.UUID, filter string) iter.Seq2[NetworkOverview, error]
 	// ListPage returns one page from GET /v1/sites/%s/networks; nil opts fetches the first page at the default size.
-	ListPage(ctx context.Context, siteId string, opts *ListOptions) (Page[NetworkOverview], error)
+	ListPage(ctx context.Context, siteId uuid.UUID, opts *ListOptions) (Page[NetworkOverview], error)
 	// Update maps to PUT /v1/sites/%s/networks/%s on the Official API.
-	Update(ctx context.Context, siteId string, networkId string, body NetworkCreateOrUpdate) (*NetworkDetails, error)
+	Update(ctx context.Context, siteId uuid.UUID, networkId uuid.UUID, body NetworkCreateOrUpdate) (*NetworkDetails, error)
 }
 
 // networksClient wraps the shared apiClient so transport, gate and site cache stay single-sourced.
@@ -38,12 +39,12 @@ func (c *apiClient) Networks() NetworksClient {
 }
 
 // Create maps to POST /v1/sites/%s/networks on the Official API.
-func (c networksClient) Create(ctx context.Context, siteId string, body NetworkCreateOrUpdate) (*NetworkDetails, error) {
+func (c networksClient) Create(ctx context.Context, siteId uuid.UUID, body NetworkCreateOrUpdate) (*NetworkDetails, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
 	}
 	var out NetworkDetails
-	if err := c.doer.Post(ctx, c.path(fmt.Sprintf("/sites/%s/networks", url.PathEscape(siteId))), body, &out); err != nil {
+	if err := c.doer.Post(ctx, c.path(fmt.Sprintf("/sites/%s/networks", siteId.String())), body, &out); err != nil {
 		return nil, fmt.Errorf("failed Create: %w", err)
 	}
 	return &out, nil
@@ -55,11 +56,11 @@ type DeleteNetworkOptions struct {
 }
 
 // Delete maps to DELETE /v1/sites/%s/networks/%s on the Official API.
-func (c networksClient) Delete(ctx context.Context, siteId string, networkId string, opts *DeleteNetworkOptions) error {
+func (c networksClient) Delete(ctx context.Context, siteId uuid.UUID, networkId uuid.UUID, opts *DeleteNetworkOptions) error {
 	if err := c.check(ctx); err != nil {
 		return err
 	}
-	var path = fmt.Sprintf("/sites/%s/networks/%s", url.PathEscape(siteId), url.PathEscape(networkId))
+	var path = fmt.Sprintf("/sites/%s/networks/%s", siteId.String(), networkId.String())
 	if opts != nil {
 		if opts.Force {
 			path += "?force=true"
@@ -72,40 +73,40 @@ func (c networksClient) Delete(ctx context.Context, siteId string, networkId str
 }
 
 // Get maps to GET /v1/sites/%s/networks/%s on the Official API.
-func (c networksClient) Get(ctx context.Context, siteId string, networkId string) (*NetworkDetails, error) {
+func (c networksClient) Get(ctx context.Context, siteId uuid.UUID, networkId uuid.UUID) (*NetworkDetails, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
 	}
 	var out NetworkDetails
-	if err := c.doer.Get(ctx, c.path(fmt.Sprintf("/sites/%s/networks/%s", url.PathEscape(siteId), url.PathEscape(networkId))), nil, &out); err != nil {
+	if err := c.doer.Get(ctx, c.path(fmt.Sprintf("/sites/%s/networks/%s", siteId.String(), networkId.String())), nil, &out); err != nil {
 		return nil, fmt.Errorf("failed Get: %w", err)
 	}
 	return &out, nil
 }
 
 // GetReferences maps to GET /v1/sites/%s/networks/%s/references on the Official API.
-func (c networksClient) GetReferences(ctx context.Context, siteId string, networkId string) (*NetworkReferences, error) {
+func (c networksClient) GetReferences(ctx context.Context, siteId uuid.UUID, networkId uuid.UUID) (*NetworkReferences, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
 	}
 	var out NetworkReferences
-	if err := c.doer.Get(ctx, c.path(fmt.Sprintf("/sites/%s/networks/%s/references", url.PathEscape(siteId), url.PathEscape(networkId))), nil, &out); err != nil {
+	if err := c.doer.Get(ctx, c.path(fmt.Sprintf("/sites/%s/networks/%s/references", siteId.String(), networkId.String())), nil, &out); err != nil {
 		return nil, fmt.Errorf("failed GetReferences: %w", err)
 	}
 	return &out, nil
 }
 
 // ListAll lazily drains every item from GET /v1/sites/%s/networks, paging on demand; pass "" filter to drain unfiltered; range it and break to stop early.
-func (c networksClient) ListAll(ctx context.Context, siteId string, filter string) iter.Seq2[NetworkOverview, error] {
-	return listSeq[NetworkOverview](ctx, c.apiClient, c.path(fmt.Sprintf("/sites/%s/networks", url.PathEscape(siteId))), filter)
+func (c networksClient) ListAll(ctx context.Context, siteId uuid.UUID, filter string) iter.Seq2[NetworkOverview, error] {
+	return listSeq[NetworkOverview](ctx, c.apiClient, c.path(fmt.Sprintf("/sites/%s/networks", siteId.String())), filter)
 }
 
 // ListPage returns one page from GET /v1/sites/%s/networks; nil opts fetches the first page at the default size.
-func (c networksClient) ListPage(ctx context.Context, siteId string, opts *ListOptions) (Page[NetworkOverview], error) {
+func (c networksClient) ListPage(ctx context.Context, siteId uuid.UUID, opts *ListOptions) (Page[NetworkOverview], error) {
 	if err := c.check(ctx); err != nil {
 		return Page[NetworkOverview]{}, err
 	}
-	p, err := listPage[NetworkOverview](ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/networks", url.PathEscape(siteId))), opts)
+	p, err := listPage[NetworkOverview](ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/networks", siteId.String())), opts)
 	if err != nil {
 		return Page[NetworkOverview]{}, fmt.Errorf("failed ListPage: %w", err)
 	}
@@ -113,12 +114,12 @@ func (c networksClient) ListPage(ctx context.Context, siteId string, opts *ListO
 }
 
 // Update maps to PUT /v1/sites/%s/networks/%s on the Official API.
-func (c networksClient) Update(ctx context.Context, siteId string, networkId string, body NetworkCreateOrUpdate) (*NetworkDetails, error) {
+func (c networksClient) Update(ctx context.Context, siteId uuid.UUID, networkId uuid.UUID, body NetworkCreateOrUpdate) (*NetworkDetails, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
 	}
 	var out NetworkDetails
-	if err := c.doer.Put(ctx, c.path(fmt.Sprintf("/sites/%s/networks/%s", url.PathEscape(siteId), url.PathEscape(networkId))), body, &out); err != nil {
+	if err := c.doer.Put(ctx, c.path(fmt.Sprintf("/sites/%s/networks/%s", siteId.String(), networkId.String())), body, &out); err != nil {
 		return nil, fmt.Errorf("failed Update: %w", err)
 	}
 	return &out, nil
@@ -127,41 +128,41 @@ func (c networksClient) Update(ctx context.Context, siteId string, networkId str
 // NetworksClientMock is a func-field test double implementing NetworksClient. A nil field
 // panics on call, surfacing an un-stubbed method in tests.
 type NetworksClientMock struct {
-	CreateFunc        func(context.Context, string, NetworkCreateOrUpdate) (*NetworkDetails, error)
-	DeleteFunc        func(context.Context, string, string, *DeleteNetworkOptions) error
-	GetFunc           func(context.Context, string, string) (*NetworkDetails, error)
-	GetReferencesFunc func(context.Context, string, string) (*NetworkReferences, error)
-	ListAllFunc       func(context.Context, string, string) iter.Seq2[NetworkOverview, error]
-	ListPageFunc      func(context.Context, string, *ListOptions) (Page[NetworkOverview], error)
-	UpdateFunc        func(context.Context, string, string, NetworkCreateOrUpdate) (*NetworkDetails, error)
+	CreateFunc        func(context.Context, uuid.UUID, NetworkCreateOrUpdate) (*NetworkDetails, error)
+	DeleteFunc        func(context.Context, uuid.UUID, uuid.UUID, *DeleteNetworkOptions) error
+	GetFunc           func(context.Context, uuid.UUID, uuid.UUID) (*NetworkDetails, error)
+	GetReferencesFunc func(context.Context, uuid.UUID, uuid.UUID) (*NetworkReferences, error)
+	ListAllFunc       func(context.Context, uuid.UUID, string) iter.Seq2[NetworkOverview, error]
+	ListPageFunc      func(context.Context, uuid.UUID, *ListOptions) (Page[NetworkOverview], error)
+	UpdateFunc        func(context.Context, uuid.UUID, uuid.UUID, NetworkCreateOrUpdate) (*NetworkDetails, error)
 }
 
 var _ NetworksClient = (*NetworksClientMock)(nil)
 
-func (m *NetworksClientMock) Create(ctx context.Context, siteId string, body NetworkCreateOrUpdate) (*NetworkDetails, error) {
+func (m *NetworksClientMock) Create(ctx context.Context, siteId uuid.UUID, body NetworkCreateOrUpdate) (*NetworkDetails, error) {
 	return m.CreateFunc(ctx, siteId, body)
 }
 
-func (m *NetworksClientMock) Delete(ctx context.Context, siteId string, networkId string, opts *DeleteNetworkOptions) error {
+func (m *NetworksClientMock) Delete(ctx context.Context, siteId uuid.UUID, networkId uuid.UUID, opts *DeleteNetworkOptions) error {
 	return m.DeleteFunc(ctx, siteId, networkId, opts)
 }
 
-func (m *NetworksClientMock) Get(ctx context.Context, siteId string, networkId string) (*NetworkDetails, error) {
+func (m *NetworksClientMock) Get(ctx context.Context, siteId uuid.UUID, networkId uuid.UUID) (*NetworkDetails, error) {
 	return m.GetFunc(ctx, siteId, networkId)
 }
 
-func (m *NetworksClientMock) GetReferences(ctx context.Context, siteId string, networkId string) (*NetworkReferences, error) {
+func (m *NetworksClientMock) GetReferences(ctx context.Context, siteId uuid.UUID, networkId uuid.UUID) (*NetworkReferences, error) {
 	return m.GetReferencesFunc(ctx, siteId, networkId)
 }
 
-func (m *NetworksClientMock) ListAll(ctx context.Context, siteId string, filter string) iter.Seq2[NetworkOverview, error] {
+func (m *NetworksClientMock) ListAll(ctx context.Context, siteId uuid.UUID, filter string) iter.Seq2[NetworkOverview, error] {
 	return m.ListAllFunc(ctx, siteId, filter)
 }
 
-func (m *NetworksClientMock) ListPage(ctx context.Context, siteId string, opts *ListOptions) (Page[NetworkOverview], error) {
+func (m *NetworksClientMock) ListPage(ctx context.Context, siteId uuid.UUID, opts *ListOptions) (Page[NetworkOverview], error) {
 	return m.ListPageFunc(ctx, siteId, opts)
 }
 
-func (m *NetworksClientMock) Update(ctx context.Context, siteId string, networkId string, body NetworkCreateOrUpdate) (*NetworkDetails, error) {
+func (m *NetworksClientMock) Update(ctx context.Context, siteId uuid.UUID, networkId uuid.UUID, body NetworkCreateOrUpdate) (*NetworkDetails, error) {
 	return m.UpdateFunc(ctx, siteId, networkId, body)
 }
