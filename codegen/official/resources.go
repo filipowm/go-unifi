@@ -33,23 +33,39 @@ type param struct {
 	Query bool   // true when sourced from a (required) query parameter
 }
 
+// optionalParam is one optional (non-required) query parameter that is surfaced
+// via a trailing *<MethodName>Options struct rather than as a direct argument.
+type optionalParam struct {
+	Name   string // Go identifier (lowerCamel from spec)
+	GoType string // Go type: "bool", "string", "int32", …
+}
+
 // operation is the generator's view of one OpenAPI operation: enough to emit the
 // wrapper body, the interface signature, and the mock — derived from the
 // operationId + HTTP method + parameters, never from path regexes.
 type operation struct {
-	Name       string  // Go method name (PascalCase operationId)
-	Group      string  // PascalCase group name from the operation's primary tag
-	HTTPMethod string  // GET/POST/PUT/DELETE/PATCH
-	SubPath    string  // path with the leading /v1 stripped and {param}->%s
-	PathArgs   []param // ordered path arguments (URL order)
-	QueryArgs  []param // ordered required query arguments
-	BodyType   string  // Go request-body type, "" when none
-	ItemType   string  // Go element type for a paginated list, "" when not a list
-	ReturnType string  // Go single-return type, "" when the call returns no body
+	Name              string          // Go method name (PascalCase operationId)
+	Group             string          // PascalCase group name from the operation's primary tag
+	HTTPMethod        string          // GET/POST/PUT/DELETE/PATCH
+	SubPath           string          // path with the leading /v1 stripped and {param}->%s
+	PathArgs          []param         // ordered path arguments (URL order)
+	QueryArgs         []param         // ordered required query arguments
+	OptionalQueryArgs []optionalParam // non-pagination optional query params → *<Method>Options struct
+	BodyType          string          // Go request-body type, "" when none
+	ItemType          string          // Go element type for a paginated list, "" when not a list
+	ReturnType        string          // Go single-return type, "" when the call returns no body
 }
 
 // IsList reports whether the wrapper auto-paginates and returns a slice.
 func (o operation) IsList() bool { return o.ItemType != "" }
+
+// HasOptions reports whether the operation has optional query parameters that are
+// surfaced via a trailing *<MethodName>Options struct.
+func (o operation) HasOptions() bool { return len(o.OptionalQueryArgs) > 0 }
+
+// OptionsType returns the Go type name for the optional-params struct, e.g.
+// "DeleteNetworkOptions" for the DeleteNetwork operation.
+func (o operation) OptionsType() string { return o.Name + "Options" }
 
 // RequiredFilter returns the name of a required "filter" query arg, if any, so
 // the wrapper can guard against an empty value (bulk deleteVouchers).
@@ -118,13 +134,14 @@ func buildOperation(path, method string, raw, schemas map[string]any) (operation
 		return operation{}, false, fmt.Errorf("operation %s %s: %w", strings.ToUpper(method), path, err)
 	}
 	op := operation{
-		Name:       pascal(opID),
-		Group:      group,
-		HTTPMethod: strings.ToUpper(method),
-		SubPath:    subPath(path),
-		PathArgs:   pathArgs(path),
-		QueryArgs:  requiredQueryArgs(raw),
-		BodyType:   bodyType(raw),
+		Name:              pascal(opID),
+		Group:             group,
+		HTTPMethod:        strings.ToUpper(method),
+		SubPath:           subPath(path),
+		PathArgs:          pathArgs(path),
+		QueryArgs:         requiredQueryArgs(raw),
+		OptionalQueryArgs: optionalQueryArgs(raw),
+		BodyType:          bodyType(raw),
 	}
 
 	respName := successResponseSchema(raw)
@@ -197,6 +214,53 @@ func requiredQueryArgs(raw map[string]any) []param {
 		out = append(out, param{Name: name, Query: true})
 	}
 	return out
+}
+
+// optionalQueryArgs returns the non-required, non-pagination query parameters in
+// source order; these surface as fields in a trailing *<MethodName>Options struct.
+func optionalQueryArgs(raw map[string]any) []optionalParam {
+	params, _ := raw["parameters"].([]any)
+	var out []optionalParam
+	for _, p := range params {
+		pm, ok := p.(map[string]any)
+		if !ok {
+			continue
+		}
+		if pm["in"] != "query" {
+			continue
+		}
+		required, _ := pm["required"].(bool)
+		name, _ := pm["name"].(string)
+		if required || paginationParams[name] {
+			continue
+		}
+		schema, _ := pm["schema"].(map[string]any)
+		out = append(out, optionalParam{
+			Name:   name,
+			GoType: schemaGoType(schema),
+		})
+	}
+	return out
+}
+
+// schemaGoType maps an OpenAPI schema object to a simple Go scalar type.
+// Unrecognised or missing schemas default to "string".
+func schemaGoType(schema map[string]any) string {
+	t, _ := schema["type"].(string)
+	switch t {
+	case "boolean":
+		return "bool"
+	case "integer":
+		format, _ := schema["format"].(string)
+		if format == "int64" {
+			return "int64"
+		}
+		return "int32"
+	case "number":
+		return "float64"
+	default:
+		return "string"
+	}
 }
 
 // bodyType returns the Go type of the JSON request body, or "" when absent.

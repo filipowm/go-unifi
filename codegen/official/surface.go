@@ -142,6 +142,11 @@ func scalarMethod(op operation) method {
 	if op.BodyType != "" {
 		m.Params = append(m.Params, arg{Name: "body", Type: op.BodyType})
 	}
+	// Optional query params surface as a trailing *<OperationName>Options struct
+	// so callers can omit them without positional ceremony.
+	if op.HasOptions() {
+		m.Params = append(m.Params, arg{Name: "opts", Type: "*" + op.OptionsType()})
+	}
 	if op.ReturnType != "" {
 		m.Returns = []string{"*" + op.ReturnType, "error"}
 	} else {
@@ -261,7 +266,7 @@ func generateGroupFile(g group, pkg string) (string, error) {
 }
 
 // groupImports renders the import block a group file needs: context always, plus
-// fmt/net/url/errors only when a generated wrapper body in the group uses them.
+// fmt/net/url/errors/strconv only when a generated wrapper body in the group uses them.
 func groupImports(g group) string {
 	use := groupImportUse(g)
 	imports := []string{`"context"`}
@@ -277,6 +282,9 @@ func groupImports(g group) string {
 	if use["net/url"] {
 		imports = append(imports, `"net/url"`)
 	}
+	if use["strconv"] {
+		imports = append(imports, `"strconv"`)
+	}
 	if len(imports) == 1 {
 		return "import " + imports[0] + "\n\n" // context only (hand-written-only group)
 	}
@@ -285,7 +293,7 @@ func groupImports(g group) string {
 
 // groupImportUse reports which std-lib imports the group file needs. iter is
 // driven by signatures (any ListAll iterator return, incl. hand-written ones);
-// fmt/net/url/errors are driven by the generated wrapper bodies.
+// fmt/net/url/errors/strconv are driven by the generated wrapper bodies.
 func groupImportUse(g group) map[string]bool {
 	use := map[string]bool{}
 	for _, m := range g.Methods {
@@ -298,11 +306,17 @@ func groupImportUse(g group) map[string]bool {
 			continue
 		}
 		use["fmt"] = true // every generated wrapper body wraps its error with fmt.
-		if len(m.op.QueryArgs) > 0 || len(m.op.PathArgs) > 0 {
+		if len(m.op.QueryArgs) > 0 || len(m.op.PathArgs) > 0 || m.op.HasOptions() {
 			use["net/url"] = true
 		}
 		if m.op.RequiredFilter() != "" {
 			use["errors"] = true
+		}
+		// strconv is needed when optional numeric params are serialised to query strings.
+		for _, o := range m.op.OptionalQueryArgs {
+			if o.GoType == "int32" || o.GoType == "int64" || o.GoType == "float64" {
+				use["strconv"] = true
+			}
 		}
 	}
 	return use
@@ -325,26 +339,56 @@ func wrapperBody(g group, m method) string {
 
 // scalarBody renders a single-detail/create/update/action wrapper: gate check,
 // optional required-filter guard, one transport call, wrapped error.
+// When the operation has optional query parameters, an *<Operation>Options struct
+// is emitted before the method, and the path is built with the opts appended.
 func scalarBody(g group, m method) string {
 	op := m.op
 	zero := m.zeroPrefix()
 	var b strings.Builder
+
+	// Emit the options struct before the method body when the operation has optional params.
+	if op.HasOptions() {
+		fmt.Fprintf(&b, "// %s holds optional query parameters for the %s method.\n", op.OptionsType(), m.Name)
+		fmt.Fprintf(&b, "type %s struct {\n", op.OptionsType())
+		for _, o := range op.OptionalQueryArgs {
+			fmt.Fprintf(&b, "\t%s %s\n", upperFirst(o.Name), o.GoType)
+		}
+		b.WriteString("}\n\n")
+	}
+
 	fmt.Fprintf(&b, "// %s %s\n", m.Name, m.Doc)
 	fmt.Fprintf(&b, "func (c %s) %s {\n", g.impl(), m.signature())
 	fmt.Fprintf(&b, "\tif err := c.check(ctx); err != nil {\n\t\treturn %serr\n\t}\n", zero)
 	if f := op.RequiredFilter(); f != "" {
 		fmt.Fprintf(&b, "\tif %s == \"\" {\n\t\treturn %serrors.New(%q)\n\t}\n", f, zero, f+" must not be empty")
 	}
-	path := pathExpr(*op)
-	if op.ReturnType != "" {
-		fmt.Fprintf(&b, "\tvar out %s\n", op.ReturnType)
-		fmt.Fprintf(&b, "\tif err := c.doer.%s(ctx, c.path(%s), %s, &out); err != nil {\n", doerMethods[op.HTTPMethod], path, reqArg(*op))
-		fmt.Fprintf(&b, "\t\treturn nil, fmt.Errorf(%q, err)\n\t}\n", "failed "+m.Name+": %w")
-		b.WriteString("\treturn &out, nil\n")
+
+	// When optional query params exist, we build the path dynamically and use a
+	// local "path" variable. Otherwise we inline the static path expression.
+	if op.HasOptions() {
+		b.WriteString(optionalQueryExpr(*op))
+		if op.ReturnType != "" {
+			fmt.Fprintf(&b, "\tvar out %s\n", op.ReturnType)
+			fmt.Fprintf(&b, "\tif err := c.doer.%s(ctx, c.path(path), %s, &out); err != nil {\n", doerMethods[op.HTTPMethod], reqArg(*op))
+			fmt.Fprintf(&b, "\t\treturn nil, fmt.Errorf(%q, err)\n\t}\n", "failed "+m.Name+": %w")
+			b.WriteString("\treturn &out, nil\n")
+		} else {
+			fmt.Fprintf(&b, "\tif err := c.doer.%s(ctx, c.path(path), %s, nil); err != nil {\n", doerMethods[op.HTTPMethod], reqArg(*op))
+			fmt.Fprintf(&b, "\t\treturn fmt.Errorf(%q, err)\n\t}\n", "failed "+m.Name+": %w")
+			b.WriteString("\treturn nil\n")
+		}
 	} else {
-		fmt.Fprintf(&b, "\tif err := c.doer.%s(ctx, c.path(%s), %s, nil); err != nil {\n", doerMethods[op.HTTPMethod], path, reqArg(*op))
-		fmt.Fprintf(&b, "\t\treturn fmt.Errorf(%q, err)\n\t}\n", "failed "+m.Name+": %w")
-		b.WriteString("\treturn nil\n")
+		path := pathExpr(*op)
+		if op.ReturnType != "" {
+			fmt.Fprintf(&b, "\tvar out %s\n", op.ReturnType)
+			fmt.Fprintf(&b, "\tif err := c.doer.%s(ctx, c.path(%s), %s, &out); err != nil {\n", doerMethods[op.HTTPMethod], path, reqArg(*op))
+			fmt.Fprintf(&b, "\t\treturn nil, fmt.Errorf(%q, err)\n\t}\n", "failed "+m.Name+": %w")
+			b.WriteString("\treturn &out, nil\n")
+		} else {
+			fmt.Fprintf(&b, "\tif err := c.doer.%s(ctx, c.path(%s), %s, nil); err != nil {\n", doerMethods[op.HTTPMethod], path, reqArg(*op))
+			fmt.Fprintf(&b, "\t\treturn fmt.Errorf(%q, err)\n\t}\n", "failed "+m.Name+": %w")
+			b.WriteString("\treturn nil\n")
+		}
 	}
 	b.WriteString("}\n")
 	return b.String()
@@ -387,6 +431,8 @@ func reqArg(op operation) string {
 
 // pathExpr renders the Go expression for the request sub-path: a string literal
 // when fully static, else an fmt.Sprintf over the path and required-query args.
+// Optional query params (from opts) are appended separately in the wrapper body
+// via optionalQueryExpr; pathExpr only covers path and required query args.
 func pathExpr(op operation) string {
 	if len(op.PathArgs) == 0 && len(op.QueryArgs) == 0 {
 		return fmt.Sprintf("%q", op.SubPath)
@@ -407,6 +453,51 @@ func pathExpr(op operation) string {
 		args = append(args, "url.QueryEscape("+q.Name+")")
 	}
 	return fmt.Sprintf("fmt.Sprintf(%q, %s)", format.String(), strings.Join(args, ", "))
+}
+
+// optionalQueryExpr renders the Go statements that append optional query parameters
+// to the path variable when they are non-nil and non-zero in the opts struct.
+// This is emitted inside the wrapper body after the base path is constructed.
+func optionalQueryExpr(op operation) string {
+	if !op.HasOptions() {
+		return ""
+	}
+	var b strings.Builder
+	// Determine the separator: "?" if there are no required query args, else "&".
+	sep := "?"
+	if len(op.QueryArgs) > 0 {
+		sep = "&"
+	}
+	b.WriteString("\tvar path = " + pathExpr(op) + "\n")
+	b.WriteString("\tif opts != nil {\n")
+	for i, o := range op.OptionalQueryArgs {
+		actualSep := sep
+		if i > 0 {
+			actualSep = "&"
+		}
+		switch o.GoType {
+		case "bool":
+			b.WriteString(fmt.Sprintf("\t\tif opts.%s {\n", upperFirst(o.Name)))
+			b.WriteString(fmt.Sprintf("\t\t\tpath += %q\n", actualSep+o.Name+"=true"))
+			b.WriteString("\t\t}\n")
+		case "int32", "int64":
+			intType := "int"
+			if o.GoType == "int64" {
+				intType = "int64"
+			}
+			b.WriteString(fmt.Sprintf("\t\tif opts.%s != 0 {\n", upperFirst(o.Name)))
+			b.WriteString(fmt.Sprintf("\t\t\tpath += %q + strconv.Format%s(%s(opts.%s), 10)\n",
+				actualSep+o.Name+"=", upperFirst(intType), o.GoType, upperFirst(o.Name)))
+			b.WriteString("\t\t}\n")
+		default:
+			b.WriteString(fmt.Sprintf("\t\tif opts.%s != \"\" {\n", upperFirst(o.Name)))
+			b.WriteString(fmt.Sprintf("\t\t\tpath += %q + url.QueryEscape(opts.%s)\n",
+				actualSep+o.Name+"=", upperFirst(o.Name)))
+			b.WriteString("\t\t}\n")
+		}
+	}
+	b.WriteString("\t}\n")
+	return b.String()
 }
 
 // generateClient renders the parent Client interface and its mock: one accessor

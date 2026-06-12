@@ -14,7 +14,7 @@ type WifiBroadcastsClient interface {
 	// Create maps to POST /v1/sites/%s/wifi/broadcasts on the Official API.
 	Create(ctx context.Context, siteId string, body WifiBroadcastCreateOrUpdate) (*WifiBroadcastDetails, error)
 	// Delete maps to DELETE /v1/sites/%s/wifi/broadcasts/%s on the Official API.
-	Delete(ctx context.Context, siteId string, wifiBroadcastId string) error
+	Delete(ctx context.Context, siteId string, wifiBroadcastId string, opts *DeleteWifiBroadcastOptions) error
 	// Get maps to GET /v1/sites/%s/wifi/broadcasts/%s on the Official API.
 	Get(ctx context.Context, siteId string, wifiBroadcastId string) (*WifiBroadcastDetails, error)
 	// ListAll lazily drains every item from GET /v1/sites/%s/wifi/broadcasts, paging on demand; pass "" filter to drain unfiltered; range it and break to stop early.
@@ -47,12 +47,23 @@ func (c wifiBroadcastsClient) Create(ctx context.Context, siteId string, body Wi
 	return &out, nil
 }
 
+// DeleteWifiBroadcastOptions holds optional query parameters for the Delete method.
+type DeleteWifiBroadcastOptions struct {
+	Force bool
+}
+
 // Delete maps to DELETE /v1/sites/%s/wifi/broadcasts/%s on the Official API.
-func (c wifiBroadcastsClient) Delete(ctx context.Context, siteId string, wifiBroadcastId string) error {
+func (c wifiBroadcastsClient) Delete(ctx context.Context, siteId string, wifiBroadcastId string, opts *DeleteWifiBroadcastOptions) error {
 	if err := c.check(ctx); err != nil {
 		return err
 	}
-	if err := c.doer.Delete(ctx, c.path(fmt.Sprintf("/sites/%s/wifi/broadcasts/%s", url.PathEscape(siteId), url.PathEscape(wifiBroadcastId))), nil, nil); err != nil {
+	var path = fmt.Sprintf("/sites/%s/wifi/broadcasts/%s", url.PathEscape(siteId), url.PathEscape(wifiBroadcastId))
+	if opts != nil {
+		if opts.Force {
+			path += "?force=true"
+		}
+	}
+	if err := c.doer.Delete(ctx, c.path(path), nil, nil); err != nil {
 		return fmt.Errorf("failed Delete: %w", err)
 	}
 	return nil
@@ -103,7 +114,7 @@ func (c wifiBroadcastsClient) Update(ctx context.Context, siteId string, wifiBro
 // panics on call, surfacing an un-stubbed method in tests.
 type WifiBroadcastsClientMock struct {
 	CreateFunc   func(context.Context, string, WifiBroadcastCreateOrUpdate) (*WifiBroadcastDetails, error)
-	DeleteFunc   func(context.Context, string, string) error
+	DeleteFunc   func(context.Context, string, string, *DeleteWifiBroadcastOptions) error
 	GetFunc      func(context.Context, string, string) (*WifiBroadcastDetails, error)
 	ListAllFunc  func(context.Context, string, string) iter.Seq2[WifiBroadcastOverview, error]
 	ListPageFunc func(context.Context, string, *ListOptions) (Page[WifiBroadcastOverview], error)
@@ -116,8 +127,8 @@ func (m *WifiBroadcastsClientMock) Create(ctx context.Context, siteId string, bo
 	return m.CreateFunc(ctx, siteId, body)
 }
 
-func (m *WifiBroadcastsClientMock) Delete(ctx context.Context, siteId string, wifiBroadcastId string) error {
-	return m.DeleteFunc(ctx, siteId, wifiBroadcastId)
+func (m *WifiBroadcastsClientMock) Delete(ctx context.Context, siteId string, wifiBroadcastId string, opts *DeleteWifiBroadcastOptions) error {
+	return m.DeleteFunc(ctx, siteId, wifiBroadcastId, opts)
 }
 
 func (m *WifiBroadcastsClientMock) Get(ctx context.Context, siteId string, wifiBroadcastId string) (*WifiBroadcastDetails, error) {
