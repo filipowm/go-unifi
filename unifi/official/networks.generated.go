@@ -60,7 +60,7 @@ func (c networksClient) Delete(ctx context.Context, siteId uuid.UUID, networkId 
 	if err := c.check(ctx); err != nil {
 		return err
 	}
-	var path = fmt.Sprintf("/sites/%s/networks/%s", siteId.String(), networkId.String())
+	path := fmt.Sprintf("/sites/%s/networks/%s", siteId.String(), networkId.String())
 	if opts != nil {
 		if opts.Force {
 			path += "?force=true"

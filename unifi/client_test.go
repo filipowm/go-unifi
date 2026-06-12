@@ -3,10 +3,8 @@ package unifi //nolint: testpackage
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"sync"
 	"testing"
 	"time"
@@ -14,29 +12,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-// verifyInterceptorPresence checks each expected interceptor type for presence or absence in the client.
-func verifyInterceptorPresence(a *assert.Assertions, c *client, interceptors []any, shouldExist bool) {
-	expectedTypes := make([]reflect.Type, 0, len(interceptors))
-	for _, i := range interceptors {
-		expectedTypes = append(expectedTypes, reflect.TypeOf(i))
-	}
-	for _, et := range expectedTypes {
-		found := false
-		for _, actual := range c.interceptors {
-			if reflect.TypeOf(actual) == et {
-				found = true
-				break
-			}
-		}
-		if shouldExist && !found {
-			a.Fail(fmt.Sprintf("expected interceptor %v not found", et))
-		}
-		if !shouldExist && found {
-			a.Fail(fmt.Sprintf("unexpected interceptor %v found", et))
-		}
-	}
-}
 
 func TestBareClientConstructor(t *testing.T) {
 	t.Parallel()

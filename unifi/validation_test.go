@@ -238,9 +238,9 @@ func TestClientConfigCustomValidators(t *testing.T) {
 	// the custom validator and proceeds to the network (failing with dial error),
 	// while an invalid payload is stopped at validation before any network call.
 	c := newOfflineClient(t, &ClientConfig{
-		URL:            testUrl,
-		APIKey:         "test-key",
-		ValidationMode: HardValidation,
+		URL:              testUrl,
+		APIKey:           "test-key",
+		ValidationMode:   HardValidation,
 		CustomValidators: []CustomValidator{extra},
 	})
 

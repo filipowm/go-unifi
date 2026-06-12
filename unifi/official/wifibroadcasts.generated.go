@@ -58,7 +58,7 @@ func (c wifiBroadcastsClient) Delete(ctx context.Context, siteId uuid.UUID, wifi
 	if err := c.check(ctx); err != nil {
 		return err
 	}
-	var path = fmt.Sprintf("/sites/%s/wifi/broadcasts/%s", siteId.String(), wifiBroadcastId.String())
+	path := fmt.Sprintf("/sites/%s/wifi/broadcasts/%s", siteId.String(), wifiBroadcastId.String())
 	if opts != nil {
 		if opts.Force {
 			path += "?force=true"

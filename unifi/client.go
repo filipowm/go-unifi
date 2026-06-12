@@ -72,13 +72,13 @@ type ClientConfig struct {
 	// SkipVerifySSL controls TLS certificate verification. The zero value (false)
 	// verifies certificates (secure by default); set it to true to disable
 	// verification, e.g. SkipVerifySSL: true for a self-signed controller certificate.
-	SkipVerifySSL            bool
+	SkipVerifySSL bool
 	// Interceptors is a list of ClientInterceptor implementations applied to every
 	// request and response. Interceptors are deduplicated by concrete type: if two
 	// interceptors share the same concrete type, the second is silently dropped and
 	// a WARN log is emitted.
-	Interceptors             []ClientInterceptor
-	HttpTransportCustomizer  HttpTransportCustomizer
+	Interceptors            []ClientInterceptor
+	HttpTransportCustomizer HttpTransportCustomizer
 	// HttpRoundTripperProvider, when set, replaces the entire HTTP transport with
 	// the returned RoundTripper. TLS configuration is entirely the caller's
 	// responsibility: the client performs no TLS validation and the SkipVerifySSL

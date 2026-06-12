@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -37,15 +38,15 @@ func TestOfficialResolveSiteID(t *testing.T) {
 		infoRoute("10.1.78"),
 		route{officialSitesPath, func(w http.ResponseWriter, _ *http.Request) {
 			_, _ = w.Write([]byte(`{"offset":0,"limit":200,"count":2,"totalCount":2,"data":[` +
-				`{"id":"uuid-default","internalReference":"default","name":"Default"},` +
-				`{"id":"uuid-lab","internalReference":"lab","name":"Lab"}]}`))
+				`{"id":"00000000-0000-0000-0000-000000000001","internalReference":"default","name":"Default"},` +
+				`{"id":"00000000-0000-0000-0000-000000000002","internalReference":"lab","name":"Lab"}]}`))
 		}},
 	)
 	c := cs.client()
 
 	id, err := c.Official().Sites().ResolveID(context.Background(), "lab")
 	require.NoError(t, err)
-	assert.Equal(t, "uuid-lab", id)
+	assert.Equal(t, uuid.MustParse("00000000-0000-0000-0000-000000000002"), id)
 }
 
 func TestOfficialGateUnavailableBelowVersionFloor(t *testing.T) {
@@ -93,7 +94,7 @@ func TestOfficialGateProbeIsCached(t *testing.T) {
 		infoRoute("10.1.78"),
 		route{officialSitesPath, func(w http.ResponseWriter, _ *http.Request) {
 			_, _ = w.Write([]byte(`{"offset":0,"limit":200,"count":1,"totalCount":1,"data":[` +
-				`{"id":"uuid-default","internalReference":"default","name":"Default"}]}`))
+				`{"id":"00000000-0000-0000-0000-000000000001","internalReference":"default","name":"Default"}]}`))
 		}},
 	)
 	c := cs.client()
