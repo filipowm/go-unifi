@@ -10,7 +10,7 @@ builds:
 changelog:
   use: "git"
   abbrev: -1
-  sort: asc
+  sort: "asc"
   filters:
     # Exclude commits that are internal/maintenance noise — consumers don't need these.
     # Keep: feat, fix, perf, security (and breaking variants marked with !)
