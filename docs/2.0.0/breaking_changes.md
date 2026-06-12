@@ -335,6 +335,33 @@ c, err := unifi.NewClient(&unifi.ClientConfig{URL: "...", APIKey: "...", SkipSys
 
 **Provenance:** unifi/client.go; delegated from epic #117, issue #148.
 
+### I. `Logger` decoupled from the `Client` interface
+
+**Status: DONE** — landed in issue [#167](https://github.com/filipowm/go-unifi/issues/167).
+
+**Interface change (compile break for custom `Client` implementations and mocks).** The `Client` interface no
+longer **embeds** `Logger`; it now exposes a single accessor `Logger() Logger`. The 10 logging methods
+(`Trace`/`Debug`/`Info`/`Warn`/`Error` + their `*f` variants) are therefore no longer promoted onto a
+`Client` value — call them through the accessor.
+
+```go
+// before
+c.Errorf("boom: %v", err)
+// after
+c.Logger().Errorf("boom: %v", err)
+```
+
+Any third-party type implementing `unifi.Client` (or a hand-rolled mock) previously had to satisfy all 10
+logging methods; now it must implement only `Logger() Logger`. The moq `ClientMock` is regenerated
+automatically and exposes a single `LoggerFunc`/`Logger()` pair instead of the 10 logging hooks.
+
+The `Logger` interface itself and the `LoggingLevel` enum are unchanged. The default logger is now backed by
+`log/slog` (no third-party logging dependency in the `unifi` package, no forced ANSI colours);
+`NewSlogLogger(*slog.Logger) Logger` is added to wrap a caller-supplied `*slog.Logger`. These are additive —
+only the `Client`-interface decoupling is a compile break.
+
+**Provenance:** unifi/client.go, unifi/logging.go, codegen/internal/client.go.tmpl; issue #167.
+
 ### H. New `Patch` method on `Client`
 
 **Status: DONE** — landed in unifi/requests.go.

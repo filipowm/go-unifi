@@ -118,7 +118,7 @@ type ClientConfig struct {
 // is the cached system information (guarded by sysInfoMu). No request-level lock
 // is held across the network round-trip.
 type client struct {
-	Logger
+	log Logger
 
 	baseURL        *url.URL
 	sysInfo        *SysInfo
@@ -153,6 +153,11 @@ var _ Client = &client{} // Ensure that client implements the Client interface. 
 
 func (c *client) BaseURL() string {
 	return c.baseURL.String()
+}
+
+// Logger returns the client's logger.
+func (c *client) Logger() Logger {
+	return c.log
 }
 
 // AddInterceptor adds a ClientInterceptor to the client's interceptor list if no
@@ -376,7 +381,7 @@ func newClientFromConfig(config *ClientConfig, v *validator) (*client, error) {
 		interceptors:     interceptors,
 		errorHandler:     errorHandler,
 		validator:        v,
-		Logger:           log,
+		log:              log,
 		officialDisabled: cfg.DisableOfficialAPI,
 	}, nil
 }
@@ -398,7 +403,7 @@ func NewClient(config *ClientConfig) (Client, error) { //nolint: ireturn
 			c.sysInfoMu.Lock()
 			c.sysInfo = sysInfo
 			c.sysInfoMu.Unlock()
-			c.Debugf("Connected to UniFi controller\nversion: %s; name: %s; build: %s; hostname: %s", sysInfo.Version, sysInfo.Name, sysInfo.Build, sysInfo.Hostname)
+			c.log.Debugf("Connected to UniFi controller\nversion: %s; name: %s; build: %s; hostname: %s", sysInfo.Version, sysInfo.Name, sysInfo.Build, sysInfo.Hostname)
 		}
 	}
 	return c, nil
@@ -425,7 +430,7 @@ func newClient(config *ClientConfig) (*client, error) {
 		}
 	case APIStyleNew:
 		c.apiPaths = &NewStyleAPI
-		c.Debugf("Using explicitly configured API style (skipping probe): %d", config.APIStyle)
+		c.log.Debugf("Using explicitly configured API style (skipping probe): %d", config.APIStyle)
 	case APIStyleOld:
 		return nil, ErrOldStyleUnsupported
 	default:

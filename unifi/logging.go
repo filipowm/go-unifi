@@ -1,8 +1,15 @@
 package unifi
 
 import (
-	"github.com/sirupsen/logrus"
+	"context"
+	"fmt"
+	"log/slog"
+	"os"
 )
+
+// levelTrace is the slog level for Trace logging. slog has no native Trace
+// level, so we use Debug-4 — the community convention for a level below Debug.
+const levelTrace = slog.LevelDebug - 4
 
 type Logger interface {
 	Trace(format string)
@@ -28,33 +35,41 @@ const (
 	ErrorLevel
 )
 
-func NewDefaultLogger(level LoggingLevel) Logger {
-	l := logrus.New()
-	var logrusLevel logrus.Level
+// slogLevel maps a LoggingLevel to its slog.Level equivalent. DisabledLevel is
+// handled by the caller (returns a noop logger) and falls through to Info here.
+func slogLevel(level LoggingLevel) slog.Level {
 	switch level {
-	case DisabledLevel:
-		return &noopLogger{}
 	case TraceLevel:
-		logrusLevel = logrus.TraceLevel
+		return levelTrace
 	case DebugLevel:
-		logrusLevel = logrus.DebugLevel
+		return slog.LevelDebug
 	case InfoLevel:
-		logrusLevel = logrus.InfoLevel
+		return slog.LevelInfo
 	case WarnLevel:
-		logrusLevel = logrus.WarnLevel
+		return slog.LevelWarn
 	case ErrorLevel:
-		logrusLevel = logrus.ErrorLevel
+		return slog.LevelError
+	case DisabledLevel:
+		return slog.LevelInfo
 	default:
-		logrusLevel = logrus.InfoLevel
+		return slog.LevelInfo
 	}
-	l.SetLevel(logrusLevel)
-	l.SetFormatter(&logrus.TextFormatter{
-		DisableTimestamp:       true,
-		DisableLevelTruncation: true,
-		FullTimestamp:          false,
-		ForceColors:            true,
-	})
-	return &defaultLogger{l}
+}
+
+// NewDefaultLogger returns a Logger backed by log/slog's text handler writing
+// plain text (no ANSI colours) to os.Stderr. DisabledLevel yields a no-op logger.
+func NewDefaultLogger(level LoggingLevel) Logger {
+	if level == DisabledLevel {
+		return &noopLogger{}
+	}
+	handler := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slogLevel(level)})
+	return &slogLogger{logger: slog.New(handler)}
+}
+
+// NewSlogLogger wraps a caller-supplied *slog.Logger into the Logger interface,
+// reusing the same level mapping and *f formatting as the default logger.
+func NewSlogLogger(l *slog.Logger) Logger {
+	return &slogLogger{logger: l}
 }
 
 type noopLogger struct{}
@@ -70,46 +85,26 @@ func (l *noopLogger) Infof(format string, args ...any)  {}
 func (l *noopLogger) Errorf(format string, args ...any) {}
 func (l *noopLogger) Warnf(format string, args ...any)  {}
 
-type defaultLogger struct {
-	*logrus.Logger
+type slogLogger struct {
+	logger *slog.Logger
 }
 
-func (l *defaultLogger) Trace(msg string) {
-	l.Logger.Trace(msg)
+func (l *slogLogger) Trace(msg string) { l.log(levelTrace, msg) }
+func (l *slogLogger) Debug(msg string) { l.log(slog.LevelDebug, msg) }
+func (l *slogLogger) Info(msg string)  { l.log(slog.LevelInfo, msg) }
+func (l *slogLogger) Error(msg string) { l.log(slog.LevelError, msg) }
+func (l *slogLogger) Warn(msg string)  { l.log(slog.LevelWarn, msg) }
+
+func (l *slogLogger) Tracef(format string, args ...any) { l.logf(levelTrace, format, args...) }
+func (l *slogLogger) Debugf(format string, args ...any) { l.logf(slog.LevelDebug, format, args...) }
+func (l *slogLogger) Infof(format string, args ...any)  { l.logf(slog.LevelInfo, format, args...) }
+func (l *slogLogger) Errorf(format string, args ...any) { l.logf(slog.LevelError, format, args...) }
+func (l *slogLogger) Warnf(format string, args ...any)  { l.logf(slog.LevelWarn, format, args...) }
+
+func (l *slogLogger) log(level slog.Level, msg string) {
+	l.logger.Log(context.Background(), level, msg)
 }
 
-func (l *defaultLogger) Debug(msg string) {
-	l.Logger.Debug(msg)
-}
-
-func (l *defaultLogger) Info(msg string) {
-	l.Logger.Info(msg)
-}
-
-func (l *defaultLogger) Error(msg string) {
-	l.Logger.Error(msg)
-}
-
-func (l *defaultLogger) Warn(msg string) {
-	l.Logger.Warn(msg)
-}
-
-func (l *defaultLogger) Tracef(format string, args ...any) {
-	l.Logger.Tracef(format, args...)
-}
-
-func (l *defaultLogger) Debugf(format string, args ...any) {
-	l.Logger.Debugf(format, args...)
-}
-
-func (l *defaultLogger) Infof(format string, args ...any) {
-	l.Logger.Infof(format, args...)
-}
-
-func (l *defaultLogger) Errorf(format string, args ...any) {
-	l.Logger.Errorf(format, args...)
-}
-
-func (l *defaultLogger) Warnf(format string, args ...any) {
-	l.Logger.Warnf(format, args...)
+func (l *slogLogger) logf(level slog.Level, format string, args ...any) {
+	l.logger.Log(context.Background(), level, fmt.Sprintf(format, args...))
 }
