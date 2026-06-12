@@ -14,7 +14,7 @@ type NetworksClient interface {
 	// Create maps to POST /v1/sites/%s/networks on the Official API.
 	Create(ctx context.Context, siteId string, body NetworkCreateOrUpdate) (*NetworkDetails, error)
 	// Delete maps to DELETE /v1/sites/%s/networks/%s on the Official API.
-	Delete(ctx context.Context, siteId string, networkId string) error
+	Delete(ctx context.Context, siteId string, networkId string, opts *DeleteNetworkOptions) error
 	// Get maps to GET /v1/sites/%s/networks/%s on the Official API.
 	Get(ctx context.Context, siteId string, networkId string) (*NetworkDetails, error)
 	// GetReferences maps to GET /v1/sites/%s/networks/%s/references on the Official API.
@@ -49,12 +49,23 @@ func (c networksClient) Create(ctx context.Context, siteId string, body NetworkC
 	return &out, nil
 }
 
+// DeleteNetworkOptions holds optional query parameters for the Delete method.
+type DeleteNetworkOptions struct {
+	Force bool
+}
+
 // Delete maps to DELETE /v1/sites/%s/networks/%s on the Official API.
-func (c networksClient) Delete(ctx context.Context, siteId string, networkId string) error {
+func (c networksClient) Delete(ctx context.Context, siteId string, networkId string, opts *DeleteNetworkOptions) error {
 	if err := c.check(ctx); err != nil {
 		return err
 	}
-	if err := c.doer.Delete(ctx, c.path(fmt.Sprintf("/sites/%s/networks/%s", url.PathEscape(siteId), url.PathEscape(networkId))), nil, nil); err != nil {
+	var path = fmt.Sprintf("/sites/%s/networks/%s", url.PathEscape(siteId), url.PathEscape(networkId))
+	if opts != nil {
+		if opts.Force {
+			path += "?force=true"
+		}
+	}
+	if err := c.doer.Delete(ctx, c.path(path), nil, nil); err != nil {
 		return fmt.Errorf("failed Delete: %w", err)
 	}
 	return nil
@@ -117,7 +128,7 @@ func (c networksClient) Update(ctx context.Context, siteId string, networkId str
 // panics on call, surfacing an un-stubbed method in tests.
 type NetworksClientMock struct {
 	CreateFunc        func(context.Context, string, NetworkCreateOrUpdate) (*NetworkDetails, error)
-	DeleteFunc        func(context.Context, string, string) error
+	DeleteFunc        func(context.Context, string, string, *DeleteNetworkOptions) error
 	GetFunc           func(context.Context, string, string) (*NetworkDetails, error)
 	GetReferencesFunc func(context.Context, string, string) (*NetworkReferences, error)
 	ListAllFunc       func(context.Context, string, string) iter.Seq2[NetworkOverview, error]
@@ -131,8 +142,8 @@ func (m *NetworksClientMock) Create(ctx context.Context, siteId string, body Net
 	return m.CreateFunc(ctx, siteId, body)
 }
 
-func (m *NetworksClientMock) Delete(ctx context.Context, siteId string, networkId string) error {
-	return m.DeleteFunc(ctx, siteId, networkId)
+func (m *NetworksClientMock) Delete(ctx context.Context, siteId string, networkId string, opts *DeleteNetworkOptions) error {
+	return m.DeleteFunc(ctx, siteId, networkId, opts)
 }
 
 func (m *NetworksClientMock) Get(ctx context.Context, siteId string, networkId string) (*NetworkDetails, error) {
