@@ -1,0 +1,147 @@
+---
+title: Interceptors
+description: Hook into every request and response with ClientInterceptor — for logging, metrics, or header injection — and avoid the response body-read hazard.
+---
+
+An interceptor is a hook that runs on every HTTP request before it's sent and on every response before it's
+decoded. Use them for cross-cutting concerns: logging, metrics, tracing spans, or stamping custom headers.
+
+## The interface
+
+Implement [`ClientInterceptor`](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#ClientInterceptor) —
+two methods:
+
+```go
+type ClientInterceptor interface {
+    InterceptRequest(req *http.Request) error
+    InterceptResponse(resp *http.Response) error
+}
+```
+
+Returning an error from either method aborts the call and surfaces that error to the caller.
+
+```go
+// loggingInterceptor logs request method/URL and response status.
+type loggingInterceptor struct{}
+
+func (l *loggingInterceptor) InterceptRequest(req *http.Request) error {
+    log.Printf("[request] %s %s", req.Method, req.URL)
+    return nil
+}
+
+func (l *loggingInterceptor) InterceptResponse(resp *http.Response) error {
+    // Do NOT read resp.Body here — the SDK decodes it after interceptors run.
+    log.Printf("[response] %d %s", resp.StatusCode, resp.Request.URL)
+    return nil
+}
+
+// headerInterceptor stamps a custom header on every outgoing request.
+type headerInterceptor struct {
+    value string
+}
+
+func (h *headerInterceptor) InterceptRequest(req *http.Request) error {
+    req.Header.Set("X-Custom-Header", h.value)
+    return nil
+}
+
+func (h *headerInterceptor) InterceptResponse(_ *http.Response) error {
+    return nil
+}
+```
+
+## Registering interceptors
+
+Register interceptors when you build the client, via `ClientConfig.Interceptors`. They apply to every request
+the client makes:
+
+```go
+c, err := unifi.NewClient(&unifi.ClientConfig{
+    URL:    "https://unifi.example.com",
+    APIKey: "your-api-key",
+    Interceptors: []unifi.ClientInterceptor{
+        &loggingInterceptor{},
+        &headerInterceptor{value: "example"},
+    },
+})
+```
+
+## Execution order
+
+On every request the client runs interceptors in this order:
+
+<Steps>
+<Step>**Built-in API-key auth** — sets the `X-Api-Key` header.</Step>
+<Step>**Built-in default headers** — `User-Agent`, `Accept`, `Content-Type`.</Step>
+<Step>**Your interceptors**, in the order you registered them.</Step>
+</Steps>
+
+Response interceptors (`InterceptResponse`) run in that same order, **before** error handling and response
+decoding. Because your interceptors run last on the request, you can override the built-in headers (including
+auth) if you really need to.
+
+<Callout type="warn">
+**One interceptor per concrete type.** The client deduplicates by concrete Go type: if you register two
+interceptors of the same type, the second is silently dropped and a `WARN` is logged. To run, say, two logging
+behaviors, use two distinct types (or a single configurable type) rather than two values of the same struct.
+</Callout>
+
+## The response body-read hazard
+
+This is the most common interceptor mistake:
+
+<Callout type="error">
+**Do not read or consume `resp.Body` inside `InterceptResponse`.** The body is decoded *after* all interceptors
+run. If an interceptor drains it, the caller receives a zero-valued response struct with **no error** — a
+silent, hard-to-debug failure.
+</Callout>
+
+If you need to observe or rewrite the body — for logging, tracing, or transformation — wrap the transport with
+[`HttpRoundTripperProvider`](/docs/advanced/configuration#customizing-the-http-transport) instead. A
+`http.RoundTripper` runs *before* the SDK touches the body, so it can buffer and restore it safely:
+
+```go
+// bodyLoggingTransport buffers and restores the response body safely, before
+// the SDK touches it — the correct place to observe a body.
+type bodyLoggingTransport struct {
+    wrapped http.RoundTripper
+}
+
+func (t bodyLoggingTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+    resp, err := t.wrapped.RoundTrip(req)
+    if err != nil || resp == nil {
+        return resp, err
+    }
+    body, _ := io.ReadAll(resp.Body)
+    resp.Body.Close()
+    log.Printf("response body: %s", body)
+    resp.Body = io.NopCloser(bytes.NewReader(body)) // restore for the SDK to decode
+    return resp, nil
+}
+
+c, err := unifi.NewClient(&unifi.ClientConfig{
+    URL:    "https://unifi.example.com",
+    APIKey: "your-api-key",
+    HttpRoundTripperProvider: func() http.RoundTripper {
+        return bodyLoggingTransport{wrapped: http.DefaultTransport}
+    },
+})
+```
+
+The same approach works for request/response **timing**: record `time.Now()` before `RoundTrip` and log the
+delta after — a round-tripper sees the full network round-trip, where an interceptor only sees the request and
+the not-yet-read response.
+
+## See also
+
+<Cards>
+  <Card title="Configuration" href="/docs/advanced/configuration">
+    `HttpRoundTripperProvider` and the rest of `ClientConfig`.
+  </Card>
+  <Card title="Logging" href="/docs/advanced/logging">
+    The SDK's built-in logger, an alternative to a logging interceptor.
+  </Card>
+  <Card title="Raw HTTP calls" href="/docs/advanced/raw-http">
+    The requests your interceptors observe.
+  </Card>
+</Cards>

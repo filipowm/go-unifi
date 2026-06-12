@@ -1,0 +1,239 @@
+---
+title: Firewall
+description: Manage firewall groups and rules, zone-based firewall policies, and content filtering on the Internal API.
+---
+
+The Internal API exposes two generations of firewall configuration: the classic **rule-based**
+firewall (groups + ordered rules per ruleset) and the newer **zone-based** firewall (zones, a
+zone matrix, and zone policies). Content filtering rounds out the set. All of these live on
+`c.Internal()` and take the site **name** (`"default"`).
+
+Every example below assumes you have a constructed client `c` and a `ctx` — see the
+[Quickstart](/docs/getting-started/quickstart) if you don't.
+
+## Firewall groups
+
+A **firewall group** is a reusable set of addresses or ports that rules reference by ID. Create,
+list, update and delete them like any other resource.
+
+```go
+func exampleFirewallGroup(ctx context.Context, c unifi.Client) error {
+	// Groups are reusable sets of addresses or ports referenced by rules.
+	g, err := c.CreateFirewallGroup(ctx, "default", &unifi.FirewallGroup{
+		Name:         "blocked-hosts",
+		GroupType:    "address-group", // address-group | port-group | ipv6-address-group
+		GroupMembers: []string{"10.0.0.5", "10.0.0.6"},
+	})
+	if err != nil {
+		return fmt.Errorf("create firewall group: %w", err)
+	}
+
+	groups, err := c.ListFirewallGroup(ctx, "default")
+	if err != nil {
+		return fmt.Errorf("list firewall groups: %w", err)
+	}
+	_ = groups
+
+	g.GroupMembers = append(g.GroupMembers, "10.0.0.7")
+	if _, err := c.UpdateFirewallGroup(ctx, "default", g); err != nil {
+		return fmt.Errorf("update firewall group: %w", err)
+	}
+
+	return c.DeleteFirewallGroup(ctx, "default", g.ID)
+}
+```
+
+`GetFirewallGroup` returns [`unifi.ErrNotFound`](/docs/guides/error-handling) when the ID is
+unknown, so use `errors.Is` rather than string-matching:
+
+```go
+g, err := c.GetFirewallGroup(ctx, "default", id)
+if err != nil {
+	if errors.Is(err, unifi.ErrNotFound) {
+		// no such group
+	}
+	return fmt.Errorf("get firewall group: %w", err)
+}
+```
+
+## Firewall rules
+
+A **firewall rule** acts on a single direction of traffic identified by its `Ruleset`
+(`LAN_IN`, `WAN_OUT`, `GUEST_LOCAL`, …). Rules can reference firewall groups by ID through
+`SrcFirewallGroupIDs` / `DstFirewallGroupIDs`.
+
+```go
+func exampleFirewallRule(ctx context.Context, c unifi.Client, groupID string) error {
+	rule, err := c.CreateFirewallRule(ctx, "default", &unifi.FirewallRule{
+		Name:                "block-bad-hosts",
+		Enabled:             true,
+		Action:              "drop",   // drop | reject | accept
+		Ruleset:             "LAN_IN", // which traffic direction the rule applies to
+		RuleIndex:           2000,
+		Protocol:            "all",
+		DstFirewallGroupIDs: []string{groupID},
+	})
+	if err != nil {
+		return fmt.Errorf("create firewall rule: %w", err)
+	}
+	_ = rule
+
+	// Reorder rules within a ruleset by assigning new indices.
+	rules, err := c.ListFirewallRule(ctx, "default")
+	if err != nil {
+		return fmt.Errorf("list firewall rules: %w", err)
+	}
+	order := make([]unifi.FirewallRuleIndexUpdate, 0, len(rules))
+	for i, r := range rules {
+		if r.Ruleset != "LAN_IN" {
+			continue
+		}
+		order = append(order, unifi.FirewallRuleIndexUpdate{ID: r.ID, RuleIndex: 2000 + i})
+	}
+	return c.ReorderFirewallRules(ctx, "default", "LAN_IN", order)
+}
+```
+
+`ReorderFirewallRules(ctx, site, ruleset, []FirewallRuleIndexUpdate)` posts a new ordering for a
+single ruleset in one call — the rule with the lowest `RuleIndex` is evaluated first. Pass the
+**ruleset name** plus the desired `ID`→`RuleIndex` mapping for every rule you want to position.
+
+<Callout type="info">
+`RuleIndex` for user rules conventionally lives in the `2000`–`2999` and `4000`–`4999` ranges;
+the controller reserves the rest for predefined rules. See the full field set (protocols, ICMP
+types, state matching) on [pkg.go.dev](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#FirewallRule).
+</Callout>
+
+## Zone-based firewall
+
+Newer controllers (UniFi Network 9+) replace per-ruleset rules with a **zone-based** model:
+networks are grouped into [`FirewallZone`](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#FirewallZone)s,
+and a [`FirewallZonePolicy`](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#FirewallZonePolicy)
+governs traffic from a source zone to a destination zone.
+
+```go
+func exampleZoneFirewall(ctx context.Context, c unifi.Client) error {
+	zone, err := c.CreateFirewallZone(ctx, "default", &unifi.FirewallZone{
+		Name:       "iot",
+		NetworkIDs: []string{}, // attach networks by their IDs
+	})
+	if err != nil {
+		return fmt.Errorf("create firewall zone: %w", err)
+	}
+
+	policy, err := c.CreateFirewallZonePolicy(ctx, "default", &unifi.FirewallZonePolicy{
+		Name:      "iot-to-iot-block",
+		Action:    "BLOCK", // ALLOW | BLOCK | REJECT
+		Enabled:   true,
+		IPVersion: "BOTH",
+		Source: unifi.FirewallZonePolicySource{
+			ZoneID: zone.ID,
+		},
+		Destination: unifi.FirewallZonePolicyDestination{
+			ZoneID: zone.ID,
+		},
+		Schedule: unifi.FirewallZonePolicySchedule{
+			Mode: "ALWAYS",
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("create firewall zone policy: %w", err)
+	}
+
+	// Reorder user policies relative to the predefined ones for a zone pair.
+	reordered, err := c.ReorderFirewallPolicies(ctx, "default", &unifi.FirewallPolicyOrderUpdate{
+		SourceZoneId:        zone.ID,
+		DestinationZoneId:   zone.ID,
+		AfterPredefinedIds:  []string{policy.ID},
+		BeforePredefinedIds: []string{},
+	})
+	if err != nil {
+		return fmt.Errorf("reorder firewall policies: %w", err)
+	}
+	_ = reordered
+
+	// The matrix summarises the configured action and policy count per zone pair.
+	matrix, err := c.ListFirewallZoneMatrix(ctx, "default")
+	if err != nil {
+		return fmt.Errorf("list firewall zone matrix: %w", err)
+	}
+	for _, m := range matrix {
+		for _, d := range m.Data {
+			fmt.Printf("%s: %s, %d policies\n", m.Name, d.Action, d.PolicyCount)
+		}
+	}
+	return nil
+}
+```
+
+Three things worth knowing:
+
+- **`GetFirewallZone` is a client-side filter.** The controller has no single-zone endpoint, so
+  `GetFirewallZone` lists all zones and matches on ID — it still returns `unifi.ErrNotFound`
+  when the ID is absent, but it costs a full list under the hood.
+- **`ReorderFirewallPolicies` returns the new ordering.** Unlike `ReorderFirewallRules` (which
+  returns only an error), it takes a single
+  [`*FirewallPolicyOrderUpdate`](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#FirewallPolicyOrderUpdate)
+  for one zone pair and returns the resulting `[]FirewallZonePolicy`.
+- **`ListFirewallZoneMatrix` is read-only.** It is the only method on the zone matrix — there is
+  no create/update/delete. Each [`FirewallZoneMatrixData`](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#FirewallZoneMatrixData)
+  entry reports the action and policy count for a zone pair.
+
+## Content filtering
+
+`ContentFiltering` blocks categories (e.g. `ADVERTISEMENT`, `FAMILY`), applies allow/block lists,
+and can be scheduled. It supports Create, Update, Delete and List.
+
+```go
+func exampleContentFiltering(ctx context.Context, c unifi.Client) error {
+	cf, err := c.CreateContentFiltering(ctx, "default", &unifi.ContentFiltering{
+		Name:       "block-ads",
+		Enabled:    true,
+		Categories: []string{"ADVERTISEMENT"}, // FAMILY | ADVERTISEMENT
+		NetworkIDs: []string{},
+		AllowList:  []string{},
+		BlockList:  []string{},
+	})
+	if err != nil {
+		return fmt.Errorf("create content filtering: %w", err)
+	}
+
+	// There is no GetContentFiltering — fetch via List and match on ID.
+	all, err := c.ListContentFiltering(ctx, "default")
+	if err != nil {
+		return fmt.Errorf("list content filtering: %w", err)
+	}
+	for i := range all {
+		if all[i].ID == cf.ID {
+			cf = &all[i]
+			break
+		}
+	}
+
+	cf.Enabled = false
+	if _, err := c.UpdateContentFiltering(ctx, "default", cf); err != nil {
+		return fmt.Errorf("update content filtering: %w", err)
+	}
+
+	return c.DeleteContentFiltering(ctx, "default", cf.ID)
+}
+```
+
+<Callout type="warn">
+`ContentFiltering` has **no `GetContentFiltering`** method — only `Create`, `Update`, `Delete`
+and `List`. To read a single record, list them and match on `ID` as shown above.
+</Callout>
+
+## Next steps
+
+<Cards>
+  <Card title="Networks" href="/docs/guides/networks">
+    Create the networks that zones, rules and content-filtering profiles reference.
+  </Card>
+  <Card title="Error handling" href="/docs/guides/error-handling">
+    Handle `ErrNotFound` and inspect `ServerError` validation details.
+  </Card>
+  <Card title="Resource reference" href="/docs/reference/resources">
+    Every firewall struct and its fields, generated from the controller API.
+  </Card>
+</Cards>

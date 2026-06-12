@@ -1,0 +1,165 @@
+---
+title: Customizations
+description: Steer the Internal-API code generator with customizations.yml — field type/name/tag overrides, exclude predicates, custom client functions, and JSON unmarshalers.
+---
+
+The Internal pass is driven by `codegen/internal/customizations.yml`. It is the supported way to shape
+generated output **without** hand-editing `*.generated.go`. When the controller's raw field definitions
+produce a wrong Go type, a bad JSON tag, or an endpoint you don't want, you fix it here and
+[regenerate](/docs/developers/regenerating).
+
+The file has two top-level sections under `customizations:` — `resources:` (per-resource and per-field
+overrides) and `client:` (interface-level customizations).
+
+## Field overrides
+
+Under `resources.<ResourceName>.fields.<FieldName>`, each of these keys is optional:
+
+<TypeTable
+  type={{
+    fieldType: { description: "Override the generated Go type, e.g. force float64 or *DeviceQOSProfile.", type: 'string' },
+    fieldName: { description: 'Rename the generated Go field (the struct identifier).', type: 'string' },
+    jsonPath: { description: 'Override the JSON tag / wire name for the field.', type: 'string' },
+    omitEmpty: { description: "Add or remove `,omitempty` on the JSON tag. Set false to always send the field.", type: 'bool' },
+    customUnmarshalType: { description: 'Decode through a helper type from unifi/json.go (numberOrString, emptyStringInt, …).', type: 'string' },
+    customUnmarshalFunc: { description: 'Apply a custom post-unmarshal function (e.g. emptyBoolToTrue).', type: 'string' },
+    ifFieldType: { description: 'Guard: only apply the override when the source field already has this type.', type: 'string' },
+  }}
+/>
+
+For example, the controller sends `Device.X`/`Device.Y` as ambiguous numbers and `StpPriority` as a
+string-or-number; the overrides pin sane Go types:
+
+```yaml title="codegen/internal/customizations.yml"
+resources:
+  Device:
+    fields:
+      _all:
+        omitEmpty: true
+      X:
+        fieldType: "float64"
+      Y:
+        fieldType: "float64"
+      StpPriority:
+        fieldType: "string"
+        customUnmarshalType: "numberOrString"
+      QOSProfile:
+        fieldType: "*DeviceQOSProfile"
+```
+
+The special field name `_all` applies to **every** field of the resource (it runs first, then the named-field
+override). Above, `_all.omitEmpty: true` makes every `Device` field omit-empty unless a specific field opts
+back out.
+
+### `ifFieldType` — conditional overrides
+
+`ifFieldType` only applies the override when the source field's type matches. This is how the same logical
+field is handled across resources where the controller is inconsistent — e.g. a `Channel` that is sometimes a
+number and sometimes the string `"auto"`:
+
+```yaml title="codegen/internal/customizations.yml"
+ChannelPlan:
+  fields:
+    Channel:
+      ifFieldType: "string"
+      customUnmarshalType: "numberOrString"
+```
+
+### `omitEmpty: false` — forcing a field onto the wire
+
+Slices default to `,omitempty`, which drops an empty slice entirely. Some controller endpoints choke on a
+missing array. Forcing the field to serialize as `[]` keeps the UI happy:
+
+```yaml title="codegen/internal/customizations.yml"
+FirewallGroup:
+  fields:
+    GroupMembers:
+      omitEmpty: false
+```
+
+## Resource-level overrides
+
+Under `resources.<ResourceName>` (alongside `fields:`):
+
+- **`resourcePath`** — override the REST path segment for the resource, e.g. `firewall/zone` or
+  `content-filtering`.
+- **`queryParams`** — a map of query-string parameters appended to every emitted URL for the resource. This is
+  the first-class alternative to smuggling a `?foo=bar` suffix into `resourcePath` (which would produce a
+  malformed id-suffixed URL). Keys are rendered in sorted, URL-encoded order.
+- **`excludeFunctions`** — omit specific CRUD actions (`Get`, `Create`, …) from the generated client. Unknown
+  action names are warned and ignored.
+
+```yaml title="codegen/internal/customizations.yml"
+ContentFiltering:
+  resourcePath: "content-filtering"
+  excludeFunctions: ["Get"]   # no public Get for this resource
+
+DescribedFeature:
+  resourcePath: "described-features"
+  queryParams:
+    includeSystemFeatures: "true"
+```
+
+## Client-level customizations
+
+Under `customizations.client`:
+
+- **`imports`** — extra imports to add to the generated client file.
+- **`functions`** — declare additional methods on the generated `Client` interface (signature + doc comment).
+  These are the **declarations**; the implementations live in hand-written siblings. This is how methods like
+  `AdoptDevice`, `GetDeviceByMAC`, `ListSites`, or the transport methods (`Get`/`Post`/`Put`/`Patch`/`Delete`)
+  appear on the interface.
+- **`excludeResources`** — omit a resource from the **`Client` interface only**. Its `*.generated.go` (types +
+  private CRUD) is still emitted, so a hand-written wrapper can wire it up (e.g. `FirewallZoneMatrix`,
+  `DescribedFeature`).
+- **`excludeGeneration`** — skip a resource **entirely** — no `*.generated.go` at all. Use this for
+  unsupported resources with no wrapper so no dead code ships (e.g. `Dpi*`). Patterns support leading/trailing
+  `*` wildcards.
+
+```yaml title="codegen/internal/customizations.yml"
+client:
+  imports: ["io"]
+  excludeResources: ["DescribedFeature", "FirewallZoneMatrix"]
+  excludeGeneration: ["Dpi*"]
+  functions:
+    - name: "GetDeviceByMAC"
+      resourceName: "Device"
+      params:
+        - { name: "ctx", type: "context.Context" }
+        - { name: "site", type: "string" }
+        - { name: "mac", type: "string" }
+      returns: ["*Device", "error"]
+```
+
+## Custom unmarshalers
+
+`customUnmarshalType` / `customUnmarshalFunc` reference helpers defined in **`unifi/json.go`** — a
+hand-written file. When you need a new wire-shape handler, add it there and reference it from the YAML. The
+existing helpers cover the common controller quirks:
+
+| Helper | Handles |
+|---|---|
+| `numberOrString` | A field that may be a JSON number **or** a string like `"auto"`. Treats `null`/`""` as empty. |
+| `emptyStringInt` | An int that the controller sometimes sends as `""`. Decodes empty/null to `0`; marshals `0` back to `""`. |
+| `booleanishString` | A boolean sent as `true`/`false`, `"enabled"`/`"disabled"`, `"1"`/`"0"`, or empty. Permissive — unrecognized input decodes to `false`. |
+| `emptyBoolToTrue` | A `customUnmarshalFunc` that defaults a missing `*bool` to `true`. |
+
+<Callout type="warn">
+`customizations.yml` is embedded into the generator binary via `//go:embed`. Editing the file is not enough on
+its own — you must **regenerate** for the change to reach `*.generated.go`, and commit the regenerated files
+alongside the YAML edit. CI's `test-codegen` job fails if they drift.
+</Callout>
+
+## See also
+
+<Cards>
+  <Card title="Code generation" href="/docs/developers/code-generation">
+    Where customizations fit in the two-pass pipeline.
+  </Card>
+  <Card title="Regenerating" href="/docs/developers/regenerating">
+    Run the generator after editing the YAML.
+  </Card>
+  <Card title="Validation" href="/docs/advanced/validation">
+    The runtime side: go-playground validator tags.
+  </Card>
+</Cards>

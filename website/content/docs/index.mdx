@@ -1,13 +1,61 @@
 ---
-title: Hello World
-description: Your first document
+title: go-unifi
+description: A Go client for the UniFi Network controller API — type-safe access to networks, clients, devices, firewall, and more.
 ---
 
-Welcome to the docs! You can start writing documents in `/content/docs`.
+**go-unifi** is a Go client library for the [UniFi Network](https://ui.com) controller API. It powers the
+[Terraform provider for UniFi](https://github.com/filipowm/terraform-provider-unifi) but works standalone in
+any Go project that needs to talk to a UniFi controller.
 
-## What is Next?
+It gives you strongly-typed access to networks, WLANs, clients, devices, firewall rules, settings and dozens of
+other resources — most of them generated directly from the controller's own API definitions for broad, accurate
+coverage.
+
+## Two API surfaces, one client
+
+A single `unifi.Client` exposes both of the controller's APIs:
 
 <Cards>
-  <Card title="Learn more about Next.js" href="https://nextjs.org/docs" />
-  <Card title="Learn more about Fumadocs" href="https://fumadocs.dev" />
+  <Card title="Internal API (default)" href="/docs/guides/choosing-a-surface">
+    The legacy UniFi Network API the library has always wrapped. Every resource method (`ListNetwork`,
+    `CreateUser`, …) lives here, reachable directly on the client or via `c.Internal()`.
+  </Card>
+  <Card title="Official API" href="/docs/guides/official-api">
+    The official UniFi OpenAPI (`integration/v1`), reached via `c.Official()`. A fluent, per-resource surface
+    that requires a newer controller and an API key.
+  </Card>
 </Cards>
+
+## Start here
+
+<Cards>
+  <Card title="Installation" href="/docs/getting-started/installation">
+    Add the module and import the packages.
+  </Card>
+  <Card title="Quickstart" href="/docs/getting-started/quickstart">
+    Connect to a controller and make your first call in one runnable program.
+  </Card>
+  <Card title="Authentication" href="/docs/getting-started/authentication">
+    Create an API key and understand the version requirements.
+  </Card>
+  <Card title="Guides" href="/docs/guides">
+    Task-oriented recipes: networks, devices, clients, firewall, and more.
+  </Card>
+  <Card title="Reference" href="/docs/reference/client">
+    The exported Go API: client, configuration, errors, and resources.
+  </Card>
+  <Card title="UniFi API Reference" href="/docs/reference/api">
+    The Official OpenAPI rendered endpoint-by-endpoint, with Go equivalents.
+  </Card>
+</Cards>
+
+## Requirements
+
+- **Go 1.26** or later.
+- A **new-style (UniFi OS)** controller, version **9.0.114** or newer — API-key authentication is the only
+  supported auth. The Official API surface additionally requires controller **10.1.78** or newer.
+
+<Callout type="info">
+  Upgrading from go-unifi 1.x? See the [migration guide](/docs/migrating/from-1.x). Coming from
+  `paultyng/go-unifi`? See [Migrating from upstream](/docs/migrating/from-paultyng).
+</Callout>

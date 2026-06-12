@@ -1,0 +1,108 @@
+---
+title: Using the Official API
+description: Reach the Official UniFi OpenAPI through c.Official() — fluent per-group accessors, uniform method shapes, and site UUIDs.
+---
+
+`c.Official()` returns the Official UniFi OpenAPI (`integration/v1`) surface: a **fluent** client with one
+accessor per resource group. This guide covers the accessors, the uniform method shapes, and how site IDs
+work. If you haven't yet, read [Choosing a surface](/docs/guides/choosing-a-surface) first — the Official
+surface is gated and requires controller **10.1.78+**.
+
+## Fluent per-group accessors
+
+Each accessor on `c.Official()` returns an independently usable (and mockable) per-group interface, derived
+from the OpenAPI tags:
+
+| Accessor | What it exposes |
+| --- | --- |
+| `Networks()` | networks / VLANs |
+| `Firewall()` | zone-based policies, zones, rule ordering (incl. `PatchPolicy`) |
+| `Devices()` | adopted devices, pending adoptions, device/port actions |
+| `Clients()` | connected clients |
+| `ACLs()` | ACL rules and ordering |
+| `DNSPolicies()` | DNS policies |
+| `TrafficMatchingLists()` | traffic-matching lists |
+| `WifiBroadcasts()` | Wi-Fi broadcasts |
+| `Hotspot()` | hotspot **vouchers** (`ListVouchersPage`, `CreateVouchers`, …) |
+| `Supporting()` | read-only catalogs: countries, RADIUS profiles, WANs, DPI, … |
+| `Sites()` | site listing and name → UUID resolution |
+| `Info()` | controller application info |
+
+<Callout type="info">
+There is **no** top-level `Vouchers()` accessor — vouchers live under `c.Official().Hotspot()`. Likewise,
+firewall resources (including `PatchPolicy`) live under `c.Official().Firewall()`.
+</Callout>
+
+## Uniform method shapes
+
+Methods are generated in a uniform shape per resource, so once you know one group you know them all:
+
+- **Read one** — `Get…(ctx, siteId, id)` returns the single-item `…Details`.
+- **List** — two methods, so draining is explicit and never accidental:
+  - `List…Page(ctx, siteId, *official.ListOptions)` returns **one bounded** `official.Page[T]`.
+  - `List…All(ctx, siteId, filter)` returns a lazy `iter.Seq2[T, error]` you can range over.
+- **Write** — `Create…` / `Update…` take the `…CreateOrUpdate` body; some groups add `Patch…`.
+- **Delete** — `Delete…(ctx, siteId, id)`.
+
+Pagination and filtering get their own guide: see [Pagination & filtering](/docs/guides/pagination-and-filtering).
+
+## Site IDs
+
+Every resource-group method takes a `siteId uuid.UUID` (not the legacy site-name string). Get it from a
+familiar name with `Sites().ResolveID`, which caches the lookup:
+
+```go title="official.go"
+siteID, err := c.Official().Sites().ResolveID(ctx, "default")
+if err != nil {
+	log.Fatal(err)
+}
+
+networks, err := c.Official().Networks().ListPage(ctx, siteID, nil)
+if err != nil {
+	log.Fatal(err)
+}
+for _, n := range networks.Items {
+	fmt.Printf("%s vlan=%d\n", n.Name, n.VlanId)
+}
+
+vouchers, err := c.Official().Hotspot().ListVouchersPage(ctx, siteID, nil)
+if err != nil {
+	log.Fatal(err)
+}
+for _, v := range vouchers.Items {
+	fmt.Println("voucher:", v.Code)
+}
+```
+
+Already have a UUID string? Parse it with `uuid.Parse` (from `github.com/google/uuid`) instead of resolving
+a name:
+
+```go title="parse.go"
+siteID, err := uuid.Parse("0fc8a3b2-3c1e-4f6a-9b2d-1a2b3c4d5e6f")
+if err != nil {
+	log.Fatal(err)
+}
+page, err := c.Official().Networks().ListPage(ctx, siteID, nil)
+```
+
+<Callout type="info">
+`ResolveID` returns `official.ErrSiteNotFound` when no site matches the name. The first resolve drains the
+full site list and caches every name → UUID mapping, so repeated lookups are free.
+</Callout>
+
+## Next steps
+
+<Cards>
+  <Card title="Pagination & filtering" href="/docs/guides/pagination-and-filtering">
+    Bounded pages, lazy streaming, and the filter DSL.
+  </Card>
+  <Card title="Sites" href="/docs/guides/sites">
+    The site-name vs UUID duality in depth.
+  </Card>
+  <Card title="UniFi API Reference" href="/docs/reference/api">
+    The Official OpenAPI rendered endpoint-by-endpoint, with Go equivalents.
+  </Card>
+</Cards>
+
+For exhaustive types and method signatures, see the
+[`official` package on pkg.go.dev](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi/official#Client).

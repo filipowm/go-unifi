@@ -1,0 +1,110 @@
+---
+title: File Uploads
+description: Upload Hotspot portal files to a UniFi controller from a path on disk or any io.Reader with UploadPortalFile and UploadPortalFileFromReader.
+---
+
+The Guest Hotspot portal can serve custom assets — a background image, a logo, an HTML template. go-unifi uploads
+those **portal files** to the controller with two methods, both of which use `multipart/form-data` as the
+controller requires:
+
+- `UploadPortalFile` — upload from a file path on disk.
+- `UploadPortalFileFromReader` — upload from any `io.Reader` (in-memory bytes, a network stream, an embedded asset).
+
+Both return a [`*unifi.PortalFile`](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#PortalFile) describing
+the stored file — its `ID`, `URL`, `Filename`, `FileSize`, and detected `ContentType`.
+
+## Upload from disk
+
+```go title="main.go"
+package main
+
+import (
+	"context"
+	"log"
+
+	"github.com/filipowm/go-unifi/v2/unifi"
+)
+
+func main() {
+	ctx := context.Background()
+
+	c, err := unifi.NewClient(&unifi.ClientConfig{
+		URL:    "https://unifi.example.com",
+		APIKey: "your-api-key",
+	})
+	if err != nil {
+		log.Fatalf("create client: %v", err)
+	}
+
+	portalFile, err := c.UploadPortalFile(ctx, "default", "/path/to/your/file.png")
+	if err != nil {
+		log.Fatalf("upload portal file: %v", err)
+	}
+
+	log.Printf("upload successful: id=%s url=%s", portalFile.ID, portalFile.URL)
+}
+```
+
+The content type is detected from the file itself — you don't set it. As with every Internal API call, the
+argument after the context is the **site name** (`"default"` here).
+
+## Upload from memory or a stream
+
+When the bytes don't live on disk — they're generated, downloaded, or embedded — use
+`UploadPortalFileFromReader` and pass the filename the controller should record:
+
+```go
+func uploadFromReader(ctx context.Context, c unifi.Client) error {
+	content := []byte("...image or HTML content...")
+	var reader io.Reader = bytes.NewReader(content)
+
+	portalFile, err := c.UploadPortalFileFromReader(ctx, "default", reader, "myfile.png")
+	if err != nil {
+		return fmt.Errorf("uploading portal file: %w", err)
+	}
+	fmt.Printf("uploaded: id=%s url=%s\n", portalFile.ID, portalFile.URL)
+	return nil
+}
+```
+
+Any `io.Reader` works — an `*os.File`, an `http.Response.Body`, a `bytes.Reader`, or an `embed.FS` entry.
+
+## Listing and deleting
+
+Uploaded files round out a small CRUD surface: `ListPortalFiles`, `GetPortalFile`, and `DeletePortalFile`.
+
+```go
+func managePortalFiles(ctx context.Context, c unifi.Client) error {
+	files, err := c.ListPortalFiles(ctx, "default")
+	if err != nil {
+		return fmt.Errorf("listing portal files: %w", err)
+	}
+	for _, f := range files {
+		fmt.Printf("%s (%s)\n", f.Filename, f.ID)
+	}
+	if len(files) > 0 {
+		if err := c.DeletePortalFile(ctx, "default", files[0].ID); err != nil {
+			return fmt.Errorf("deleting portal file: %w", err)
+		}
+	}
+	return nil
+}
+```
+
+<Callout type="info">
+All the usual client behaviour applies to uploads: request/response interceptors, the `X-Api-Key` header,
+`ServerError` decoding, and validation all run unchanged. An empty upload response surfaces as
+`unifi.ErrNotFound`. For uploads to other endpoints there are lower-level `UploadFile` / `UploadFileFromReader`
+primitives, but those are not part of the public `Client` interface — use the raw-call surface if you need them.
+</Callout>
+
+## Next steps
+
+<Cards>
+  <Card title="Error handling" href="/docs/guides/error-handling">
+    Reacting to upload failures and `ServerError` details.
+  </Card>
+  <Card title="Client reference" href="/docs/reference/client">
+    The full `Client` interface, including the portal-file methods.
+  </Card>
+</Cards>

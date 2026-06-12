@@ -1,0 +1,124 @@
+---
+title: Architecture
+description: How go-unifi is built — generated resource code vs. the hand-written client layer, the Client interface, and the one-way unifi → official dependency.
+---
+
+This section is for people who work **on** go-unifi rather than with it. It explains how the library is put
+together so you can change it safely. If you just want to call the API, start with the
+[guides](/docs/guides) instead.
+
+The library has two halves: a large body of **generated** code describing every resource the controller
+exposes, and a thin **hand-written** layer that turns that code into a usable client.
+
+## Generated vs. hand-written
+
+Most resource types and their CRUD methods are generated directly from the UniFi controller's own API
+definitions. This is what gives the library its broad, accurate coverage — there are far more resources than
+anyone would hand-maintain.
+
+<Callout type="error">
+Files named `*.generated.go` begin with `// Code generated … DO NOT EDIT.` **Never hand-edit them.** CI
+regenerates and overwrites them, so your change would be silently lost. To change generated output, edit the
+[codegen customizations](/docs/developers/customizations) or add a hand-written sibling file.
+</Callout>
+
+The split inside `unifi/` looks like this:
+
+| File pattern | Origin | Contains |
+|---|---|---|
+| `*.generated.go` | [code generation](/docs/developers/code-generation) | Resource structs, **private** CRUD methods (`getUser`, `listUser`), the `Client`/`InternalClient` interfaces, the moq mock |
+| `<resource>.go` | hand-written | **Public** wrappers (`GetUser`, `ListUser`), business logic (search-by-MAC, field init, custom marshaling) |
+| `client.go`, `requests.go`, `interceptors.go`, `json.go`, … | hand-written | Transport, config, auth, error handling, JSON edge cases |
+
+Generated CRUD methods are deliberately private. The public surface lives in the hand-written sibling, so a
+regeneration never clobbers your custom logic. See [Contributing](/docs/developers/contributing) for the
+wrapper convention.
+
+## The Client interface
+
+The generated [`Client`](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#Client) interface **embeds**
+[`InternalClient`](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#InternalClient) — the interface
+carrying every resource CRUD method — and then adds transport/lifecycle methods (`Get`/`Post`/`Put`/`Patch`/
+`Delete`/`Do`, `BaseURL`, `Version`) plus the two API-surface accessors:
+
+```go title="surfaces.go"
+package developers
+
+import (
+	"context"
+
+	"github.com/filipowm/go-unifi/v2/unifi"
+	"github.com/filipowm/go-unifi/v2/unifi/official"
+)
+
+// exampleSurfaces shows the two API surfaces hanging off one client.
+func exampleSurfaces(ctx context.Context, c unifi.Client) {
+	// Internal() returns the legacy resource CRUD surface (the default).
+	var internal unifi.InternalClient = c.Internal()
+
+	// Official() returns the Official OpenAPI surface, bound to the same transport.
+	var off official.Client = c.Official()
+
+	_, _ = internal.ListNetwork(ctx, "default")
+	_ = off
+}
+```
+
+Because the resource methods are promoted through the embedded `InternalClient`, `c.ListNetwork(...)` and
+`c.Internal().ListNetwork(...)` are the same call. `c.Internal()` and `c.Official()` simply name the surface
+you mean. The full reference is on the [client reference page](/docs/reference/client) and on
+[pkg.go.dev](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#Client).
+
+## The one-way `unifi → official` dependency
+
+The Official OpenAPI surface lives in its own package, `unifi/official`. The dependency is strictly one-way:
+
+```text
+unifi  ──imports──▶  unifi/official
+   ▲                      │
+   └──── imports nothing ─┘
+```
+
+`unifi/official` imports **nothing** from `unifi`. That keeps it independently testable and prevents an import
+cycle. The two packages meet at two small structural seams, both injected by `unifi` when it constructs the
+Official client:
+
+<Cards>
+  <Card title="Doer — the transport seam" href="https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi/official#Doer">
+    A five-method interface (`Get`/`Post`/`Put`/`Patch`/`Delete`). `*unifi.client` satisfies it through its
+    public request methods, so the Official wrappers send requests without knowing about the concrete client.
+  </Card>
+  <Card title="Gate — the capability seam" href="https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi/official#Gate">
+    A `func(ctx) error` run before every Official call. `unifi` injects a gate that checks opt-out, requires a
+    new-style controller with API-key auth, and probes the version floor (10.1.78+) once.
+  </Card>
+</Cards>
+
+The wiring lives in `unifi/official_surface.go`: `Official()` calls `official.New(c, integrationV1Path,
+c.officialAvailable)`, passing the client as the `Doer` and its gate method as the `Gate`. Official wrappers
+pass full leading-`/` paths under the `integration/v1` prefix, which `buildRequestURL` resolves directly
+against the base URL — bypassing the legacy API-path logic. This is why `unifi/official` never needs to know
+about old-vs-new API path styles.
+
+## Where to go next
+
+<Cards>
+  <Card title="Code generation" href="/docs/developers/code-generation">
+    The two-pass pipeline and the two version axes.
+  </Card>
+  <Card title="Customizations" href="/docs/developers/customizations">
+    Steer generated output via customizations.yml.
+  </Card>
+  <Card title="Regenerating" href="/docs/developers/regenerating">
+    The exact commands to regenerate everything.
+  </Card>
+  <Card title="Testing" href="/docs/developers/testing">
+    Fixtures, golden tests, and mocks.
+  </Card>
+  <Card title="Release process" href="/docs/developers/release-process">
+    goreleaser, changelog automation, and the daily regen.
+  </Card>
+  <Card title="Contributing" href="/docs/developers/contributing">
+    Style, conventions, and the pre-push gate.
+  </Card>
+</Cards>

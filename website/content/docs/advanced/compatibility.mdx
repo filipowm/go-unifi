@@ -1,0 +1,114 @@
+---
+title: Compatibility
+description: Which UniFi controller versions each go-unifi release supports, plus a changelog of breaking compatibility changes.
+---
+
+This page maps `go-unifi` releases to the UniFi Network controller versions they are known to work with, and
+records the breaking compatibility changes between releases.
+
+## Release ↔ controller matrix
+
+| `go-unifi` version  | Min UniFi Controller | Internal API version | Official API version    |
+|---------------------|----------------------|----------------------|-------------------------|
+| `2.0.0`             | `9.0.114`            | `9.5.21` (frozen)    | `10.1.78` (tracks spec) |
+| `1.11.0`            | `5.12.35`            | `9.5.21`             | —                       |
+| `1.10.0`            | `5.12.35`            | `9.4.19`             | —                       |
+| `v1.9.0` – `v1.9.1` | `5.12.35`            | `9.3.45`             | —                       |
+| `v0.0.1` – `v1.8.1` | `5.12.35`            | `9.0.114`            | —                       |
+
+<Callout type="info">
+Only the **min** and **latest** controller versions in each row are explicitly verified. Versions in between
+(and newer ones released after the latest tested) are very likely supported too, but this is **not** checked. If
+you hit an issue on a specific controller version, please
+[open an issue](https://github.com/filipowm/go-unifi/issues).
+</Callout>
+
+### 2.0.0 specifics
+
+- The **minimum** controller version (`9.0.114`) is set by API-key authentication — the only supported auth in
+  2.0.0. Old-style (classic) controllers are unsupported: `NewClient` returns `ErrOldStyleUnsupported`.
+- The **Internal API** is frozen at `9.5.21` for the 2.0.0 lifecycle. The daily codegen CI run is a deterministic
+  no-op for the internal half, so the legacy resource set does not move forward.
+- The **Official OpenAPI** surface (`c.Official()`) requires controller `10.1.78` or newer. Operations return
+  `ErrOfficialAPIUnavailable` on older controllers. Its spec version tracks the latest committed snapshot and may
+  update when the Official spec changes.
+
+Two plain-text version markers at the repo root record the pinned versions, written by `go generate`:
+
+- `.unifi-version` — the Internal (legacy) API controller version.
+- `.unifi-version-official` — the Official OpenAPI (`integration/v1`) spec version (requires controller ≥ `10.1.78`).
+
+## Compatibility changelog
+
+### 2.0.0 — breaking changes
+
+2.0.0 is a major release with several breaking changes. The headline items:
+
+- **API-key-only auth** — username/password login was removed (`Login`/`Logout` are gone).
+- **TLS verify by default** — the old `VerifySSL` field became `SkipVerifySSL` (secure-by-default zero value).
+- **Go 1.26+** required.
+- **`NewBareClient` removed** — use `ClientConfig.SkipSystemInfo: true` for offline/deferred construction.
+- **`Client` no longer embeds `Logger`** — call `client.Logger().Errorf(...)` instead of `client.Errorf(...)`.
+
+See the full [breaking changes guide](/docs/migrating/breaking-changes) and the
+[migration guide from 1.x](/docs/migrating/from-1.x).
+
+### 1.11.0 / UniFi Controller 9.5.21
+
+**Breaking changes**
+
+`ChannelPlan` — trimmed down to `Date` and `RadioTable` (no replacement identified):
+
+- removed fields `ApBlacklistedChannels`, `ConfSource`, `Coupling`, `Fitness`, `Note`, `Radio`, `Satisfaction`,
+  `SatisfactionTable`, `SiteBlacklistedChannels`
+- removed types `ChannelPlanApBlacklistedChannels`, `ChannelPlanCoupling`, `ChannelPlanSatisfactionTable`,
+  `ChannelPlanSiteBlacklistedChannels`
+- removed field `ChannelPlanRadioTable.BackupChannel`
+
+`DeviceRadioTable` — removed fields `BackupChannel` and `ChannelOptimizationEnabled`.
+
+**Additions**
+
+- `Network`: `WANDHCPv6PDSizeAuto` (auto IPv6 prefix-delegation size); `WANType` accepts `dslite-over-pppoe`.
+- `SettingRadioAi`: `HighPriorityDevices` (high-priority device MACs); `Radios` accepts `6e` (Wi-Fi 6E band).
+
+### 1.10.0 / UniFi Controller 9.4.19
+
+**Breaking changes**
+
+`SettingIps` — DNS filtering & ad-blocking moved out into the new `ContentFiltering` resource:
+
+- removed fields `DNSFiltering`, `DNSFilters`, `AdBlockingEnabled`, `AdBlockingConfigurations` (and types
+  `SettingIpsDNSFilters`, `SettingIpsAdBlockingConfigurations`)
+- added `ContentFilteringBlockingPageEnabled`
+
+`Device`:
+
+- `Mbb` field renamed to `MbbOverrides` (type `DeviceMbb` → `DeviceMbbOverrides`)
+- `DeviceSim.Iccid` removed
+
+`ContentFiltering` — new resource, replaces the removed IPS fields.
+
+**Additions**
+
+- New `ContentFiltering` resource. It exposes `ListContentFiltering`, `CreateContentFiltering`,
+  `UpdateContentFiltering`, and `DeleteContentFiltering` — there is **no** public `GetContentFiltering` (list and
+  filter instead).
+- `Device`: `NutServer`, `DeviceCurrentApn.PDpType`, and `DeviceSim` SIM-data fields
+  (`DataSoftLimitDisplayUnit`, `DataWarningThreshold`, `ResetDate`, `ResetPolicy`, `UseCustomApn`).
+- `Network`: IPv6 DHCP support (`WANDHCPv6Cos`, `WANDHCPv6Options`) and MAP-E `WANType` values.
+- `WLANMdnsProxyCustom.ServicesMode` accepts `none`; new dashboard widgets.
+
+## Next steps
+
+<Cards>
+  <Card title="Migrating from 1.x" href="/docs/migrating/from-1.x">
+    Step-by-step upgrade to 2.0.0.
+  </Card>
+  <Card title="Breaking changes" href="/docs/migrating/breaking-changes">
+    The complete 2.0.0 breaking-change list.
+  </Card>
+  <Card title="Authentication" href="/docs/getting-started/authentication">
+    API keys and the 9.0.114 version floor.
+  </Card>
+</Cards>

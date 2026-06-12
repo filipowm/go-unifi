@@ -1,0 +1,164 @@
+---
+title: Resources
+description: A curated map of the Internal (legacy) API resource methods — grouped by domain, with each resource's CRUD verbs and the by-MAC, reorder, and upload extras.
+---
+
+The Internal (legacy) API exposes every resource as plain methods on the client (also reachable via
+[`c.Internal()`](/docs/guides/choosing-a-surface)). They follow a strict naming convention, so this page
+maps the **resources** rather than transcribing hundreds of generated struct fields — for those, browse
+[the `unifi` package on pkg.go.dev](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi).
+
+## The convention
+
+Most resources expose the same five methods, named `<Verb><Resource>`:
+
+| Verb | Signature | Returns |
+| --- | --- | --- |
+| `Create` | `Create<R>(ctx, site, *R)` | `(*R, error)` |
+| `Get` | `Get<R>(ctx, site, id)` | `(*R, error)` |
+| `List` | `List<R>(ctx, site)` | `([]R, error)` |
+| `Update` | `Update<R>(ctx, site, *R)` | `(*R, error)` |
+| `Delete` | `Delete<R>(ctx, site, id)` | `error` |
+
+So the `Network` row below means `CreateNetwork`, `GetNetwork`, `ListNetwork`, `UpdateNetwork`,
+`DeleteNetwork`. Every method takes a `context.Context` first and a **site name** string (`"default"`);
+`Get` returns [`ErrNotFound`](/docs/reference/errors) when the resource doesn't exist, while `List`
+returns an empty slice (and a `nil` error) when there are none. In the tables below, **CRUD** is shorthand
+for all five; deviations are spelled out.
+
+```go title="resources.go"
+package main
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"log"
+
+	"github.com/filipowm/go-unifi/v2/unifi"
+)
+
+func main() {
+	ctx := context.Background()
+	c, err := unifi.NewClient(&unifi.ClientConfig{URL: "https://unifi.example.com", APIKey: "your-api-key"})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	networks, err := c.ListNetwork(ctx, "default")
+	if err != nil {
+		log.Fatalf("list networks: %v", err)
+	}
+	for _, n := range networks {
+		fmt.Printf("%s (%s)\n", n.Name, n.Purpose)
+	}
+
+	// Device and User add convenience by-MAC variants.
+	dev, err := c.GetDeviceByMAC(ctx, "default", "00:11:22:33:44:55")
+	if err != nil && !errors.Is(err, unifi.ErrNotFound) {
+		log.Fatal(err)
+	}
+	_ = dev
+}
+```
+
+## Networking
+
+| Resource | Methods | Notes |
+| --- | --- | --- |
+| `Network` | CRUD | LANs, VLANs, WAN, and VPN networks. |
+| `PortForward` | CRUD | Port-forwarding rules. |
+| `Routing` | CRUD | Static routes. |
+| `DHCPOption` | CRUD | Custom DHCP options. |
+| `DNSRecord` | CRUD | Controller DNS records. |
+| `DynamicDNS` | CRUD | Dynamic-DNS service configs. |
+| `RADIUSProfile` | CRUD | RADIUS auth/accounting profiles. |
+
+## Firewall
+
+| Resource | Methods | Notes |
+| --- | --- | --- |
+| `FirewallRule` | CRUD + `ReorderFirewallRules` | Classic ruleset rules; reorder by ruleset. |
+| `FirewallGroup` | CRUD | Address/port groups referenced by rules. |
+| `FirewallZone` | CRUD + `ListFirewallZoneMatrix` | Zone-based firewall zones; matrix lists zone-pair state. |
+| `FirewallZonePolicy` | CRUD + `ReorderFirewallPolicies` | Zone-based firewall policies. |
+| `ContentFiltering` | Create / List / Update / Delete | **No `Get`** — fetch via `ListContentFiltering`. |
+
+## Wireless
+
+| Resource | Methods | Notes |
+| --- | --- | --- |
+| `WLAN` | CRUD | Wireless networks (SSIDs). |
+| `WLANGroup` | CRUD | Groups of WLANs assigned to APs. |
+| `APGroup` | CRUD | Access-point groups. |
+| `ChannelPlan` | CRUD | Saved RF channel plans. |
+| `Hotspot2Conf` | CRUD | Hotspot 2.0 / Passpoint configuration. |
+
+## Devices
+
+| Resource | Methods | Notes |
+| --- | --- | --- |
+| `Device` | CRUD + `GetDeviceByMAC`, `AdoptDevice`, `ForgetDevice` | Adopt/forget take a **MAC**; `GetDeviceByMAC` looks up by MAC. |
+| `PortProfile` | CRUD | Switch-port profiles. |
+| `VirtualDevice` | CRUD | Virtual / logical devices. |
+| `Tag` | CRUD | Device tags. |
+| `BroadcastGroup` | CRUD | Broadcast (PA) groups of devices. |
+
+## Clients & Users
+
+| Resource | Methods | Notes |
+| --- | --- | --- |
+| `User` | CRUD + `GetUserByMAC`, `DeleteUserByMAC`, `BlockUserByMAC`, `UnblockUserByMAC`, `KickUserByMAC`, `OverrideUserFingerprint` | "Users" are known clients; the extras act by **MAC**. |
+| `UserGroup` | CRUD | Bandwidth-limit groups. |
+| `Account` | CRUD | RADIUS / guest accounts. |
+
+## Sites & System
+
+| Resource | Methods | Notes |
+| --- | --- | --- |
+| `Site` | `CreateSite(desc)`, `GetSite(id)`, `ListSites`, `UpdateSite(name, desc)`, `DeleteSite(id)` | **No `site` arg** (sites are global); list is `ListSites`; mutations return `[]Site`. |
+| System info | `GetSystemInformationContext(ctx)`, `GetSystemInfo(ctx, id)`, `GetSystemInformation()` | Returns `*SysInfo`. `GetSystemInformation` is the only method without a `context`. |
+| Features | `ListFeatures`, `GetFeature(name)`, `IsFeatureEnabled(name)` | Controller feature flags; names are the [feature constants](/docs/reference/feature-constants). |
+| `Dashboard` | CRUD | Saved dashboards. |
+| `ScheduleTask` | CRUD | Scheduled tasks. |
+| Traffic flows | `GetTrafficFlows(req)` | Analytics query; takes a `*TrafficFlowsRequest`. |
+| Settings | `GetSetting` / `SetSetting` + typed pairs | See the [Settings catalogue](/docs/reference/settings). |
+
+## Layout & Media
+
+| Resource | Methods | Notes |
+| --- | --- | --- |
+| `Map` | CRUD | Floor-plan / topology maps. |
+| `HeatMap` | CRUD | Coverage heatmaps. |
+| `HeatMapPoint` | CRUD | Individual heatmap survey points. |
+| `SpatialRecord` | CRUD | Spatial survey records. |
+| `MediaFile` | CRUD | Uploaded media references. |
+
+## Guest portal & hotspot
+
+| Resource | Methods | Notes |
+| --- | --- | --- |
+| `HotspotOp` | CRUD | Hotspot operators. |
+| `HotspotPackage` | CRUD | Hotspot payment packages. |
+| `PortalFile` | `ListPortalFiles`, `GetPortalFile`, `UploadPortalFile`, `UploadPortalFileFromReader`, `DeletePortalFile` | Upload-based — **no `Create`/`Update`**; upload from a path or an `io.Reader`. |
+
+<Callout type="info">
+This map is curated for orientation. The exact field set of each resource struct — and any rarely used
+helper — is authoritative on
+[pkg.go.dev](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi). The full method list also lives
+on the [`InternalClient` interface](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#InternalClient).
+</Callout>
+
+## See also
+
+<Cards>
+  <Card title="Settings" href="/docs/reference/settings">
+    The `Setting*` catalogue and its typed `Get`/`Update` pairs.
+  </Card>
+  <Card title="Official API" href="/docs/reference/official">
+    The newer `c.Official()` surface, addressed by site UUID.
+  </Card>
+  <Card title="Errors" href="/docs/reference/errors">
+    `ErrNotFound`, `ServerError`, and how to match them.
+  </Card>
+</Cards>

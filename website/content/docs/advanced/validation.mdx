@@ -1,0 +1,118 @@
+---
+title: Validation
+description: Control request-body validation modes (soft, hard, disabled), inspect ValidationError, and register custom regex validators.
+---
+
+Before sending a write request, the client validates the request body against the
+[`go-playground/validator`](https://pkg.go.dev/github.com/go-playground/validator/v10) struct tags carried by the
+generated resource types (e.g. `Network.Purpose` only accepts `corporate`, `guest`, `wan`, …). This catches
+malformed payloads on your side instead of as an opaque controller error. How a failure is handled depends on
+the **validation mode**.
+
+<Callout type="info">
+Validation only runs on **request bodies** (the `reqBody` of POST/PUT/PATCH calls). Read calls (`Get`, `List…`)
+are never validated, and a `nil` body is skipped.
+</Callout>
+
+## Validation modes
+
+Set the mode with [`ClientConfig.ValidationMode`](/docs/reference/configuration-types):
+
+<TypeTable
+  type={{
+    SoftValidation: { description: 'Default. Logs a WARN for invalid fields but still sends the request.', type: 'ValidationMode' },
+    HardValidation: { description: 'Returns an error and does NOT send the request when validation fails.', type: 'ValidationMode' },
+    DisableValidation: { description: 'Skips validation entirely — the body goes to the controller untouched.', type: 'ValidationMode' },
+  }}
+/>
+
+```go title="hard-validation.go"
+c, err := unifi.NewClient(&unifi.ClientConfig{
+	URL:            "https://unifi.example.com",
+	APIKey:         "your-api-key",
+	ValidationMode: unifi.HardValidation,
+})
+```
+
+The default `SoftValidation` is deliberate: the generated tags come from the controller's own API definitions and
+can be stricter than a given controller version actually enforces. Soft mode keeps you moving (and logs a warning
+you can act on), while hard mode is best in tests and CI where you want a fast, local failure.
+
+## Handling a ValidationError
+
+In `HardValidation` mode a failed validation surfaces as a `*unifi.ValidationError`, wrapped with context. Use
+`errors.As` to reach it and read the per-field messages from `Messages`:
+
+```go title="handle-validation-error.go"
+n := &unifi.Network{
+	Name:     "my-network",
+	Purpose:  "invalid-purpose", // not one of the allowed values
+	IPSubnet: "10.0.0.10/24",
+}
+
+_, err := c.CreateNetwork(ctx, "default", n)
+if err != nil {
+	var verr *unifi.ValidationError
+	if errors.As(err, &verr) {
+		for field, msg := range verr.Messages {
+			log.Printf("validation error on %s: %s", field, msg)
+		}
+		return verr
+	}
+	return err
+}
+```
+
+`ValidationError` has two fields:
+
+- `Messages map[string]string` — a human-readable, translated message per failing field (keys are sorted when
+  rendered via `Error()`, so the string form is deterministic).
+- `Root error` — the underlying cause. For a normal struct failure this is the raw
+  [`validator.ValidationErrors`](https://pkg.go.dev/github.com/go-playground/validator/v10#ValidationErrors), so
+  `errors.As(err, &validationErrs)` works if you need each field's tag, kind, and value. (On a non-struct or nil
+  argument it instead carries the validator's `InvalidValidationError`.) `Unwrap()` exposes `Root`, so
+  `errors.Is`/`errors.As` walk straight through.
+
+## Custom validators
+
+The client registers a couple of built-in regex tags (`w_regex`, `numeric_nonzero`) that the generated structs
+reference. To add your own tag, build one with `NewCustomRegexValidator` and register it through
+[`ClientConfig.CustomValidators`](/docs/reference/configuration-types):
+
+```go title="custom-validator.go"
+// Register a new "hostname_rfc1123" tag usable on request-body struct fields.
+hostname := unifi.NewCustomRegexValidator("hostname_rfc1123", `^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`)
+
+c, err := unifi.NewClient(&unifi.ClientConfig{
+	URL:              "https://unifi.example.com",
+	APIKey:           "your-api-key",
+	CustomValidators: []unifi.CustomValidator{hostname},
+})
+```
+
+`NewCustomRegexValidator(tag, regex)` returns a `CustomValidator` whose `tag` becomes a go-playground/validator
+tag name. Any struct field carrying `validate:"...,hostname_rfc1123"` is then checked against the pattern, and a
+failure produces the message `<field> must comply with the regular expression pattern '<regex>'`. Each custom
+validator is registered on the client's own validator instance — it does not mutate global state, so two clients
+can carry different sets.
+
+<Callout type="warn">
+Custom validators only fire during the client's own request-body validation, on fields whose struct tags
+reference your tag. The generated resource types are not editable (they are regenerated) and there is no public
+accessor to the client's validator, so this is most useful for tags the generated definitions already emit but
+the built-in set does not yet cover.
+</Callout>
+
+## Next steps
+
+<Cards>
+  <Card title="Error handling" href="/docs/guides/error-handling">
+    Sentinels, ServerError, and reacting to controller failures.
+  </Card>
+  <Card title="Configuration" href="/docs/advanced/configuration">
+    All ClientConfig options, including ValidationMode and CustomValidators.
+  </Card>
+  <Card title="Troubleshooting" href="/docs/advanced/troubleshooting">
+    When to relax validation for a stubborn controller version.
+  </Card>
+</Cards>

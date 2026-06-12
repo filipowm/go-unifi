@@ -1,0 +1,40 @@
+---
+title: Advanced
+description: Fine-tune the client beyond the basics — configuration, raw HTTP calls, interceptors, logging, validation, concurrency, and more.
+---
+
+The [Getting Started](/docs/getting-started/quickstart) and [Guides](/docs/guides) sections cover everyday use.
+These pages go deeper: how to reshape the HTTP transport, call endpoints that have no generated method, hook into
+the request/response cycle, and reason about validation, logging, and concurrency.
+
+## Topics
+
+<Cards>
+  <Card title="Configuration" href="/docs/advanced/configuration">
+    `ClientConfig` beyond `URL` and `APIKey` — timeouts, User-Agent, custom transports, error handling, and
+    custom validators.
+  </Card>
+  <Card title="Raw HTTP calls" href="/docs/advanced/raw-http">
+    Reach endpoints without a generated method using `Do`/`Get`/`Post`/`Put`/`Patch`/`Delete`, and understand
+    how paths resolve.
+  </Card>
+  <Card title="Interceptors" href="/docs/advanced/interceptors">
+    Hook into every request and response for logging, metrics, or header injection — and the body-read hazard
+    to avoid.
+  </Card>
+  <Card title="Logging" href="/docs/advanced/logging">
+    Configure the SDK logger, pick a level, or plug in your own implementation.
+  </Card>
+  <Card title="Validation" href="/docs/advanced/validation">
+    Soft, hard, and disabled validation modes, and how to add your own rules.
+  </Card>
+  <Card title="Concurrency" href="/docs/advanced/concurrency">
+    Why one client is safe to share across goroutines and the `UseLocking` no-op.
+  </Card>
+  <Card title="Compatibility" href="/docs/advanced/compatibility">
+    Controller version requirements and API-style detection.
+  </Card>
+  <Card title="Troubleshooting" href="/docs/advanced/troubleshooting">
+    Diagnose common connection, authentication, and API errors.
+  </Card>
+</Cards>

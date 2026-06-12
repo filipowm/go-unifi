@@ -1,0 +1,172 @@
+---
+title: Configuration types
+description: Every ClientConfig field with its type and default, plus the ValidationMode, APIStyle, and logging enums.
+---
+
+`ClientConfig` is the single struct you pass to [`NewClient`](/docs/reference/client#newclient). Only `URL` and
+`APIKey` are required; everything else is optional and secure-by-default. This page is the field-by-field reference;
+for the task-oriented walkthrough see [Configuration](/docs/advanced/configuration).
+
+## ClientConfig
+
+<TypeTable
+  type={{
+    URL: {
+      description: 'Base URL of the controller. Must be https and must NOT include the /api suffix. Required.',
+      type: 'string',
+      default: '—',
+    },
+    APIKey: {
+      description: 'API key sent in the X-Api-Key header. Required. Obtain one from the controller (9.0.114+).',
+      type: 'string',
+      default: '—',
+    },
+    Timeout: {
+      description: 'Maximum duration to wait for a controller response. Zero means no timeout; a WARN is logged when unset. Consider 30s.',
+      type: 'time.Duration',
+      default: '0 (no timeout)',
+    },
+    SkipVerifySSL: {
+      description: 'Set true to DISABLE TLS certificate verification (self-signed controller certs). Logs a WARN when enabled.',
+      type: 'bool',
+      default: 'false (verify)',
+    },
+    ValidationMode: {
+      description: 'How request bodies are validated before sending. See ValidationMode below.',
+      type: 'ValidationMode',
+      default: 'SoftValidation',
+    },
+    APIStyle: {
+      description: 'Forces the controller API style instead of probing the network. See APIStyle below.',
+      type: 'APIStyle',
+      default: 'APIStyleAuto',
+    },
+    SkipSystemInfo: {
+      description: 'Set true to skip the eager GetSystemInformation round-trip in NewClient (defers the check to the first call).',
+      type: 'bool',
+      default: 'false',
+    },
+    DisableOfficialAPI: {
+      description: 'Set true to opt out of the Official OpenAPI; Official() operations then fail with ErrOfficialAPIDisabled.',
+      type: 'bool',
+      default: 'false',
+    },
+    Logger: {
+      description: 'Logger implementation for client diagnostics. See Logging below.',
+      type: 'Logger',
+      default: 'NewDefaultLogger(InfoLevel)',
+    },
+    UserAgent: {
+      description: 'User-Agent header for outgoing requests.',
+      type: 'string',
+      default: 'go-unifi/<version>',
+    },
+    Interceptors: {
+      description: 'Request/response interceptors applied to every call. Deduplicated by concrete type (a duplicate is dropped with a WARN).',
+      type: '[]ClientInterceptor',
+      default: 'nil',
+    },
+    HttpTransportCustomizer: {
+      description: 'Callback to customize the default *http.Transport (timeouts, idle conns, TLS, proxy).',
+      type: 'HttpTransportCustomizer',
+      default: 'nil',
+    },
+    HttpRoundTripperProvider: {
+      description: 'Replaces the entire transport with the returned RoundTripper. Takes precedence; TLS becomes caller-managed (SkipVerifySSL ignored).',
+      type: 'func() http.RoundTripper',
+      default: 'nil',
+    },
+    ErrorHandler: {
+      description: 'Custom handler for non-2xx HTTP responses. Defaults to the built-in handler that builds a *ServerError.',
+      type: 'ResponseErrorHandler',
+      default: 'DefaultResponseErrorHandler',
+    },
+    CustomValidators: {
+      description: 'Extra validation rules registered on top of the built-in set. Build regex rules with NewCustomRegexValidator.',
+      type: '[]CustomValidator',
+      default: 'nil',
+    },
+    UseLocking: {
+      description: 'DEPRECATED no-op since 1.11.0. The client is goroutine-safe and no longer serializes requests; retained only for source compatibility.',
+      type: 'bool',
+      default: 'false',
+    },
+  }}
+/>
+
+<Callout type="info">
+`HttpTransportCustomizer` and `HttpRoundTripperProvider` are mutually exclusive. If both are set,
+`HttpRoundTripperProvider` wins (and a WARN reminds you that TLS is then entirely your responsibility). See
+[Configuration → customizing the HTTP client](/docs/advanced/configuration).
+</Callout>
+
+## ValidationMode
+
+`ValidationMode` controls what happens when a request body fails the built-in [struct
+validation](/docs/advanced/validation) before it is sent.
+
+| Constant | Behavior |
+| --- | --- |
+| `SoftValidation` | **Default.** Validation failures are logged as warnings; the request still goes out. |
+| `HardValidation` | Validation failures become an error and the request is **not** sent. |
+| `DisableValidation` | No validation is performed. |
+
+## APIStyle
+
+`APIStyle` selects which controller API style the client uses. The zero value probes the controller over the
+network at construction time; pinning a style skips that probe and enables fully offline construction (pair it with
+`SkipSystemInfo: true`).
+
+| Constant | Behavior |
+| --- | --- |
+| `APIStyleAuto` | **Default.** Auto-detect by probing the controller. |
+| `APIStyleNew` | Force the new (UniFi OS / proxy) style without probing. |
+| `APIStyleOld` | The legacy classic style — **unsupported**; `NewClient` returns [`ErrOldStyleUnsupported`](/docs/reference/errors). |
+
+```go
+func exampleOffline() (unifi.Client, error) {
+	return unifi.NewClient(&unifi.ClientConfig{
+		URL:            "https://unifi.example.com",
+		APIKey:         "your-api-key",
+		APIStyle:       unifi.APIStyleNew, // pin the style; skip the probe
+		SkipSystemInfo: true,              // skip the eager system-info call
+	})
+}
+```
+
+## Logging
+
+The client logs through the `Logger` interface (10 leveled methods: `Trace`/`Debug`/`Info`/`Warn`/`Error` and
+their `*f` formatting variants). When `ClientConfig.Logger` is `nil` the client uses an `slog`-backed default at
+`InfoLevel`. Two constructors are provided:
+
+| Constructor | Returns |
+| --- | --- |
+| `NewDefaultLogger(level LoggingLevel)` | A `log/slog` text logger to stderr. `DisabledLevel` yields a no-op logger. |
+| `NewSlogLogger(l *slog.Logger)` | Wraps your own `*slog.Logger` in the `Logger` interface. |
+
+`LoggingLevel` values, in order: `DisabledLevel`, `TraceLevel`, `DebugLevel`, `InfoLevel` (default), `WarnLevel`,
+`ErrorLevel`.
+
+```go
+func exampleConfig() (unifi.Client, error) {
+	return unifi.NewClient(&unifi.ClientConfig{
+		URL:    "https://unifi.example.com",
+		APIKey: "your-api-key",
+
+		Timeout:       30 * time.Second,
+		SkipVerifySSL: false, // verify certificates (secure default)
+
+		ValidationMode: unifi.HardValidation, // reject invalid request bodies
+		APIStyle:       unifi.APIStyleAuto,   // probe the controller (default)
+
+		Logger:    unifi.NewDefaultLogger(unifi.WarnLevel),
+		UserAgent: "my-app/1.0",
+	})
+}
+```
+
+For the full `Logger` and `ClientConfig` godoc see
+[`ClientConfig`](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#ClientConfig) and
+[`Logger`](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#Logger). For deeper how-tos see
+[Logging](/docs/advanced/logging) and [Validation](/docs/advanced/validation).

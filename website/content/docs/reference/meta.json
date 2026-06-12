@@ -1,0 +1,16 @@
+{
+  "title": "Reference",
+  "icon": "Braces",
+  "pages": [
+    "index",
+    "client",
+    "configuration-types",
+    "errors",
+    "official",
+    "resources",
+    "settings",
+    "feature-constants",
+    "---UniFi API (OpenAPI)---",
+    "api"
+  ]
+}

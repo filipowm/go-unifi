@@ -1,0 +1,11 @@
+{
+  "pages": [
+    "index",
+    "getting-started",
+    "guides",
+    "advanced",
+    "reference",
+    "migrating",
+    "developers"
+  ]
+}

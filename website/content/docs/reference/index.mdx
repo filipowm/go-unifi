@@ -1,0 +1,56 @@
+---
+title: Reference
+description: Curated reference for the go-unifi exported API — client, configuration, errors, resources, and the Official OpenAPI surface.
+---
+
+This section is a **curated** reference. It documents the parts of the API you reach for most — how to build a
+client, every configuration field, the error model, and the two API surfaces — with the structure, defaults, and
+gotchas you cannot get from a flat symbol list.
+
+For exhaustive, always-current detail (every resource struct, every field, every method signature), the source of
+truth is **[pkg.go.dev](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi)**. These pages link there
+liberally rather than re-typing hundreds of generated fields that would drift out of date.
+
+<Callout type="info">
+Most resource types are **generated** from the controller's own API definitions, so they are far better browsed on
+pkg.go.dev than transcribed here. The curated pages cover the hand-written, stable surface; pkg.go.dev covers the
+long tail.
+</Callout>
+
+## Pages
+
+<Cards>
+  <Card title="Client" href="/docs/reference/client">
+    `NewClient`, the `Client` interface, and its transport/lifecycle methods.
+  </Card>
+  <Card title="Configuration types" href="/docs/reference/configuration-types">
+    Every `ClientConfig` field plus the `ValidationMode`, `APIStyle`, and logging enums.
+  </Card>
+  <Card title="Errors" href="/docs/reference/errors">
+    `ServerError`, `ValidationError`, and the `Err*` sentinels you match with `errors.Is`.
+  </Card>
+  <Card title="Official API" href="/docs/reference/official">
+    The `c.Official()` surface: fluent per-group clients, `ListOptions`, and pagination helpers.
+  </Card>
+  <Card title="Resources" href="/docs/reference/resources">
+    The Internal (legacy) resource methods (`ListNetwork`, `CreateUser`, …) and their structs.
+  </Card>
+  <Card title="Settings" href="/docs/reference/settings">
+    The controller settings types and their `Setting*Key` constants.
+  </Card>
+  <Card title="Feature constants" href="/docs/reference/feature-constants">
+    The `features` package: controller feature-flag name constants.
+  </Card>
+  <Card title="UniFi API (OpenAPI)" href="/docs/reference/api">
+    The Official UniFi OpenAPI rendered endpoint-by-endpoint, with Go equivalents.
+  </Card>
+</Cards>
+
+## Conventions
+
+- Every client method takes a `context.Context` as its first argument.
+- Internal (legacy) methods address a site by its **name** string (`"default"`); the Official surface addresses a
+  site by `uuid.UUID` (resolve it with `c.Official().Sites().ResolveID`). See
+  [Choosing a surface](/docs/guides/choosing-a-surface).
+- Errors are wrapped with `%w`; match sentinels and typed errors with `errors.Is` / `errors.As`. See
+  [Errors](/docs/reference/errors).

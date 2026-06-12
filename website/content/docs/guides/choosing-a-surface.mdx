@@ -1,0 +1,113 @@
+---
+title: Choosing a surface
+description: Internal vs Official — what each API surface is, how to reach it, the capability gate, and which to pick.
+---
+
+A single `unifi.Client` exposes **two** of the controller's APIs. They cover overlapping resources with
+different shapes, identifiers and requirements. This guide explains both and helps you pick.
+
+## The two surfaces
+
+- **Internal** — the legacy UniFi Network API this library has always wrapped. Every resource method
+  (`ListNetwork`, `CreateUser`, …) lives here, reachable **directly on the client** or via `c.Internal()`.
+  It is the **default**: calling a resource method on the client is identical to calling it on `c.Internal()`.
+- **Official** — the official UniFi OpenAPI (`integration/v1`), reached via `c.Official()`. A **fluent**,
+  per-resource-group surface generated from the controller's own OpenAPI snapshot. It needs a newer controller.
+
+```go title="surfaces.go"
+// These two calls are identical — Internal is the default surface.
+a, err := c.ListNetwork(ctx, "default")
+b, err := c.Internal().ListNetwork(ctx, "default")
+
+// The Official surface is explicit and fluent.
+info, err := c.Official().Info().Get(ctx)
+```
+
+<Callout type="info">
+Writing `c.Internal()` is never required in 2.0.0 — it only documents intent. It pays off ahead of the
+[3.0.0 default flip](#the-20--30-default-flip): code that already says `c.Internal()` keeps working unchanged.
+</Callout>
+
+## The Official capability gate
+
+The Official surface only works on a capable controller, so every Official operation runs a **capability
+gate** first and returns a sentinel error when it can't proceed. Match either with `errors.Is`:
+
+- `unifi.ErrOfficialAPIUnavailable` — the controller can't serve it: a classic (old-style) controller,
+  non-API-key auth, or a controller version below **10.1.78**.
+- `unifi.ErrOfficialAPIDisabled` — you opted out via `ClientConfig.DisableOfficialAPI`.
+
+```go title="gate.go"
+info, err := c.Official().Info().Get(ctx)
+switch {
+case errors.Is(err, unifi.ErrOfficialAPIDisabled):
+	log.Println("Official API turned off via DisableOfficialAPI")
+	return
+case errors.Is(err, unifi.ErrOfficialAPIUnavailable):
+	log.Println("controller too old, wrong auth, or classic — Official API unavailable")
+	return
+case err != nil:
+	log.Fatal(err)
+}
+log.Println("controller version:", info.ApplicationVersion)
+```
+
+The first successful gate check probes `GET /v1/info` once and caches the result, so later calls skip it.
+
+### Opting out
+
+Set `DisableOfficialAPI` to skip the Official surface entirely — the capability probe never runs and every
+`c.Official()` operation fails fast with `ErrOfficialAPIDisabled`:
+
+```go title="disable.go"
+c, err := unifi.NewClient(&unifi.ClientConfig{
+	URL:                "https://unifi.example.com",
+	APIKey:             "your-api-key",
+	DisableOfficialAPI: true,
+})
+```
+
+## Site identifiers differ
+
+The biggest day-to-day difference is how each surface names a site:
+
+| Surface | Site identifier | Example |
+| --- | --- | --- |
+| Internal | site **name** string | `"default"` |
+| Official | a `uuid.UUID` | `c.Official().Sites().ResolveID(ctx, "default")` |
+
+`Official().Sites().ResolveID(ctx, name)` maps the familiar name to its UUID (and caches it). If you already
+hold a UUID string, parse it with `uuid.Parse` from `github.com/google/uuid`. See the
+[Sites guide](/docs/guides/sites) for the full bridge.
+
+## The 2.0 → 3.0 default flip
+
+<Callout type="warn">
+In **2.0.0 the Internal surface is the canonical default**, so existing code is untouched. **3.0.0 is
+expected to flip the default to the Official client.** If you want to stay on the legacy API across that
+change, call resource methods through `c.Internal()` now — it is a no-op today and future-proof later.
+</Callout>
+
+## Which should I use?
+
+- Prefer **Official** for resources it covers — it is the direction Ubiquiti supports going forward, with
+  stable typed models and explicit pagination. Requires controller **10.1.78+**.
+- Use **Internal** for everything the Official surface doesn't cover yet, or when you target controllers
+  between **9.0.114** and 10.1.78. It has the broadest resource coverage.
+
+The [coverage map](/docs/reference/api) and the [Reference](/docs/reference/official) show which resources
+each surface exposes.
+
+## Next steps
+
+<Cards>
+  <Card title="Using the Official API" href="/docs/guides/official-api">
+    The fluent per-group surface and its uniform method shapes.
+  </Card>
+  <Card title="Sites" href="/docs/guides/sites">
+    Resolve a site name to its Official UUID.
+  </Card>
+  <Card title="Error handling" href="/docs/guides/error-handling">
+    Sentinels, server errors, and how to react to them.
+  </Card>
+</Cards>

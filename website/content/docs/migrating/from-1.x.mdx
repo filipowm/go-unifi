@@ -1,0 +1,412 @@
+---
+title: Upgrading from 1.x
+description: A task-oriented walkthrough of every breaking change between go-unifi 1.x and 2.0, with before/after code and grep hints.
+---
+
+This guide walks you through every breaking change introduced in go-unifi 2.0.0. It is written for Go
+developers of all experience levels: a senior can skim the [Fast path](#fast-path) checklist and be done in
+minutes; a junior can read each thematic section for the full story of what changed, why, and what to look
+for in their own code.
+
+You don't need the [breaking-changes log](/docs/migrating/breaking-changes) open while reading this — all the
+rationale and affected symbols are inlined here. That page is a cross-reference for completeness; this one is
+your hands-on guide.
+
+## Fast path
+
+A mechanical checklist — tick each off in order:
+
+- [ ] Update the import path to `/v2`: `github.com/filipowm/go-unifi/v2/unifi`
+- [ ] Update `go get`: `go get github.com/filipowm/go-unifi/v2`
+- [ ] Replace `ClientConfig.User`/`Password`/`RememberMe` with `APIKey:`
+- [ ] Remove any calls to `.Login()`, `.LoginContext()`, `.Logout()`, `.LogoutContext()`
+- [ ] Rename `VerifySSL: false` → `SkipVerifySSL: true` (and double-check the logic flip — verify is now ON by default)
+- [ ] Update your Go toolchain to Go 1.26 or newer
+- [ ] Replace `NewBareClient(cfg)` with `NewClient(cfg)` + `SkipSystemInfo: true`
+- [ ] Review error checks on `Create`/`Update` paths (they no longer return `ErrNotFound`)
+- [ ] If your code implements the `Client` interface, add `SetSetting`, `VersionContext`, and `GetSystemInformationContext`
+- [ ] Move promoted logging calls (`c.Errorf(...)`) to the `c.Logger()` accessor
+- [ ] Remove any direct use of `CSRFInterceptor` or `CsrfHeader`
+
+## Module path bumped to `/v2`
+
+Every import path changes from `github.com/filipowm/go-unifi/unifi` to
+`github.com/filipowm/go-unifi/v2/unifi`. This is a Go-modules requirement for a new major version.
+
+```go
+// go-unifi 1.x
+import "github.com/filipowm/go-unifi/unifi"
+```
+
+```go
+// go-unifi 2.0.0
+import "github.com/filipowm/go-unifi/v2/unifi"
+```
+
+Update the module and run a find-and-replace across your tree:
+
+```bash
+go get github.com/filipowm/go-unifi/v2
+find . -name '*.go' | xargs sed -i 's|filipowm/go-unifi/unifi|filipowm/go-unifi/v2/unifi|g'
+```
+
+## Authentication & TLS
+
+### API key replaces username/password
+
+**What changed.** Username/password authentication is gone. The `ClientConfig` fields
+`User`/`Password`/`RememberMe` and the type `UserPassCredentials` no longer exist. The
+`Login`/`LoginContext`/`Logout`/`LogoutContext` methods are removed from the `Client` interface.
+Old-style (classic) controllers — which only ever supported user/pass — are also unsupported; constructing
+a client against one returns `ErrOldStyleUnsupported` immediately.
+
+**Why.** API keys are more secure (no session expiry, no CSRF exposure, scoped credentials) and are the path
+Ubiquiti is investing in. Removing the fallback keeps the auth surface small and predictable.
+
+```go
+// go-unifi 1.x — the field was always URL:, never BaseURL:
+cfg := &unifi.ClientConfig{
+	URL:      "https://unifi.localdomain",
+	User:     "admin",
+	Password: "secret",
+}
+```
+
+```go
+// go-unifi 2.0.0
+cfg := &unifi.ClientConfig{
+	URL:    "https://unifi.localdomain",
+	APIKey: "your-api-key", // obtain from Control Plane → Admins & Users
+}
+```
+
+**Check your code.**
+
+```bash
+grep -r 'User:\|Password:\|RememberMe:\|UserPassCredentials' .
+grep -r '\.Login(\|\.Logout(' .
+```
+
+<Callout type="info">
+  API keys require UniFi Network **9.0.114** or newer on a UniFi OS (new-style) controller. See
+  [Authentication](/docs/getting-started/authentication) for how to create one.
+</Callout>
+
+### TLS verification now ON by default
+
+**What changed.** `ClientConfig.VerifySSL bool` was renamed **and inverted** to `SkipVerifySSL bool`. The
+zero value now means *verify certificates* (secure by default). In 1.x the zero value `VerifySSL: false`
+meant *skip verification* — the exact opposite.
+
+**Why.** The old name was a footgun: leaving it at zero gave you an insecure connection by accident. The
+renamed, inverted field means safe code requires no action; unsafe code is explicit and logged at WARN.
+
+```go
+// go-unifi 1.x — zero value silently skipped verification
+cfg := &unifi.ClientConfig{VerifySSL: false} // verification OFF
+```
+
+```go
+// go-unifi 2.0.0 — zero value verifies; set true only for self-signed certs
+cfg := &unifi.ClientConfig{SkipVerifySSL: true} // disable for self-signed cert (logs a warning)
+```
+
+<Callout type="warn">
+  `grep -r 'VerifySSL' .` — any hit that set `VerifySSL: false` was getting no TLS verification and will now
+  get full verification (good for most callers). If your controller uses a self-signed cert you **must** add
+  `SkipVerifySSL: true`, or `NewClient` will fail with a TLS error.
+</Callout>
+
+### CSRF handling removed
+
+**What changed.** With username/password auth gone, the `CSRFInterceptor` and its token logic are removed.
+The `CsrfHeader` constant is also gone.
+
+**Why.** CSRF tokens were session-cookie artifacts tied to user/pass auth. API-key auth doesn't use session
+cookies, so CSRF management is irrelevant.
+
+```go
+// go-unifi 1.x
+c.AddInterceptor(&unifi.CSRFInterceptor{}) // type is gone in 2.0.0
+// go-unifi 2.0.0 — simply remove the line
+```
+
+**Check your code.** `grep -r 'CSRFInterceptor\|CsrfHeader' .`
+
+## Official API surface (additive, recommended)
+
+The Official API (`integration/v1`) is the surface Ubiquiti now maintains as a versioned, stable contract.
+**Prefer it over the legacy Internal API, and migrate existing Internal calls to their Official equivalents
+wherever a covered one exists.** The Internal surface stays supported for everything the Official API doesn't
+yet cover, but new code should reach for `c.Official()` first.
+
+**What changed.** `c.Official()` returns a fluent client for the UniFi official OpenAPI (`integration/v1`).
+This is new in 2.0.0 and is purely additive — no existing code changes.
+
+```go
+// Official API — new in 2.0.0; requires controller ≥ 10.1.78 with API-key auth
+info, err := c.Official().Info().Get(ctx)
+
+id, err := c.Official().Sites().ResolveID(ctx, "default") // returns uuid.UUID for the site
+
+page, err := c.Official().Networks().ListPage(ctx, id, nil)
+
+// body is an official.FirewallPolicyCreateOrUpdate
+pol, err := c.Official().Firewall().CreatePolicy(ctx, id, body)
+```
+
+All resource-group methods (Networks, Firewall, Devices, …) accept `siteId uuid.UUID` as their first
+argument. `Sites().ResolveID` maps a familiar site name (`"default"`, `"lab"`, …) to the required UUID. If
+you already have a UUID string, use `uuid.Parse("xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx")`.
+
+Operations on `c.Official()` return `ErrOfficialAPIUnavailable` if the controller is below `10.1.78`, is
+old-style, or uses non-API-key auth. Set `DisableOfficialAPI: true` in `ClientConfig` to opt out entirely
+(operations then fail fast with `ErrOfficialAPIDisabled`).
+
+**Error handling.** The Official surface uses the same error types as the Internal surface. Errors returned
+through the default transport are `*unifi.ServerError`, and HTTP 404 responses satisfy
+`errors.Is(err, unifi.ErrNotFound)`:
+
+```go
+id, err := c.Official().Sites().ResolveID(ctx, "default")
+if errors.Is(err, unifi.ErrNotFound) {
+	// site not found
+}
+var serverErr *unifi.ServerError
+if errors.As(err, &serverErr) {
+	log.Printf("controller error %d: %s", serverErr.StatusCode, serverErr.Message)
+}
+```
+
+In 2.0.0 the Internal surface remains the default — calling a resource method directly on `c` is identical
+to calling it on `c.Internal()`. The default is expected to flip to Official in 3.0.0.
+
+<Callout type="info">
+  New to the two surfaces? Read [Choosing a surface](/docs/guides/choosing-a-surface) and the
+  [Official API guide](/docs/guides/official-api).
+</Callout>
+
+## Go version
+
+**What changed.** The module requires Go 1.26 or later (`go 1.26.0` in `go.mod`).
+
+**Why.** The Official API surface uses range-over-func iterators (`iter.Seq2`), which need Go ≥ 1.23. The
+module pins `1.26` as the project's supported toolchain baseline — not because any single language feature
+demands it — so contributors and consumers build on one known-good floor.
+
+**Check your code.** Run `go version` — if you're below 1.26 you'll see a build error immediately. Update
+your toolchain:
+
+```bash
+go install golang.org/dl/go1.26.0@latest && go1.26.0 download
+```
+
+## Client interface additions
+
+**What changed.** The `Client` interface has three new methods. If you maintain a custom type that
+implements `Client` (rare — most callers use the concrete client returned by `NewClient`), you must add
+these:
+
+```go
+// Implement all three if you have a custom Client implementation
+SetSetting(ctx context.Context, site string, key string, reqBody any) (any, error)
+VersionContext(ctx context.Context) (string, error)
+GetSystemInformationContext(ctx context.Context) (*SysInfo, error)
+```
+
+`LoginContext`/`LogoutContext` were briefly added during the 2.0.0 work and then removed along with the rest
+of username/password auth.
+
+**Why.** `SetSetting` was on the concrete struct but missing from the interface. The `*Context` variants add
+proper context propagation for callers who need cancellation/timeouts on lifecycle calls.
+
+**Check your code.** This only affects you if you have a type that satisfies `unifi.Client` by listing the
+methods (e.g. a hand-written mock). The generated `ClientMock` (moq) is regenerated automatically.
+
+### Logger is no longer promoted onto the client
+
+**What changed.** The `Client` interface no longer **embeds** `Logger`; it exposes a single accessor
+`Logger() Logger`. The 10 logging methods (`Trace`/`Debug`/`Info`/`Warn`/`Error` and their `*f` variants)
+are therefore no longer promoted onto a `Client` value — call them through the accessor.
+
+```go
+// go-unifi 1.x
+c.Errorf("boom: %v", err)
+```
+
+```go
+// go-unifi 2.0.0
+c.Logger().Errorf("boom: %v", err)
+```
+
+The `Logger` interface and the `LoggingLevel` enum are unchanged. The default logger is now backed by
+`log/slog`; `NewSlogLogger(*slog.Logger) Logger` wraps a caller-supplied logger. See
+[Logging](/docs/advanced/logging) for the full picture.
+
+## Error handling
+
+### `meta.rc=="error"` on HTTP 200 now surfaces as `*ServerError`
+
+**What changed.** The UniFi v1 API sometimes returns HTTP 200 with `meta.rc == "error"` — a soft
+application-level failure. In 1.x this was caught in exactly one place (`CreateUser`) and silently swallowed
+everywhere else. In 2.0.0 it is detected centrally, so **every** decoded `{meta,data}` 200 with
+`rc=="error"` surfaces as a `*ServerError` carrying the controller's `rc`/`msg`, enriched with
+status/method/URL.
+
+**Why.** Silent swallowing of soft errors was a correctness hazard. Surfacing them uniformly lets callers
+make explicit decisions.
+
+```go
+// Same code as before — but rc=="error" now produces *ServerError
+n := &unifi.Network{Name: "lab"}
+_, err := c.CreateNetwork(ctx, "default", n)
+
+var serverErr *unifi.ServerError
+if errors.As(err, &serverErr) {
+	log.Printf("controller error: %s", serverErr.Message)
+}
+```
+
+**Check your code.** If you have error checks that assumed success whenever `err == nil` after a resource
+call, they are now correct. If you specifically checked for `nil` and then inspected the response body
+yourself, you can remove that logic.
+
+<Callout type="info">
+  Requests that pass `nil` as the response body (all generated deletes and fire-and-forget `cmd/`
+  operations) skip this check — the body isn't inspected when no response struct is expected.
+</Callout>
+
+### 404 responses now satisfy `errors.Is(err, ErrNotFound)`
+
+**What changed.** Previously only hand-written list/get wrappers returned `ErrNotFound`. In 2.0.0,
+`(*ServerError).Is` maps any `*ServerError` with `StatusCode == 404` to the `ErrNotFound` sentinel, so a
+genuine HTTP 404 from **any** endpoint satisfies `errors.Is(err, unifi.ErrNotFound)`.
+
+**Why.** Consistent error semantics: "not found" means `ErrNotFound`, regardless of which endpoint produced
+the 404.
+
+```go
+// Same check; now covers all 404s, not just specific resources
+_, err := c.GetNetwork(ctx, "default", "missing-id")
+if errors.Is(err, unifi.ErrNotFound) {
+	// resource doesn't exist
+}
+```
+
+**Check your code.** If you were checking `err != nil && !errors.Is(err, ErrNotFound)` on get paths, the
+behavior is now wider — any 404 will match. This is correct and desirable.
+
+### `Create`/`Update` no longer return `ErrNotFound` on unexpected responses
+
+**What changed.** The v1-REST template used to return `ErrNotFound` when a successful create/update response
+contained a data array with a length other than 1. That was semantically wrong (you just created something
+— it can't "not be found"). In 2.0.0 these return a descriptive error instead:
+`fmt.Errorf("unexpected response: expected 1 <X>, got %d", n)`.
+
+**Why.** `ErrNotFound` should only mean "the resource doesn't exist at that path." Using it on a create path
+confused callers and hid real bugs.
+
+```go
+// go-unifi 1.x — ErrNotFound could (incorrectly) come back from a create
+_, err := c.CreateNetwork(ctx, "default", n)
+if errors.Is(err, unifi.ErrNotFound) { /* this branch could fire on create */ }
+```
+
+```go
+// go-unifi 2.0.0 — ErrNotFound will NOT come from Create/Update
+_, err := c.CreateNetwork(ctx, "default", n)
+// non-nil err means failure; errors.Is(err, ErrNotFound) is always false here
+```
+
+**Check your code.** `grep -r 'ErrNotFound' .` — any `errors.Is(err, ErrNotFound)` that sits on a
+`Create`/`Update` call path was dead code (the controller was returning an application error, not a 404).
+Remove those branches or replace with a generic `err != nil` check.
+
+## Types and methods
+
+### `NewBareClient` replaced by `NewClient` with `SkipSystemInfo: true`
+
+**What changed.** The `NewBareClient` function is removed. Its purpose was to create a client without the
+eager `GetSystemInformation()` round-trip. You now do this with the standard `NewClient` and the
+`SkipSystemInfo: true` field.
+
+**Why.** A separate constructor created two code paths to maintain. The `SkipSystemInfo` field achieves the
+same behaviour without the duplication.
+
+```go
+// go-unifi 1.x
+c, err := unifi.NewBareClient(&unifi.ClientConfig{
+	URL:    "https://unifi.localdomain",
+	APIKey: "your-api-key",
+})
+```
+
+```go
+// go-unifi 2.0.0
+c, err := unifi.NewClient(&unifi.ClientConfig{
+	URL:            "https://unifi.localdomain",
+	APIKey:         "your-api-key",
+	SkipSystemInfo: true, // skip the eager sysinfo check; errors surface on first API call
+})
+```
+
+**Check your code.** `grep -r 'NewBareClient' .`
+
+### New `Patch` method
+
+**What changed.** The `Client` interface (and the concrete client) now exposes a `Patch` method alongside
+the existing `Get`/`Post`/`Put`/`Delete`. It sends an HTTP PATCH request for partial updates.
+
+**Why.** PATCH is the standard verb for partial updates, and the escape-hatch surface
+(`Do`/`Get`/`Post`/`Put`/`Delete`) was missing it. It is most useful against endpoints that actually accept
+PATCH — notably the Official `integration/v1` surface and any new-style endpoint documented to support
+partial updates.
+
+```go
+// New in 2.0.0 — partial update via PATCH against a PATCH-capable endpoint
+patch := struct {
+	Name string `json:"name"`
+}{Name: "updated"}
+
+var resp map[string]any
+err := c.Patch(ctx, "/proxy/network/integration/v1/sites/<id>/...", patch, &resp)
+```
+
+`Patch` sends a literal HTTP PATCH — the target endpoint must accept it. Most legacy Internal REST resources
+(e.g. `networkconf`) expect `PUT`; use `Put` for those. This is an additive change — no existing code is
+broken. See [Raw HTTP requests](/docs/advanced/raw-http) for the full escape-hatch surface.
+
+### `UseLocking` is a no-op
+
+**What changed.** `ClientConfig.UseLocking` is deprecated and has no effect. `net/http.Client` is
+goroutine-safe; requests run concurrently and are not serialized.
+
+**Why.** The old mutex serialisation was a performance hazard with no correctness benefit once the
+underlying HTTP client became goroutine-safe.
+
+```go
+// go-unifi 1.x — had an effect (serialised requests)
+cfg := &unifi.ClientConfig{UseLocking: true}
+```
+
+```go
+// go-unifi 2.0.0 — field retained for source compat but ignored; remove it
+cfg := &unifi.ClientConfig{} // concurrent by default
+```
+
+**Check your code.** `grep -r 'UseLocking' .` — you can remove the field; setting it has no effect. Share
+**one** client across goroutines (see [Concurrency](/docs/advanced/concurrency)).
+
+## Further reading
+
+<Cards>
+  <Card title="Breaking changes" href="/docs/migrating/breaking-changes">
+    The authoritative changelog with status, provenance, and code for every break.
+  </Card>
+  <Card title="Compatibility" href="/docs/advanced/compatibility">
+    The go-unifi release ↔ controller version matrix.
+  </Card>
+  <Card title="Raw HTTP requests" href="/docs/advanced/raw-http">
+    Do/Get/Post/Put/Patch/Delete, path-resolution rules, and interceptors.
+  </Card>
+</Cards>

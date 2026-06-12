@@ -1,0 +1,177 @@
+---
+title: Settings
+description: The controller settings catalogue — the generic GetSetting/SetSetting pair, the typed GetSetting<X>/UpdateSetting<X> methods, and the Setting<X>Key constants.
+---
+
+UniFi controller settings are keyed singletons, not list resources: each *kind* of setting (NTP, mDNS,
+management, …) has exactly one record per site. go-unifi exposes them two ways — a **generic** key-based
+pair and a **typed** pair per setting kind.
+
+All settings methods take a `context.Context` and a **site name** string (`"default"`).
+
+## Typed accessors (recommended)
+
+For each setting kind `X` there is a matching struct `Setting<X>` and a method pair:
+
+```go
+GetSetting<X>(ctx, site)            (*Setting<X>, error)
+UpdateSetting<X>(ctx, site, *Setting<X>) (*Setting<X>, error)
+```
+
+The typical edit is read-modify-write — fetch, change a field, write back:
+
+```go title="settings.go"
+package main
+
+import (
+	"context"
+	"log"
+
+	"github.com/filipowm/go-unifi/v2/unifi"
+)
+
+func main() {
+	ctx := context.Background()
+	c, err := unifi.NewClient(&unifi.ClientConfig{URL: "https://unifi.example.com", APIKey: "your-api-key"})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	ntp, err := c.GetSettingNtp(ctx, "default")
+	if err != nil {
+		log.Fatalf("get ntp setting: %v", err)
+	}
+
+	// ...mutate ntp fields here...
+
+	if _, err := c.UpdateSettingNtp(ctx, "default", ntp); err != nil {
+		log.Fatalf("update ntp setting: %v", err)
+	}
+}
+```
+
+<Callout type="warn">
+The verbs are asymmetric: reads are `GetSetting<X>`, writes are **`UpdateSetting<X>`** — but the
+generic write (below) is **`SetSetting`**, not `UpdateSetting`.
+</Callout>
+
+## Generic accessors
+
+When you want to work by key (e.g. a setting kind without a typed wrapper, or dynamic code), use the
+generic pair:
+
+```go
+GetSetting(ctx, site, key)            (*Setting, any, error)
+SetSetting(ctx, site, key, reqBody any) (any, error)
+```
+
+`GetSetting` returns the bare [`Setting`](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#Setting)
+envelope (`ID`, `SiteID`, `Key`) plus the decoded fields as an `any` — which is a `*Setting<X>` pointer
+you type-assert. Pass the matching `Setting<X>Key` constant:
+
+```go title="generic_setting.go"
+package main
+
+import (
+	"context"
+	"fmt"
+	"log"
+
+	"github.com/filipowm/go-unifi/v2/unifi"
+)
+
+func main() {
+	ctx := context.Background()
+	c, err := unifi.NewClient(&unifi.ClientConfig{URL: "https://unifi.example.com", APIKey: "your-api-key"})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	setting, fields, err := c.GetSetting(ctx, "default", unifi.SettingMgmtKey)
+	if err != nil {
+		log.Fatal(err)
+	}
+	mgmt, ok := fields.(*unifi.SettingMgmt)
+	if !ok {
+		log.Fatalf("unexpected fields type for key %q", setting.Key)
+	}
+	fmt.Println(mgmt.SiteID)
+}
+```
+
+<Callout type="info">
+Both pairs decode the same way: the key resolves to a generated factory that returns a fresh
+`*Setting<X>`. An unknown key yields an `unexpected key` error; a key absent from the controller's
+response yields [`ErrNotFound`](/docs/reference/errors).
+</Callout>
+
+## Catalogue
+
+Every kind below has a `Setting<X>` struct, a `Setting<X>Key` constant, and a typed
+`GetSetting<X>` / `UpdateSetting<X>` pair. Field-level detail lives on
+[pkg.go.dev](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi).
+
+| `X` (type / method suffix) | `Setting<X>Key` value | Covers |
+| --- | --- | --- |
+| `AutoSpeedtest` | `auto_speedtest` | Scheduled automatic speed tests. |
+| `Baresip` | `baresip` | VoIP (baresip) integration. |
+| `Broadcast` | `broadcast` | Broadcast / PA audio. |
+| `Connectivity` | `connectivity` | Uplink connectivity monitoring. |
+| `Country` | `country` | Site country / regulatory domain. |
+| `Dashboard` | `dashboard` | Dashboard preferences. |
+| `Doh` | `doh` | DNS-over-HTTPS. |
+| `Dpi` | `dpi` | Deep packet inspection. |
+| `ElementAdopt` | `element_adopt` | UniFi Element adoption. |
+| `EtherLighting` | `ether_lighting` | Switch port LED / ether-lighting. |
+| `EvaluationScore` | `evaluation_score` | Network experience score. |
+| `GlobalAp` | `global_ap` | Global access-point defaults. |
+| `GlobalNat` | `global_nat` | Global NAT behaviour. |
+| `GlobalSwitch` | `global_switch` | Global switch defaults. |
+| `GuestAccess` | `guest_access` | Guest portal / hotspot access. |
+| `Ips` | `ips` | Intrusion prevention / detection. |
+| `Lcm` | `lcm` | Device LCD / LCM screen. |
+| `Locale` | `locale` | Site locale / timezone. |
+| `MagicSiteToSiteVpn` | `magic_site_to_site_vpn` | Auto site-to-site VPN. |
+| `Mdns` | `mdns` | Multicast DNS (Bonjour) forwarding. |
+| `Mgmt` | `mgmt` | Device management (SSH, etc.). |
+| `Netflow` | `netflow` | NetFlow export. |
+| `NetworkOptimization` | `network_optimization` | Automatic network optimization. |
+| `Ntp` | `ntp` | NTP servers. |
+| `Porta` | `porta` | Hotspot portal customization. |
+| `RadioAi` | `radio_ai` | AI RF / radio optimization. |
+| `Radius` | `radius` | Built-in RADIUS server. |
+| `RoamingAssistant` | `roaming_assistant` | Client roaming assistance. |
+| `Rsyslogd` | `rsyslogd` | Remote syslog. |
+| `Snmp` | `snmp` | SNMP agent. |
+| `SslInspection` | `ssl_inspection` | SSL inspection. |
+| `SuperCloudaccess` | `super_cloudaccess` | Controller-wide remote (cloud) access. |
+| `SuperEvents` | `super_events` | Controller-wide event retention. |
+| `SuperFwupdate` | `super_fwupdate` | Controller-wide firmware-update policy. |
+| `SuperIdentity` | `super_identity` | Controller identity / name. |
+| `SuperMail` | `super_mail` | Controller-wide mail. |
+| `SuperMgmt` | `super_mgmt` | Controller-wide management. |
+| `SuperSdn` | `super_sdn` | Controller-wide SDN / cloud integration. |
+| `SuperSmtp` | `super_smtp` | Controller-wide SMTP server. |
+| `Teleport` | `teleport` | Teleport VPN. |
+| `TrafficFlow` | `traffic_flow` | Traffic-flow analytics. |
+| `Usg` | `usg` | Gateway (USG / UDM) settings. |
+| `Usw` | `usw` | Switch (USW) settings. |
+
+<Callout type="info">
+The `Super*` kinds are controller-wide rather than per-site, but you still read and write them with the
+same site-scoped methods (use `"default"`).
+</Callout>
+
+## See also
+
+<Cards>
+  <Card title="Resources" href="/docs/reference/resources">
+    The list-style resource methods (`ListNetwork`, `CreateUser`, …).
+  </Card>
+  <Card title="Errors" href="/docs/reference/errors">
+    `ErrNotFound` and the `unexpected key` error from settings.
+  </Card>
+  <Card title="unifi on pkg.go.dev" href="https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#Setting">
+    Every `Setting<X>` struct and its fields.
+  </Card>
+</Cards>

@@ -1,0 +1,15 @@
+{
+  "title": "Advanced",
+  "icon": "Settings2",
+  "pages": [
+    "index",
+    "configuration",
+    "raw-http",
+    "interceptors",
+    "logging",
+    "validation",
+    "concurrency",
+    "compatibility",
+    "troubleshooting"
+  ]
+}

@@ -1,0 +1,110 @@
+---
+title: Contributing
+description: Conventions for contributing to go-unifi — formatting, context-first methods, error wrapping, the generated-vs-hand-written rule, and the pre-push gate.
+---
+
+This page collects the conventions a change to go-unifi is expected to follow. Most are enforced by tooling;
+run the [pre-push gate](#the-pre-push-gate) before opening a PR and CI should be green.
+
+## The cardinal rule: never edit generated files
+
+<Callout type="error">
+Files named `*.generated.go` start with `// Code generated … DO NOT EDIT.` **Never hand-edit them.** A daily CI
+job regenerates and overwrites them. To change generated output, edit
+[`customizations.yml`](/docs/developers/customizations) and [regenerate](/docs/developers/regenerating), or add
+a hand-written sibling `.go` file.
+</Callout>
+
+This is the single most important convention — see the [architecture overview](/docs/developers) for the
+generated-vs-hand-written split.
+
+## Wrapping generated code
+
+Generated CRUD methods are **private** (`getUser`, `listUser`, `createUser`). Expose them through **public
+wrappers** in the hand-written sibling (`GetUser`, `ListUser`, …), and put any custom logic — search-by-MAC,
+field initialization, custom marshaling — in the wrapper, not the generated file. That way a regeneration never
+clobbers your behavior.
+
+A few more client conventions:
+
+- **Transport:** use `c.Get`/`Post`/`Put`/`Patch`/`Delete` (or `c.Do`) from `requests.go`; don't build raw
+  `http.Request`s.
+- **Errors:** surface API failures as `ServerError` (status, method, URL, code, validation details). Return the
+  `ErrNotFound` sentinel when a single-resource GET finds nothing.
+- **JSON edge cases:** for empty-string-or-int, string-or-number, or enabled/disabled fields, use the helpers
+  in `json.go` (`emptyStringInt`, `numberOrString`, `booleanishString`) rather than ad-hoc unmarshaling.
+- **Validation:** use [go-playground/validator](/docs/advanced/validation) struct tags; register custom regex
+  validators via `NewCustomRegexValidator` in `validation.go`.
+- **One-way Official dependency:** `unifi/official` must import nothing from `unifi`. The transport is injected
+  as the structural `Doer` and the capability check as a `Gate`.
+
+## Go style
+
+| Rule | Enforced by |
+|---|---|
+| **Tabs** for indentation | `gofmt` family |
+| Max line length **200** | `golangci-lint` |
+| Import grouping & ordering | `goimports` + `gci` |
+| Stricter formatting | `gofumpt` |
+
+Run the formatters with `golangci-lint fmt` (aliased to `make fmt`). A few language conventions on top:
+
+- **Context first.** Every client method takes `context.Context` as its first argument.
+- **Wrap errors with `%w` and context.** Never return a bare error that adds no information — name what failed:
+  `fmt.Errorf("injecting validation tags: %w", err)`. The exception: if the callee already wraps with
+  sufficient context, bubbling it up verbatim is fine.
+- **Comments explain *why*, not *what*.** Keep them short (≈2 lines); only exceed that for genuinely complex
+  logic that naming and structure can't make self-evident. Don't narrate obvious code.
+- **Logging.** The client holds a named `log Logger` field (not embedded) and exposes a `Logger()` accessor.
+  The default logger is `log/slog`-backed — don't import logrus in the `unifi` package.
+
+go-unifi targets **Go 1.26**.
+
+## Commit messages
+
+Use [conventional commits](https://www.conventionalcommits.org/). The type you choose drives the
+[changelog](/docs/developers/release-process#changelog-generation): `feat`, `fix`, `perf`, and `security`
+appear in release notes; a `!` marker (`feat!:`) flags a breaking change; `chore`/`ci`/`docs`/`refactor`/
+`style`/`test`/`build` are treated as internal noise and excluded.
+
+## The pre-push gate
+
+```bash
+make check        # build + lint + test — the pre-push gate
+```
+
+Or run the steps individually:
+
+```bash
+go build ./...
+golangci-lint run
+go test ./...
+```
+
+If you touched anything that feeds code generation (`customizations.yml`, a template, a snapshot, the
+`DeviceState` enum, or the `Client` interface), also confirm the generated output is current — CI fails on a
+diff:
+
+```bash
+go generate unifi/codegen.go && git diff --exit-code   # mirrors CI's test-codegen
+go generate unifi/device.go  && git diff --exit-code   # the DeviceState stringer
+```
+
+<Callout type="warn">
+`golangci-lint` reads the Go version from `go.mod`. If a tool manager shadows your Go install with an older
+version, formatting and linting can fail spuriously — make sure the `go` on your `PATH` matches `go.mod`.
+</Callout>
+
+## See also
+
+<Cards>
+  <Card title="Architecture" href="/docs/developers">
+    The generated-vs-hand-written split these rules protect.
+  </Card>
+  <Card title="Testing" href="/docs/developers/testing">
+    Test conventions and the fixtures to reuse.
+  </Card>
+  <Card title="Regenerating" href="/docs/developers/regenerating">
+    Commands to run after a codegen change.
+  </Card>
+</Cards>

@@ -1,0 +1,128 @@
+---
+title: Testing
+description: go-unifi's test strategy — testify, table-driven cases, httptest controller fixtures, golden/determinism tests, and the generated mocks.
+---
+
+go-unifi has two kinds of tests: **behavioral** tests for the hand-written client (assertions over real HTTP
+round-trips against a fake controller) and **golden / determinism** tests that lock down the generated output.
+This page covers the conventions for both. Run the suite with:
+
+```bash
+go test ./...                      # everything
+go test -run TestName ./unifi      # a single test
+make test                          # with coverage (generated files excluded)
+make test-fast                     # no coverage, quick loop
+```
+
+## Conventions for hand-written tests
+
+<Steps>
+<Step>
+**Assertions: testify.** Use `testify/assert` + `testify/require` (or `tj/assert` for simple cases). Compare
+marshaled JSON with `assert.JSONEq` rather than string equality.
+</Step>
+<Step>
+**Table-driven.** Cases go in a `map[string]struct{...}`, one `t.Run(name, ...)` per case. Call `t.Parallel()`
+in both the outer test and each subtest.
+</Step>
+<Step>
+**External package.** Test files are `*_test.go` and use the external `unifi_test` package when exercising the
+public API, so tests see only what consumers see.
+</Step>
+</Steps>
+
+## Mocking a real controller
+
+When a test needs a real HTTP round-trip, mock the controller with `net/http/httptest.NewServer` and assert on
+the request path/method inside the handler. Prefer the **shared fixtures** over hand-rolling setup:
+
+- Route through the `controllerServer` fixture and helpers like `sysinfoRoute` / `clientWith` instead of
+  spinning up a bespoke server + client per test. They keep request routing, the version pre-warm, and the
+  request counters consistent across the suite.
+- When you find yourself duplicating server setup, route handlers, or assertion counters, **extract a shared
+  fixture or helper** rather than copy-pasting — and reach for an existing fixture before writing new
+  boilerplate.
+
+## Testing with the generated mocks
+
+For unit tests that don't need HTTP at all, use the generated mocks. `ClientMock` is a
+[moq](https://github.com/matryer/moq)-generated double for the public `Client` interface: set only the `…Func`
+fields your code under test actually calls.
+
+```go title="mock_test.go"
+package developers
+
+import (
+	"context"
+	"testing"
+
+	"github.com/filipowm/go-unifi/v2/unifi"
+)
+
+// TestListActiveNetworks drives code under test against a ClientMock instead of a
+// live controller: only the methods the code touches need a Func field.
+func TestListActiveNetworks(t *testing.T) {
+	mock := &unifi.ClientMock{
+		ListNetworkFunc: func(ctx context.Context, site string) ([]unifi.Network, error) {
+			return []unifi.Network{{Name: "LAN"}}, nil
+		},
+	}
+
+	// The mock satisfies the full unifi.Client interface.
+	var c unifi.Client = mock
+
+	nets, err := c.ListNetwork(context.Background(), "default")
+	if err != nil {
+		t.Fatalf("list networks: %v", err)
+	}
+	if len(nets) != 1 || nets[0].Name != "LAN" {
+		t.Fatalf("unexpected networks: %+v", nets)
+	}
+}
+```
+
+The Official surface has its own hand-rolled mocks — one per resource group, e.g. `official.ClientsClientMock`
+or `official.ACLsClientMock`, each a func-field double where a nil field panics if called. These are emitted by
+the Official codegen pass, not by moq. See [Regenerating](/docs/developers/regenerating) for how the mock is
+regenerated when the interface changes.
+
+## Golden & determinism tests
+
+The generated code is locked down two ways.
+
+**At the CI level**, `test-codegen` runs `go generate unifi/codegen.go` then `git diff --exit-code` — the
+working tree must be byte-identical to the committed output. The `stringer` job does the same for the
+`DeviceState` stringer.
+
+**Inside the `codegen/official` module**, two generator tests assert the surface is stable and correct:
+
+| Test | Asserts |
+|---|---|
+| `TestSurfaceMatchesCommitted` | The regenerated Official surface equals the committed `*.generated.go`. |
+| `TestSurfaceDeterministic` | Generation is byte-stable run-to-run (no map-iteration nondeterminism). |
+
+They run offline against the committed OpenAPI snapshot. Because the generator pins a fixed header version and
+sorts its output, regeneration is reproducible regardless of how it's launched.
+
+A third guard, `models_roundtrip_test.go`, lives in the generated **`unifi/official`** package itself — so it runs
+with the normal `go test ./...` suite rather than the codegen module — and asserts the generated models
+round-trip through JSON without loss.
+
+## Coverage
+
+`make test` writes a coverage profile with `*.generated.go` lines filtered out (generated code isn't
+hand-tested), matching what CI reports. The Makefile prints the total; `make cover` opens the HTML report.
+
+## See also
+
+<Cards>
+  <Card title="Regenerating" href="/docs/developers/regenerating">
+    Regenerate the mock and the golden output.
+  </Card>
+  <Card title="Contributing" href="/docs/developers/contributing">
+    Style and the pre-push gate.
+  </Card>
+  <Card title="Error handling" href="/docs/guides/error-handling">
+    The error shapes your tests assert on.
+  </Card>
+</Cards>

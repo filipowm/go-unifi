@@ -1,0 +1,167 @@
+---
+title: Clients & users
+description: Manage UniFi client stations — list, create, block, kick and forget by MAC — plus user groups and RADIUS accounts.
+---
+
+In the UniFi data model a **client** (a connected or known station — a laptop, phone, printer) is called a
+**user**, represented by [`unifi.User`](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#User). The
+client exposes REST-style CRUD keyed by the user's `_id`, plus a set of MAC-keyed command actions
+(block / unblock / kick / forget) for acting on live clients.
+
+The snippets assume a connected client `c` and a `ctx` (see the [Quickstart](/docs/getting-started/quickstart)).
+Every call takes the **site name** (`"default"`) first.
+
+## List and look up clients
+
+```go
+users, err := c.ListUser(ctx, "default")
+if err != nil {
+	panic(err)
+}
+
+for _, u := range users {
+	fmt.Printf("%-18s %-16s blocked=%t\n", u.Name, u.MAC, u.Blocked)
+}
+```
+
+There are two single-client lookups, hitting different endpoints:
+
+```go
+// By _id, via the REST endpoint.
+u, err := c.GetUser(ctx, "default", id)
+
+// By MAC. This endpoint also populates the live IP address, which GetUser does not return.
+byMAC, err := c.GetUserByMAC(ctx, "default", "00:11:22:33:44:55")
+fmt.Printf("%s is at %s\n", byMAC.Name, byMAC.IP)
+```
+
+<Callout type="info">
+`GetUser` and `GetUserByMAC` return slightly different data because they use separate controller endpoints —
+notably `IP` is only populated by `GetUserByMAC`. Both return `unifi.ErrNotFound` when nothing matches.
+</Callout>
+
+## Create a client
+
+Creating a user registers a known client — for example to pin a fixed IP or attach a note. A `MAC` is required,
+and `NetworkID` ties the client to one of your [networks](/docs/guides/networks):
+
+```go
+created, err := c.CreateUser(ctx, "default", &unifi.User{
+	MAC:        "00:11:22:33:44:55",
+	Name:       "Office Printer",
+	NetworkID:  networkID,
+	UseFixedIP: true,
+	FixedIP:    "192.168.30.10",
+	Note:       "managed by go-unifi",
+})
+if err != nil {
+	panic(err)
+}
+fmt.Printf("created client %s with id %s\n", created.Name, created.ID)
+```
+
+Update an existing client with `UpdateUser` (read-modify-write, like other resources) and remove it by `_id`
+with `DeleteUser`.
+
+## Block, unblock, kick, forget — by MAC
+
+These act on a live client by MAC address and return only an error. Each returns `unifi.ErrNotFound` if the
+controller doesn't recognise the MAC.
+
+```go
+// Deny the client network access (persists until unblocked).
+if err := c.BlockUserByMAC(ctx, "default", mac); err != nil {
+	panic(err)
+}
+
+// Restore access.
+if err := c.UnblockUserByMAC(ctx, "default", mac); err != nil {
+	panic(err)
+}
+
+// Force a reconnect — e.g. to re-apply a new VLAN or group assignment.
+if err := c.KickUserByMAC(ctx, "default", mac); err != nil {
+	panic(err)
+}
+
+// Forget the client entirely (drops its history and known-client entry).
+if err := c.DeleteUserByMAC(ctx, "default", mac); err != nil {
+	panic(err)
+}
+```
+
+<Callout type="warn">
+`DeleteUser(ctx, site, id)` and `DeleteUserByMAC(ctx, site, mac)` are not interchangeable: the first removes a
+known-client record by its `_id` via REST, the second issues the controller's `forget-sta` command by MAC.
+Reach for `DeleteUserByMAC` when you only have the MAC of a connected station.
+</Callout>
+
+## Override a client's fingerprint
+
+The controller fingerprints clients to guess their device type. `OverrideUserFingerprint` forces a specific
+fingerprint id; passing `0` clears the override.
+
+```go
+// Force the device type to fingerprint id 12.
+if err := c.OverrideUserFingerprint(ctx, "default", mac, 12); err != nil {
+	panic(err)
+}
+
+// Clear the override.
+if err := c.OverrideUserFingerprint(ctx, "default", mac, 0); err != nil {
+	panic(err)
+}
+```
+
+## User groups
+
+A [`unifi.UserGroup`](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#UserGroup) caps a client's
+bandwidth. It has the standard CRUD: `ListUserGroup`, `GetUserGroup`, `CreateUserGroup`, `UpdateUserGroup`,
+`DeleteUserGroup`. Rates are in **Kbps**, and `-1` means unlimited.
+
+```go
+group, err := c.CreateUserGroup(ctx, "default", &unifi.UserGroup{
+	Name:           "Throttled",
+	QOSRateMaxDown: 50000, // Kbps; -1 means unlimited
+	QOSRateMaxUp:   10000,
+})
+if err != nil {
+	panic(err)
+}
+```
+
+Assign a client to the group by setting `User.UserGroupID` to `group.ID` and calling `UpdateUser`.
+
+## RADIUS accounts
+
+A [`unifi.Account`](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#Account) is a RADIUS user account,
+used for VPN, 802.1X and hotspot authentication. It also follows the standard CRUD: `ListAccount`,
+`GetAccount`, `CreateAccount`, `UpdateAccount`, `DeleteAccount`.
+
+```go
+acct, err := c.CreateAccount(ctx, "default", &unifi.Account{
+	Name:      "vpn-user",
+	XPassword: "s3cret",
+})
+if err != nil {
+	panic(err)
+}
+fmt.Printf("created RADIUS account %s (%s)\n", acct.Name, acct.ID)
+```
+
+## Next steps
+
+<Cards>
+  <Card title="Networks" href="/docs/guides/networks">
+    The VLANs and LANs you assign clients to.
+  </Card>
+  <Card title="Wireless" href="/docs/guides/wireless">
+    WLANs clients connect through, including RADIUS-backed WPA-Enterprise.
+  </Card>
+  <Card title="Firewall" href="/docs/guides/firewall">
+    Rules and groups that gate client traffic.
+  </Card>
+  <Card title="Error handling" href="/docs/guides/error-handling">
+    Tell ErrNotFound apart from server and validation errors.
+  </Card>
+</Cards>

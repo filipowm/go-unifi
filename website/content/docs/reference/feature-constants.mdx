@@ -1,0 +1,132 @@
+---
+title: Feature constants
+description: The features package — string constants naming UniFi controller feature flags, for use with GetFeature / IsFeatureEnabled / ListFeatures.
+---
+
+The [`features`](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi/features) package is a small
+set of string constants naming the controller's feature flags. They exist so you don't hand-type the
+raw `SCREAMING_SNAKE_CASE` names when probing capabilities.
+
+Pass them to the Internal API's feature methods (names are **case-insensitive**):
+
+- `IsFeatureEnabled(ctx, site, name) (bool, error)`
+- `GetFeature(ctx, site, name) (*DescribedFeature, error)`
+- `ListFeatures(ctx, site) ([]DescribedFeature, error)`
+
+```go title="features.go"
+package main
+
+import (
+	"context"
+	"fmt"
+	"log"
+
+	"github.com/filipowm/go-unifi/v2/unifi"
+	"github.com/filipowm/go-unifi/v2/unifi/features"
+)
+
+func main() {
+	ctx := context.Background()
+	c, err := unifi.NewClient(&unifi.ClientConfig{URL: "https://unifi.example.com", APIKey: "your-api-key"})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	enabled, err := c.IsFeatureEnabled(ctx, "default", features.ZoneBasedFirewall)
+	if err != nil {
+		log.Fatalf("check feature: %v", err)
+	}
+	fmt.Println("zone-based firewall enabled:", enabled)
+}
+```
+
+<Callout type="info">
+These constants are plain `string` values — they only name a flag. Whether the flag exists or is enabled
+is up to the controller; always probe with `IsFeatureEnabled` / `GetFeature` rather than assuming.
+</Callout>
+
+## Constants
+
+| Constant | String value |
+| --- | --- |
+| `features.AdBlocking` | `AD_BLOCKING` |
+| `features.AllUnifiDevicesPage` | `ALL_UNIFI_DEVICES_PAGE` |
+| `features.CustomDohServers` | `CUSTOM_DOH_SERVERS` |
+| `features.Hotspot2Passpoint` | `HOTSPOT2_PASSPOINT` |
+| `features.IgmpProxy` | `IGMP_PROXY` |
+| `features.IpExclusionFromLeases` | `IP_EXCLUSION_FROM_LEASES` |
+| `features.Ips` | `IPS` |
+| `features.IpsEtPro` | `IPS_ET_PRO` |
+| `features.IpsSignatureReport` | `IPS_SIGNATURE_REPORT` |
+| `features.IpsecFqdn` | `IPSEC_FQDN` |
+| `features.Ipv4ActiveLeaseReporting` | `IPV4_ACTIVE_LEASE_REPORTING` |
+| `features.LegacyUiSupported` | `LEGACY_UI_SUPPORTED` |
+| `features.LimitIpsCategories` | `LIMIT_IPS_CATEGORIES` |
+| `features.LiveDeviceUpdates` | `LIVE_DEVICE_UPDATES` |
+| `features.LockAp` | `LOCK_AP` |
+| `features.NatPool` | `NAT_POOL` |
+| `features.Netflow` | `NETFLOW` |
+| `features.OspfDefaultRouteAnnouncement` | `OSPF_DEFAULT_ROUTE_ANNOUNCEMENT` |
+| `features.OspfRouting` | `OSPF_ROUTING` |
+| `features.OpenVpnClient` | `OPENVPN_CLIENT` |
+| `features.OpenVpnClientTrafficRoutes` | `OPENVPN_CLIENT_TRAFFIC_ROUTES` |
+| `features.OpenVpnEncryptionCiphers` | `OPENVPN_ENCRYPTION_CIPHERS` |
+| `features.OpenVpnRemoteDisconnect` | `OPENVPN_REMOTE_DISCONNECT` |
+| `features.OpenVpnServer` | `OPENVPN_SERVER` |
+| `features.RadiusBatchUsers` | `RADIUS_BATCH_USERS` |
+| `features.RadiusProfiles` | `RADIUS_PROFILES` |
+| `features.RadiusServer` | `RADIUS_SERVER` |
+| `features.ScorePage` | `SCORE_PAGE` |
+| `features.SdwanHubSpoke` | `SDWAN_HUB_SPOKE` |
+| `features.SdwanMesh` | `SDWAN_MESH` |
+| `features.SpeedTest` | `SPEED_TEST` |
+| `features.StaticDns` | `STATIC_DNS` |
+| `features.SwitchBgpRouting` | `SWITCH_BGP_ROUTING` |
+| `features.SwitchCustomAclRules` | `SWITCH_CUSTOM_ACL_RULES` |
+| `features.SwitchGlobalAclRules` | `SWITCH_GLOBAL_ACL_RULES` |
+| `features.Teleport` | `TELEPORT` |
+| `features.TrafficMap` | `TRAFFIC_MAP` |
+| `features.TrafficRouteKillSwitch` | `TRAFFIC_ROUTE_KILL_SWITCH` |
+| `features.TrafficRoutes` | `TRAFFIC_ROUTES` |
+| `features.TrafficRoutesIpsecS2sVpn` | `TRAFFIC_ROUTES_IPSEC_S2S_VPN` |
+| `features.TrafficRoutesOpenVpnS2sVpn` | `TRAFFIC_ROUTES_OPENVPN_S2S_VPN` |
+| `features.TrafficRuleAndRouteRegions` | `TRAFFIC_RULE_AND_ROUTE_REGIONS` |
+| `features.TrafficRuleRateLimiting` | `TRAFFIC_RULE_RATE_LIMITING` |
+| `features.TrafficRuleSchedules` | `TRAFFIC_RULE_SCHEDULES` |
+| `features.UdapiGetBlocks` | `UDAPI_GET_BLOCKS` |
+| `features.UcoreAutolinkDeviceUpdates` | `UCORE_AUTOLINK_DEVICE_UPDATES` |
+| `features.UcorePartialDeviceUpdates` | `UCORE_PARTIAL_DEVICE_UPDATES` |
+| `features.UidRadius` | `UID_RADIUS` |
+| `features.UidRadiusGroupPolicy` | `UID_RADIUS_GROUP_POLICY` |
+| `features.UidVpn` | `UID_VPN` |
+| `features.UidVpnAllowWanLocal` | `UID_VPN_ALLOW_WAN_LOCAL` |
+| `features.UidVpnOverrideDns` | `UID_VPN_OVERRIDE_DNS` |
+| `features.UidVpnStrictClientCommonName` | `UID_VPN_STRICT_CLIENT_COMMON_NAME` |
+| `features.UidVpnSupportUdp` | `UID_VPN_SUPPORT_UDP` |
+| `features.UidWifi` | `UID_WIFI` |
+| `features.UidWifiIot` | `UID_WIFI_IOT` |
+| `features.UidWifiRadiusGroupPolicy` | `UID_WIFI_RADIUS_GROUP_POLICY` |
+| `features.UnboundWanMonitor` | `UNBOUND_WAN_MONITOR` |
+| `features.UserDefinedNatRules` | `USER_DEFINED_NAT_RULES` |
+| `features.VisualProgramming` | `VISUAL_PROGRAMMING` |
+| `features.WanDhcpRequestCos` | `WAN_DHCP_REQUEST_COS` |
+| `features.WanDhcpv6Stateless` | `WAN_DHCPV6_STATELESS` |
+| `features.WanDsLite` | `WAN_DS_LITE` |
+| `features.WanLoadBalancingDistributedMode` | `WAN_LOAD_BALANCING_DISTRIBUTED_MODE` |
+| `features.WifiConfigCreated` | `WIFI_CONFIG_CREATED` |
+| `features.WifiMimo` | `WIFI_MIMO` |
+| `features.WireguardVpnClient` | `WIREGUARD_VPN_CLIENT` |
+| `features.WireguardVpnServer` | `WIREGUARD_VPN_SERVER` |
+| `features.ZoneBasedFirewall` | `ZONE_BASED_FIREWALL` |
+| `features.ZoneBasedFirewallMigration` | `ZONE_BASED_FIREWALL_MIGRATION` |
+
+## See also
+
+<Cards>
+  <Card title="Resources" href="/docs/reference/resources">
+    `GetFeature`, `IsFeatureEnabled`, and `ListFeatures` in context.
+  </Card>
+  <Card title="features on pkg.go.dev" href="https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi/features">
+    The authoritative, always-current constant list.
+  </Card>
+</Cards>
