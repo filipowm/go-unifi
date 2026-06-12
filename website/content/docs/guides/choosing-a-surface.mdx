@@ -33,8 +33,8 @@ Writing `c.Internal()` is never required in 2.0.0 — it only documents intent. 
 The Official surface only works on a capable controller, so every Official operation runs a **capability
 gate** first and returns a sentinel error when it can't proceed. Match either with `errors.Is`:
 
-- `unifi.ErrOfficialAPIUnavailable` — the controller can't serve it: a classic (old-style) controller,
-  non-API-key auth, or a controller version below **10.1.78**.
+- `unifi.ErrOfficialAPIUnavailable` — the controller can't serve it: a classic (old-style) controller, a failed
+  `GET /v1/info` probe (a rejected API key surfaces here), or a controller version below **10.1.78**.
 - `unifi.ErrOfficialAPIDisabled` — you opted out via `ClientConfig.DisableOfficialAPI`.
 
 ```go title="gate.go"
@@ -44,7 +44,7 @@ case errors.Is(err, unifi.ErrOfficialAPIDisabled):
 	log.Println("Official API turned off via DisableOfficialAPI")
 	return
 case errors.Is(err, unifi.ErrOfficialAPIUnavailable):
-	log.Println("controller too old, wrong auth, or classic — Official API unavailable")
+	log.Println("controller too old, classic, or info probe failed — Official API unavailable")
 	return
 case err != nil:
 	log.Fatal(err)
@@ -95,8 +95,9 @@ change, call resource methods through `c.Internal()` now — it is a no-op today
 - Use **Internal** for everything the Official surface doesn't cover yet, or when you target controllers
   between **9.0.114** and 10.1.78. It has the broadest resource coverage.
 
-The [coverage map](/docs/reference/api) and the [Reference](/docs/reference/official) show which resources
-each surface exposes.
+The [UniFi API reference](/docs/reference/api) and the [Official reference](/docs/reference/official) document
+the Official surface endpoint-by-endpoint; the [Resources catalogue](/docs/reference/resources) lists what the
+Internal surface exposes.
 
 ## Next steps
 

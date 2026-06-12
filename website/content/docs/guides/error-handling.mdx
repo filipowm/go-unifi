@@ -13,9 +13,9 @@ These package-level values let you react to a specific condition with `errors.Is
 
 | Sentinel | Meaning |
 | --- | --- |
-| `unifi.ErrNotFound` | The resource doesn't exist — a real HTTP 404, or a list endpoint that returned zero items. |
+| `unifi.ErrNotFound` | The resource doesn't exist — a real HTTP 404, or a single-resource `Get` that returned empty data. List methods return an empty slice and nil error, not `ErrNotFound`. |
 | `unifi.ErrOldStyleUnsupported` | Construction-time: the target is an old-style (classic) controller. API-key auth needs UniFi Network **9.0.114+**. |
-| `unifi.ErrOfficialAPIUnavailable` | The `c.Official()` surface can't be used here — controller below **10.1.78**, non-API-key auth, or a classic controller. |
+| `unifi.ErrOfficialAPIUnavailable` | The `c.Official()` surface can't be used here — a classic controller, a failed `GET /v1/info` probe (a rejected API key surfaces here), or a controller below **10.1.78**. |
 | `unifi.ErrOfficialAPIDisabled` | The Official API was explicitly turned off via `ClientConfig.DisableOfficialAPI`. |
 
 ## Not found
@@ -116,7 +116,7 @@ func official(ctx context.Context, c unifi.Client) {
 		log.Println("Official API turned off via ClientConfig.DisableOfficialAPI")
 		return
 	case errors.Is(err, unifi.ErrOfficialAPIUnavailable):
-		log.Println("controller too old (<10.1.78), wrong auth, or classic")
+		log.Println("controller too old (<10.1.78), classic, or info probe failed")
 		return
 	case err != nil:
 		// Past the gate, a request failure is still a *unifi.ServerError.

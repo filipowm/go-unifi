@@ -121,7 +121,7 @@ func main() {
 | Features | `ListFeatures`, `GetFeature(name)`, `IsFeatureEnabled(name)` | Controller feature flags; names are the [feature constants](/docs/reference/feature-constants). |
 | `Dashboard` | CRUD | Saved dashboards. |
 | `ScheduleTask` | CRUD | Scheduled tasks. |
-| Traffic flows | `GetTrafficFlows(req)` | Analytics query; takes a `*TrafficFlowsRequest`. |
+| Traffic flows | `GetTrafficFlows(ctx, site, req)` | Site-scoped analytics query; `req` is a `*TrafficFlowsRequest`. |
 | Settings | `GetSetting` / `SetSetting` + typed pairs | See the [Settings catalogue](/docs/reference/settings). |
 
 ## Layout & Media

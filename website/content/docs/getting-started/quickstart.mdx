@@ -8,8 +8,8 @@ This page gets you from nothing to a working program that talks to your UniFi co
 
 ## The whole program
 
-Create a new module and drop this into `main.go`. It connects to a controller and prints every network on the
-default site.
+In the module you created during [Installation](/docs/getting-started/installation) (or a new one), replace
+`main.go` with the program below. It connects to a controller and prints every network on the default site.
 
 ```go title="main.go"
 package main
@@ -51,13 +51,16 @@ func main() {
 }
 ```
 
+Replace `https://unifi.example.com` with your controller's base URL and `your-api-key` with the key you created
+in [Authentication](/docs/getting-started/authentication).
+
 Run it:
 
 ```bash
 go run .
 ```
 
-You should see your networks printed, one per line.
+With your real URL and key, you should see your networks printed, one per line.
 
 ## What just happened
 

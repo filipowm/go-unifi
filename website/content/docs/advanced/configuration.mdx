@@ -78,7 +78,8 @@ c, err := unifi.NewClient(&unifi.ClientConfig{
 
 ## Customizing the HTTP transport
 
-There are two ways to shape the underlying `*http.Client`, and they are **mutually exclusive**:
+There are two ways to shape the underlying `*http.Client`. You normally use one or the other; if both are set,
+`HttpRoundTripperProvider` takes precedence (see the note below):
 
 - **`HttpTransportCustomizer`** — receives the client's pre-built `*http.Transport` so you can tweak it (idle
   connection limits, proxy, TLS) and return it (or return a fresh one).

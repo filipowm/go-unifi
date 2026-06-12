@@ -197,8 +197,9 @@ sentinel now sees them as equal.
 
 **Behavioral change (no compile break).** `net/http.Client` is goroutine-safe and the client no longer
 serializes requests. `ClientConfig.UseLocking` is retained for source compatibility but is marked
-`// Deprecated:` and has **no effect** — setting it `true` or `false` changes nothing. Remove it from your
-config.
+`// Deprecated:` and has **no effect** — setting it `true` or `false` changes nothing. This no-op is **not new
+in 2.0.0**: `UseLocking` has been deprecated and inert since **1.11.0**, so 1.11.x callers already saw no
+serialisation. Remove it from your config.
 
 **Provenance:** ARCH-04, Wave 1.
 
@@ -273,8 +274,8 @@ untouched; 3.0.0 is expected to flip the default to the Official client (the **3
 operation is gated. They return:
 
 - `ErrOfficialAPIDisabled` when `ClientConfig.DisableOfficialAPI` is set (fails fast, no probe).
-- `ErrOfficialAPIUnavailable` on an old-style (classic) controller, non-API-key auth, or a controller
-  version below 10.1.78.
+- `ErrOfficialAPIUnavailable` on an old-style (classic) controller, a failed `GET /v1/info` probe (a rejected
+  API key surfaces here), or a controller version below 10.1.78.
 
 Match with `errors.Is(err, unifi.ErrOfficialAPIUnavailable)` / `errors.Is(err, unifi.ErrOfficialAPIDisabled)`.
 The Internal API is unaffected.

@@ -102,8 +102,8 @@ v2 responses are typically bare (no `meta`/`data` envelope), so decode directly 
 
 The Official UniFi OpenAPI lives under `/proxy/network/integration/v1`. Most of it is already wrapped by the
 fluent [`c.Official()`](/docs/guides/official-api) surface — prefer that. But you can hit any path directly with
-an absolute (leading-slash) path. Unlike legacy REST resources, the Official surface accepts `PATCH` for partial
-updates:
+an absolute (leading-slash) path. A few Official endpoints (e.g. firewall policies) accept `PATCH` for partial
+updates; most — including networks — use `PUT`:
 
 ```go
 patch := struct {
@@ -114,16 +114,17 @@ var resp struct {
     ID   string `json:"id"`
     Name string `json:"name"`
 }
-// Absolute path under the Official integration surface accepts PATCH.
-path := "/proxy/network/integration/v1/sites/<site-id>/networks/<network-id>"
+// Firewall policies are the one Official resource that accepts PATCH.
+path := "/proxy/network/integration/v1/sites/<site-id>/firewall/policies/<policy-id>"
 if err := c.Patch(ctx, path, patch, &resp); err != nil {
     log.Fatalf("patch: %v", err)
 }
 ```
 
 <Callout type="warn">
-`Patch` sends a literal HTTP `PATCH`. The Official `integration/v1` surface accepts it, but most legacy Internal
-REST resources (e.g. `networkconf`) expect a full `PUT` — use `Put` for those, sending the complete object.
+`Patch` sends a literal HTTP `PATCH`. Only a few Official `integration/v1` endpoints (e.g. firewall policies)
+accept it — most, including Official networks, require a full `PUT`, as do legacy Internal REST resources (e.g.
+`networkconf`). Use `Put` for those, sending the complete object.
 </Callout>
 
 ## See also

@@ -43,10 +43,12 @@ unifi.NewClient(&unifi.ClientConfig{URL: "...", APIKey: "...", Timeout: 30 * tim
 
 <Accordions type="single">
 <Accordion title="ErrOldStyleUnsupported at NewClient">
-You pointed the client at an **old-style (classic)** controller, or one older than `9.0.114`. API-key
-authentication — the only auth in 2.0.0 — requires a new-style (UniFi OS) controller at `9.0.114` or newer.
-There is no workaround other than upgrading the controller. See [Authentication](/docs/getting-started/authentication)
-and the [compatibility matrix](/docs/advanced/compatibility).
+You pointed the client at an **old-style (classic)** controller. API-key authentication — the only auth in
+2.0.0 — requires a new-style (UniFi OS) controller, so the client fails fast on a classic (old-style) one.
+There is no workaround other than upgrading the controller. A *new-style* controller below `9.0.114` is still
+detected as new-style and instead surfaces an authentication error from the eager system-info call, not this
+sentinel. See [Authentication](/docs/getting-started/authentication) and the
+[compatibility matrix](/docs/advanced/compatibility).
 </Accordion>
 
 <Accordion title="ErrOfficialAPIUnavailable from c.Official()">

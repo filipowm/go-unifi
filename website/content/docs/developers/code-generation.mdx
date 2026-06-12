@@ -132,8 +132,10 @@ CI re-runs generation and fails if the working tree is not byte-identical:
 
 - `test-codegen` runs `go generate unifi/codegen.go`, then `git diff --exit-code`.
 - `test-codegen-official` runs the `codegen/official` module's own test suite.
-- The Official pass is additionally guarded by determinism / committed-surface / round-trip tests
-  (`TestSurfaceMatchesCommitted`, `TestSurfaceDeterministic`, `models_roundtrip_test.go`).
+- The Official pass is additionally guarded by determinism / committed-surface tests in the `codegen/official`
+  module (`TestSurfaceMatchesCommitted`, `TestSurfaceDeterministic`).
+- The generated models carry a round-trip test, `models_roundtrip_test.go`, which lives in the generated
+  `unifi/official` package (not the `codegen/official` module) and runs under the normal `go test ./...` suite.
 
 ## See also
 

@@ -68,7 +68,7 @@ func main() {
 	}
 
 	page, err := c.Official().Clients().ListConnectedPage(ctx, siteID, &official.ListOptions{
-		Filter: "and(name.like('guest*'), type.eq('WIRELESS'))",
+		Filter: "and(type.eq('WIRELESS'), access.authorized.eq(true))",
 	})
 	if err != nil {
 		log.Fatal(err)
@@ -109,7 +109,8 @@ The filter DSL is URL-safe and has three kinds of expression:
 | `like` | 1 | pattern match | `STRING` |
 | `in` / `notIn` | 1+ | (not) one of | `STRING`, `INTEGER`, `DECIMAL`, `TIMESTAMP`, `UUID` |
 | `isEmpty` | 0 | empty set | `SET` |
-| `contains` / `containsAny` / `containsAll` / `containsExactly` | 1+ | set membership | `SET` |
+| `contains` | 1 | set membership | `SET` |
+| `containsAny` / `containsAll` / `containsExactly` | 1+ | set membership | `SET` |
 
 In a `like` pattern, `.` matches a single character, `*` matches any number of characters, and `\`
 escapes a literal `.` or `*` — e.g. `name.like('guest*')` matches `guest1` and `guest100`.

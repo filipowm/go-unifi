@@ -12,9 +12,9 @@ task-oriented guide see [Error handling](/docs/guides/error-handling).
 
 | Sentinel | Meaning |
 | --- | --- |
-| `ErrNotFound` | The resource does not exist (a real HTTP 404, or a list endpoint that returned zero items). |
+| `ErrNotFound` | The resource does not exist (a real HTTP 404, or a single-resource `Get` that returned empty data). List methods return an empty slice and nil error, not `ErrNotFound`. |
 | `ErrOldStyleUnsupported` | `NewClient` targeted a classic (old-style) controller. API-key auth needs UniFi Network **9.0.114+**. |
-| `ErrOfficialAPIUnavailable` | The Official API cannot run against this controller (old-style, non-API-key, or version below **10.1.78**). |
+| `ErrOfficialAPIUnavailable` | The Official API cannot run against this controller — an old-style (classic) controller, a failed `GET /v1/info` probe (a rejected API key surfaces here), or a version below **10.1.78**. |
 | `ErrOfficialAPIDisabled` | The Official API was opted out via [`ClientConfig.DisableOfficialAPI`](/docs/reference/configuration-types). |
 
 Match them with `errors.Is`:
@@ -34,8 +34,9 @@ func exampleNotFound(ctx context.Context, c unifi.Client) {
 ```
 
 <Callout type="info">
-`ErrNotFound` covers both a genuine HTTP 404 and the "empty result" case: a list endpoint that returns no items.
-A `*ServerError` with a 404 status also satisfies `errors.Is(err, unifi.ErrNotFound)`.
+`ErrNotFound` covers both a genuine HTTP 404 and the "empty result" case: a single-resource `Get` whose lookup
+came back empty. A list endpoint that returns no items is **not** `ErrNotFound` — it yields an empty slice and a
+`nil` error. A `*ServerError` with a 404 status also satisfies `errors.Is(err, unifi.ErrNotFound)`.
 </Callout>
 
 These surface at different points: `ErrOldStyleUnsupported` comes from `NewClient` at construction, while the two
@@ -78,7 +79,9 @@ It carries the request context and any structured validation details the control
 | --- | --- |
 | `ServerErrorDetails` | `Message string`, `ValidationError ServerValidationError` |
 | `ServerValidationError` | `Field string`, `Pattern string` |
-| `Meta` | `RC string`, `Message string` — the raw v1 `{ "meta": { "rc", "msg" } }` envelope the handler parses. |
+
+`Meta` (`RC string`, `Message string`) is a **separate** type — the raw v1 `{ "meta": { "rc", "msg" } }`
+envelope the handler parses — not a field of `Details`.
 
 Reach the structured error with `errors.As`:
 

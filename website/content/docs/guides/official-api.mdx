@@ -48,8 +48,9 @@ Pagination and filtering get their own guide: see [Pagination & filtering](/docs
 
 ## Site IDs
 
-Every resource-group method takes a `siteId uuid.UUID` (not the legacy site-name string). Get it from a
-familiar name with `Sites().ResolveID`, which caches the lookup:
+Every **site-scoped** resource method takes a `siteId uuid.UUID` (not the legacy site-name string). The two
+global accessors are the exception: `Sites()` and `Info()` take no `siteId` — and `Sites()` is how you obtain
+one in the first place. Get the UUID from a familiar name with `Sites().ResolveID`, which caches the lookup:
 
 ```go title="official.go"
 siteID, err := c.Official().Sites().ResolveID(ctx, "default")
