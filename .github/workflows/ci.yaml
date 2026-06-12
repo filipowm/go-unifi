@@ -112,4 +112,4 @@ jobs:
         with:
           go-version-file: 'go.mod'
       - run: 'go test ./...'
-        working-directory: codegen/official
+        working-directory: "codegen/official"
