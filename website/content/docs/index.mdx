@@ -52,10 +52,21 @@ A single `unifi.Client` exposes both of the controller's APIs:
 ## Requirements
 
 - **Go 1.26** or later.
-- A **new-style (UniFi OS)** controller, version **9.0.114** or newer — API-key authentication is the only
-  supported auth. The Official API surface additionally requires controller **10.1.78** or newer.
+- A **UniFi OS** console (new-style) running **UniFi Network 9.0.114** or newer — API-key authentication is the
+  only supported auth. The Official API surface additionally requires **UniFi Network 10.1.78** or newer.
+  (Both are *Network Application* versions; UniFi OS — the console's operating system — versions separately.)
 
 <Callout type="info">
   Upgrading from go-unifi 1.x? See the [migration guide](/docs/migrating/from-1.x). Coming from
   `paultyng/go-unifi`? See [Migrating from upstream](/docs/migrating/from-paultyng).
 </Callout>
+
+## AI & LLMs
+
+Pointing an LLM or AI coding agent at these docs? They're published in machine-readable form following the
+[llms.txt](https://llmstxt.org) convention:
+
+- [`/llms.txt`](/llms.txt) — a compact index of every page, with descriptions.
+- [`/llms-full.txt`](/llms-full.txt) — the entire documentation as a single plain-text file.
+
+Every page header also has a button to copy that page as Markdown.

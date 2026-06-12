@@ -12,8 +12,16 @@ but it stands alone in any Go program that needs to read or change controller st
 
 ## A few terms
 
-- **Controller** — the UniFi Network application you talk to, reachable over HTTPS (a UniFi OS console like a
-  Dream Machine, or a self-hosted install). Everything in this library is a request to your controller.
+- **UniFi OS** — the operating system that runs on a UniFi console (a Dream Machine, a Cloud Key, or the
+  self-hosted UniFi OS Server). It hosts Ubiquiti's applications — Network, Protect, Access, and others — and
+  carries its **own** version number (the latest is in the `5.x` line).
+- **UniFi Network Application** — the application, packaged *inside* UniFi OS, that actually manages your
+  network and exposes the API this library targets. It versions **independently** of UniFi OS (the latest is in
+  the `10.x` line). Historically called the "UniFi Network Controller" / "UniFi Controller".
+- **Controller** — throughout these docs, shorthand for the UniFi Network Application you talk to, reachable
+  over HTTPS. **Every version number in this documentation** — `9.0.114`, `10.1.78`, and so on — **is a
+  UniFi Network Application version, never a UniFi OS version** (a console on UniFi OS `5.x` may run UniFi
+  Network `10.x`). Everything in this library is a request to your controller.
 - **Site** — a controller hosts one or more *sites* (independent network configurations). A fresh controller
   has a single site named `default`.
 - **API surface** — a set of endpoints the controller exposes. go-unifi wraps **two** of them (below).
@@ -62,14 +70,16 @@ to add it, and the [migration guide](/docs/migrating/from-1.x) if you are coming
 ## Requirements at a glance
 
 - **Go 1.26** or later.
-- A **new-style (UniFi OS)** controller, version **9.0.114** or newer. Authentication is **API key only**
-  (username/password was removed in 2.0.0), and API keys require that minimum version. Older "classic"
-  controllers are unsupported and fail fast at construction.
-- The **Official API surface** additionally needs controller **10.1.78** or newer.
+- A **UniFi OS** console (new-style) running **UniFi Network 9.0.114** or newer. Authentication is **API key
+  only** (username/password was removed in 2.0.0), and API keys require that minimum Network Application
+  version. Older "classic" standalone controllers — the Network Application running without UniFi OS — are
+  unsupported and fail fast at construction.
+- The **Official API surface** additionally needs **UniFi Network 10.1.78** or newer.
 
 <Callout type="info">
-  These are floors, not targets. Running the latest controller release is recommended — the library is
-  regenerated daily to track new versions.
+  `9.0.114` and `10.1.78` are **UniFi Network Application** versions, not UniFi OS versions — the two track
+  separately. They are floors, not targets: running the latest Network Application release is recommended, and
+  the library is regenerated daily to track new versions.
 </Callout>
 
 ## Where to next

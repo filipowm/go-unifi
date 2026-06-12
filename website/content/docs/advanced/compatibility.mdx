@@ -6,9 +6,16 @@ description: Which UniFi controller versions each go-unifi release supports, plu
 This page maps `go-unifi` releases to the UniFi Network controller versions they are known to work with, and
 records the breaking compatibility changes between releases.
 
+<Callout type="info">
+Every version on this page is a **UniFi Network Application** version (the application that manages your
+network and serves the API). UniFi Network versions track **independently** of **UniFi OS**, the console
+operating system that hosts the application — a console on UniFi OS `5.x` may run UniFi Network `10.x`. The
+floors below (`9.0.114`, `10.1.78`) are Network Application versions, not UniFi OS versions.
+</Callout>
+
 ## Release ↔ controller matrix
 
-| `go-unifi` version    | Min UniFi Controller | Internal API version | Official API version    |
+| `go-unifi` version    | Min UniFi Network | Internal API version | Official API version    |
 |-----------------------|----------------------|----------------------|-------------------------|
 | `v2.0.0`              | `9.0.114`            | `9.5.21` (frozen)    | `10.1.78` (tracks spec) |
 | `v1.11.0` – `v1.11.1` | `5.12.35`            | `9.5.21`             | —                       |
@@ -53,7 +60,7 @@ Two plain-text version markers at the repo root record the pinned versions, writ
 See the full [breaking changes guide](/docs/migrating/breaking-changes) and the
 [migration guide from 1.x](/docs/migrating/from-1.x).
 
-### 1.11.0 / UniFi Controller 9.5.21
+### 1.11.0 / UniFi Network 9.5.21
 
 **Breaking changes**
 
@@ -72,7 +79,7 @@ See the full [breaking changes guide](/docs/migrating/breaking-changes) and the
 - `Network`: `WANDHCPv6PDSizeAuto` (auto IPv6 prefix-delegation size); `WANType` accepts `dslite-over-pppoe`.
 - `SettingRadioAi`: `HighPriorityDevices` (high-priority device MACs); `Radios` accepts `6e` (Wi-Fi 6E band).
 
-### 1.10.0 / UniFi Controller 9.4.19
+### 1.10.0 / UniFi Network 9.4.19
 
 **Breaking changes**
 

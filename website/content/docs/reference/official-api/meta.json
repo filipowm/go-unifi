@@ -1,5 +1,5 @@
 {
   "title": "Official API",
   "icon": "Network",
-  "pages": ["official", "---OpenAPI Reference---", "api"]
+  "pages": ["api"]
 }

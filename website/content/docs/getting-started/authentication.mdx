@@ -9,8 +9,8 @@ request in the `X-Api-Key` header.
 
 <Callout type="info">
   **Why API key only?** API keys are scoped, revocable, and don't require juggling login sessions or CSRF
-  tokens. They are available on UniFi OS controllers from version **9.0.114** onward — the same floor this
-  library requires.
+  tokens. They are available in **UniFi Network 9.0.114** and newer (running on a UniFi OS console) — the same
+  floor this library requires. `9.0.114` is a Network Application version, not a UniFi OS version.
 </Callout>
 
 ## Obtaining an API key
@@ -47,13 +47,15 @@ hand. (For an end-to-end runnable program, see the [Quickstart](/docs/getting-st
 
 ## Version requirements
 
-API-key authentication needs a **new-style (UniFi OS)** controller running **9.0.114 or newer**. This is the
-hard floor for the whole library, regardless of which [API surface](/docs/guides/choosing-a-surface) you use.
+API-key authentication needs a **UniFi OS** console (new-style) running **UniFi Network 9.0.114 or newer**.
+This is the hard floor for the whole library, regardless of which
+[API surface](/docs/guides/choosing-a-surface) you use. The versions below are **UniFi Network Application**
+versions — they track separately from the console's UniFi OS version.
 
-| Capability                    | Minimum controller |
-| ----------------------------- | ------------------ |
-| API-key auth (whole library)  | **9.0.114**        |
-| Official API (`c.Official()`) | **10.1.78**        |
+| Capability                    | Minimum UniFi Network |
+| ----------------------------- | --------------------- |
+| API-key auth (whole library)  | **9.0.114**           |
+| Official API (`c.Official()`) | **10.1.78**           |
 
 ## Old-style controllers are unsupported
 
@@ -72,7 +74,9 @@ if errors.Is(err, unifi.ErrOldStyleUnsupported) {
 }
 ```
 
-The remedy is to upgrade the controller to a UniFi OS release of 9.0.114 or later.
+The remedy is to move to a **UniFi OS** console (a Dream Machine, a Cloud Key, or the self-hosted UniFi OS
+Server) running **UniFi Network 9.0.114** or newer. Classic standalone controllers — the Network Application
+without UniFi OS — can't issue API keys at all, so there is no workaround on that style of install.
 
 ## Next steps
 

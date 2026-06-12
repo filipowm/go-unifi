@@ -21,7 +21,8 @@ There are two ways you can arrive at go-unifi 2.0.0. Pick the guide that matches
 The headline changes, all covered in detail by the [1.x upgrade guide](/docs/migrating/from-1.x):
 
 - **API-key authentication only.** Username/password login was removed. You authenticate with an
-  [API key](/docs/getting-started/authentication) on a UniFi OS controller running **9.0.114** or newer.
+  [API key](/docs/getting-started/authentication) on a UniFi OS console running **UniFi Network 9.0.114** or
+  newer (a Network Application version, distinct from the UniFi OS version).
 - **Module path is now `/v2`.** Import `github.com/filipowm/go-unifi/v2/unifi`.
 - **TLS verification is on by default.** The old `VerifySSL` field became
   [`SkipVerifySSL`](/docs/reference/configuration-types) — renamed *and* inverted.

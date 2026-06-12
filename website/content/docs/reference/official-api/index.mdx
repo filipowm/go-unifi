@@ -1,26 +1,214 @@
 ---
 title: Official API
-description: The Official surface — the controller's own integration/v1 OpenAPI, reached via c.Official() and addressed by site UUID.
+description: The c.Official() surface — the controller's own integration/v1 OpenAPI, addressed by site UUID - fluent per-group clients, the uniform method shape, and the ListOptions / Page / Collect pagination primitives.
 ---
 
-The **Official API** is the controller's own [UniFi Network API](https://developer.ui.com) (`integration/v1`),
-reached from any `unifi.Client` via [`c.Official()`](/docs/reference/official-api/official). It is a separate,
-fluent surface — one accessor per resource group — that addresses sites by `uuid.UUID` rather than the legacy
-site-name string.
+The **Official API** is the controller's own [UniFi Network API](https://developer.ui.com)
+(`integration/v1`), reached from any `unifi.Client` via `c.Official()`. It is a separate, fluent
+surface — one accessor per resource group — that addresses sites by `uuid.UUID` rather than the legacy
+site-name string. It lives in package
+[`github.com/filipowm/go-unifi/v2/unifi/official`](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi/official).
 
-It requires **API-key auth** and a newer controller: the Official surface needs **10.1.78** or later (API keys
-themselves are accepted from 9.0.114). The first call probes `GET /v1/info` once and then fails fast if the
-controller is too old, unreachable, or disabled. See [Choosing a surface](/docs/guides/choosing-a-surface) for
-when to prefer it over the Internal API.
+<Callout type="info">
+The Official surface requires controller **10.1.78** or newer and API-key auth (API keys themselves are
+accepted from 9.0.114). The first call probes `GET /v1/info` once; if the controller is too old,
+unreachable, or you opted out with `DisableOfficialAPI`, the call fails fast with
+[`ErrOfficialAPIUnavailable`](/docs/reference/errors) or `ErrOfficialAPIDisabled`. See
+[Choosing a surface](/docs/guides/choosing-a-surface).
+</Callout>
 
-## Pages
+## Resource groups
+
+`c.Official()` returns an [`official.Client`](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi/official#Client),
+exposing exactly one accessor per resource group. Each accessor returns a small interface (e.g.
+`NetworksClient`) whose methods map 1:1 to Official API operations.
+
+| Accessor | Group interface | What it covers |
+| --- | --- | --- |
+| `Sites()` | `SitesClient` | Local sites; `ResolveID` (name → `uuid.UUID`). |
+| `Info()` | `InfoClient` | Controller application info (`GET /v1/info`). |
+| `Networks()` | `NetworksClient` | Networks: CRUD plus `GetReferences`. |
+| `Clients()` | `ClientsClient` | Connected clients: list, get, `ExecuteConnectedAction`. |
+| `Devices()` | `DevicesClient` | Adopted/pending devices, statistics, port and device actions. |
+| `Firewall()` | `FirewallClient` | Firewall zones, policies, and policy ordering. |
+| `ACLs()` | `ACLsClient` | Access-control (ACL) rules and rule ordering. |
+| `DNSPolicies()` | `DNSPoliciesClient` | DNS policies: CRUD. |
+| `WifiBroadcasts()` | `WifiBroadcastsClient` | WiFi broadcasts (SSIDs): CRUD. |
+| `Hotspot()` | `HotspotClient` | Hotspot vouchers: create, list, get, delete. |
+| `TrafficMatchingLists()` | `TrafficMatchingListsClient` | Traffic-matching lists: CRUD. |
+| `Supporting()` | `SupportingClient` | Read-only catalogues: countries, DPI apps/categories, device tags, RADIUS profiles, WANs, VPN servers and tunnels. |
+
+For the full method set and request/response types of each group, browse
+[the `official` package on pkg.go.dev](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi/official),
+or the [endpoint-by-endpoint OpenAPI reference](/docs/reference/official-api/api).
+
+## The uniform method shape
+
+Every operation follows the same conventions:
+
+- **Context first, site UUID next.** Site-scoped methods take `(ctx, siteId uuid.UUID, …)`. A few
+  global ones (`Info().Get`, `Devices().ListPendingPage`, `Supporting().ListCountriesPage`,
+  `Supporting().ListDpiApplicationsPage`) take no site.
+- **Single-item CRUD** returns a pointer to the typed resource and an error: `Get`, `Create`,
+  `Update`, `Delete` (some groups use noun-suffixed names — `Firewall().CreatePolicy`,
+  `ACLs().GetRule`, `Hotspot().CreateVouchers`).
+- **Listing comes in two flavours** — the `…Page`/`…All` convention (see below).
+- **Errors are wrapped with `%w`.** With the default transport they are
+  [`*unifi.ServerError`](/docs/reference/errors) values, so `errors.Is(err, unifi.ErrNotFound)` detects
+  404s.
+
+Resolve a site name to its UUID once, then call any group:
+
+```go title="official_list.go"
+package main
+
+import (
+	"context"
+	"fmt"
+	"log"
+
+	"github.com/filipowm/go-unifi/v2/unifi"
+)
+
+func main() {
+	ctx := context.Background()
+	c, err := unifi.NewClient(&unifi.ClientConfig{
+		URL:    "https://unifi.example.com",
+		APIKey: "your-api-key",
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Official methods take a uuid.UUID, not the "default" site name.
+	siteID, err := c.Official().Sites().ResolveID(ctx, "default")
+	if err != nil {
+		log.Fatalf("resolve site: %v", err)
+	}
+
+	page, err := c.Official().Networks().ListPage(ctx, siteID, nil)
+	if err != nil {
+		log.Fatalf("list networks: %v", err)
+	}
+	fmt.Printf("page of %d, %d total\n", page.Count, page.TotalCount)
+	for _, n := range page.Items {
+		fmt.Println(n.Name)
+	}
+}
+```
+
+<Callout type="info">
+`ResolveID` fetches the full site list on first miss and caches the name → UUID mapping, so repeated
+lookups don't round-trip. If you already hold a UUID string, skip it and use `uuid.Parse`.
+</Callout>
+
+## Pagination primitives
+
+List endpoints return a `{offset, limit, count, totalCount, data}` envelope. The package exposes three
+primitives — all generic over the item type `T`:
+
+### `ListOptions` — bound a single page
+
+```go
+type ListOptions struct {
+	Offset int
+	Limit  int
+	Filter string // optional server-side filter expression
+}
+```
+
+Passed to every `…Page` method (a `nil` is allowed). The page size is capped at **200** (`maxPageLimit`):
+
+- `nil` opts → the first page at the maximum size (200 items), unfiltered.
+- A non-positive or over-200 `Limit` is clamped to 200; a negative `Offset` becomes 0.
+- `Filter` is forwarded verbatim as the `filter` query parameter — see the
+  [filter DSL](/docs/reference/official-api/api#filtering).
+
+### `Page[T]` — one page of results
+
+```go
+type Page[T any] struct {
+	Items      []T // the decoded data slice
+	Offset     int
+	Limit      int
+	Count      int // items in this page
+	TotalCount int // items across all pages
+}
+```
+
+### The `…Page` / `…All` convention
+
+Each listable resource exposes a pair:
+
+- **`…Page(ctx, siteId, *ListOptions) (Page[T], error)`** — fetch exactly one page. You drive the
+  offset/limit yourself. Use it when you want explicit control or only need the first page.
+- **`…All(ctx, siteId, filter string) iter.Seq2[T, error]`** — a Go 1.23 range-over-func iterator that
+  lazily drains every page on demand (200 per fetch), forwarding `filter` on every request. `range`
+  it and `break` to stop early — no further request is issued.
+
+```go title="official_stream.go"
+package main
+
+import (
+	"context"
+	"fmt"
+	"log"
+
+	"github.com/filipowm/go-unifi/v2/unifi"
+)
+
+func main() {
+	ctx := context.Background()
+	c, err := unifi.NewClient(&unifi.ClientConfig{URL: "https://unifi.example.com", APIKey: "your-api-key"})
+	if err != nil {
+		log.Fatal(err)
+	}
+	siteID, err := c.Official().Sites().ResolveID(ctx, "default")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Stream every network; the error is the second range value.
+	for n, err := range c.Official().Networks().ListAll(ctx, siteID, "") {
+		if err != nil {
+			log.Fatalf("list networks: %v", err)
+		}
+		fmt.Println(n.Name)
+	}
+}
+```
+
+### `Collect` — drain an iterator into a slice
+
+`official.Collect` is the explicit opt-in for callers who genuinely want every item in memory rather
+than streaming. It short-circuits on the first error.
+
+```go
+func collectNetworks(ctx context.Context, c unifi.Client, siteID uuid.UUID) ([]official.NetworkOverview, error) {
+	return official.Collect(c.Official().Networks().ListAll(ctx, siteID, ""))
+}
+```
+
+<Callout type="warn">
+Some groups name their list pair after the noun: `Firewall().ListPoliciesPage` /
+`ListPoliciesAll`, `ACLs().ListRulesPage` / `ListRulesAll`, `Clients().ListConnectedPage` /
+`ListConnectedAll`, `Devices().ListAdoptedPage` / `ListAdoptedAll` and `ListPendingPage` /
+`ListPendingAll`. The shape is identical — only the verb noun differs.
+</Callout>
+
+## See also
 
 <Cards>
-  <Card title="The c.Official() Go surface" href="/docs/reference/official-api/official">
-    The fluent per-group clients, the uniform method shape, and the `ListOptions` / `Page` / `Collect`
-    pagination primitives.
+  <Card title="Choosing a surface" href="/docs/guides/choosing-a-surface">
+    When to reach for the Official API vs the Internal one, and how site IDs differ.
   </Card>
   <Card title="UniFi API (OpenAPI)" href="/docs/reference/official-api/api">
-    The Official UniFi OpenAPI rendered endpoint-by-endpoint, each with its equivalent Go call.
+    The Official API rendered endpoint-by-endpoint, each with its Go equivalent.
+  </Card>
+  <Card title="Errors" href="/docs/reference/errors">
+    `ServerError`, `ErrNotFound`, and the Official-API gate sentinels.
+  </Card>
+  <Card title="official on pkg.go.dev" href="https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi/official">
+    Every group interface, method signature, and request/response type.
   </Card>
 </Cards>

@@ -52,7 +52,7 @@ controller download is needed for a normal regenerate.
 
 | Pass | Input | Committed location |
 |---|---|---|
-| Internal | Controller field-definition JSONs (extracted from the UniFi OS / Network package) | `codegen/v<version>/` (e.g. `codegen/v9.5.21/`) |
+| Internal | Controller field-definition JSONs (extracted from the UniFi Network Application package) | `codegen/v<version>/` (e.g. `codegen/v9.5.21/`) |
 | Official | UniFi OpenAPI (`integration/v1`) spec | `codegen/openapi/integration-<version>.json` |
 
 The Internal field snapshot is **frozen** at `codegen/v9.5.21/` (committed, with a matching `.gitignore`
@@ -88,10 +88,11 @@ its own resolver in `codegen/version.go`.
 
 ### The Internal axis is capped at 9.5.21
 
-`9.5.21` is the **last** classic Network Controller release that ships the internal `api/fields/*.json`
-definitions. UniFi OS packages (10.x and later) dropped those files, so there is nothing to generate Internal
-resources from beyond this point — the classic controller is end-of-life there. `resolveInternalVersion`
-enforces the cap:
+`9.5.21` is the **last** UniFi Network Application release that ships the internal `api/fields/*.json`
+definitions. Newer Network Application packages (`10.x` and later) dropped those files, so there is nothing to
+generate Internal resources from beyond this point — the legacy field-definition format is end-of-life there.
+(`9.5.21` and `10.x` are Network Application versions, unrelated to the console's UniFi OS version.)
+`resolveInternalVersion` enforces the cap:
 
 - `latest` resolves the newest release, then **clamps** to `min(resolved, 9.5.21)`.
 - An explicit version `≤ 9.5.21` is used as-is.
