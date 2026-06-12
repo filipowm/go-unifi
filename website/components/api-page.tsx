@@ -19,7 +19,7 @@ export const OpenAPIPage = createOpenAPIPage({
       {
         lang: 'go',
         label: 'Go (go-unifi)',
-        source: `// ctx context.Context, c unifi.Client, siteID uuid.UUID\n// import ".../v2/unifi" and ".../v2/unifi/official"\n${call}`,
+        source: `// ctx context.Context, c unifi.Client, siteID uuid.UUID\n// import "github.com/filipowm/go-unifi/v2/unifi" and "github.com/filipowm/go-unifi/v2/unifi/official"\n${call}`,
       },
     ];
   },
