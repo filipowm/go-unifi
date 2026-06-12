@@ -2,7 +2,6 @@
   "title": "For Library Developers",
   "icon": "Hammer",
   "pages": [
-    "index",
     "code-generation",
     "customizations",
     "regenerating",

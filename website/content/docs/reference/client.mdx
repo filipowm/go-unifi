@@ -52,7 +52,7 @@ package ships a generated `ClientMock`. See [Testing](/docs/guides/testing).
 
 ## The Client interface
 
-`Client` embeds [`InternalClient`](/docs/reference/resources) (every legacy resource method — `ListNetwork`,
+`Client` embeds [`InternalClient`](/docs/reference/internal-api/resources) (every legacy resource method — `ListNetwork`,
 `CreateUser`, `GetSystemInformation`, …) and adds the transport, lifecycle, and surface-accessor methods below.
 
 | Method | Signature | Purpose |
@@ -62,7 +62,7 @@ package ships a generated `ClientMock`. See [Testing](/docs/guides/testing).
 | `VersionContext` | `VersionContext(ctx) (string, error)` | Like `Version` but honors `ctx` and **surfaces** the fetch error. |
 | `Logger` | `Logger() Logger` | The [`Logger`](/docs/reference/configuration-types#logging) the client was built with. |
 | `Internal` | `Internal() InternalClient` | The Internal (legacy) API surface. Its methods are also reachable directly on `c`. |
-| `Official` | `Official() official.Client` | The [Official OpenAPI](/docs/reference/official) surface (controller 10.1.78+). |
+| `Official` | `Official() official.Client` | The [Official OpenAPI](/docs/reference/official-api/official) surface (controller 10.1.78+). |
 | `Do` | `Do(ctx, method, apiPath, reqBody, respBody) error` | Send an arbitrary request; decode the response into `respBody`. |
 | `Get` | `Get(ctx, apiPath, reqBody, respBody) error` | GET helper over `Do`. |
 | `Post` | `Post(ctx, apiPath, reqBody, respBody) error` | POST helper over `Do`. |
@@ -94,8 +94,8 @@ func exampleLifecycle(ctx context.Context, c unifi.Client) error {
 
 ### The two API surfaces
 
-`Internal()` and `Official()` return the [Internal](/docs/reference/resources) and
-[Official](/docs/reference/official) clients. In 2.0.0 the Internal surface is the **default**: every resource
+`Internal()` and `Official()` return the [Internal](/docs/reference/internal-api/resources) and
+[Official](/docs/reference/official-api/official) clients. In 2.0.0 the Internal surface is the **default**: every resource
 method is reachable directly on `c`, so `c.ListNetwork(...)` and `c.Internal().ListNetwork(...)` are equivalent.
 
 ```go

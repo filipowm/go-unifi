@@ -1,0 +1,28 @@
+---
+title: Internal API
+description: The Internal (legacy) surface — every resource as Verb-Resource methods on the client, addressed by site name.
+---
+
+The **Internal API** is the legacy surface and the **default** one: every resource is exposed as a plain
+`<Verb><Resource>` method directly on the `unifi.Client` (also reachable via
+[`c.Internal()`](/docs/guides/choosing-a-surface)) — `ListNetwork`, `CreateUser`, `UpdateWLAN`, and so on.
+It addresses a site by its **name** string (`"default"`), not a UUID.
+
+Most of these resource types are **generated** from the controller's own API definitions, so the pages here
+map the surface — the resource catalogue, the settings types, and the feature-flag constants — and link to
+[pkg.go.dev](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi) for the exhaustive, always-current
+field lists. See [Choosing a surface](/docs/guides/choosing-a-surface) for how it compares to the Official API.
+
+## Pages
+
+<Cards>
+  <Card title="Resources" href="/docs/reference/internal-api/resources">
+    The resource methods (`ListNetwork`, `CreateUser`, …), grouped by domain, with their CRUD verbs and extras.
+  </Card>
+  <Card title="Settings" href="/docs/reference/internal-api/settings">
+    The controller settings types and their `Setting*Key` constants.
+  </Card>
+  <Card title="Feature constants" href="/docs/reference/internal-api/feature-constants">
+    The `features` package: controller feature-flag name constants.
+  </Card>
+</Cards>

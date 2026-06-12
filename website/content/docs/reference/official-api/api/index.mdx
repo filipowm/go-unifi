@@ -5,7 +5,7 @@ description: Overview of the Official UniFi Network API (integration/v1) — bas
 
 This section renders the **Official UniFi Network API** — the controller's own OpenAPI document
 (`integration/v1`, spec version **10.1.78**) — endpoint by endpoint. go-unifi calls this surface for you
-through [`c.Official()`](/docs/reference/official); the pages here are the canonical HTTP-level reference,
+through [`c.Official()`](/docs/reference/official-api/official); the pages here are the canonical HTTP-level reference,
 and **each one shows the equivalent Go call**.
 
 <Callout type="info">
@@ -24,7 +24,7 @@ The OpenAPI document declares its server as `/integration` and versions every pa
 /proxy/network/integration/v1
 ```
 
-You never assemble these paths yourself — the [`official`](/docs/reference/official) wrappers build them
+You never assemble these paths yourself — the [`official`](/docs/reference/official-api/official) wrappers build them
 from the site UUID and resource IDs.
 
 ## Authentication
@@ -42,7 +42,7 @@ API-key auth requires controller **9.0.114** or newer; the Official API surface 
 
 Some `GET` and `DELETE` list endpoints accept a `filter` query parameter for server-side querying. Each
 endpoint that supports it documents its filterable properties. In Go, set
-[`official.ListOptions.Filter`](/docs/reference/official#pagination-primitives) (or pass the
+[`official.ListOptions.Filter`](/docs/reference/official-api/official#pagination-primitives) (or pass the
 `filter` argument to a `…All` iterator); the string is forwarded verbatim.
 
 ```go title="filter.go"
@@ -144,7 +144,7 @@ Lists, and Supporting Resources** — and listed in the sidebar. Every operation
 method, path, parameters, and schemas, alongside the matching `c.Official()` Go call.
 
 <Cards>
-  <Card title="Official API reference" href="/docs/reference/official">
+  <Card title="Official API reference" href="/docs/reference/official-api/official">
     The Go surface: `c.Official()` accessors, method shape, and pagination.
   </Card>
   <Card title="Choosing a surface" href="/docs/guides/choosing-a-surface">

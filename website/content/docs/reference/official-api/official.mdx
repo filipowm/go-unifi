@@ -39,7 +39,7 @@ exposing exactly one accessor per resource group. Each accessor returns a small 
 
 For the full method set and request/response types of each group, browse
 [the `official` package on pkg.go.dev](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi/official),
-or the [endpoint-by-endpoint OpenAPI reference](/docs/reference/api).
+or the [endpoint-by-endpoint OpenAPI reference](/docs/reference/official-api/api).
 
 ## The uniform method shape
 
@@ -121,7 +121,7 @@ Passed to every `…Page` method (a `nil` is allowed). The page size is capped a
 - `nil` opts → the first page at the maximum size (200 items), unfiltered.
 - A non-positive or over-200 `Limit` is clamped to 200; a negative `Offset` becomes 0.
 - `Filter` is forwarded verbatim as the `filter` query parameter — see the
-  [filter DSL](/docs/reference/api#filtering).
+  [filter DSL](/docs/reference/official-api/api#filtering).
 
 ### `Page[T]` — one page of results
 
@@ -201,7 +201,7 @@ Some groups name their list pair after the noun: `Firewall().ListPoliciesPage` /
   <Card title="Choosing a surface" href="/docs/guides/choosing-a-surface">
     When to reach for the Official API vs the Internal one, and how site IDs differ.
   </Card>
-  <Card title="UniFi API (OpenAPI)" href="/docs/reference/api">
+  <Card title="UniFi API (OpenAPI)" href="/docs/reference/official-api/api">
     The Official API rendered endpoint-by-endpoint, each with its Go equivalent.
   </Card>
   <Card title="Errors" href="/docs/reference/errors">

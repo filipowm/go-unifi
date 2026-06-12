@@ -118,11 +118,11 @@ func main() {
 | --- | --- | --- |
 | `Site` | `CreateSite(desc)`, `GetSite(id)`, `ListSites`, `UpdateSite(name, desc)`, `DeleteSite(id)` | **No `site` arg** (sites are global); list is `ListSites`; mutations return `[]Site`. |
 | System info | `GetSystemInformationContext(ctx)`, `GetSystemInfo(ctx, id)`, `GetSystemInformation()` | Returns `*SysInfo`. `GetSystemInformation` is the only method without a `context`. |
-| Features | `ListFeatures`, `GetFeature(name)`, `IsFeatureEnabled(name)` | Controller feature flags; names are the [feature constants](/docs/reference/feature-constants). |
+| Features | `ListFeatures`, `GetFeature(name)`, `IsFeatureEnabled(name)` | Controller feature flags; names are the [feature constants](/docs/reference/internal-api/feature-constants). |
 | `Dashboard` | CRUD | Saved dashboards. |
 | `ScheduleTask` | CRUD | Scheduled tasks. |
 | Traffic flows | `GetTrafficFlows(ctx, site, req)` | Site-scoped analytics query; `req` is a `*TrafficFlowsRequest`. |
-| Settings | `GetSetting` / `SetSetting` + typed pairs | See the [Settings catalogue](/docs/reference/settings). |
+| Settings | `GetSetting` / `SetSetting` + typed pairs | See the [Settings catalogue](/docs/reference/internal-api/settings). |
 
 ## Layout & Media
 
@@ -152,10 +152,10 @@ on the [`InternalClient` interface](https://pkg.go.dev/github.com/filipowm/go-un
 ## See also
 
 <Cards>
-  <Card title="Settings" href="/docs/reference/settings">
+  <Card title="Settings" href="/docs/reference/internal-api/settings">
     The `Setting*` catalogue and its typed `Get`/`Update` pairs.
   </Card>
-  <Card title="Official API" href="/docs/reference/official">
+  <Card title="Official API" href="/docs/reference/official-api/official">
     The newer `c.Official()` surface, addressed by site UUID.
   </Card>
   <Card title="Errors" href="/docs/reference/errors">

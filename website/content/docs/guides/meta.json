@@ -2,7 +2,6 @@
   "title": "Guides",
   "icon": "BookOpen",
   "pages": [
-    "index",
     "choosing-a-surface",
     "official-api",
     "pagination-and-filtering",

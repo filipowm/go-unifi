@@ -1,5 +1,5 @@
 {
   "title": "Migrating",
   "icon": "ArrowRightLeft",
-  "pages": ["index", "from-1.x", "breaking-changes", "from-paultyng"]
+  "pages": ["from-1.x", "breaking-changes", "from-paultyng"]
 }

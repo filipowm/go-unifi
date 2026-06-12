@@ -241,7 +241,7 @@ func exampleWifiBroadcasts(ctx context.Context, c unifi.Client, siteID uuid.UUID
 The Official surface requires controller **10.1.78** or newer and an API key. The request and
 response models (`HotspotVoucherCreationRequest`, `WifiBroadcastCreateOrUpdate`, …) live in the
 [`official` package](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi/official); the raw
-endpoints are in the [UniFi API reference](/docs/reference/api).
+endpoints are in the [UniFi API reference](/docs/reference/official-api/api).
 </Callout>
 
 ## Next steps
@@ -253,7 +253,7 @@ endpoints are in the [UniFi API reference](/docs/reference/api).
   <Card title="Pagination and filtering" href="/docs/guides/pagination-and-filtering">
     Drain iterators, fetch single pages, and apply Official-API filters.
   </Card>
-  <Card title="Resource reference" href="/docs/reference/resources">
+  <Card title="Resource reference" href="/docs/reference/internal-api/resources">
     Every wireless struct and its fields, generated from the controller API.
   </Card>
 </Cards>
