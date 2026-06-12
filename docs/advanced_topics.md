@@ -215,7 +215,7 @@ The SDK provides flexible logging capabilities through the `Logger` interface. Y
 
 ### Using the Default Logger
 
-The SDK includes a default logger based on [logrus](https://github.com/sirupsen/logrus). You can configure it with different logging levels:
+The SDK includes a default logger backed by Go's standard [`log/slog`](https://pkg.go.dev/log/slog), emitting plain text (no ANSI colour codes) to `os.Stderr`. You can configure it with different logging levels:
 
 ```go
 // Configure client with default logger at Debug level
@@ -235,21 +235,18 @@ Available logging levels are:
 - `unifi.WarnLevel` - warning messages
 - `unifi.ErrorLevel` - error messages only
 
-The `Logger` interface is embedded directly in `Client`, so logging methods are promoted and callable
-on the client itself:
+The configured logger is reachable via the `Logger()` accessor on `Client` (the SDK uses it internally for diagnostics):
 
 ```go
-client.Trace("Trace message")
-client.Tracef("Trace message with %s", "formatting")
-client.Debug("Debug message")
-client.Debugf("Debug message with %s", "formatting")
-client.Info("Info message")
-client.Infof("Info message with %s", "formatting")
-client.Warn("Warn message")
-client.Warnf("Warn message with %s", "formatting")
-client.Error("Error message")
-client.Errorf("Error message with %s", "formatting")
+log := client.Logger()
+log.Debug("Debug message")
+log.Debugf("Debug message with %s", "formatting")
+log.Errorf("Error message with %s", "formatting")
 ```
+
+> **Breaking change (2.0.0):** `Client` no longer embeds `Logger`, so logging methods are no longer
+> promoted onto the client itself. Replace any `client.Errorf(...)` calls with `client.Logger().Errorf(...)`.
+> See [breaking_changes.md](2.0.0/breaking_changes.md).
 
 ### Custom Logger Implementation
 
@@ -277,6 +274,17 @@ config := &unifi.ClientConfig{
     URL:    "https://unifi.localdomain",
     APIKey: "your-api-key",
     Logger: &MyCustomLogger{},
+}
+client, err := unifi.NewClient(config)
+```
+
+If you already have a configured `*slog.Logger`, wrap it directly with `unifi.NewSlogLogger`:
+
+```go
+config := &unifi.ClientConfig{
+    URL:    "https://unifi.localdomain",
+    APIKey: "your-api-key",
+    Logger: unifi.NewSlogLogger(slog.Default()),
 }
 client, err := unifi.NewClient(config)
 ```
