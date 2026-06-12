@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -53,6 +54,31 @@ func (f *fakeDoer) Delete(context.Context, string, any, any) error { return nil 
 
 const base = "/proxy/network/integration/v1"
 
+// mustUUID parses a UUID string or panics — used only in test fixtures.
+func mustUUID(s string) uuid.UUID {
+	return uuid.MustParse(s)
+}
+
+// Stable test UUIDs (RFC 4122 format) to replace arbitrary fake strings in fixtures.
+var (
+	uuidDefault = mustUUID("00000000-0000-0000-0000-000000000001")
+	uuidOther   = mustUUID("00000000-0000-0000-0000-000000000002")
+	uuidA       = mustUUID("00000000-0000-0000-0000-00000000000a")
+	uuidB       = mustUUID("00000000-0000-0000-0000-00000000000b")
+)
+
+// testSiteOverview creates a SiteOverview with a sequential UUID ID derived from
+// the index, so pagination tests can build large fixture sets deterministically.
+func testSiteOverview(i int) SiteOverview {
+	// Encode the index in the last 4 bytes of a zero UUID.
+	var id uuid.UUID
+	id[12] = byte(i >> 24)
+	id[13] = byte(i >> 16)
+	id[14] = byte(i >> 8)
+	id[15] = byte(i)
+	return SiteOverview{ID: id, InternalReference: fmt.Sprintf("site%d", i), Name: fmt.Sprintf("Site %d", i)}
+}
+
 func TestGetInfo(t *testing.T) {
 	t.Parallel()
 	d := &fakeDoer{responses: map[string]any{base + "/info": Info{ApplicationVersion: "10.1.78"}}}
@@ -94,7 +120,7 @@ func TestListAllDrainsAcrossPages(t *testing.T) {
 	// 250 sites across two pages of <=200 — ListAll must walk both.
 	all := make([]SiteOverview, 0, 250)
 	for i := range 250 {
-		all = append(all, SiteOverview{ID: fmt.Sprintf("uuid-%d", i), InternalReference: fmt.Sprintf("site%d", i), Name: fmt.Sprintf("Site %d", i)})
+		all = append(all, testSiteOverview(i))
 	}
 
 	var urls []string
@@ -127,7 +153,7 @@ func TestListAllBreakStopsFetching(t *testing.T) {
 	t.Parallel()
 	all := make([]SiteOverview, 0, 400)
 	for i := range 400 {
-		all = append(all, SiteOverview{ID: fmt.Sprintf("u%d", i), InternalReference: fmt.Sprintf("r%d", i), Name: "n"})
+		all = append(all, testSiteOverview(i))
 	}
 	calls := 0
 	d := &pagingDoer{fn: func(apiPath string, respBody any) error {
@@ -159,7 +185,7 @@ func TestListPageFetchesSinglePage(t *testing.T) {
 		calls++
 		assert.Contains(t, apiPath, "offset=0")
 		assert.Contains(t, apiPath, "limit=200", "nil opts must request the default page size")
-		return encode(sitePage(0, 9999, []SiteOverview{{ID: "u1", InternalReference: "r1", Name: "n"}}), respBody)
+		return encode(sitePage(0, 9999, []SiteOverview{testSiteOverview(1)}), respBody)
 	}}
 	c := New(d, base, nil)
 
@@ -213,21 +239,21 @@ func TestResolveSiteIDCachesByInternalReference(t *testing.T) {
 	t.Parallel()
 	d := &fakeDoer{responses: map[string]any{
 		base + "/sites": sitePage(0, 2, []SiteOverview{
-			{ID: "uuid-default", InternalReference: "default", Name: "Default"},
-			{ID: "uuid-other", InternalReference: "other", Name: "Other"},
+			{ID: uuidDefault, InternalReference: "default", Name: "Default"},
+			{ID: uuidOther, InternalReference: "other", Name: "Other"},
 		}),
 	}}
 	c := New(d, base, nil)
 
 	id, err := c.Sites().ResolveID(context.Background(), "default")
 	require.NoError(t, err)
-	assert.Equal(t, "uuid-default", id)
+	assert.Equal(t, uuidDefault, id)
 
 	// Second lookup is served from cache: no further transport call.
 	before := len(d.calls)
 	id2, err := c.Sites().ResolveID(context.Background(), "other")
 	require.NoError(t, err)
-	assert.Equal(t, "uuid-other", id2)
+	assert.Equal(t, uuidOther, id2)
 	assert.Len(t, d.calls, before, "cached lookup must not hit transport again")
 
 	_, err = c.Sites().ResolveID(context.Background(), "ghost")
@@ -240,7 +266,7 @@ func TestResolveSiteIDNotFoundSentinel(t *testing.T) {
 	t.Parallel()
 	d := &fakeDoer{responses: map[string]any{
 		base + "/sites": sitePage(0, 1, []SiteOverview{
-			{ID: "uuid-default", InternalReference: "default", Name: "Default"},
+			{ID: uuidDefault, InternalReference: "default", Name: "Default"},
 		}),
 	}}
 	c := New(d, base, nil)
@@ -295,8 +321,8 @@ func TestListAllTerminatesOnEmptyPageWithHighTotalCount(t *testing.T) {
 	t.Parallel()
 	const reportedTotal = 999
 	realData := []SiteOverview{
-		{ID: "uuid-a", InternalReference: "a", Name: "A"},
-		{ID: "uuid-b", InternalReference: "b", Name: "B"},
+		{ID: uuidA, InternalReference: "a", Name: "A"},
+		{ID: uuidB, InternalReference: "b", Name: "B"},
 	}
 	calls := 0
 	d := &pagingDoer{fn: func(_ string, respBody any) error {
@@ -328,7 +354,7 @@ func TestListAllForwardsFilterAcrossPages(t *testing.T) {
 	// on more than one request.
 	all := make([]SiteOverview, 0, 250)
 	for i := range 250 {
-		all = append(all, SiteOverview{ID: fmt.Sprintf("u%d", i), InternalReference: fmt.Sprintf("r%d", i), Name: "n"})
+		all = append(all, testSiteOverview(i))
 	}
 
 	var urls []string

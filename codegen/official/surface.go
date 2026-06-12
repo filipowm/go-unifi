@@ -24,7 +24,7 @@ var customMethods = []method{
 	{Group: "Info", Name: "Get", Doc: "returns the controller application info (GET /v1/info).", Params: []arg{ctxArg}, Returns: []string{"*Info", "error"}},
 	{Group: "Sites", Name: "ListPage", Doc: "returns one page of local sites; nil opts fetches the first page at the default size.", Params: []arg{ctxArg, listOptionsArg}, Returns: []string{"Page[SiteOverview]", "error"}},
 	{Group: "Sites", Name: "ListAll", Doc: "lazily drains every local site across pages; pass \"\" to drain unfiltered.", Params: []arg{ctxArg, {Name: "filter", Type: "string"}}, Returns: []string{"iter.Seq2[SiteOverview, error]"}},
-	{Group: "Sites", Name: "ResolveID", Doc: "maps a legacy site name to its Official-API site UUID, caching the lookup.", Params: []arg{ctxArg, {Name: "name", Type: "string"}}, Returns: []string{"string", "error"}},
+	{Group: "Sites", Name: "ResolveID", Doc: "maps a legacy site name to its Official-API site UUID, caching the lookup.", Params: []arg{ctxArg, {Name: "name", Type: "string"}}, Returns: []string{"uuid.UUID", "error"}},
 }
 
 // ctxArg is the leading context argument shared by every surface method.
@@ -120,12 +120,17 @@ func methodsFor(op operation) []method {
 }
 
 // baseParams renders the leading parameters shared by every shape: ctx, then the
-// path args, then the required query args (all strings).
+// path args (typed by schema format: uuid.UUID, int32, or string), then the
+// required query args (always strings).
 func baseParams(op operation) []arg {
 	params := make([]arg, 0, 1+len(op.PathArgs)+len(op.QueryArgs))
 	params = append(params, ctxArg)
 	for _, p := range op.PathArgs {
-		params = append(params, arg{Name: p.Name, Type: "string"})
+		t := p.GoType
+		if t == "" {
+			t = "string"
+		}
+		params = append(params, arg{Name: p.Name, Type: t})
 	}
 	for _, q := range op.QueryArgs {
 		params = append(params, arg{Name: q.Name, Type: "string"})
@@ -266,33 +271,49 @@ func generateGroupFile(g group, pkg string) (string, error) {
 }
 
 // groupImports renders the import block a group file needs: context always, plus
-// fmt/net/url/errors/strconv only when a generated wrapper body in the group uses them.
+// fmt/net/url/errors/strconv/uuid only when a generated wrapper body in the group uses them.
+// Stdlib imports are emitted in one group; third-party imports follow in a separate
+// group (blank-line-separated) so gci's group ordering is satisfied.
 func groupImports(g group) string {
 	use := groupImportUse(g)
-	imports := []string{`"context"`}
+	stdImports := []string{`"context"`}
 	if use["errors"] {
-		imports = append(imports, `"errors"`)
+		stdImports = append(stdImports, `"errors"`)
 	}
 	if use["fmt"] {
-		imports = append(imports, `"fmt"`)
+		stdImports = append(stdImports, `"fmt"`)
 	}
 	if use["iter"] {
-		imports = append(imports, `"iter"`)
+		stdImports = append(stdImports, `"iter"`)
 	}
 	if use["net/url"] {
-		imports = append(imports, `"net/url"`)
+		stdImports = append(stdImports, `"net/url"`)
 	}
 	if use["strconv"] {
-		imports = append(imports, `"strconv"`)
+		stdImports = append(stdImports, `"strconv"`)
 	}
-	if len(imports) == 1 {
-		return "import " + imports[0] + "\n\n" // context only (hand-written-only group)
+
+	var thirdParty []string
+	if use["uuid"] {
+		thirdParty = append(thirdParty, `"github.com/google/uuid"`)
 	}
-	return "import (\n\t" + strings.Join(imports, "\n\t") + "\n)\n\n"
+
+	if len(thirdParty) == 0 {
+		if len(stdImports) == 1 {
+			return "import " + stdImports[0] + "\n\n" // context only (hand-written-only group)
+		}
+		return "import (\n\t" + strings.Join(stdImports, "\n\t") + "\n)\n\n"
+	}
+	// Two groups: stdlib then third-party, separated by a blank line (gci ordering).
+	return "import (\n\t" +
+		strings.Join(stdImports, "\n\t") +
+		"\n\n\t" +
+		strings.Join(thirdParty, "\n\t") +
+		"\n)\n\n"
 }
 
-// groupImportUse reports which std-lib imports the group file needs. iter is
-// driven by signatures (any ListAll iterator return, incl. hand-written ones);
+// groupImportUse reports which std-lib/third-party imports the group file needs.
+// iter/uuid are driven by all method signatures (incl. hand-written ones);
 // fmt/net/url/errors/strconv are driven by the generated wrapper bodies.
 func groupImportUse(g group) map[string]bool {
 	use := map[string]bool{}
@@ -301,21 +322,57 @@ func groupImportUse(g group) map[string]bool {
 			if strings.Contains(r, "iter.Seq2") {
 				use["iter"] = true
 			}
+			if strings.Contains(r, "uuid.UUID") {
+				use["uuid"] = true
+			}
+		}
+		for _, p := range m.Params {
+			if strings.Contains(p.Type, "uuid.UUID") {
+				use["uuid"] = true
+			}
 		}
 		if m.op == nil {
 			continue
 		}
 		use["fmt"] = true // every generated wrapper body wraps its error with fmt.
-		if len(m.op.QueryArgs) > 0 || len(m.op.PathArgs) > 0 || m.op.HasOptions() {
+		// net/url is needed for string path args (PathEscape) and string query args.
+		for _, p := range m.op.PathArgs {
+			if p.GoType == "string" || p.GoType == "" {
+				use["net/url"] = true
+			}
+		}
+		// Required query params are always strings (url.QueryEscape needed).
+		if len(m.op.QueryArgs) > 0 {
 			use["net/url"] = true
+		}
+		// Optional string query params (in a scalar wrapper) need url.QueryEscape.
+		if m.kind == kindScalar {
+			for _, o := range m.op.OptionalQueryArgs {
+				if o.GoType == "string" {
+					use["net/url"] = true
+				}
+			}
 		}
 		if m.op.RequiredFilter() != "" {
 			use["errors"] = true
 		}
-		// strconv is needed when optional numeric params are serialised to query strings.
+		// strconv is needed for numeric path and optional params.
+		for _, p := range m.op.PathArgs {
+			if p.GoType == "int32" || p.GoType == "int64" {
+				use["strconv"] = true
+			}
+		}
 		for _, o := range m.op.OptionalQueryArgs {
 			if o.GoType == "int32" || o.GoType == "int64" || o.GoType == "float64" {
 				use["strconv"] = true
+			}
+		}
+		// uuid import is also needed when path params are typed as uuid.UUID
+		// (this catches generated methods not covered by the signature scan above,
+		// e.g. when uuid.UUID appears only in op.PathArgs, not in m.Params yet).
+		for _, p := range m.op.PathArgs {
+			if p.GoType == "uuid.UUID" {
+				use["uuid"] = true
 			}
 		}
 	}
@@ -433,6 +490,9 @@ func reqArg(op operation) string {
 // when fully static, else an fmt.Sprintf over the path and required-query args.
 // Optional query params (from opts) are appended separately in the wrapper body
 // via optionalQueryExpr; pathExpr only covers path and required query args.
+// UUID path params are rendered as p.Name.String() (no url.PathEscape needed:
+// a UUID contains only hex digits and hyphens, none of which need escaping).
+// int32 params are rendered as strconv.Itoa(int(p.Name)).
 func pathExpr(op operation) string {
 	if len(op.PathArgs) == 0 && len(op.QueryArgs) == 0 {
 		return fmt.Sprintf("%q", op.SubPath)
@@ -440,9 +500,19 @@ func pathExpr(op operation) string {
 	var format strings.Builder
 	format.WriteString(op.SubPath)
 	args := make([]string, 0, len(op.PathArgs)+len(op.QueryArgs))
-	// Escape path segments: an ID containing '/', '?' or '#' must not alter the route.
 	for _, p := range op.PathArgs {
-		args = append(args, "url.PathEscape("+p.Name+")")
+		switch p.GoType {
+		case "uuid.UUID":
+			// UUID contains only hex digits and hyphens — no PathEscape needed.
+			args = append(args, p.Name+".String()")
+		case "int32":
+			args = append(args, "strconv.Itoa(int("+p.Name+"))")
+		case "int64":
+			args = append(args, "strconv.FormatInt(int64("+p.Name+"), 10)")
+		default:
+			// Escape path segments: a string ID containing '/', '?' or '#' must not alter the route.
+			args = append(args, "url.PathEscape("+p.Name+")")
+		}
 	}
 	for i, q := range op.QueryArgs {
 		sep := "&"

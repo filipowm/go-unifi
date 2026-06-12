@@ -6,23 +6,24 @@ import (
 	"context"
 	"fmt"
 	"iter"
-	"net/url"
+
+	"github.com/google/uuid"
 )
 
 // TrafficMatchingListsClient is the TrafficMatchingLists resource group of the Official UniFi OpenAPI surface.
 type TrafficMatchingListsClient interface {
 	// Create maps to POST /v1/sites/%s/traffic-matching-lists on the Official API.
-	Create(ctx context.Context, siteId string, body TrafficMatchingListCreateOrUpdate) (*TrafficMatchingList, error)
+	Create(ctx context.Context, siteId uuid.UUID, body TrafficMatchingListCreateOrUpdate) (*TrafficMatchingList, error)
 	// Delete maps to DELETE /v1/sites/%s/traffic-matching-lists/%s on the Official API.
-	Delete(ctx context.Context, siteId string, trafficMatchingListId string) error
+	Delete(ctx context.Context, siteId uuid.UUID, trafficMatchingListId uuid.UUID) error
 	// Get maps to GET /v1/sites/%s/traffic-matching-lists/%s on the Official API.
-	Get(ctx context.Context, siteId string, trafficMatchingListId string) (*TrafficMatchingList, error)
+	Get(ctx context.Context, siteId uuid.UUID, trafficMatchingListId uuid.UUID) (*TrafficMatchingList, error)
 	// ListAll lazily drains every item from GET /v1/sites/%s/traffic-matching-lists, paging on demand; pass "" filter to drain unfiltered; range it and break to stop early.
-	ListAll(ctx context.Context, siteId string, filter string) iter.Seq2[TrafficMatchingList, error]
+	ListAll(ctx context.Context, siteId uuid.UUID, filter string) iter.Seq2[TrafficMatchingList, error]
 	// ListPage returns one page from GET /v1/sites/%s/traffic-matching-lists; nil opts fetches the first page at the default size.
-	ListPage(ctx context.Context, siteId string, opts *ListOptions) (Page[TrafficMatchingList], error)
+	ListPage(ctx context.Context, siteId uuid.UUID, opts *ListOptions) (Page[TrafficMatchingList], error)
 	// Update maps to PUT /v1/sites/%s/traffic-matching-lists/%s on the Official API.
-	Update(ctx context.Context, siteId string, trafficMatchingListId string, body TrafficMatchingListCreateOrUpdate) (*TrafficMatchingList, error)
+	Update(ctx context.Context, siteId uuid.UUID, trafficMatchingListId uuid.UUID, body TrafficMatchingListCreateOrUpdate) (*TrafficMatchingList, error)
 }
 
 // trafficMatchingListsClient wraps the shared apiClient so transport, gate and site cache stay single-sourced.
@@ -36,51 +37,51 @@ func (c *apiClient) TrafficMatchingLists() TrafficMatchingListsClient {
 }
 
 // Create maps to POST /v1/sites/%s/traffic-matching-lists on the Official API.
-func (c trafficMatchingListsClient) Create(ctx context.Context, siteId string, body TrafficMatchingListCreateOrUpdate) (*TrafficMatchingList, error) {
+func (c trafficMatchingListsClient) Create(ctx context.Context, siteId uuid.UUID, body TrafficMatchingListCreateOrUpdate) (*TrafficMatchingList, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
 	}
 	var out TrafficMatchingList
-	if err := c.doer.Post(ctx, c.path(fmt.Sprintf("/sites/%s/traffic-matching-lists", url.PathEscape(siteId))), body, &out); err != nil {
+	if err := c.doer.Post(ctx, c.path(fmt.Sprintf("/sites/%s/traffic-matching-lists", siteId.String())), body, &out); err != nil {
 		return nil, fmt.Errorf("failed Create: %w", err)
 	}
 	return &out, nil
 }
 
 // Delete maps to DELETE /v1/sites/%s/traffic-matching-lists/%s on the Official API.
-func (c trafficMatchingListsClient) Delete(ctx context.Context, siteId string, trafficMatchingListId string) error {
+func (c trafficMatchingListsClient) Delete(ctx context.Context, siteId uuid.UUID, trafficMatchingListId uuid.UUID) error {
 	if err := c.check(ctx); err != nil {
 		return err
 	}
-	if err := c.doer.Delete(ctx, c.path(fmt.Sprintf("/sites/%s/traffic-matching-lists/%s", url.PathEscape(siteId), url.PathEscape(trafficMatchingListId))), nil, nil); err != nil {
+	if err := c.doer.Delete(ctx, c.path(fmt.Sprintf("/sites/%s/traffic-matching-lists/%s", siteId.String(), trafficMatchingListId.String())), nil, nil); err != nil {
 		return fmt.Errorf("failed Delete: %w", err)
 	}
 	return nil
 }
 
 // Get maps to GET /v1/sites/%s/traffic-matching-lists/%s on the Official API.
-func (c trafficMatchingListsClient) Get(ctx context.Context, siteId string, trafficMatchingListId string) (*TrafficMatchingList, error) {
+func (c trafficMatchingListsClient) Get(ctx context.Context, siteId uuid.UUID, trafficMatchingListId uuid.UUID) (*TrafficMatchingList, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
 	}
 	var out TrafficMatchingList
-	if err := c.doer.Get(ctx, c.path(fmt.Sprintf("/sites/%s/traffic-matching-lists/%s", url.PathEscape(siteId), url.PathEscape(trafficMatchingListId))), nil, &out); err != nil {
+	if err := c.doer.Get(ctx, c.path(fmt.Sprintf("/sites/%s/traffic-matching-lists/%s", siteId.String(), trafficMatchingListId.String())), nil, &out); err != nil {
 		return nil, fmt.Errorf("failed Get: %w", err)
 	}
 	return &out, nil
 }
 
 // ListAll lazily drains every item from GET /v1/sites/%s/traffic-matching-lists, paging on demand; pass "" filter to drain unfiltered; range it and break to stop early.
-func (c trafficMatchingListsClient) ListAll(ctx context.Context, siteId string, filter string) iter.Seq2[TrafficMatchingList, error] {
-	return listSeq[TrafficMatchingList](ctx, c.apiClient, c.path(fmt.Sprintf("/sites/%s/traffic-matching-lists", url.PathEscape(siteId))), filter)
+func (c trafficMatchingListsClient) ListAll(ctx context.Context, siteId uuid.UUID, filter string) iter.Seq2[TrafficMatchingList, error] {
+	return listSeq[TrafficMatchingList](ctx, c.apiClient, c.path(fmt.Sprintf("/sites/%s/traffic-matching-lists", siteId.String())), filter)
 }
 
 // ListPage returns one page from GET /v1/sites/%s/traffic-matching-lists; nil opts fetches the first page at the default size.
-func (c trafficMatchingListsClient) ListPage(ctx context.Context, siteId string, opts *ListOptions) (Page[TrafficMatchingList], error) {
+func (c trafficMatchingListsClient) ListPage(ctx context.Context, siteId uuid.UUID, opts *ListOptions) (Page[TrafficMatchingList], error) {
 	if err := c.check(ctx); err != nil {
 		return Page[TrafficMatchingList]{}, err
 	}
-	p, err := listPage[TrafficMatchingList](ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/traffic-matching-lists", url.PathEscape(siteId))), opts)
+	p, err := listPage[TrafficMatchingList](ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/traffic-matching-lists", siteId.String())), opts)
 	if err != nil {
 		return Page[TrafficMatchingList]{}, fmt.Errorf("failed ListPage: %w", err)
 	}
@@ -88,12 +89,12 @@ func (c trafficMatchingListsClient) ListPage(ctx context.Context, siteId string,
 }
 
 // Update maps to PUT /v1/sites/%s/traffic-matching-lists/%s on the Official API.
-func (c trafficMatchingListsClient) Update(ctx context.Context, siteId string, trafficMatchingListId string, body TrafficMatchingListCreateOrUpdate) (*TrafficMatchingList, error) {
+func (c trafficMatchingListsClient) Update(ctx context.Context, siteId uuid.UUID, trafficMatchingListId uuid.UUID, body TrafficMatchingListCreateOrUpdate) (*TrafficMatchingList, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
 	}
 	var out TrafficMatchingList
-	if err := c.doer.Put(ctx, c.path(fmt.Sprintf("/sites/%s/traffic-matching-lists/%s", url.PathEscape(siteId), url.PathEscape(trafficMatchingListId))), body, &out); err != nil {
+	if err := c.doer.Put(ctx, c.path(fmt.Sprintf("/sites/%s/traffic-matching-lists/%s", siteId.String(), trafficMatchingListId.String())), body, &out); err != nil {
 		return nil, fmt.Errorf("failed Update: %w", err)
 	}
 	return &out, nil
@@ -102,36 +103,36 @@ func (c trafficMatchingListsClient) Update(ctx context.Context, siteId string, t
 // TrafficMatchingListsClientMock is a func-field test double implementing TrafficMatchingListsClient. A nil field
 // panics on call, surfacing an un-stubbed method in tests.
 type TrafficMatchingListsClientMock struct {
-	CreateFunc   func(context.Context, string, TrafficMatchingListCreateOrUpdate) (*TrafficMatchingList, error)
-	DeleteFunc   func(context.Context, string, string) error
-	GetFunc      func(context.Context, string, string) (*TrafficMatchingList, error)
-	ListAllFunc  func(context.Context, string, string) iter.Seq2[TrafficMatchingList, error]
-	ListPageFunc func(context.Context, string, *ListOptions) (Page[TrafficMatchingList], error)
-	UpdateFunc   func(context.Context, string, string, TrafficMatchingListCreateOrUpdate) (*TrafficMatchingList, error)
+	CreateFunc   func(context.Context, uuid.UUID, TrafficMatchingListCreateOrUpdate) (*TrafficMatchingList, error)
+	DeleteFunc   func(context.Context, uuid.UUID, uuid.UUID) error
+	GetFunc      func(context.Context, uuid.UUID, uuid.UUID) (*TrafficMatchingList, error)
+	ListAllFunc  func(context.Context, uuid.UUID, string) iter.Seq2[TrafficMatchingList, error]
+	ListPageFunc func(context.Context, uuid.UUID, *ListOptions) (Page[TrafficMatchingList], error)
+	UpdateFunc   func(context.Context, uuid.UUID, uuid.UUID, TrafficMatchingListCreateOrUpdate) (*TrafficMatchingList, error)
 }
 
 var _ TrafficMatchingListsClient = (*TrafficMatchingListsClientMock)(nil)
 
-func (m *TrafficMatchingListsClientMock) Create(ctx context.Context, siteId string, body TrafficMatchingListCreateOrUpdate) (*TrafficMatchingList, error) {
+func (m *TrafficMatchingListsClientMock) Create(ctx context.Context, siteId uuid.UUID, body TrafficMatchingListCreateOrUpdate) (*TrafficMatchingList, error) {
 	return m.CreateFunc(ctx, siteId, body)
 }
 
-func (m *TrafficMatchingListsClientMock) Delete(ctx context.Context, siteId string, trafficMatchingListId string) error {
+func (m *TrafficMatchingListsClientMock) Delete(ctx context.Context, siteId uuid.UUID, trafficMatchingListId uuid.UUID) error {
 	return m.DeleteFunc(ctx, siteId, trafficMatchingListId)
 }
 
-func (m *TrafficMatchingListsClientMock) Get(ctx context.Context, siteId string, trafficMatchingListId string) (*TrafficMatchingList, error) {
+func (m *TrafficMatchingListsClientMock) Get(ctx context.Context, siteId uuid.UUID, trafficMatchingListId uuid.UUID) (*TrafficMatchingList, error) {
 	return m.GetFunc(ctx, siteId, trafficMatchingListId)
 }
 
-func (m *TrafficMatchingListsClientMock) ListAll(ctx context.Context, siteId string, filter string) iter.Seq2[TrafficMatchingList, error] {
+func (m *TrafficMatchingListsClientMock) ListAll(ctx context.Context, siteId uuid.UUID, filter string) iter.Seq2[TrafficMatchingList, error] {
 	return m.ListAllFunc(ctx, siteId, filter)
 }
 
-func (m *TrafficMatchingListsClientMock) ListPage(ctx context.Context, siteId string, opts *ListOptions) (Page[TrafficMatchingList], error) {
+func (m *TrafficMatchingListsClientMock) ListPage(ctx context.Context, siteId uuid.UUID, opts *ListOptions) (Page[TrafficMatchingList], error) {
 	return m.ListPageFunc(ctx, siteId, opts)
 }
 
-func (m *TrafficMatchingListsClientMock) Update(ctx context.Context, siteId string, trafficMatchingListId string, body TrafficMatchingListCreateOrUpdate) (*TrafficMatchingList, error) {
+func (m *TrafficMatchingListsClientMock) Update(ctx context.Context, siteId uuid.UUID, trafficMatchingListId uuid.UUID, body TrafficMatchingListCreateOrUpdate) (*TrafficMatchingList, error) {
 	return m.UpdateFunc(ctx, siteId, trafficMatchingListId, body)
 }

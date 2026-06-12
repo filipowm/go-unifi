@@ -6,7 +6,8 @@ import (
 	"context"
 	"fmt"
 	"iter"
-	"net/url"
+
+	"github.com/google/uuid"
 )
 
 // SupportingClient is the Supporting resource group of the Official UniFi OpenAPI surface.
@@ -16,9 +17,9 @@ type SupportingClient interface {
 	// ListCountriesPage returns one page from GET /v1/countries; nil opts fetches the first page at the default size.
 	ListCountriesPage(ctx context.Context, opts *ListOptions) (Page[CountryDefinition], error)
 	// ListDeviceTagsAll lazily drains every item from GET /v1/sites/%s/device-tags, paging on demand; pass "" filter to drain unfiltered; range it and break to stop early.
-	ListDeviceTagsAll(ctx context.Context, siteId string, filter string) iter.Seq2[DeviceTag, error]
+	ListDeviceTagsAll(ctx context.Context, siteId uuid.UUID, filter string) iter.Seq2[DeviceTag, error]
 	// ListDeviceTagsPage returns one page from GET /v1/sites/%s/device-tags; nil opts fetches the first page at the default size.
-	ListDeviceTagsPage(ctx context.Context, siteId string, opts *ListOptions) (Page[DeviceTag], error)
+	ListDeviceTagsPage(ctx context.Context, siteId uuid.UUID, opts *ListOptions) (Page[DeviceTag], error)
 	// ListDpiApplicationCategoriesAll lazily drains every item from GET /v1/dpi/categories, paging on demand; pass "" filter to drain unfiltered; range it and break to stop early.
 	ListDpiApplicationCategoriesAll(ctx context.Context, filter string) iter.Seq2[DPICategory, error]
 	// ListDpiApplicationCategoriesPage returns one page from GET /v1/dpi/categories; nil opts fetches the first page at the default size.
@@ -28,21 +29,21 @@ type SupportingClient interface {
 	// ListDpiApplicationsPage returns one page from GET /v1/dpi/applications; nil opts fetches the first page at the default size.
 	ListDpiApplicationsPage(ctx context.Context, opts *ListOptions) (Page[DPIApplication], error)
 	// ListRadiusProfilesAll lazily drains every item from GET /v1/sites/%s/radius/profiles, paging on demand; pass "" filter to drain unfiltered; range it and break to stop early.
-	ListRadiusProfilesAll(ctx context.Context, siteId string, filter string) iter.Seq2[RadiusProfileOverview, error]
+	ListRadiusProfilesAll(ctx context.Context, siteId uuid.UUID, filter string) iter.Seq2[RadiusProfileOverview, error]
 	// ListRadiusProfilesPage returns one page from GET /v1/sites/%s/radius/profiles; nil opts fetches the first page at the default size.
-	ListRadiusProfilesPage(ctx context.Context, siteId string, opts *ListOptions) (Page[RadiusProfileOverview], error)
+	ListRadiusProfilesPage(ctx context.Context, siteId uuid.UUID, opts *ListOptions) (Page[RadiusProfileOverview], error)
 	// ListSiteToSiteVpnTunnelsAll lazily drains every item from GET /v1/sites/%s/vpn/site-to-site-tunnels, paging on demand; pass "" filter to drain unfiltered; range it and break to stop early.
-	ListSiteToSiteVpnTunnelsAll(ctx context.Context, siteId string, filter string) iter.Seq2[SiteToSiteVPNTunnelOverview, error]
+	ListSiteToSiteVpnTunnelsAll(ctx context.Context, siteId uuid.UUID, filter string) iter.Seq2[SiteToSiteVPNTunnelOverview, error]
 	// ListSiteToSiteVpnTunnelsPage returns one page from GET /v1/sites/%s/vpn/site-to-site-tunnels; nil opts fetches the first page at the default size.
-	ListSiteToSiteVpnTunnelsPage(ctx context.Context, siteId string, opts *ListOptions) (Page[SiteToSiteVPNTunnelOverview], error)
+	ListSiteToSiteVpnTunnelsPage(ctx context.Context, siteId uuid.UUID, opts *ListOptions) (Page[SiteToSiteVPNTunnelOverview], error)
 	// ListVpnServersAll lazily drains every item from GET /v1/sites/%s/vpn/servers, paging on demand; pass "" filter to drain unfiltered; range it and break to stop early.
-	ListVpnServersAll(ctx context.Context, siteId string, filter string) iter.Seq2[VPNServerOverview, error]
+	ListVpnServersAll(ctx context.Context, siteId uuid.UUID, filter string) iter.Seq2[VPNServerOverview, error]
 	// ListVpnServersPage returns one page from GET /v1/sites/%s/vpn/servers; nil opts fetches the first page at the default size.
-	ListVpnServersPage(ctx context.Context, siteId string, opts *ListOptions) (Page[VPNServerOverview], error)
+	ListVpnServersPage(ctx context.Context, siteId uuid.UUID, opts *ListOptions) (Page[VPNServerOverview], error)
 	// ListWansAll lazily drains every item from GET /v1/sites/%s/wans, paging on demand; pass "" filter to drain unfiltered; range it and break to stop early.
-	ListWansAll(ctx context.Context, siteId string, filter string) iter.Seq2[WANOverview, error]
+	ListWansAll(ctx context.Context, siteId uuid.UUID, filter string) iter.Seq2[WANOverview, error]
 	// ListWansPage returns one page from GET /v1/sites/%s/wans; nil opts fetches the first page at the default size.
-	ListWansPage(ctx context.Context, siteId string, opts *ListOptions) (Page[WANOverview], error)
+	ListWansPage(ctx context.Context, siteId uuid.UUID, opts *ListOptions) (Page[WANOverview], error)
 }
 
 // supportingClient wraps the shared apiClient so transport, gate and site cache stay single-sourced.
@@ -73,16 +74,16 @@ func (c supportingClient) ListCountriesPage(ctx context.Context, opts *ListOptio
 }
 
 // ListDeviceTagsAll lazily drains every item from GET /v1/sites/%s/device-tags, paging on demand; pass "" filter to drain unfiltered; range it and break to stop early.
-func (c supportingClient) ListDeviceTagsAll(ctx context.Context, siteId string, filter string) iter.Seq2[DeviceTag, error] {
-	return listSeq[DeviceTag](ctx, c.apiClient, c.path(fmt.Sprintf("/sites/%s/device-tags", url.PathEscape(siteId))), filter)
+func (c supportingClient) ListDeviceTagsAll(ctx context.Context, siteId uuid.UUID, filter string) iter.Seq2[DeviceTag, error] {
+	return listSeq[DeviceTag](ctx, c.apiClient, c.path(fmt.Sprintf("/sites/%s/device-tags", siteId.String())), filter)
 }
 
 // ListDeviceTagsPage returns one page from GET /v1/sites/%s/device-tags; nil opts fetches the first page at the default size.
-func (c supportingClient) ListDeviceTagsPage(ctx context.Context, siteId string, opts *ListOptions) (Page[DeviceTag], error) {
+func (c supportingClient) ListDeviceTagsPage(ctx context.Context, siteId uuid.UUID, opts *ListOptions) (Page[DeviceTag], error) {
 	if err := c.check(ctx); err != nil {
 		return Page[DeviceTag]{}, err
 	}
-	p, err := listPage[DeviceTag](ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/device-tags", url.PathEscape(siteId))), opts)
+	p, err := listPage[DeviceTag](ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/device-tags", siteId.String())), opts)
 	if err != nil {
 		return Page[DeviceTag]{}, fmt.Errorf("failed ListDeviceTagsPage: %w", err)
 	}
@@ -124,16 +125,16 @@ func (c supportingClient) ListDpiApplicationsPage(ctx context.Context, opts *Lis
 }
 
 // ListRadiusProfilesAll lazily drains every item from GET /v1/sites/%s/radius/profiles, paging on demand; pass "" filter to drain unfiltered; range it and break to stop early.
-func (c supportingClient) ListRadiusProfilesAll(ctx context.Context, siteId string, filter string) iter.Seq2[RadiusProfileOverview, error] {
-	return listSeq[RadiusProfileOverview](ctx, c.apiClient, c.path(fmt.Sprintf("/sites/%s/radius/profiles", url.PathEscape(siteId))), filter)
+func (c supportingClient) ListRadiusProfilesAll(ctx context.Context, siteId uuid.UUID, filter string) iter.Seq2[RadiusProfileOverview, error] {
+	return listSeq[RadiusProfileOverview](ctx, c.apiClient, c.path(fmt.Sprintf("/sites/%s/radius/profiles", siteId.String())), filter)
 }
 
 // ListRadiusProfilesPage returns one page from GET /v1/sites/%s/radius/profiles; nil opts fetches the first page at the default size.
-func (c supportingClient) ListRadiusProfilesPage(ctx context.Context, siteId string, opts *ListOptions) (Page[RadiusProfileOverview], error) {
+func (c supportingClient) ListRadiusProfilesPage(ctx context.Context, siteId uuid.UUID, opts *ListOptions) (Page[RadiusProfileOverview], error) {
 	if err := c.check(ctx); err != nil {
 		return Page[RadiusProfileOverview]{}, err
 	}
-	p, err := listPage[RadiusProfileOverview](ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/radius/profiles", url.PathEscape(siteId))), opts)
+	p, err := listPage[RadiusProfileOverview](ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/radius/profiles", siteId.String())), opts)
 	if err != nil {
 		return Page[RadiusProfileOverview]{}, fmt.Errorf("failed ListRadiusProfilesPage: %w", err)
 	}
@@ -141,16 +142,16 @@ func (c supportingClient) ListRadiusProfilesPage(ctx context.Context, siteId str
 }
 
 // ListSiteToSiteVpnTunnelsAll lazily drains every item from GET /v1/sites/%s/vpn/site-to-site-tunnels, paging on demand; pass "" filter to drain unfiltered; range it and break to stop early.
-func (c supportingClient) ListSiteToSiteVpnTunnelsAll(ctx context.Context, siteId string, filter string) iter.Seq2[SiteToSiteVPNTunnelOverview, error] {
-	return listSeq[SiteToSiteVPNTunnelOverview](ctx, c.apiClient, c.path(fmt.Sprintf("/sites/%s/vpn/site-to-site-tunnels", url.PathEscape(siteId))), filter)
+func (c supportingClient) ListSiteToSiteVpnTunnelsAll(ctx context.Context, siteId uuid.UUID, filter string) iter.Seq2[SiteToSiteVPNTunnelOverview, error] {
+	return listSeq[SiteToSiteVPNTunnelOverview](ctx, c.apiClient, c.path(fmt.Sprintf("/sites/%s/vpn/site-to-site-tunnels", siteId.String())), filter)
 }
 
 // ListSiteToSiteVpnTunnelsPage returns one page from GET /v1/sites/%s/vpn/site-to-site-tunnels; nil opts fetches the first page at the default size.
-func (c supportingClient) ListSiteToSiteVpnTunnelsPage(ctx context.Context, siteId string, opts *ListOptions) (Page[SiteToSiteVPNTunnelOverview], error) {
+func (c supportingClient) ListSiteToSiteVpnTunnelsPage(ctx context.Context, siteId uuid.UUID, opts *ListOptions) (Page[SiteToSiteVPNTunnelOverview], error) {
 	if err := c.check(ctx); err != nil {
 		return Page[SiteToSiteVPNTunnelOverview]{}, err
 	}
-	p, err := listPage[SiteToSiteVPNTunnelOverview](ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/vpn/site-to-site-tunnels", url.PathEscape(siteId))), opts)
+	p, err := listPage[SiteToSiteVPNTunnelOverview](ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/vpn/site-to-site-tunnels", siteId.String())), opts)
 	if err != nil {
 		return Page[SiteToSiteVPNTunnelOverview]{}, fmt.Errorf("failed ListSiteToSiteVpnTunnelsPage: %w", err)
 	}
@@ -158,16 +159,16 @@ func (c supportingClient) ListSiteToSiteVpnTunnelsPage(ctx context.Context, site
 }
 
 // ListVpnServersAll lazily drains every item from GET /v1/sites/%s/vpn/servers, paging on demand; pass "" filter to drain unfiltered; range it and break to stop early.
-func (c supportingClient) ListVpnServersAll(ctx context.Context, siteId string, filter string) iter.Seq2[VPNServerOverview, error] {
-	return listSeq[VPNServerOverview](ctx, c.apiClient, c.path(fmt.Sprintf("/sites/%s/vpn/servers", url.PathEscape(siteId))), filter)
+func (c supportingClient) ListVpnServersAll(ctx context.Context, siteId uuid.UUID, filter string) iter.Seq2[VPNServerOverview, error] {
+	return listSeq[VPNServerOverview](ctx, c.apiClient, c.path(fmt.Sprintf("/sites/%s/vpn/servers", siteId.String())), filter)
 }
 
 // ListVpnServersPage returns one page from GET /v1/sites/%s/vpn/servers; nil opts fetches the first page at the default size.
-func (c supportingClient) ListVpnServersPage(ctx context.Context, siteId string, opts *ListOptions) (Page[VPNServerOverview], error) {
+func (c supportingClient) ListVpnServersPage(ctx context.Context, siteId uuid.UUID, opts *ListOptions) (Page[VPNServerOverview], error) {
 	if err := c.check(ctx); err != nil {
 		return Page[VPNServerOverview]{}, err
 	}
-	p, err := listPage[VPNServerOverview](ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/vpn/servers", url.PathEscape(siteId))), opts)
+	p, err := listPage[VPNServerOverview](ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/vpn/servers", siteId.String())), opts)
 	if err != nil {
 		return Page[VPNServerOverview]{}, fmt.Errorf("failed ListVpnServersPage: %w", err)
 	}
@@ -175,16 +176,16 @@ func (c supportingClient) ListVpnServersPage(ctx context.Context, siteId string,
 }
 
 // ListWansAll lazily drains every item from GET /v1/sites/%s/wans, paging on demand; pass "" filter to drain unfiltered; range it and break to stop early.
-func (c supportingClient) ListWansAll(ctx context.Context, siteId string, filter string) iter.Seq2[WANOverview, error] {
-	return listSeq[WANOverview](ctx, c.apiClient, c.path(fmt.Sprintf("/sites/%s/wans", url.PathEscape(siteId))), filter)
+func (c supportingClient) ListWansAll(ctx context.Context, siteId uuid.UUID, filter string) iter.Seq2[WANOverview, error] {
+	return listSeq[WANOverview](ctx, c.apiClient, c.path(fmt.Sprintf("/sites/%s/wans", siteId.String())), filter)
 }
 
 // ListWansPage returns one page from GET /v1/sites/%s/wans; nil opts fetches the first page at the default size.
-func (c supportingClient) ListWansPage(ctx context.Context, siteId string, opts *ListOptions) (Page[WANOverview], error) {
+func (c supportingClient) ListWansPage(ctx context.Context, siteId uuid.UUID, opts *ListOptions) (Page[WANOverview], error) {
 	if err := c.check(ctx); err != nil {
 		return Page[WANOverview]{}, err
 	}
-	p, err := listPage[WANOverview](ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/wans", url.PathEscape(siteId))), opts)
+	p, err := listPage[WANOverview](ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/wans", siteId.String())), opts)
 	if err != nil {
 		return Page[WANOverview]{}, fmt.Errorf("failed ListWansPage: %w", err)
 	}
@@ -196,20 +197,20 @@ func (c supportingClient) ListWansPage(ctx context.Context, siteId string, opts 
 type SupportingClientMock struct {
 	ListCountriesAllFunc                 func(context.Context, string) iter.Seq2[CountryDefinition, error]
 	ListCountriesPageFunc                func(context.Context, *ListOptions) (Page[CountryDefinition], error)
-	ListDeviceTagsAllFunc                func(context.Context, string, string) iter.Seq2[DeviceTag, error]
-	ListDeviceTagsPageFunc               func(context.Context, string, *ListOptions) (Page[DeviceTag], error)
+	ListDeviceTagsAllFunc                func(context.Context, uuid.UUID, string) iter.Seq2[DeviceTag, error]
+	ListDeviceTagsPageFunc               func(context.Context, uuid.UUID, *ListOptions) (Page[DeviceTag], error)
 	ListDpiApplicationCategoriesAllFunc  func(context.Context, string) iter.Seq2[DPICategory, error]
 	ListDpiApplicationCategoriesPageFunc func(context.Context, *ListOptions) (Page[DPICategory], error)
 	ListDpiApplicationsAllFunc           func(context.Context, string) iter.Seq2[DPIApplication, error]
 	ListDpiApplicationsPageFunc          func(context.Context, *ListOptions) (Page[DPIApplication], error)
-	ListRadiusProfilesAllFunc            func(context.Context, string, string) iter.Seq2[RadiusProfileOverview, error]
-	ListRadiusProfilesPageFunc           func(context.Context, string, *ListOptions) (Page[RadiusProfileOverview], error)
-	ListSiteToSiteVpnTunnelsAllFunc      func(context.Context, string, string) iter.Seq2[SiteToSiteVPNTunnelOverview, error]
-	ListSiteToSiteVpnTunnelsPageFunc     func(context.Context, string, *ListOptions) (Page[SiteToSiteVPNTunnelOverview], error)
-	ListVpnServersAllFunc                func(context.Context, string, string) iter.Seq2[VPNServerOverview, error]
-	ListVpnServersPageFunc               func(context.Context, string, *ListOptions) (Page[VPNServerOverview], error)
-	ListWansAllFunc                      func(context.Context, string, string) iter.Seq2[WANOverview, error]
-	ListWansPageFunc                     func(context.Context, string, *ListOptions) (Page[WANOverview], error)
+	ListRadiusProfilesAllFunc            func(context.Context, uuid.UUID, string) iter.Seq2[RadiusProfileOverview, error]
+	ListRadiusProfilesPageFunc           func(context.Context, uuid.UUID, *ListOptions) (Page[RadiusProfileOverview], error)
+	ListSiteToSiteVpnTunnelsAllFunc      func(context.Context, uuid.UUID, string) iter.Seq2[SiteToSiteVPNTunnelOverview, error]
+	ListSiteToSiteVpnTunnelsPageFunc     func(context.Context, uuid.UUID, *ListOptions) (Page[SiteToSiteVPNTunnelOverview], error)
+	ListVpnServersAllFunc                func(context.Context, uuid.UUID, string) iter.Seq2[VPNServerOverview, error]
+	ListVpnServersPageFunc               func(context.Context, uuid.UUID, *ListOptions) (Page[VPNServerOverview], error)
+	ListWansAllFunc                      func(context.Context, uuid.UUID, string) iter.Seq2[WANOverview, error]
+	ListWansPageFunc                     func(context.Context, uuid.UUID, *ListOptions) (Page[WANOverview], error)
 }
 
 var _ SupportingClient = (*SupportingClientMock)(nil)
@@ -222,11 +223,11 @@ func (m *SupportingClientMock) ListCountriesPage(ctx context.Context, opts *List
 	return m.ListCountriesPageFunc(ctx, opts)
 }
 
-func (m *SupportingClientMock) ListDeviceTagsAll(ctx context.Context, siteId string, filter string) iter.Seq2[DeviceTag, error] {
+func (m *SupportingClientMock) ListDeviceTagsAll(ctx context.Context, siteId uuid.UUID, filter string) iter.Seq2[DeviceTag, error] {
 	return m.ListDeviceTagsAllFunc(ctx, siteId, filter)
 }
 
-func (m *SupportingClientMock) ListDeviceTagsPage(ctx context.Context, siteId string, opts *ListOptions) (Page[DeviceTag], error) {
+func (m *SupportingClientMock) ListDeviceTagsPage(ctx context.Context, siteId uuid.UUID, opts *ListOptions) (Page[DeviceTag], error) {
 	return m.ListDeviceTagsPageFunc(ctx, siteId, opts)
 }
 
@@ -246,34 +247,34 @@ func (m *SupportingClientMock) ListDpiApplicationsPage(ctx context.Context, opts
 	return m.ListDpiApplicationsPageFunc(ctx, opts)
 }
 
-func (m *SupportingClientMock) ListRadiusProfilesAll(ctx context.Context, siteId string, filter string) iter.Seq2[RadiusProfileOverview, error] {
+func (m *SupportingClientMock) ListRadiusProfilesAll(ctx context.Context, siteId uuid.UUID, filter string) iter.Seq2[RadiusProfileOverview, error] {
 	return m.ListRadiusProfilesAllFunc(ctx, siteId, filter)
 }
 
-func (m *SupportingClientMock) ListRadiusProfilesPage(ctx context.Context, siteId string, opts *ListOptions) (Page[RadiusProfileOverview], error) {
+func (m *SupportingClientMock) ListRadiusProfilesPage(ctx context.Context, siteId uuid.UUID, opts *ListOptions) (Page[RadiusProfileOverview], error) {
 	return m.ListRadiusProfilesPageFunc(ctx, siteId, opts)
 }
 
-func (m *SupportingClientMock) ListSiteToSiteVpnTunnelsAll(ctx context.Context, siteId string, filter string) iter.Seq2[SiteToSiteVPNTunnelOverview, error] {
+func (m *SupportingClientMock) ListSiteToSiteVpnTunnelsAll(ctx context.Context, siteId uuid.UUID, filter string) iter.Seq2[SiteToSiteVPNTunnelOverview, error] {
 	return m.ListSiteToSiteVpnTunnelsAllFunc(ctx, siteId, filter)
 }
 
-func (m *SupportingClientMock) ListSiteToSiteVpnTunnelsPage(ctx context.Context, siteId string, opts *ListOptions) (Page[SiteToSiteVPNTunnelOverview], error) {
+func (m *SupportingClientMock) ListSiteToSiteVpnTunnelsPage(ctx context.Context, siteId uuid.UUID, opts *ListOptions) (Page[SiteToSiteVPNTunnelOverview], error) {
 	return m.ListSiteToSiteVpnTunnelsPageFunc(ctx, siteId, opts)
 }
 
-func (m *SupportingClientMock) ListVpnServersAll(ctx context.Context, siteId string, filter string) iter.Seq2[VPNServerOverview, error] {
+func (m *SupportingClientMock) ListVpnServersAll(ctx context.Context, siteId uuid.UUID, filter string) iter.Seq2[VPNServerOverview, error] {
 	return m.ListVpnServersAllFunc(ctx, siteId, filter)
 }
 
-func (m *SupportingClientMock) ListVpnServersPage(ctx context.Context, siteId string, opts *ListOptions) (Page[VPNServerOverview], error) {
+func (m *SupportingClientMock) ListVpnServersPage(ctx context.Context, siteId uuid.UUID, opts *ListOptions) (Page[VPNServerOverview], error) {
 	return m.ListVpnServersPageFunc(ctx, siteId, opts)
 }
 
-func (m *SupportingClientMock) ListWansAll(ctx context.Context, siteId string, filter string) iter.Seq2[WANOverview, error] {
+func (m *SupportingClientMock) ListWansAll(ctx context.Context, siteId uuid.UUID, filter string) iter.Seq2[WANOverview, error] {
 	return m.ListWansAllFunc(ctx, siteId, filter)
 }
 
-func (m *SupportingClientMock) ListWansPage(ctx context.Context, siteId string, opts *ListOptions) (Page[WANOverview], error) {
+func (m *SupportingClientMock) ListWansPage(ctx context.Context, siteId uuid.UUID, opts *ListOptions) (Page[WANOverview], error) {
 	return m.ListWansPageFunc(ctx, siteId, opts)
 }

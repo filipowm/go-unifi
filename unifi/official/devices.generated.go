@@ -6,31 +6,33 @@ import (
 	"context"
 	"fmt"
 	"iter"
-	"net/url"
+	"strconv"
+
+	"github.com/google/uuid"
 )
 
 // DevicesClient is the Devices resource group of the Official UniFi OpenAPI surface.
 type DevicesClient interface {
 	// Adopt maps to POST /v1/sites/%s/devices on the Official API.
-	Adopt(ctx context.Context, siteId string, body DeviceAdoptionRequest) (*AdoptedDeviceDetails, error)
+	Adopt(ctx context.Context, siteId uuid.UUID, body DeviceAdoptionRequest) (*AdoptedDeviceDetails, error)
 	// ExecuteAdoptedAction maps to POST /v1/sites/%s/devices/%s/actions on the Official API.
-	ExecuteAdoptedAction(ctx context.Context, siteId string, deviceId string, body DeviceActionRequest) error
+	ExecuteAdoptedAction(ctx context.Context, siteId uuid.UUID, deviceId uuid.UUID, body DeviceActionRequest) error
 	// ExecutePortAction maps to POST /v1/sites/%s/devices/%s/interfaces/ports/%s/actions on the Official API.
-	ExecutePortAction(ctx context.Context, siteId string, deviceId string, portIdx string, body PortActionRequest) error
+	ExecutePortAction(ctx context.Context, siteId uuid.UUID, deviceId uuid.UUID, portIdx int32, body PortActionRequest) error
 	// GetAdopted maps to GET /v1/sites/%s/devices/%s on the Official API.
-	GetAdopted(ctx context.Context, siteId string, deviceId string) (*AdoptedDeviceDetails, error)
+	GetAdopted(ctx context.Context, siteId uuid.UUID, deviceId uuid.UUID) (*AdoptedDeviceDetails, error)
 	// GetAdoptedLatestStatistics maps to GET /v1/sites/%s/devices/%s/statistics/latest on the Official API.
-	GetAdoptedLatestStatistics(ctx context.Context, siteId string, deviceId string) (*LatestStatisticsForADevice, error)
+	GetAdoptedLatestStatistics(ctx context.Context, siteId uuid.UUID, deviceId uuid.UUID) (*LatestStatisticsForADevice, error)
 	// ListAdoptedAll lazily drains every item from GET /v1/sites/%s/devices, paging on demand; pass "" filter to drain unfiltered; range it and break to stop early.
-	ListAdoptedAll(ctx context.Context, siteId string, filter string) iter.Seq2[AdoptedDeviceOverview, error]
+	ListAdoptedAll(ctx context.Context, siteId uuid.UUID, filter string) iter.Seq2[AdoptedDeviceOverview, error]
 	// ListAdoptedPage returns one page from GET /v1/sites/%s/devices; nil opts fetches the first page at the default size.
-	ListAdoptedPage(ctx context.Context, siteId string, opts *ListOptions) (Page[AdoptedDeviceOverview], error)
+	ListAdoptedPage(ctx context.Context, siteId uuid.UUID, opts *ListOptions) (Page[AdoptedDeviceOverview], error)
 	// ListPendingAll lazily drains every item from GET /v1/pending-devices, paging on demand; pass "" filter to drain unfiltered; range it and break to stop early.
 	ListPendingAll(ctx context.Context, filter string) iter.Seq2[DevicePendingAdoption, error]
 	// ListPendingPage returns one page from GET /v1/pending-devices; nil opts fetches the first page at the default size.
 	ListPendingPage(ctx context.Context, opts *ListOptions) (Page[DevicePendingAdoption], error)
 	// Remove maps to DELETE /v1/sites/%s/devices/%s on the Official API.
-	Remove(ctx context.Context, siteId string, deviceId string) error
+	Remove(ctx context.Context, siteId uuid.UUID, deviceId uuid.UUID) error
 }
 
 // devicesClient wraps the shared apiClient so transport, gate and site cache stay single-sourced.
@@ -44,74 +46,74 @@ func (c *apiClient) Devices() DevicesClient {
 }
 
 // Adopt maps to POST /v1/sites/%s/devices on the Official API.
-func (c devicesClient) Adopt(ctx context.Context, siteId string, body DeviceAdoptionRequest) (*AdoptedDeviceDetails, error) {
+func (c devicesClient) Adopt(ctx context.Context, siteId uuid.UUID, body DeviceAdoptionRequest) (*AdoptedDeviceDetails, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
 	}
 	var out AdoptedDeviceDetails
-	if err := c.doer.Post(ctx, c.path(fmt.Sprintf("/sites/%s/devices", url.PathEscape(siteId))), body, &out); err != nil {
+	if err := c.doer.Post(ctx, c.path(fmt.Sprintf("/sites/%s/devices", siteId.String())), body, &out); err != nil {
 		return nil, fmt.Errorf("failed Adopt: %w", err)
 	}
 	return &out, nil
 }
 
 // ExecuteAdoptedAction maps to POST /v1/sites/%s/devices/%s/actions on the Official API.
-func (c devicesClient) ExecuteAdoptedAction(ctx context.Context, siteId string, deviceId string, body DeviceActionRequest) error {
+func (c devicesClient) ExecuteAdoptedAction(ctx context.Context, siteId uuid.UUID, deviceId uuid.UUID, body DeviceActionRequest) error {
 	if err := c.check(ctx); err != nil {
 		return err
 	}
-	if err := c.doer.Post(ctx, c.path(fmt.Sprintf("/sites/%s/devices/%s/actions", url.PathEscape(siteId), url.PathEscape(deviceId))), body, nil); err != nil {
+	if err := c.doer.Post(ctx, c.path(fmt.Sprintf("/sites/%s/devices/%s/actions", siteId.String(), deviceId.String())), body, nil); err != nil {
 		return fmt.Errorf("failed ExecuteAdoptedAction: %w", err)
 	}
 	return nil
 }
 
 // ExecutePortAction maps to POST /v1/sites/%s/devices/%s/interfaces/ports/%s/actions on the Official API.
-func (c devicesClient) ExecutePortAction(ctx context.Context, siteId string, deviceId string, portIdx string, body PortActionRequest) error {
+func (c devicesClient) ExecutePortAction(ctx context.Context, siteId uuid.UUID, deviceId uuid.UUID, portIdx int32, body PortActionRequest) error {
 	if err := c.check(ctx); err != nil {
 		return err
 	}
-	if err := c.doer.Post(ctx, c.path(fmt.Sprintf("/sites/%s/devices/%s/interfaces/ports/%s/actions", url.PathEscape(siteId), url.PathEscape(deviceId), url.PathEscape(portIdx))), body, nil); err != nil {
+	if err := c.doer.Post(ctx, c.path(fmt.Sprintf("/sites/%s/devices/%s/interfaces/ports/%s/actions", siteId.String(), deviceId.String(), strconv.Itoa(int(portIdx)))), body, nil); err != nil {
 		return fmt.Errorf("failed ExecutePortAction: %w", err)
 	}
 	return nil
 }
 
 // GetAdopted maps to GET /v1/sites/%s/devices/%s on the Official API.
-func (c devicesClient) GetAdopted(ctx context.Context, siteId string, deviceId string) (*AdoptedDeviceDetails, error) {
+func (c devicesClient) GetAdopted(ctx context.Context, siteId uuid.UUID, deviceId uuid.UUID) (*AdoptedDeviceDetails, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
 	}
 	var out AdoptedDeviceDetails
-	if err := c.doer.Get(ctx, c.path(fmt.Sprintf("/sites/%s/devices/%s", url.PathEscape(siteId), url.PathEscape(deviceId))), nil, &out); err != nil {
+	if err := c.doer.Get(ctx, c.path(fmt.Sprintf("/sites/%s/devices/%s", siteId.String(), deviceId.String())), nil, &out); err != nil {
 		return nil, fmt.Errorf("failed GetAdopted: %w", err)
 	}
 	return &out, nil
 }
 
 // GetAdoptedLatestStatistics maps to GET /v1/sites/%s/devices/%s/statistics/latest on the Official API.
-func (c devicesClient) GetAdoptedLatestStatistics(ctx context.Context, siteId string, deviceId string) (*LatestStatisticsForADevice, error) {
+func (c devicesClient) GetAdoptedLatestStatistics(ctx context.Context, siteId uuid.UUID, deviceId uuid.UUID) (*LatestStatisticsForADevice, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
 	}
 	var out LatestStatisticsForADevice
-	if err := c.doer.Get(ctx, c.path(fmt.Sprintf("/sites/%s/devices/%s/statistics/latest", url.PathEscape(siteId), url.PathEscape(deviceId))), nil, &out); err != nil {
+	if err := c.doer.Get(ctx, c.path(fmt.Sprintf("/sites/%s/devices/%s/statistics/latest", siteId.String(), deviceId.String())), nil, &out); err != nil {
 		return nil, fmt.Errorf("failed GetAdoptedLatestStatistics: %w", err)
 	}
 	return &out, nil
 }
 
 // ListAdoptedAll lazily drains every item from GET /v1/sites/%s/devices, paging on demand; pass "" filter to drain unfiltered; range it and break to stop early.
-func (c devicesClient) ListAdoptedAll(ctx context.Context, siteId string, filter string) iter.Seq2[AdoptedDeviceOverview, error] {
-	return listSeq[AdoptedDeviceOverview](ctx, c.apiClient, c.path(fmt.Sprintf("/sites/%s/devices", url.PathEscape(siteId))), filter)
+func (c devicesClient) ListAdoptedAll(ctx context.Context, siteId uuid.UUID, filter string) iter.Seq2[AdoptedDeviceOverview, error] {
+	return listSeq[AdoptedDeviceOverview](ctx, c.apiClient, c.path(fmt.Sprintf("/sites/%s/devices", siteId.String())), filter)
 }
 
 // ListAdoptedPage returns one page from GET /v1/sites/%s/devices; nil opts fetches the first page at the default size.
-func (c devicesClient) ListAdoptedPage(ctx context.Context, siteId string, opts *ListOptions) (Page[AdoptedDeviceOverview], error) {
+func (c devicesClient) ListAdoptedPage(ctx context.Context, siteId uuid.UUID, opts *ListOptions) (Page[AdoptedDeviceOverview], error) {
 	if err := c.check(ctx); err != nil {
 		return Page[AdoptedDeviceOverview]{}, err
 	}
-	p, err := listPage[AdoptedDeviceOverview](ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/devices", url.PathEscape(siteId))), opts)
+	p, err := listPage[AdoptedDeviceOverview](ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/devices", siteId.String())), opts)
 	if err != nil {
 		return Page[AdoptedDeviceOverview]{}, fmt.Errorf("failed ListAdoptedPage: %w", err)
 	}
@@ -136,11 +138,11 @@ func (c devicesClient) ListPendingPage(ctx context.Context, opts *ListOptions) (
 }
 
 // Remove maps to DELETE /v1/sites/%s/devices/%s on the Official API.
-func (c devicesClient) Remove(ctx context.Context, siteId string, deviceId string) error {
+func (c devicesClient) Remove(ctx context.Context, siteId uuid.UUID, deviceId uuid.UUID) error {
 	if err := c.check(ctx); err != nil {
 		return err
 	}
-	if err := c.doer.Delete(ctx, c.path(fmt.Sprintf("/sites/%s/devices/%s", url.PathEscape(siteId), url.PathEscape(deviceId))), nil, nil); err != nil {
+	if err := c.doer.Delete(ctx, c.path(fmt.Sprintf("/sites/%s/devices/%s", siteId.String(), deviceId.String())), nil, nil); err != nil {
 		return fmt.Errorf("failed Remove: %w", err)
 	}
 	return nil
@@ -149,45 +151,45 @@ func (c devicesClient) Remove(ctx context.Context, siteId string, deviceId strin
 // DevicesClientMock is a func-field test double implementing DevicesClient. A nil field
 // panics on call, surfacing an un-stubbed method in tests.
 type DevicesClientMock struct {
-	AdoptFunc                      func(context.Context, string, DeviceAdoptionRequest) (*AdoptedDeviceDetails, error)
-	ExecuteAdoptedActionFunc       func(context.Context, string, string, DeviceActionRequest) error
-	ExecutePortActionFunc          func(context.Context, string, string, string, PortActionRequest) error
-	GetAdoptedFunc                 func(context.Context, string, string) (*AdoptedDeviceDetails, error)
-	GetAdoptedLatestStatisticsFunc func(context.Context, string, string) (*LatestStatisticsForADevice, error)
-	ListAdoptedAllFunc             func(context.Context, string, string) iter.Seq2[AdoptedDeviceOverview, error]
-	ListAdoptedPageFunc            func(context.Context, string, *ListOptions) (Page[AdoptedDeviceOverview], error)
+	AdoptFunc                      func(context.Context, uuid.UUID, DeviceAdoptionRequest) (*AdoptedDeviceDetails, error)
+	ExecuteAdoptedActionFunc       func(context.Context, uuid.UUID, uuid.UUID, DeviceActionRequest) error
+	ExecutePortActionFunc          func(context.Context, uuid.UUID, uuid.UUID, int32, PortActionRequest) error
+	GetAdoptedFunc                 func(context.Context, uuid.UUID, uuid.UUID) (*AdoptedDeviceDetails, error)
+	GetAdoptedLatestStatisticsFunc func(context.Context, uuid.UUID, uuid.UUID) (*LatestStatisticsForADevice, error)
+	ListAdoptedAllFunc             func(context.Context, uuid.UUID, string) iter.Seq2[AdoptedDeviceOverview, error]
+	ListAdoptedPageFunc            func(context.Context, uuid.UUID, *ListOptions) (Page[AdoptedDeviceOverview], error)
 	ListPendingAllFunc             func(context.Context, string) iter.Seq2[DevicePendingAdoption, error]
 	ListPendingPageFunc            func(context.Context, *ListOptions) (Page[DevicePendingAdoption], error)
-	RemoveFunc                     func(context.Context, string, string) error
+	RemoveFunc                     func(context.Context, uuid.UUID, uuid.UUID) error
 }
 
 var _ DevicesClient = (*DevicesClientMock)(nil)
 
-func (m *DevicesClientMock) Adopt(ctx context.Context, siteId string, body DeviceAdoptionRequest) (*AdoptedDeviceDetails, error) {
+func (m *DevicesClientMock) Adopt(ctx context.Context, siteId uuid.UUID, body DeviceAdoptionRequest) (*AdoptedDeviceDetails, error) {
 	return m.AdoptFunc(ctx, siteId, body)
 }
 
-func (m *DevicesClientMock) ExecuteAdoptedAction(ctx context.Context, siteId string, deviceId string, body DeviceActionRequest) error {
+func (m *DevicesClientMock) ExecuteAdoptedAction(ctx context.Context, siteId uuid.UUID, deviceId uuid.UUID, body DeviceActionRequest) error {
 	return m.ExecuteAdoptedActionFunc(ctx, siteId, deviceId, body)
 }
 
-func (m *DevicesClientMock) ExecutePortAction(ctx context.Context, siteId string, deviceId string, portIdx string, body PortActionRequest) error {
+func (m *DevicesClientMock) ExecutePortAction(ctx context.Context, siteId uuid.UUID, deviceId uuid.UUID, portIdx int32, body PortActionRequest) error {
 	return m.ExecutePortActionFunc(ctx, siteId, deviceId, portIdx, body)
 }
 
-func (m *DevicesClientMock) GetAdopted(ctx context.Context, siteId string, deviceId string) (*AdoptedDeviceDetails, error) {
+func (m *DevicesClientMock) GetAdopted(ctx context.Context, siteId uuid.UUID, deviceId uuid.UUID) (*AdoptedDeviceDetails, error) {
 	return m.GetAdoptedFunc(ctx, siteId, deviceId)
 }
 
-func (m *DevicesClientMock) GetAdoptedLatestStatistics(ctx context.Context, siteId string, deviceId string) (*LatestStatisticsForADevice, error) {
+func (m *DevicesClientMock) GetAdoptedLatestStatistics(ctx context.Context, siteId uuid.UUID, deviceId uuid.UUID) (*LatestStatisticsForADevice, error) {
 	return m.GetAdoptedLatestStatisticsFunc(ctx, siteId, deviceId)
 }
 
-func (m *DevicesClientMock) ListAdoptedAll(ctx context.Context, siteId string, filter string) iter.Seq2[AdoptedDeviceOverview, error] {
+func (m *DevicesClientMock) ListAdoptedAll(ctx context.Context, siteId uuid.UUID, filter string) iter.Seq2[AdoptedDeviceOverview, error] {
 	return m.ListAdoptedAllFunc(ctx, siteId, filter)
 }
 
-func (m *DevicesClientMock) ListAdoptedPage(ctx context.Context, siteId string, opts *ListOptions) (Page[AdoptedDeviceOverview], error) {
+func (m *DevicesClientMock) ListAdoptedPage(ctx context.Context, siteId uuid.UUID, opts *ListOptions) (Page[AdoptedDeviceOverview], error) {
 	return m.ListAdoptedPageFunc(ctx, siteId, opts)
 }
 
@@ -199,6 +201,6 @@ func (m *DevicesClientMock) ListPendingPage(ctx context.Context, opts *ListOptio
 	return m.ListPendingPageFunc(ctx, opts)
 }
 
-func (m *DevicesClientMock) Remove(ctx context.Context, siteId string, deviceId string) error {
+func (m *DevicesClientMock) Remove(ctx context.Context, siteId uuid.UUID, deviceId uuid.UUID) error {
 	return m.RemoveFunc(ctx, siteId, deviceId)
 }

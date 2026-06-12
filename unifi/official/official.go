@@ -23,6 +23,8 @@ package official
 import (
 	"context"
 	"sync"
+
+	"github.com/google/uuid"
 )
 
 // Doer is the transport seam: the subset of the UniFi client's public request
@@ -49,7 +51,7 @@ type apiClient struct {
 
 	// siteIDs caches internalReference (legacy site name) -> Official-API UUID.
 	mu      sync.RWMutex
-	siteIDs map[string]string
+	siteIDs map[string]uuid.UUID
 }
 
 // New constructs an official Client bound to doer, with basePath the

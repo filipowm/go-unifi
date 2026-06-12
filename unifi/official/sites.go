@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"iter"
+
+	"github.com/google/uuid"
 )
 
 // ErrSiteNotFound is returned by ResolveID when the given legacy site name
@@ -15,9 +17,9 @@ var ErrSiteNotFound = errors.New("site not found")
 // UUID; InternalReference is the legacy site name used by the Internal API
 // (so callers keep passing the familiar name); Name is the display name.
 type SiteOverview struct {
-	ID                string `json:"id"`
-	InternalReference string `json:"internalReference"`
-	Name              string `json:"name"`
+	ID                uuid.UUID `json:"id"`
+	InternalReference string    `json:"internalReference"`
+	Name              string    `json:"name"`
 }
 
 // ListPage returns one page of local sites; nil opts fetches the first page at
@@ -42,19 +44,19 @@ func (c sitesClient) ListAll(ctx context.Context, filter string) iter.Seq2[SiteO
 // internalReference) to its Official-API site UUID. The full site list is cached
 // on first miss so repeated lookups avoid a round-trip.
 //
-// The returned string is the siteId UUID required by all resource-group methods
+// The returned uuid.UUID is the siteId required by all resource-group methods
 // (Networks, Firewall, Devices, etc.). Pass it directly as the siteId argument.
-func (c sitesClient) ResolveID(ctx context.Context, name string) (string, error) {
+func (c sitesClient) ResolveID(ctx context.Context, name string) (uuid.UUID, error) {
 	if id, ok := c.cachedSiteID(name); ok {
 		return id, nil
 	}
 	sites, err := Collect(c.ListAll(ctx, ""))
 	if err != nil {
-		return "", err
+		return uuid.UUID{}, err
 	}
 	c.mu.Lock()
 	if c.siteIDs == nil {
-		c.siteIDs = make(map[string]string, len(sites))
+		c.siteIDs = make(map[string]uuid.UUID, len(sites))
 	}
 	for _, s := range sites {
 		c.siteIDs[s.InternalReference] = s.ID
@@ -63,11 +65,11 @@ func (c sitesClient) ResolveID(ctx context.Context, name string) (string, error)
 	if id, ok := c.cachedSiteID(name); ok {
 		return id, nil
 	}
-	return "", fmt.Errorf("%w: %q", ErrSiteNotFound, name)
+	return uuid.UUID{}, fmt.Errorf("%w: %q", ErrSiteNotFound, name)
 }
 
 // cachedSiteID returns the cached UUID for a legacy site name, if present.
-func (c *apiClient) cachedSiteID(name string) (string, bool) {
+func (c *apiClient) cachedSiteID(name string) (uuid.UUID, bool) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	id, ok := c.siteIDs[name]

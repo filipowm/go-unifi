@@ -6,23 +6,24 @@ import (
 	"context"
 	"fmt"
 	"iter"
-	"net/url"
+
+	"github.com/google/uuid"
 )
 
 // DNSPoliciesClient is the DNSPolicies resource group of the Official UniFi OpenAPI surface.
 type DNSPoliciesClient interface {
 	// Create maps to POST /v1/sites/%s/dns/policies on the Official API.
-	Create(ctx context.Context, siteId string, body DNSPolicyCreateOrUpdate) (*DNSPolicy, error)
+	Create(ctx context.Context, siteId uuid.UUID, body DNSPolicyCreateOrUpdate) (*DNSPolicy, error)
 	// Delete maps to DELETE /v1/sites/%s/dns/policies/%s on the Official API.
-	Delete(ctx context.Context, siteId string, dnsPolicyId string) error
+	Delete(ctx context.Context, siteId uuid.UUID, dnsPolicyId uuid.UUID) error
 	// Get maps to GET /v1/sites/%s/dns/policies/%s on the Official API.
-	Get(ctx context.Context, siteId string, dnsPolicyId string) (*DNSPolicy, error)
+	Get(ctx context.Context, siteId uuid.UUID, dnsPolicyId uuid.UUID) (*DNSPolicy, error)
 	// ListAll lazily drains every item from GET /v1/sites/%s/dns/policies, paging on demand; pass "" filter to drain unfiltered; range it and break to stop early.
-	ListAll(ctx context.Context, siteId string, filter string) iter.Seq2[DNSPolicy, error]
+	ListAll(ctx context.Context, siteId uuid.UUID, filter string) iter.Seq2[DNSPolicy, error]
 	// ListPage returns one page from GET /v1/sites/%s/dns/policies; nil opts fetches the first page at the default size.
-	ListPage(ctx context.Context, siteId string, opts *ListOptions) (Page[DNSPolicy], error)
+	ListPage(ctx context.Context, siteId uuid.UUID, opts *ListOptions) (Page[DNSPolicy], error)
 	// Update maps to PUT /v1/sites/%s/dns/policies/%s on the Official API.
-	Update(ctx context.Context, siteId string, dnsPolicyId string, body DNSPolicyCreateOrUpdate) (*DNSPolicy, error)
+	Update(ctx context.Context, siteId uuid.UUID, dnsPolicyId uuid.UUID, body DNSPolicyCreateOrUpdate) (*DNSPolicy, error)
 }
 
 // dNSPoliciesClient wraps the shared apiClient so transport, gate and site cache stay single-sourced.
@@ -36,51 +37,51 @@ func (c *apiClient) DNSPolicies() DNSPoliciesClient {
 }
 
 // Create maps to POST /v1/sites/%s/dns/policies on the Official API.
-func (c dNSPoliciesClient) Create(ctx context.Context, siteId string, body DNSPolicyCreateOrUpdate) (*DNSPolicy, error) {
+func (c dNSPoliciesClient) Create(ctx context.Context, siteId uuid.UUID, body DNSPolicyCreateOrUpdate) (*DNSPolicy, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
 	}
 	var out DNSPolicy
-	if err := c.doer.Post(ctx, c.path(fmt.Sprintf("/sites/%s/dns/policies", url.PathEscape(siteId))), body, &out); err != nil {
+	if err := c.doer.Post(ctx, c.path(fmt.Sprintf("/sites/%s/dns/policies", siteId.String())), body, &out); err != nil {
 		return nil, fmt.Errorf("failed Create: %w", err)
 	}
 	return &out, nil
 }
 
 // Delete maps to DELETE /v1/sites/%s/dns/policies/%s on the Official API.
-func (c dNSPoliciesClient) Delete(ctx context.Context, siteId string, dnsPolicyId string) error {
+func (c dNSPoliciesClient) Delete(ctx context.Context, siteId uuid.UUID, dnsPolicyId uuid.UUID) error {
 	if err := c.check(ctx); err != nil {
 		return err
 	}
-	if err := c.doer.Delete(ctx, c.path(fmt.Sprintf("/sites/%s/dns/policies/%s", url.PathEscape(siteId), url.PathEscape(dnsPolicyId))), nil, nil); err != nil {
+	if err := c.doer.Delete(ctx, c.path(fmt.Sprintf("/sites/%s/dns/policies/%s", siteId.String(), dnsPolicyId.String())), nil, nil); err != nil {
 		return fmt.Errorf("failed Delete: %w", err)
 	}
 	return nil
 }
 
 // Get maps to GET /v1/sites/%s/dns/policies/%s on the Official API.
-func (c dNSPoliciesClient) Get(ctx context.Context, siteId string, dnsPolicyId string) (*DNSPolicy, error) {
+func (c dNSPoliciesClient) Get(ctx context.Context, siteId uuid.UUID, dnsPolicyId uuid.UUID) (*DNSPolicy, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
 	}
 	var out DNSPolicy
-	if err := c.doer.Get(ctx, c.path(fmt.Sprintf("/sites/%s/dns/policies/%s", url.PathEscape(siteId), url.PathEscape(dnsPolicyId))), nil, &out); err != nil {
+	if err := c.doer.Get(ctx, c.path(fmt.Sprintf("/sites/%s/dns/policies/%s", siteId.String(), dnsPolicyId.String())), nil, &out); err != nil {
 		return nil, fmt.Errorf("failed Get: %w", err)
 	}
 	return &out, nil
 }
 
 // ListAll lazily drains every item from GET /v1/sites/%s/dns/policies, paging on demand; pass "" filter to drain unfiltered; range it and break to stop early.
-func (c dNSPoliciesClient) ListAll(ctx context.Context, siteId string, filter string) iter.Seq2[DNSPolicy, error] {
-	return listSeq[DNSPolicy](ctx, c.apiClient, c.path(fmt.Sprintf("/sites/%s/dns/policies", url.PathEscape(siteId))), filter)
+func (c dNSPoliciesClient) ListAll(ctx context.Context, siteId uuid.UUID, filter string) iter.Seq2[DNSPolicy, error] {
+	return listSeq[DNSPolicy](ctx, c.apiClient, c.path(fmt.Sprintf("/sites/%s/dns/policies", siteId.String())), filter)
 }
 
 // ListPage returns one page from GET /v1/sites/%s/dns/policies; nil opts fetches the first page at the default size.
-func (c dNSPoliciesClient) ListPage(ctx context.Context, siteId string, opts *ListOptions) (Page[DNSPolicy], error) {
+func (c dNSPoliciesClient) ListPage(ctx context.Context, siteId uuid.UUID, opts *ListOptions) (Page[DNSPolicy], error) {
 	if err := c.check(ctx); err != nil {
 		return Page[DNSPolicy]{}, err
 	}
-	p, err := listPage[DNSPolicy](ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/dns/policies", url.PathEscape(siteId))), opts)
+	p, err := listPage[DNSPolicy](ctx, c.doer, c.path(fmt.Sprintf("/sites/%s/dns/policies", siteId.String())), opts)
 	if err != nil {
 		return Page[DNSPolicy]{}, fmt.Errorf("failed ListPage: %w", err)
 	}
@@ -88,12 +89,12 @@ func (c dNSPoliciesClient) ListPage(ctx context.Context, siteId string, opts *Li
 }
 
 // Update maps to PUT /v1/sites/%s/dns/policies/%s on the Official API.
-func (c dNSPoliciesClient) Update(ctx context.Context, siteId string, dnsPolicyId string, body DNSPolicyCreateOrUpdate) (*DNSPolicy, error) {
+func (c dNSPoliciesClient) Update(ctx context.Context, siteId uuid.UUID, dnsPolicyId uuid.UUID, body DNSPolicyCreateOrUpdate) (*DNSPolicy, error) {
 	if err := c.check(ctx); err != nil {
 		return nil, err
 	}
 	var out DNSPolicy
-	if err := c.doer.Put(ctx, c.path(fmt.Sprintf("/sites/%s/dns/policies/%s", url.PathEscape(siteId), url.PathEscape(dnsPolicyId))), body, &out); err != nil {
+	if err := c.doer.Put(ctx, c.path(fmt.Sprintf("/sites/%s/dns/policies/%s", siteId.String(), dnsPolicyId.String())), body, &out); err != nil {
 		return nil, fmt.Errorf("failed Update: %w", err)
 	}
 	return &out, nil
@@ -102,36 +103,36 @@ func (c dNSPoliciesClient) Update(ctx context.Context, siteId string, dnsPolicyI
 // DNSPoliciesClientMock is a func-field test double implementing DNSPoliciesClient. A nil field
 // panics on call, surfacing an un-stubbed method in tests.
 type DNSPoliciesClientMock struct {
-	CreateFunc   func(context.Context, string, DNSPolicyCreateOrUpdate) (*DNSPolicy, error)
-	DeleteFunc   func(context.Context, string, string) error
-	GetFunc      func(context.Context, string, string) (*DNSPolicy, error)
-	ListAllFunc  func(context.Context, string, string) iter.Seq2[DNSPolicy, error]
-	ListPageFunc func(context.Context, string, *ListOptions) (Page[DNSPolicy], error)
-	UpdateFunc   func(context.Context, string, string, DNSPolicyCreateOrUpdate) (*DNSPolicy, error)
+	CreateFunc   func(context.Context, uuid.UUID, DNSPolicyCreateOrUpdate) (*DNSPolicy, error)
+	DeleteFunc   func(context.Context, uuid.UUID, uuid.UUID) error
+	GetFunc      func(context.Context, uuid.UUID, uuid.UUID) (*DNSPolicy, error)
+	ListAllFunc  func(context.Context, uuid.UUID, string) iter.Seq2[DNSPolicy, error]
+	ListPageFunc func(context.Context, uuid.UUID, *ListOptions) (Page[DNSPolicy], error)
+	UpdateFunc   func(context.Context, uuid.UUID, uuid.UUID, DNSPolicyCreateOrUpdate) (*DNSPolicy, error)
 }
 
 var _ DNSPoliciesClient = (*DNSPoliciesClientMock)(nil)
 
-func (m *DNSPoliciesClientMock) Create(ctx context.Context, siteId string, body DNSPolicyCreateOrUpdate) (*DNSPolicy, error) {
+func (m *DNSPoliciesClientMock) Create(ctx context.Context, siteId uuid.UUID, body DNSPolicyCreateOrUpdate) (*DNSPolicy, error) {
 	return m.CreateFunc(ctx, siteId, body)
 }
 
-func (m *DNSPoliciesClientMock) Delete(ctx context.Context, siteId string, dnsPolicyId string) error {
+func (m *DNSPoliciesClientMock) Delete(ctx context.Context, siteId uuid.UUID, dnsPolicyId uuid.UUID) error {
 	return m.DeleteFunc(ctx, siteId, dnsPolicyId)
 }
 
-func (m *DNSPoliciesClientMock) Get(ctx context.Context, siteId string, dnsPolicyId string) (*DNSPolicy, error) {
+func (m *DNSPoliciesClientMock) Get(ctx context.Context, siteId uuid.UUID, dnsPolicyId uuid.UUID) (*DNSPolicy, error) {
 	return m.GetFunc(ctx, siteId, dnsPolicyId)
 }
 
-func (m *DNSPoliciesClientMock) ListAll(ctx context.Context, siteId string, filter string) iter.Seq2[DNSPolicy, error] {
+func (m *DNSPoliciesClientMock) ListAll(ctx context.Context, siteId uuid.UUID, filter string) iter.Seq2[DNSPolicy, error] {
 	return m.ListAllFunc(ctx, siteId, filter)
 }
 
-func (m *DNSPoliciesClientMock) ListPage(ctx context.Context, siteId string, opts *ListOptions) (Page[DNSPolicy], error) {
+func (m *DNSPoliciesClientMock) ListPage(ctx context.Context, siteId uuid.UUID, opts *ListOptions) (Page[DNSPolicy], error) {
 	return m.ListPageFunc(ctx, siteId, opts)
 }
 
-func (m *DNSPoliciesClientMock) Update(ctx context.Context, siteId string, dnsPolicyId string, body DNSPolicyCreateOrUpdate) (*DNSPolicy, error) {
+func (m *DNSPoliciesClientMock) Update(ctx context.Context, siteId uuid.UUID, dnsPolicyId uuid.UUID, body DNSPolicyCreateOrUpdate) (*DNSPolicy, error) {
 	return m.UpdateFunc(ctx, siteId, dnsPolicyId, body)
 }
