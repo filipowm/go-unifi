@@ -3,7 +3,7 @@
 ![GitHub Release](https://img.shields.io/github/v/release/filipowm/go-unifi)
 ![Supported Internal API Version](https://img.shields.io/badge/dynamic/regex?url=https%3A%2F%2Fraw.githubusercontent.com%2Ffilipowm%2Fgo-unifi%2Frefs%2Fheads%2Fmain%2F.unifi-version&search=(.*)%3F&logo=ubiquiti&label=Supported%20Internal%20API%20Version&color=yellow)
 ![Supported Official API Version](https://img.shields.io/badge/dynamic/regex?url=https%3A%2F%2Fraw.githubusercontent.com%2Ffilipowm%2Fgo-unifi%2Frefs%2Fheads%2Fmain%2F.unifi-version-official&search=(.*)%3F&logo=ubiquiti&label=Supported%20Official%20API%20Version&color=blue)
-[![Docs](https://img.shields.io/badge/docs-reference-blue)](https://github.com/filipowm/go-unifi/blob/main/docs/readme.md)
+[![Docs](https://img.shields.io/badge/docs-reference-blue)](https://filipowm.github.io/go-unifi/)
 [![Go Reference](https://pkg.go.dev/badge/github.com/filipowm/go-unifi/v2/unifi.svg)](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi)
 ![GitHub branch check runs](https://img.shields.io/github/check-runs/filipowm/go-unifi/main)
 ![GitHub License](https://img.shields.io/github/license/filipowm/go-unifi)
@@ -11,9 +11,9 @@
 This SDK provides a Go client for the UniFi Network Controller API. It is used primarily in the [Terraform provider for UniFi](https://github.com/filipowm/terraform-provider-unifi),
 but can be used independently for any Go project requiring UniFi Network Controller API integration.
 
-Check out the detailed [documentation](docs/readme.md) for more information, including the
-[1.x → 2.0 migration guide](docs/2.0.0/migration_guide.md) and the
-[breaking-changes log](docs/2.0.0/breaking_changes.md).
+Check out the detailed [documentation site](https://filipowm.github.io/go-unifi/) for more information, including the
+[1.x → 2.0 migration guide](https://filipowm.github.io/go-unifi/docs/migrating/from-1.x) and the
+[breaking-changes log](https://filipowm.github.io/go-unifi/docs/migrating/breaking-changes).
 
 ## Features
 
@@ -36,7 +36,7 @@ surface (`c.Official()`) requires controller **10.1.78** or newer (`.unifi-versi
 The SDK is updated daily to track the latest UniFi Controller versions.
 If you encounter any issues with the latest UniFi Controller version, please open an issue.
 
-See the [compatibility matrix](docs/compatibility_matrix.md) for the mapping between `go-unifi` releases and supported UniFi Controller versions.
+See the [compatibility matrix](https://filipowm.github.io/go-unifi/docs/advanced/compatibility) for the mapping between `go-unifi` releases and supported UniFi Controller versions.
 It also includes a changelog of breaking compatibility changes for each release.
 
 ## Code Generation
@@ -66,13 +66,13 @@ and the UniFi Controller JAR is obfuscated, making it challenging to directly us
 
 If you already use `paultyng/go-unifi`, you can migrate to this SDK — it is a fork and the core client
 methods remain the same.
-Check out the [migration guide](docs/migrating_from_upstream.md) for information on how to migrate from the upstream `paultyng/go-unifi` SDK.
+Check out the [migration guide](https://filipowm.github.io/go-unifi/docs/migrating/from-paultyng) for information on how to migrate from the upstream `paultyng/go-unifi` SDK.
 
 ## Upgrading from go-unifi 1.x
 
-See the [1.x → 2.0 migration guide](docs/2.0.0/migration_guide.md) for a step-by-step walkthrough of every
-breaking change. A quick reference of all 10 breaks is in
-[breaking_changes.md](docs/2.0.0/breaking_changes.md).
+See the [1.x → 2.0 migration guide](https://filipowm.github.io/go-unifi/docs/migrating/from-1.x) for a step-by-step walkthrough of every
+breaking change. A quick reference of all breaks is in the
+[breaking-changes log](https://filipowm.github.io/go-unifi/docs/migrating/breaking-changes).
 
 ## Usage
 
@@ -165,7 +165,7 @@ UUID string, use `uuid.Parse("…")` to convert it.
 ### Low-level API calls
 
 For endpoints not covered by a generated method, the client exposes `Do`, `Get`, `Post`, `Put`, `Patch`,
-and `Delete`. See [Advanced Topics](docs/advanced_topics.md) for the path-resolution rules and examples.
+and `Delete`. See [Raw HTTP calls](https://filipowm.github.io/go-unifi/docs/advanced/raw-http) for the path-resolution rules and examples.
 
 ### Customizing HTTP Client
 
