@@ -8,7 +8,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://filipowm.github.io'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://filipowm.github.io/go-unifi/'),
   title: {
     default: 'go-unifi — Go client for the UniFi Network API',
     template: '%s · go-unifi',
