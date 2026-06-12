@@ -1,0 +1,153 @@
+---
+title: UniFi API (OpenAPI)
+description: Overview of the Official UniFi Network API (integration/v1) — base path, API-key auth, the filter DSL, and the error model.
+---
+
+This section renders the **Official UniFi Network API** — the controller's own OpenAPI document
+(`integration/v1`, spec version **10.1.78**) — endpoint by endpoint. go-unifi calls this surface for you
+through [`c.Official()`](/docs/reference/official-api); the pages here are the canonical HTTP-level reference,
+and **each one shows the equivalent Go call**.
+
+<Callout type="info">
+Each UniFi application exposes these endpoints locally, per site, for analytics and control of that
+application. For high-level insight across *all* your sites instead, see the separate
+[UniFi Site Manager API](https://developer.ui.com).
+</Callout>
+
+## Base path
+
+The OpenAPI document declares its server as `/integration` and versions every path under `/v1`
+(e.g. `/v1/sites/{siteId}/networks`). On a UniFi OS controller the integration API is mounted under
+`/proxy/network`, so the full runtime base path is:
+
+```text
+/proxy/network/integration/v1
+```
+
+You never assemble these paths yourself — the [`official`](/docs/reference/official-api) wrappers build them
+from the site UUID and resource IDs.
+
+## Authentication
+
+Every request authenticates with an **API key**, sent in the `X-Api-Key` HTTP header (exact casing).
+Generate one from the **Integrations** section of your UniFi application. go-unifi attaches it
+automatically from `ClientConfig.APIKey` — see [Authentication](/docs/getting-started/authentication).
+
+<Callout type="warn">
+API-key auth requires controller **9.0.114** or newer; the Official API surface specifically requires
+**10.1.78** or newer. Username/password auth is not supported.
+</Callout>
+
+## Filtering
+
+Some `GET` and `DELETE` list endpoints accept a `filter` query parameter for server-side querying. Each
+endpoint that supports it documents its filterable properties. In Go, set
+[`official.ListOptions.Filter`](/docs/reference/official-api#pagination-primitives) (or pass the
+`filter` argument to a `…All` iterator); the string is forwarded verbatim.
+
+```go title="filter.go"
+package main
+
+import (
+	"context"
+	"log"
+
+	"github.com/filipowm/go-unifi/v2/unifi"
+	"github.com/filipowm/go-unifi/v2/unifi/official"
+)
+
+func main() {
+	ctx := context.Background()
+	c, err := unifi.NewClient(&unifi.ClientConfig{URL: "https://unifi.example.com", APIKey: "your-api-key"})
+	if err != nil {
+		log.Fatal(err)
+	}
+	siteID, err := c.Official().Sites().ResolveID(ctx, "default")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	page, err := c.Official().Clients().ListConnectedPage(ctx, siteID, &official.ListOptions{
+		Filter: "and(type.eq('WIRELESS'), access.authorized.eq(true))",
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("%d matching clients", page.Count)
+}
+```
+
+### Syntax
+
+The filter DSL is URL-safe and has three kinds of expression:
+
+1. **Property expressions** — `<property>.<function>(<args>)`, e.g. `id.eq(123)`,
+   `name.isNotNull()`, `createdAt.in(2025-01-01, 2025-01-05)`.
+2. **Compound expressions** — combine with `and(...)` / `or(...)`, e.g.
+   `and(name.isNull(), createdAt.gt(2025-01-01))`.
+3. **Negation** — `not(<expression>)`, e.g. `not(name.like('guest*'))`.
+
+### Property types
+
+| Type | Example | Syntax |
+| --- | --- | --- |
+| `STRING` | `'Hello, ''World''!'` | Wrap in single quotes; escape a quote by doubling it. |
+| `INTEGER` | `123` | Must start with a digit. |
+| `DECIMAL` | `123.321` | Digit-leading; may include a `.`. |
+| `TIMESTAMP` | `2025-01-29T12:39:11Z` | ISO 8601 date or date-time. |
+| `BOOLEAN` | `true`, `false` | — |
+| `UUID` | `550e8400-e29b-41d4-a716-446655440000` | Standard 8-4-4-4-12 form. |
+| `SET(...)` | `[1, 2, 3]` | A set of unique values. |
+
+### Functions
+
+| Function | Args | Meaning | Types |
+| --- | --- | --- | --- |
+| `isNull` / `isNotNull` | 0 | (not) null | all |
+| `eq` / `ne` | 1 | (not) equals | `STRING`, `INTEGER`, `DECIMAL`, `TIMESTAMP`, `BOOLEAN`, `UUID` |
+| `gt` / `ge` / `lt` / `le` | 1 | ordering comparisons | `STRING`, `INTEGER`, `DECIMAL`, `TIMESTAMP`, `UUID` |
+| `like` | 1 | pattern match | `STRING` |
+| `in` / `notIn` | 1+ | (not) one of | `STRING`, `INTEGER`, `DECIMAL`, `TIMESTAMP`, `UUID` |
+| `isEmpty` | 0 | empty set | `SET` |
+| `contains` | 1 | set membership | `SET` |
+| `containsAny` / `containsAll` / `containsExactly` | 1+ | set membership | `SET` |
+
+In a `like` pattern, `.` matches a single character, `*` matches any number of characters, and `\`
+escapes a literal `.` or `*` — e.g. `name.like('guest*')` matches `guest1` and `guest100`.
+
+## Error model
+
+Failed requests return a standard JSON error body:
+
+```json
+{
+  "statusCode": 401,
+  "statusName": "UNAUTHORIZED",
+  "code": "api.authentication.missing-credentials",
+  "message": "Missing credentials",
+  "timestamp": "2024-11-27T08:13:46.966Z",
+  "requestPath": "/integration/v1/sites/123",
+  "requestId": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+}
+```
+
+`code` is a stable machine-readable identifier; `statusName` mirrors the HTTP status; and on a `500`,
+`requestId` lets you correlate the failure with the controller's server log. With go-unifi's default
+transport these surface as [`*unifi.ServerError`](/docs/reference/errors), so
+`errors.Is(err, unifi.ErrNotFound)` detects 404s and `errors.As` exposes the structured fields.
+
+## Endpoints
+
+The pages in this section are grouped by API tag — **Application Info, Sites, UniFi Devices, Clients,
+Networks, WiFi Broadcasts, Hotspot, Firewall, Access Control (ACL Rules), DNS Policies, Traffic Matching
+Lists, and Supporting Resources** — and listed in the sidebar. Every operation page documents its HTTP
+method, path, parameters, and schemas, alongside the matching `c.Official()` Go call.
+
+<Cards>
+  <Card title="Official API reference" href="/docs/reference/official-api">
+    The Go surface: `c.Official()` accessors, method shape, and pagination.
+  </Card>
+  <Card title="Choosing a surface" href="/docs/guides/choosing-a-surface">
+    When to use the Official API instead of the Internal one.
+  </Card>
+</Cards>

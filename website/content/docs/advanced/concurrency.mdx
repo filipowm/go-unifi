@@ -1,0 +1,63 @@
+---
+title: Concurrency
+description: The UniFi client is safe for concurrent use — share one client across goroutines instead of creating many.
+---
+
+A `unifi.Client` (and everything obtained from it — `Internal()`, `Official()`, resource methods) is **safe for
+concurrent use by multiple goroutines**. Build one client at startup and share it; do not create a client per
+request or per goroutine.
+
+## Share one client
+
+Requests run concurrently through a goroutine-safe `net/http.Client` and are not serialized, so fanning work out
+is straightforward:
+
+```go title="shared-client.go"
+func listAcrossSites(ctx context.Context, c unifi.Client, sites []string) {
+	var wg sync.WaitGroup
+	for _, site := range sites {
+		wg.Add(1)
+		go func(site string) {
+			defer wg.Done()
+			// Safe: every method on the client is goroutine-safe.
+			_, _ = c.ListNetwork(ctx, site)
+		}(site)
+	}
+	wg.Wait()
+}
+```
+
+Why share? `NewClient` does real work — it parses the URL, builds the HTTP transport, registers validators, and
+(unless `SkipSystemInfo` is set) makes a round-trip to verify your API key. A single client also lets the
+underlying transport pool and reuse TCP connections across goroutines.
+
+<Callout type="info">
+Use `context.Context` for per-call cancellation and deadlines, not separate clients. Every method takes a
+`ctx` first; cancel it to abort an in-flight request without affecting others sharing the client.
+</Callout>
+
+## UseLocking is a deprecated no-op
+
+`ClientConfig.UseLocking` exists only for source compatibility with older releases. Since 1.11.0 it has **no
+effect**: requests are no longer serialized behind a mutex. Leave it unset.
+
+```go
+// Deprecated: UseLocking is a no-op since 1.11.0 and is ignored.
+UseLocking bool
+```
+
+If you previously relied on `UseLocking: true` to serialize calls, you don't need it — the client was made
+goroutine-safe instead. If your *application* needs to serialize a specific sequence of operations (say, a
+read-modify-write against one resource), coordinate that in your own code with a mutex; the client will not do
+it for you.
+
+## Next steps
+
+<Cards>
+  <Card title="Configuration" href="/docs/advanced/configuration">
+    All ClientConfig fields, including the deprecated UseLocking.
+  </Card>
+  <Card title="Quickstart" href="/docs/getting-started/quickstart">
+    Build your first client.
+  </Card>
+</Cards>

@@ -1,0 +1,130 @@
+---
+title: Traffic Flows
+description: Query the UniFi controller's traffic-flow log with GetTrafficFlows — a filtered, paginated view of allowed and blocked connections.
+---
+
+A **traffic flow** is one connection the controller observed — a source, a destination, the protocol and service,
+which firewall policy acted on it, how many bytes moved, and when. go-unifi exposes the controller's flow log
+through a single Internal API method, `GetTrafficFlows`, which takes a filter/pagination request and returns one
+page of results.
+
+This is the data behind the controller's "Traffic" / flow-insights views, useful for auditing what a firewall
+rule actually matched.
+
+## Fetch a page of flows
+
+You build a [`*unifi.TrafficFlowsRequest`](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#TrafficFlowsRequest),
+set whatever filters you want, and read the page out of the
+[`*unifi.TrafficFlowsResponse`](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#TrafficFlowsResponse).
+
+```go
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"github.com/filipowm/go-unifi/v2/unifi"
+)
+
+func recentBlocks(ctx context.Context, c unifi.Client) error {
+	req := &unifi.TrafficFlowsRequest{
+		Action:        []string{"BLOCK"},
+		TimestampFrom: time.Now().Add(-time.Hour).UnixMilli(),
+		TimestampTo:   time.Now().UnixMilli(),
+		PageNumber:    0,
+		PageSize:      50,
+	}
+
+	resp, err := c.GetTrafficFlows(ctx, "default", req)
+	if err != nil {
+		return fmt.Errorf("fetching traffic flows: %w", err)
+	}
+
+	for _, flow := range resp.Data {
+		fmt.Printf("%s %s -> %s  %s/%s  rx=%d bytes\n",
+			flow.Action,
+			flow.Source.IP,
+			flow.Destination.IP,
+			flow.Protocol,
+			flow.Service,
+			flow.TrafficData.BytesRx,
+		)
+	}
+	fmt.Printf("page %d of %d (total %d flows)\n",
+		resp.PageNumber, resp.TotalPageCount, resp.TotalElementCount)
+	return nil
+}
+```
+
+Each [`TrafficFlow`](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#TrafficFlow) carries a `Source` and
+`Destination` ([`TrafficFlowTarget`](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#TrafficFlowTarget) —
+IP, MAC, hostname, client name, network and zone), the matched `Policies`
+([`TrafficFlowPolicy`](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#TrafficFlowPolicy)), and byte/packet
+counters in `TrafficData`.
+
+## Filtering
+
+`TrafficFlowsRequest` has a wide set of optional filter fields — most are `[]string` slices that the controller
+treats as "match any of these". Leaving a field at its zero value means "don't filter on it". A few of the common
+ones:
+
+| Field | Meaning |
+| --- | --- |
+| `Action` | e.g. `"ALLOW"`, `"BLOCK"` |
+| `Risk` | risk level reported for the flow |
+| `Protocol` | `"tcp"`, `"udp"`, … |
+| `SourceIP` / `DestinationIP` | match specific endpoints |
+| `SourceMAC` / `DestinationMAC` | match specific clients |
+| `SourceNetworkID` / `DestinationNetworkID` | match a network |
+| `SearchText` | free-text search |
+| `TimestampFrom` / `TimestampTo` | time window, **Unix milliseconds** |
+
+See the [`TrafficFlowsRequest` reference](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#TrafficFlowsRequest)
+for the complete list.
+
+<Callout type="warn">
+`TimestampFrom` and `TimestampTo` are **Unix milliseconds** (`int64`), not seconds — use `time.Time.UnixMilli()`,
+not `Unix()`. Passing seconds asks for flows from 1970.
+</Callout>
+
+## Paging through results
+
+`GetTrafficFlows` returns one page. The response tells you whether more pages exist via `HasNext`; advance by
+incrementing `PageNumber`.
+
+```go
+func allFlows(ctx context.Context, c unifi.Client) error {
+	req := &unifi.TrafficFlowsRequest{PageNumber: 0, PageSize: 100}
+	for {
+		resp, err := c.GetTrafficFlows(ctx, "default", req)
+		if err != nil {
+			return fmt.Errorf("fetching traffic flows page %d: %w", req.PageNumber, err)
+		}
+		for _, flow := range resp.Data {
+			fmt.Printf("%s: %s\n", flow.ID, flow.Risk)
+		}
+		if !resp.HasNext {
+			break
+		}
+		req.PageNumber++
+	}
+	return nil
+}
+```
+
+<Callout type="info">
+Traffic flows are an **Internal API** feature and are unrelated to the [Official API](/docs/guides/official-api)
+list endpoints and their `ListOptions`/`Page[T]` paging model. The flow log uses its own page-number request shape
+shown above.
+</Callout>
+
+## Next steps
+
+<Cards>
+  <Card title="Firewall" href="/docs/guides/firewall">
+    Create the rules whose effects you see in the flow log.
+  </Card>
+  <Card title="Error handling" href="/docs/guides/error-handling">
+    Handling failures from `GetTrafficFlows`.
+  </Card>
+</Cards>

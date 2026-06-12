@@ -1,0 +1,152 @@
+---
+title: From paultyng/go-unifi
+description: Switch from the upstream paultyng/go-unifi to filipowm/go-unifi — only client construction and authentication differ.
+---
+
+`filipowm/go-unifi` started as a fork of [`paultyng/go-unifi`](https://github.com/paultyng/go-unifi). The
+**resource methods are the same**, so most of your code keeps working unchanged. What differs is how you
+construct and authenticate the client — and you gain a larger API surface, structured configuration, and
+the Official UniFi OpenAPI on top.
+
+## Client construction
+
+The biggest change is moving from a manually-configured struct to a single `NewClient` constructor.
+
+<Tabs items={['paultyng/go-unifi', 'filipowm/go-unifi (2.0.0)']}>
+<Tab value="paultyng/go-unifi">
+
+```go
+client := unifi.Client{}
+client.SetBaseURL("https://unifi.localdomain")
+
+// Optional: configure TLS by hand
+if skipTLSVerify {
+	httpClient := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		},
+	}
+	jar, _ := cookiejar.New(nil)
+	httpClient.Jar = jar
+	client.SetHTTPClient(httpClient)
+}
+
+// Login is required
+if err := client.Login(ctx, username, password); err != nil {
+	return nil, err
+}
+```
+
+</Tab>
+<Tab value="filipowm/go-unifi (2.0.0)">
+
+```go
+client, err := unifi.NewClient(&unifi.ClientConfig{
+	URL:    "https://unifi.localdomain",
+	APIKey: "your-api-key",
+})
+if err != nil {
+	log.Fatalf("create client: %v", err)
+}
+```
+
+</Tab>
+</Tabs>
+
+`NewClient` validates the connection and your API key up front, so there is no separate `Login()` step. In
+2.0.0 the **only** supported authentication is an [API key](/docs/getting-started/authentication), available
+from UniFi Network controller **9.0.114** and newer.
+
+## Key differences
+
+| Topic | paultyng/go-unifi | filipowm/go-unifi |
+|-------|-------------------|-------------------|
+| **Construction** | Manual struct + setters (`SetBaseURL`, `SetHTTPClient`) | `NewClient(&ClientConfig{...})` |
+| **Client type** | A concrete `struct` | An [interface](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#Client) (mockable) |
+| **Authentication** | Username/password via explicit `Login()` | API key only; handled during construction |
+| **TLS config** | Hand-built `http.Client` + `cookiejar` | `SkipVerifySSL` flag, or `HttpTransportCustomizer` / `HttpRoundTripperProvider` |
+| **API errors** | `unifi.APIError` | [`unifi.ServerError`](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#ServerError) |
+| **Extras** | — | Validation modes, request/response interceptors, configurable logging, the Official API |
+
+## TLS verification
+
+TLS verification is now **on by default** (secure by default). To skip verification — for example against a
+controller with a self-signed certificate — set `SkipVerifySSL: true`. The zero value (`false`) verifies,
+and disabling verification logs a warning on every client build:
+
+```go
+client, err := unifi.NewClient(&unifi.ClientConfig{
+	URL:           "https://unifi.localdomain",
+	APIKey:        "your-api-key",
+	SkipVerifySSL: true,
+})
+```
+
+For finer control you can replace the transport entirely with `HttpRoundTripperProvider`, or tweak the
+default one with `HttpTransportCustomizer` — see [Configuration](/docs/advanced/configuration).
+
+## Error handling
+
+Replace any reference to `unifi.APIError` with [`unifi.ServerError`](/docs/guides/error-handling). It carries
+the controller's status, method, URL, message, and code:
+
+```go
+n := &unifi.Network{Name: "lab"}
+_, err := c.CreateNetwork(ctx, "default", n)
+
+var serverErr *unifi.ServerError
+if errors.As(err, &serverErr) {
+	log.Printf("controller error %d: %s", serverErr.StatusCode, serverErr.Message)
+}
+```
+
+A genuine HTTP 404 from any endpoint also satisfies `errors.Is(err, unifi.ErrNotFound)`.
+
+## What you gain
+
+Beyond the resource methods you already use, `filipowm/go-unifi` adds:
+
+<Cards>
+  <Card title="Official API" href="/docs/guides/official-api">
+    A second surface — the official UniFi OpenAPI (`integration/v1`) — reached via `c.Official()`.
+  </Card>
+  <Card title="Validation" href="/docs/advanced/validation">
+    `SoftValidation`, `HardValidation`, or `DisableValidation` for request bodies, set via
+    `ClientConfig.ValidationMode`.
+  </Card>
+  <Card title="Interceptors" href="/docs/advanced/interceptors">
+    Pluggable request/response interceptors for headers, tracing, and custom auth.
+  </Card>
+  <Card title="Logging" href="/docs/advanced/logging">
+    A configurable `slog`-backed logger you can wire to your own handler.
+  </Card>
+</Cards>
+
+## Migration steps
+
+<Steps>
+<Step>
+Replace the import `github.com/paultyng/go-unifi/unifi` with `github.com/filipowm/go-unifi/v2/unifi`.
+</Step>
+<Step>
+Swap manual struct construction for `NewClient` with a `ClientConfig`. Provide an `APIKey` — username and
+password are no longer accepted.
+</Step>
+<Step>
+Remove explicit `Login()` calls; `NewClient` authenticates during construction.
+</Step>
+<Step>
+TLS verification is on by default. Add `SkipVerifySSL: true` only if your controller uses a self-signed
+certificate.
+</Step>
+<Step>
+Replace `unifi.APIError` with `unifi.ServerError` in your error handling.
+</Step>
+</Steps>
+
+The rest of your code — the resource methods — should continue to work as before.
+
+<Callout type="info">
+  Already on `filipowm/go-unifi` 1.x and upgrading to 2.0? Use the
+  [1.x upgrade guide](/docs/migrating/from-1.x) instead — it covers every 2.0.0 breaking change in detail.
+</Callout>

@@ -1,0 +1,140 @@
+---
+title: Logging
+description: Configure the client's Logger — the built-in slog logger, levels, wrapping your own *slog.Logger, or a fully custom implementation.
+---
+
+The client logs its own diagnostics (request tracing, validation warnings, build-time warnings) through a small
+`Logger` interface. You choose the implementation via [`ClientConfig.Logger`](/docs/reference/configuration-types),
+and you can reach the active logger from the client with `c.Logger()`.
+
+<Callout type="info">
+**2.0.0 change.** `Client` no longer *embeds* `Logger`, so methods like `Errorf` are no longer promoted onto
+the client itself. Replace any `client.Errorf(...)` calls with `client.Logger().Errorf(...)`. See the
+[breaking changes](/docs/migrating/breaking-changes).
+</Callout>
+
+## The default logger
+
+If you set nothing, the client uses a logger backed by Go's standard
+[`log/slog`](https://pkg.go.dev/log/slog), emitting plain text (no ANSI colour) to `os.Stderr` at `Info` level.
+To change the level, build one explicitly with `NewDefaultLogger`:
+
+```go title="default-logger.go"
+c, err := unifi.NewClient(&unifi.ClientConfig{
+	URL:    "https://unifi.example.com",
+	APIKey: "your-api-key",
+	Logger: unifi.NewDefaultLogger(unifi.DebugLevel),
+})
+```
+
+### Logging levels
+
+`NewDefaultLogger` takes a `unifi.LoggingLevel`. From least to most verbose:
+
+<TypeTable
+  type={{
+    DisabledLevel: { description: 'No logging at all (returns a no-op logger).', type: 'LoggingLevel' },
+    ErrorLevel: { description: 'Errors only.', type: 'LoggingLevel' },
+    WarnLevel: { description: 'Warnings and errors.', type: 'LoggingLevel' },
+    InfoLevel: { description: 'Informational messages and above. The default when no logger is set.', type: 'LoggingLevel' },
+    DebugLevel: { description: 'Debug detail and above.', type: 'LoggingLevel' },
+    TraceLevel: { description: 'Most verbose — per-request tracing (mapped to slog Debug-4).', type: 'LoggingLevel' },
+  }}
+/>
+
+## Reaching the active logger
+
+The configured logger is available on the client via `Logger()`. The SDK uses it internally; you can use it
+too, for example to keep your own logs on the same handler:
+
+```go title="logger-accessor.go"
+log := c.Logger()
+log.Debug("a debug message")
+log.Debugf("listing networks for site %q", "default")
+log.Errorf("something went wrong: %v", err)
+```
+
+The `Logger` interface has paired plain and formatted methods at every level:
+
+```go
+type Logger interface {
+	Trace(format string)
+	Debug(format string)
+	Info(format string)
+	Warn(format string)
+	Error(format string)
+	Tracef(format string, args ...any)
+	Debugf(format string, args ...any)
+	Infof(format string, args ...any)
+	Warnf(format string, args ...any)
+	Errorf(format string, args ...any)
+}
+```
+
+## Wrapping your own *slog.Logger
+
+Already have a configured `*slog.Logger` (with your own handler, attributes, output)? Wrap it directly with
+`NewSlogLogger` so the SDK shares it:
+
+```go title="slog-logger.go"
+handler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug})
+logger := slog.New(handler).With("component", "unifi")
+
+c, err := unifi.NewClient(&unifi.ClientConfig{
+	URL:    "https://unifi.example.com",
+	APIKey: "your-api-key",
+	Logger: unifi.NewSlogLogger(logger),
+})
+```
+
+The same `LoggingLevel` → `slog.Level` mapping applies, so `TraceLevel` lands on `slog.LevelDebug - 4`.
+
+## A fully custom logger
+
+To route logs somewhere `slog` doesn't reach — a metrics pipeline, an existing logging facade, a test sink —
+implement the `Logger` interface yourself and pass it as `Logger`:
+
+```go title="custom-logger.go"
+// metricsLogger is a minimal custom Logger implementation.
+type metricsLogger struct{}
+
+func (l *metricsLogger) Trace(msg string)                  {}
+func (l *metricsLogger) Debug(msg string)                  {}
+func (l *metricsLogger) Info(msg string)                   {}
+func (l *metricsLogger) Warn(msg string)                   {}
+func (l *metricsLogger) Error(msg string)                  {}
+func (l *metricsLogger) Tracef(format string, args ...any) {}
+func (l *metricsLogger) Debugf(format string, args ...any) {}
+func (l *metricsLogger) Infof(format string, args ...any)  {}
+func (l *metricsLogger) Warnf(format string, args ...any)  {}
+func (l *metricsLogger) Errorf(format string, args ...any) {}
+
+func newClient() (unifi.Client, error) {
+	return unifi.NewClient(&unifi.ClientConfig{
+		URL:    "https://unifi.example.com",
+		APIKey: "your-api-key",
+		Logger: &metricsLogger{},
+	})
+}
+```
+
+You must implement all ten methods; `var _ unifi.Logger = (*metricsLogger)(nil)` is a handy compile-time check.
+
+<Callout type="info">
+To silence the SDK entirely, pass `unifi.NewDefaultLogger(unifi.DisabledLevel)` — it returns a no-op logger,
+so `c.Logger()` calls are cheap and produce no output.
+</Callout>
+
+## Next steps
+
+<Cards>
+  <Card title="Configuration" href="/docs/advanced/configuration">
+    Every ClientConfig field, including Logger.
+  </Card>
+  <Card title="Interceptors" href="/docs/advanced/interceptors">
+    Hook the request/response cycle for richer logging or tracing.
+  </Card>
+  <Card title="Troubleshooting" href="/docs/advanced/troubleshooting">
+    Turn the level up to Trace to diagnose connection and decode problems.
+  </Card>
+</Cards>

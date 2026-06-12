@@ -1,0 +1,51 @@
+---
+title: Migrating
+description: Pick the right guide — upgrading go-unifi 1.x to 2.0, or switching from paultyng/go-unifi.
+---
+
+There are two ways you can arrive at go-unifi 2.0.0. Pick the guide that matches where you're coming from.
+
+<Cards>
+  <Card title="Upgrading from go-unifi 1.x" href="/docs/migrating/from-1.x">
+    You already use `filipowm/go-unifi` and want to move to 2.0. A task-oriented walkthrough of every
+    breaking change, with grep hints and before/after code.
+  </Card>
+  <Card title="Switching from paultyng/go-unifi" href="/docs/migrating/from-paultyng">
+    You use the upstream `paultyng/go-unifi`. The resource methods are the same — only client
+    construction and authentication differ.
+  </Card>
+</Cards>
+
+## What changed in 2.0.0
+
+The headline changes, all covered in detail by the [1.x upgrade guide](/docs/migrating/from-1.x):
+
+- **API-key authentication only.** Username/password login was removed. You authenticate with an
+  [API key](/docs/getting-started/authentication) on a UniFi OS console running **UniFi Network 9.0.114** or
+  newer (a Network Application version, distinct from the UniFi OS version).
+- **Module path is now `/v2`.** Import `github.com/filipowm/go-unifi/v2/unifi`.
+- **TLS verification is on by default.** The old `VerifySSL` field became
+  [`SkipVerifySSL`](/docs/reference/configuration-types) — renamed *and* inverted.
+- **A second API surface.** `c.Official()` exposes the official UniFi OpenAPI (`integration/v1`)
+  alongside the legacy Internal API. It's additive — see [Choosing a surface](/docs/guides/choosing-a-surface).
+- **Go 1.26** is the minimum toolchain.
+
+<Callout type="info">
+  Want the exhaustive, status-tracked changelog with provenance for every change? See
+  [Breaking changes](/docs/migrating/breaking-changes).
+</Callout>
+
+## Where to go next
+
+<Cards>
+  <Card title="Breaking changes" href="/docs/migrating/breaking-changes">
+    The authoritative 2.0.0 changelog: every behavior and signature change, its impact, and what's
+    deferred to 3.0.0.
+  </Card>
+  <Card title="Compatibility" href="/docs/advanced/compatibility">
+    Which controller versions each go-unifi release supports.
+  </Card>
+  <Card title="Authentication" href="/docs/getting-started/authentication">
+    Create an API key and confirm your controller meets the version floor.
+  </Card>
+</Cards>

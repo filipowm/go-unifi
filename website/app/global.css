@@ -1,0 +1,84 @@
+@import 'tailwindcss';
+@import 'fumadocs-ui/css/vitepress.css';
+@import 'fumadocs-ui/css/preset.css';
+
+/* Brand palette — Go cyan hero + AA-safe functional aqua + UniFi deep blue.
+   @theme after the imports overrides the vitepress defaults (light mode). */
+@theme {
+  /* Reusable brand tokens (hero surfaces only) */
+  --color-brand-cyan: #00add8;
+  --color-brand-blue: #0559c9;
+
+  /* Light mode Fumadocs tokens */
+  --color-fd-primary: #007d9c; /* AA-safe Go aqua: links, buttons, active nav (4.76:1 on white) */
+  --color-fd-primary-foreground: #ffffff;
+  --color-fd-ring: #00add8; /* hero cyan focus ring */
+  --color-fd-accent: hsl(190 60% 94%); /* subtle cyan tint: hover backgrounds */
+  --color-fd-accent-foreground: #06303a;
+}
+
+/* Dark mode overrides — runtime CSS-variable swap under the .dark class */
+.dark {
+  --color-fd-primary: #5dc9e2; /* bright Go light-blue */
+  --color-fd-primary-foreground: #06141a;
+  --color-fd-ring: #38c7e8;
+  --color-fd-accent: hsl(195 70% 16%); /* dark cyan tint */
+  --color-fd-accent-foreground: #d7f4fb;
+}
+
+/* OpenAPI HTTP-method pills (fumadocs-openapi MethodLabel).
+   The .font-mono.font-medium qualifier confines these rules to the
+   method badge (its base class is exactly "font-mono font-medium"). */
+:is(
+  .text-green-600,
+  .text-green-400,
+  .text-blue-600,
+  .text-blue-400,
+  .text-yellow-600,
+  .text-yellow-400,
+  .text-orange-600,
+  .text-orange-400,
+  .text-red-600,
+  .text-red-400
+).font-mono.font-medium {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.375rem;
+  padding: 0.0625rem 0.5rem;
+  font-size: 0.6875rem;
+  line-height: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #fff !important;
+}
+
+:is(.text-green-600, .text-green-400).font-mono.font-medium {
+  background-color: #16a34a !important; /* GET */
+}
+
+:is(.text-blue-600, .text-blue-400).font-mono.font-medium {
+  background-color: #0559c9 !important; /* POST */
+}
+
+:is(.text-yellow-600, .text-yellow-400).font-mono.font-medium {
+  background-color: #d97706 !important; /* PUT */
+}
+
+:is(.text-orange-600, .text-orange-400).font-mono.font-medium {
+  background-color: #ea580c !important; /* PATCH */
+}
+
+:is(.text-red-600, .text-red-400).font-mono.font-medium {
+  background-color: #dc2626 !important; /* DELETE */
+}
+
+html {
+  scrollbar-gutter: stable;
+}
+
+html > body[data-scroll-locked] {
+  margin-right: 0px !important;
+  --removed-body-scroll-bar-size: 0px !important;
+}

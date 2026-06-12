@@ -1,0 +1,121 @@
+---
+title: Feature Flags
+description: Check whether a UniFi controller supports and enables a capability before you rely on it, using IsFeatureEnabled, GetFeature, and ListFeatures.
+---
+
+UniFi controllers expose a set of named **feature flags** that describe which capabilities are available and
+turned on for a site — things like zone-based firewall, IPS, or WireGuard VPN. Before you build on a feature
+that only exists on newer firmware, ask the controller whether it is there.
+
+The Internal API surfaces this through three client methods and a package of stable name constants.
+
+## Is a feature enabled?
+
+`IsFeatureEnabled` is the shortcut: it returns a single `bool`. Feature names are **case-insensitive**, and the
+[`features`](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi/features) package gives you constants so you
+never hard-code a string.
+
+```go
+import (
+	"context"
+	"fmt"
+
+	"github.com/filipowm/go-unifi/v2/unifi"
+	"github.com/filipowm/go-unifi/v2/unifi/features"
+)
+
+func zoneFirewall(ctx context.Context, c unifi.Client) error {
+	enabled, err := c.IsFeatureEnabled(ctx, "default", features.ZoneBasedFirewall)
+	if err != nil {
+		return fmt.Errorf("checking zone-based firewall: %w", err)
+	}
+	if enabled {
+		fmt.Println("zone-based firewall is enabled")
+	} else {
+		fmt.Println("zone-based firewall is supported but off")
+	}
+	return nil
+}
+```
+
+The first argument after the context is the **site name** (`"default"` on a single-site controller), exactly like
+every other Internal API method.
+
+## Supported vs. enabled
+
+There is a subtle distinction worth understanding:
+
+- A feature the controller has **never heard of** (too old, wrong product) yields `unifi.ErrNotFound`.
+- A feature the controller **knows about** comes back as a [`DescribedFeature`](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#DescribedFeature)
+  whose `FeatureExists` field reports whether it is actually present/enabled.
+
+`GetFeature` gives you that struct so you can tell the two apart:
+
+```go
+func zoneFirewallMigration(ctx context.Context, c unifi.Client) (bool, error) {
+	f, err := c.GetFeature(ctx, "default", features.ZoneBasedFirewallMigration)
+	if err != nil {
+		if errors.Is(err, unifi.ErrNotFound) {
+			log.Printf("feature %s is unavailable on this controller", features.ZoneBasedFirewallMigration)
+			return false, nil
+		}
+		return false, fmt.Errorf("getting feature: %w", err)
+	}
+	return f.FeatureExists, nil
+}
+```
+
+`IsFeatureEnabled` is exactly this with the `FeatureExists` value returned for you — so an unknown feature
+surfaces as an error there too, not as `false`. Always handle the `ErrNotFound` case.
+
+<Callout type="info">
+`GetFeature` and `IsFeatureEnabled` are implemented on top of `ListFeatures`: each call fetches the full feature
+list and scans it. If you need to test several features at once, call `ListFeatures` once and inspect the slice
+yourself rather than making one round-trip per flag.
+</Callout>
+
+## List every feature
+
+`ListFeatures` returns the whole set the controller reports for a site — handy for diagnostics or for building a
+capability map up front.
+
+```go
+func listFeatures(ctx context.Context, c unifi.Client) error {
+	all, err := c.ListFeatures(ctx, "default")
+	if err != nil {
+		return fmt.Errorf("listing features: %w", err)
+	}
+	for _, f := range all {
+		fmt.Printf("%-32s exists=%t\n", f.Name, f.FeatureExists)
+	}
+	return nil
+}
+```
+
+## Custom feature names
+
+The constants in `features` are convenience values, not an allow-list. Any string is accepted, so you can probe a
+flag the library doesn't ship a constant for:
+
+```go
+enabled, err := c.IsFeatureEnabled(ctx, "default", "MAGIC_AP_BOOST")
+```
+
+If the controller doesn't recognize the name you get `unifi.ErrNotFound`, exactly as with the constants.
+
+<Callout type="warn">
+Feature flags belong to the **Internal API**. They describe controller-wide capabilities and are unrelated to the
+[Official API](/docs/guides/official-api) capability gate (the `ErrOfficialAPI*` sentinels), which decides whether
+the `c.Official()` surface can be used at all. See [Error handling](/docs/guides/error-handling) for those.
+</Callout>
+
+## Next steps
+
+<Cards>
+  <Card title="Feature constants reference" href="/docs/reference/internal-api/feature-constants">
+    The full list of `features.*` names.
+  </Card>
+  <Card title="Error handling" href="/docs/guides/error-handling">
+    `ErrNotFound`, `ServerError`, and the other sentinels.
+  </Card>
+</Cards>

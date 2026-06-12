@@ -1,0 +1,202 @@
+---
+title: Testing
+description: Test code that talks to a UniFi controller without a controller, using the generated unifi.ClientMock and the per-group Official API mocks.
+---
+
+Code that depends on go-unifi should depend on the **`unifi.Client` interface**, not the concrete client. That one
+decision makes your code trivially testable: the library ships generated mocks that satisfy the interface, so your
+tests run with no controller, no network, and no waiting.
+
+There are two kinds of mock:
+
+- [`unifi.ClientMock`](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#ClientMock) — a
+  [moq](https://github.com/matryer/moq)-generated double for the whole Internal API `Client`. Every method has a
+  `…Func` field you stub and a `…Calls()` helper that records invocations.
+- The **Official** per-group doubles in `unifi/official` (`official.ClientMock`, `official.SitesClientMock`,
+  `official.NetworksClientMock`, …) — code-generated func-field test doubles (emitted by the `codegen/official`
+  generator, not moq), one per resource group.
+
+In both, an **un-stubbed method panics** when called, so a test that exercises an unexpected dependency fails
+loudly instead of returning a misleading zero value.
+
+## Depend on the interface
+
+Write the code under test against `unifi.Client`:
+
+```go
+func reportActiveNetworks(ctx context.Context, c unifi.Client) ([]string, error) {
+	nets, err := c.ListNetwork(ctx, "default")
+	if err != nil {
+		return nil, err
+	}
+	var names []string
+	for _, n := range nets {
+		if n.Enabled {
+			names = append(names, n.Name)
+		}
+	}
+	return names, nil
+}
+```
+
+## A table-driven test with ClientMock
+
+Stub only the method the code calls. Each `…Func` field is the behaviour for one method; the matching `…Calls()`
+slice lets you assert how it was called.
+
+```go title="networks_test.go"
+func TestReportActiveNetworks(t *testing.T) {
+	tests := map[string]struct {
+		networks []unifi.Network
+		listErr  error
+		want     []string
+		wantErr  bool
+	}{
+		"filters disabled": {
+			networks: []unifi.Network{
+				{Name: "LAN", Enabled: true},
+				{Name: "Guest", Enabled: false},
+				{Name: "IoT", Enabled: true},
+			},
+			want: []string{"LAN", "IoT"},
+		},
+		"propagates error": {
+			listErr: unifi.ErrNotFound,
+			wantErr: true,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			c := &unifi.ClientMock{
+				ListNetworkFunc: func(_ context.Context, site string) ([]unifi.Network, error) {
+					if site != "default" {
+						t.Fatalf("unexpected site %q", site)
+					}
+					return tc.networks, tc.listErr
+				},
+			}
+
+			got, err := reportActiveNetworks(context.Background(), c)
+			if tc.wantErr {
+				if err == nil {
+					t.Fatal("expected error, got nil")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if len(got) != len(tc.want) {
+				t.Fatalf("got %v, want %v", got, tc.want)
+			}
+
+			// Calls() helpers record every invocation and its arguments.
+			if n := len(c.ListNetworkCalls()); n != 1 {
+				t.Fatalf("ListNetwork called %d times, want 1", n)
+			}
+			if site := c.ListNetworkCalls()[0].Site; site != "default" {
+				t.Fatalf("called with site %q", site)
+			}
+		})
+	}
+}
+```
+
+Each `…Calls()` method returns a slice of anonymous structs whose fields are the named arguments
+(`ListNetworkCalls()[0].Site`, `IsFeatureEnabledCalls()[0].Name`, and so on) — handy for asserting that your code
+passed the right site, MAC, or payload.
+
+<Callout type="info">
+You don't have to stub every method — only the ones your code path touches. Anything left `nil` panics if called,
+which is usually what you want: it pins the test to exactly the controller calls you expect.
+</Callout>
+
+## Returning sentinels from a mock
+
+Because the mock returns whatever your `…Func` returns, you can drive the error branches from
+[Error handling](/docs/guides/error-handling) directly:
+
+```go
+func TestNotFound(t *testing.T) {
+	c := &unifi.ClientMock{
+		GetNetworkFunc: func(_ context.Context, _, _ string) (*unifi.Network, error) {
+			return nil, unifi.ErrNotFound
+		},
+	}
+	_, err := c.GetNetwork(context.Background(), "default", "missing")
+	if !errors.Is(err, unifi.ErrNotFound) {
+		t.Fatalf("want ErrNotFound, got %v", err)
+	}
+}
+```
+
+## Mocking the Official surface
+
+The Official API is a tree: `c.Official()` returns an `official.Client`, whose accessors (`Sites()`, `Networks()`,
+…) return per-group clients. To mock it, build an `official.ClientMock` whose accessor returns the per-group mock,
+then hand it to the top-level `unifi.ClientMock` via `OfficialFunc`:
+
+```go title="sites_test.go"
+func countSites(ctx context.Context, c unifi.Client) (int, error) {
+	page, err := c.Official().Sites().ListPage(ctx, nil)
+	if err != nil {
+		return 0, err
+	}
+	return page.TotalCount, nil
+}
+
+func TestCountSites(t *testing.T) {
+	sites := &official.SitesClientMock{
+		ListPageFunc: func(_ context.Context, _ *official.ListOptions) (official.Page[official.SiteOverview], error) {
+			return official.Page[official.SiteOverview]{
+				Items:      []official.SiteOverview{{ID: uuid.New()}},
+				TotalCount: 3,
+			}, nil
+		},
+	}
+	off := &official.ClientMock{
+		SitesFunc: func() official.SitesClient { return sites },
+	}
+
+	c := &unifi.ClientMock{
+		OfficialFunc: func() official.Client { return off },
+	}
+
+	got, err := countSites(context.Background(), c)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got != 3 {
+		t.Fatalf("got %d sites, want 3", got)
+	}
+}
+```
+
+<Callout type="warn">
+The Official per-group mocks (`official.SitesClientMock`, `official.NetworksClientMock`, …) are func-field doubles
+**without** `…Calls()` helpers — that recording machinery exists only on the moq-generated `unifi.ClientMock`. To
+assert arguments on an Official mock, capture them in a closure variable inside the `…Func` you stub.
+</Callout>
+
+## Keeping the mock current
+
+`unifi.ClientMock` lives in `client_mock.generated.go` and is regenerated whenever the `Client` interface changes:
+
+```bash
+go generate ./unifi/...
+```
+
+A compile-time `var _ Client = &ClientMock{}` assertion in that file guarantees the mock always satisfies the
+interface, so a stale mock is caught at build time.
+
+## Next steps
+
+<Cards>
+  <Card title="Error handling" href="/docs/guides/error-handling">
+    The sentinels and types your mocks can return.
+  </Card>
+  <Card title="Client reference" href="/docs/reference/client">
+    The full `Client` interface the mock implements.
+  </Card>
+</Cards>

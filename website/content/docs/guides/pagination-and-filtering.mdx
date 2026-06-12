@@ -1,0 +1,121 @@
+---
+title: Pagination & filtering
+description: Page through Official API results — bounded pages with ListPage, lazy streaming with ListAll and Collect, and the filter DSL.
+---
+
+Official list endpoints are paged, and the SDK makes draining **explicit** so you never accidentally pull
+thousands of rows. Every listable group exposes **two** methods: a bounded `List…Page` and a lazy
+`List…All`. This guide uses `Networks`, but the shapes are identical across every group.
+
+## One bounded page: `List…Page`
+
+`List…Page(ctx, siteId, *official.ListOptions)` fetches **exactly one** page and returns an
+`official.Page[T]`. Pass `nil` options for the first page at the default size:
+
+```go title="firstpage.go"
+page, err := c.Official().Networks().ListPage(ctx, siteID, nil)
+if err != nil {
+	log.Fatal(err)
+}
+fmt.Printf("got %d of %d (offset=%d limit=%d)\n", page.Count, page.TotalCount, page.Offset, page.Limit)
+for _, n := range page.Items {
+	fmt.Println(n.Name)
+}
+```
+
+The returned `official.Page[T]` carries both the items and the envelope counters:
+
+<TypeTable
+  type={{
+    Items: { description: 'The decoded page of results.', type: '[]T' },
+    Offset: { description: 'Index of the first item in this page.', type: 'int' },
+    Limit: { description: 'Page size the server applied.', type: 'int' },
+    Count: { description: 'Number of items in this page.', type: 'int' },
+    TotalCount: { description: 'Total items matching the query across all pages.', type: 'int' },
+  }}
+/>
+
+### Bounding and filtering a page
+
+Pass an `official.ListOptions` to control offset, size and a server-side filter:
+
+```go title="bounded.go"
+page, err := c.Official().Networks().ListPage(ctx, siteID, &official.ListOptions{
+	Offset: 0,
+	Limit:  50, // clamped to 200 if larger
+	Filter: "name.eq('lan')",
+})
+```
+
+<TypeTable
+  type={{
+    Offset: { description: 'Index of the first item to return. 0 is a valid explicit value; a negative offset is treated as 0.', type: 'int', default: '0' },
+    Limit: { description: 'Page size. Non-positive or larger than 200 clamps to 200.', type: 'int', default: '200' },
+    Filter: { description: "Optional server-side filter expression, e.g. name.eq('lan').", type: 'string' },
+  }}
+/>
+
+<Callout type="info">
+The Official spec caps page size at **200**. A `Limit` that is non-positive or above 200 is clamped to 200
+for you, so a page never silently returns more than you asked for.
+</Callout>
+
+## Streaming every item: `List…All`
+
+`List…All(ctx, siteId, filter)` returns an `iter.Seq2[T, error]` that pages **on demand**. Range over it
+and `break` to stop — no further requests are made once you stop:
+
+```go title="listall.go"
+for net, err := range c.Official().Networks().ListAll(ctx, siteID, "") {
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(net.Name)
+	if net.Default {
+		break // no further pages are fetched
+	}
+}
+```
+
+The `filter` argument is the same expression as `ListOptions.Filter`; pass `""` to stream unfiltered. Each
+loop iteration yields either an item **or** an error (the gate failing, or a page fetch failing), so always
+check `err` inside the loop.
+
+### Materializing with `Collect`
+
+When you genuinely want every match in a slice, wrap the iterator with `official.Collect`. It drains the
+stream and short-circuits on the first error:
+
+```go title="collect.go"
+all, err := official.Collect(c.Official().Networks().ListAll(ctx, siteID, "name.eq('lan')"))
+if err != nil {
+	log.Fatal(err)
+}
+fmt.Println("matched", len(all))
+```
+
+<Callout type="warn">
+`Collect` (and an un-`break`-ed `ListAll`) loads **all** matching rows into memory — that's the explicit
+opt-in. Prefer ranging with a `break`, or a single `ListPage`, when you don't need the whole set.
+</Callout>
+
+## The filter DSL
+
+`Filter` is a server-side expression evaluated by the controller. It uses a `field.op('value')` form, for
+example `name.eq('lan')`. Filtering happens on the controller, so it narrows results **before** they are
+paged and transferred. Refer to the [UniFi API Reference](/docs/reference/official-api/api) for the operators and fields
+each endpoint accepts.
+
+## Next steps
+
+<Cards>
+  <Card title="Sites" href="/docs/guides/sites">
+    Resolve a site name to the UUID these methods need.
+  </Card>
+  <Card title="Using the Official API" href="/docs/guides/official-api">
+    The fluent surface and its uniform method shapes.
+  </Card>
+  <Card title="UniFi API Reference" href="/docs/reference/official-api/api">
+    Per-endpoint filter fields and operators.
+  </Card>
+</Cards>

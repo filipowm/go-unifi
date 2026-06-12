@@ -1,0 +1,90 @@
+---
+title: Authentication
+description: go-unifi authenticates with an API key only — how to create one and which controller versions support it.
+---
+
+go-unifi authenticates with an **API key** and nothing else. Username/password login was removed in 2.0.0.
+An API key is a long secret token you generate once in the controller's UI; the client sends it on every
+request in the `X-Api-Key` header.
+
+<Callout type="info">
+  **Why API key only?** API keys are scoped, revocable, and don't require juggling login sessions or CSRF
+  tokens. They are available in **UniFi Network 9.0.114** and newer (running on a UniFi OS console) — the same
+  floor this library requires. `9.0.114` is a Network Application version, not a UniFi OS version.
+</Callout>
+
+## Obtaining an API key
+
+<Steps>
+<Step>Open your site in the [UniFi Site Manager](https://unifi.ui.com).</Step>
+<Step>Go to **Control Plane → Admins & Users**.</Step>
+<Step>Select your admin user.</Step>
+<Step>Click **Create API Key**.</Step>
+<Step>Give the key a name.</Step>
+<Step>**Copy the key and store it securely — it is shown only once.**</Step>
+<Step>Click **Done** so the key is hashed and saved.</Step>
+</Steps>
+
+## Using the key
+
+Pass the key as `APIKey` when you build the client. That is the only credential field on
+[`ClientConfig`](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#ClientConfig):
+
+```go
+c, err := unifi.NewClient(&unifi.ClientConfig{
+	URL:    "https://unifi.example.com", // your controller, no trailing /api
+	APIKey: "your-api-key",
+})
+```
+
+The client attaches the key to every request automatically as the `X-Api-Key` header — you never set it by
+hand. (For an end-to-end runnable program, see the [Quickstart](/docs/getting-started/quickstart).)
+
+<Callout type="warn">
+  Treat the key like a password. Don't hard-code it in source you commit — read it from an environment
+  variable or a secret store, e.g. `APIKey: os.Getenv("UNIFI_API_KEY")`.
+</Callout>
+
+## Version requirements
+
+API-key authentication needs a **UniFi OS** console (new-style) running **UniFi Network 9.0.114 or newer**.
+This is the hard floor for the whole library, regardless of which
+[API surface](/docs/guides/choosing-a-surface) you use. The versions below are **UniFi Network Application**
+versions — they track separately from the console's UniFi OS version.
+
+| Capability                    | Minimum UniFi Network |
+| ----------------------------- | --------------------- |
+| API-key auth (whole library)  | **9.0.114**           |
+| Official API (`c.Official()`) | **10.1.78**           |
+
+## Old-style controllers are unsupported
+
+"Classic" (non-UniFi-OS) controllers can't issue API keys, so they aren't supported. When the client detects
+one at construction time, `NewClient` returns
+[`unifi.ErrOldStyleUnsupported`](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#ErrOldStyleUnsupported).
+Match it with `errors.Is`:
+
+```go
+_, err := unifi.NewClient(&unifi.ClientConfig{
+	URL:    "https://unifi.example.com",
+	APIKey: "your-api-key",
+})
+if errors.Is(err, unifi.ErrOldStyleUnsupported) {
+	log.Fatal("this controller is too old; API-key auth needs UniFi Network 9.0.114+")
+}
+```
+
+The remedy is to move to a **UniFi OS** console (a Dream Machine, a Cloud Key, or the self-hosted UniFi OS
+Server) running **UniFi Network 9.0.114** or newer. Classic standalone controllers — the Network Application
+without UniFi OS — can't issue API keys at all, so there is no workaround on that style of install.
+
+## Next steps
+
+<Cards>
+  <Card title="Connecting to your controller" href="/docs/getting-started/connecting">
+    URL, TLS, timeouts, and the rest of the client options.
+  </Card>
+  <Card title="Quickstart" href="/docs/getting-started/quickstart">
+    Put it together: connect and list your networks.
+  </Card>
+</Cards>

@@ -1,0 +1,161 @@
+---
+title: Client
+description: NewClient and the Client interface — the transport and lifecycle methods plus the Internal and Official surface accessors.
+---
+
+The `Client` interface is the single entry point to a UniFi controller. You build one with `NewClient` and hold on
+to it for the lifetime of your program — it is safe for concurrent use by many goroutines, so share **one** client
+rather than creating a client per request.
+
+## NewClient
+
+```go
+func NewClient(config *ClientConfig) (Client, error)
+```
+
+`NewClient` validates the [`*ClientConfig`](/docs/reference/configuration-types), builds the HTTP transport, and —
+unless `SkipSystemInfo` is `true` — makes one eager round-trip (`GetSystemInformation`) to confirm the URL is
+reachable and the API key is valid. That makes a bad key or unreachable host **fail fast at construction** rather
+than on your first real call. On any error it returns a `nil` `Client`, so a `err != nil` check fully protects you
+from a nil-panic.
+
+```go title="main.go"
+package main
+
+import (
+	"context"
+	"log"
+
+	"github.com/filipowm/go-unifi/v2/unifi"
+)
+
+func main() {
+	c, err := unifi.NewClient(&unifi.ClientConfig{
+		URL:    "https://unifi.example.com",
+		APIKey: "your-api-key",
+	})
+	if err != nil {
+		log.Fatalf("create client: %v", err)
+	}
+
+	ctx := context.Background()
+	if _, err := c.ListNetwork(ctx, "default"); err != nil {
+		log.Fatalf("list networks: %v", err)
+	}
+}
+```
+
+<Callout type="info">
+`NewClient` returns the `Client` **interface**, not a concrete struct. That makes it trivial to mock in tests — the
+package ships a generated `ClientMock`. See [Testing](/docs/guides/testing).
+</Callout>
+
+## The Client interface
+
+`Client` embeds [`InternalClient`](/docs/reference/internal-api/resources) (every legacy resource method — `ListNetwork`,
+`CreateUser`, `GetSystemInformation`, …) and adds the transport, lifecycle, and surface-accessor methods below.
+
+| Method | Signature | Purpose |
+| --- | --- | --- |
+| `BaseURL` | `BaseURL() string` | The normalized controller base URL the client was built with. |
+| `Version` | `Version() string` | Cached controller version; fetched once on first use. Swallows fetch errors (returns `""`). |
+| `VersionContext` | `VersionContext(ctx) (string, error)` | Like `Version` but honors `ctx` and **surfaces** the fetch error. |
+| `Logger` | `Logger() Logger` | The [`Logger`](/docs/reference/configuration-types#logging) the client was built with. |
+| `Internal` | `Internal() InternalClient` | The Internal (legacy) API surface. Its methods are also reachable directly on `c`. |
+| `Official` | `Official() official.Client` | The [Official OpenAPI](/docs/reference/official-api) surface (controller 10.1.78+). |
+| `Do` | `Do(ctx, method, apiPath, reqBody, respBody) error` | Send an arbitrary request; decode the response into `respBody`. |
+| `Get` | `Get(ctx, apiPath, reqBody, respBody) error` | GET helper over `Do`. |
+| `Post` | `Post(ctx, apiPath, reqBody, respBody) error` | POST helper over `Do`. |
+| `Put` | `Put(ctx, apiPath, reqBody, respBody) error` | PUT helper over `Do`. |
+| `Patch` | `Patch(ctx, apiPath, reqBody, respBody) error` | PATCH helper over `Do`. |
+| `Delete` | `Delete(ctx, apiPath, reqBody, respBody) error` | DELETE helper over `Do`. |
+
+For the full embedded resource surface, see the [`Client`
+godoc](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#Client).
+
+### Lifecycle methods
+
+```go
+func exampleLifecycle(ctx context.Context, c unifi.Client) error {
+	_ = c.BaseURL() // e.g. "https://unifi.example.com"
+
+	// Version() swallows fetch errors (returns ""); VersionContext surfaces them.
+	_ = c.Version()
+	v, err := c.VersionContext(ctx)
+	if err != nil {
+		return fmt.Errorf("controller version: %w", err)
+	}
+
+	// The logger the client was built with.
+	c.Logger().Debugf("controller %s is running %s", c.BaseURL(), v)
+	return nil
+}
+```
+
+### The two API surfaces
+
+`Internal()` and `Official()` return the [Internal](/docs/reference/internal-api/resources) and
+[Official](/docs/reference/official-api) clients. In 2.0.0 the Internal surface is the **default**: every resource
+method is reachable directly on `c`, so `c.ListNetwork(...)` and `c.Internal().ListNetwork(...)` are equivalent.
+
+```go
+func exampleSurfaces(ctx context.Context, c unifi.Client) error {
+	// Internal (legacy) resource methods — also callable directly on c.
+	internal := c.Internal()
+	if _, err := internal.ListNetwork(ctx, "default"); err != nil {
+		return fmt.Errorf("list networks: %w", err)
+	}
+
+	// Official OpenAPI surface (controller 10.1.78+); sites are addressed by UUID.
+	siteID, err := c.Official().Sites().ResolveID(ctx, "default")
+	if err != nil {
+		return fmt.Errorf("resolve site id: %w", err)
+	}
+	fmt.Println("official site id:", siteID)
+	return nil
+}
+```
+
+See [Choosing a surface](/docs/guides/choosing-a-surface) for how to decide between them.
+
+### Raw transport methods
+
+When no typed method exists for an endpoint, drop down to `Do`/`Get`/`Post`/`Put`/`Patch`/`Delete`. Each takes an
+`apiPath` (resolved against the controller base URL), an optional request body, and a pointer to decode the
+response into.
+
+```go
+func exampleRawRequest(ctx context.Context, c unifi.Client) error {
+	var resp struct {
+		Data []struct {
+			Name string `json:"name"`
+		} `json:"data"`
+	}
+	// apiPath is resolved against the controller base URL.
+	if err := c.Get(ctx, "s/default/stat/health", nil, &resp); err != nil {
+		return fmt.Errorf("raw GET: %w", err)
+	}
+	return nil
+}
+```
+
+See [Raw HTTP access](/docs/advanced/raw-http) for the full treatment, including file uploads.
+
+<Callout type="warn">
+Interceptors are registered up front through [`ClientConfig.Interceptors`](/docs/reference/configuration-types) —
+there is no `AddInterceptor` on the `Client` interface. See [Interceptors](/docs/advanced/interceptors).
+</Callout>
+
+## See also
+
+<Cards>
+  <Card title="Configuration types" href="/docs/reference/configuration-types">
+    Every `ClientConfig` field and the configuration enums.
+  </Card>
+  <Card title="Errors" href="/docs/reference/errors">
+    The error model and the sentinels `NewClient` and resource methods return.
+  </Card>
+  <Card title="Connecting to your controller" href="/docs/getting-started/connecting">
+    TLS, timeouts, and the rest of the connection options.
+  </Card>
+</Cards>

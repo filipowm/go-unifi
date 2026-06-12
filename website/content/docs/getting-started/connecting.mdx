@@ -1,0 +1,162 @@
+---
+title: Connecting
+description: Build the client — the controller URL, TLS for self-signed certs, timeouts, and startup behavior.
+---
+
+You connect to a controller by building a `unifi.Client` from a
+[`*unifi.ClientConfig`](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#ClientConfig). Only `URL` and
+`APIKey` are required; the rest tune TLS, timeouts, and startup behavior. This page walks through the options
+you reach for most often.
+
+## The minimum
+
+```go
+c, err := unifi.NewClient(&unifi.ClientConfig{
+	URL:    "https://unifi.example.com",
+	APIKey: "your-api-key",
+})
+```
+
+`NewClient` returns `(unifi.Client, error)`. On any error it returns a `nil` client, so checking `err != nil`
+is enough — you won't risk a nil-panic on your first call.
+
+### The URL
+
+- It **must be `https://`** — the client refuses plaintext so your API key is never sent in the clear.
+- Give the **controller's base URL only**, with **no trailing `/api`**. The client appends the right paths
+  itself. `https://unifi.example.com` is correct; `https://unifi.example.com/api` is rejected.
+- A trailing slash is fine — it's trimmed for you.
+
+## The common options
+
+<TypeTable
+  type={{
+    URL: {
+      description: 'Controller base URL. Must be https and must not include /api. Required.',
+      type: 'string',
+    },
+    APIKey: {
+      description: 'Your API key, sent as the X-Api-Key header. Required.',
+      type: 'string',
+    },
+    Timeout: {
+      description: 'Max time to wait for a response. Zero means no timeout (can hang).',
+      type: 'time.Duration',
+      default: '0',
+    },
+    SkipVerifySSL: {
+      description: 'Set true to disable TLS verification (self-signed certs). Secure by default.',
+      type: 'bool',
+      default: 'false',
+    },
+    SkipSystemInfo: {
+      description: 'Set true to skip the eager startup connectivity check.',
+      type: 'bool',
+      default: 'false',
+    },
+    DisableOfficialAPI: {
+      description: 'Set true to opt out of the Official API surface entirely.',
+      type: 'bool',
+      default: 'false',
+    },
+  }}
+/>
+
+For the exhaustive list (interceptors, custom transports, validation modes, loggers), see
+[`ClientConfig` on pkg.go.dev](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#ClientConfig).
+
+## Self-signed certificates
+
+TLS verification is **on by default**. A controller with a self-signed certificate will therefore make
+`NewClient` fail with a TLS error. The pragmatic fix is to disable verification with `SkipVerifySSL: true`:
+
+```go
+c, err := unifi.NewClient(&unifi.ClientConfig{
+	URL:           "https://unifi.example.com",
+	APIKey:        "your-api-key",
+	SkipVerifySSL: true,
+})
+```
+
+<Callout type="warn">
+  Disabling verification exposes the connection to man-in-the-middle attacks, and the client logs a warning
+  when you do. For anything beyond a lab, prefer trusting the controller's CA certificate instead.
+</Callout>
+
+## Timeouts
+
+By default there is **no timeout**: a slow or unreachable controller can make a call hang indefinitely (and
+the client logs a warning at build time when `Timeout` is unset). Set a deadline that covers all requests:
+
+```go
+c, err := unifi.NewClient(&unifi.ClientConfig{
+	URL:     "https://unifi.example.com",
+	APIKey:  "your-api-key",
+	Timeout: 30 * time.Second,
+})
+```
+
+This timeout applies to the whole HTTP round-trip. Per-call cancellation is separate — every client method
+also takes a `context.Context` you can give its own deadline.
+
+## Deferring the startup check
+
+By default `NewClient` makes **one round-trip** to the controller to confirm the URL is reachable and the key
+is valid, so a bad key or wrong URL fails *there* rather than on your first real call. Set
+`SkipSystemInfo: true` to skip that eager check:
+
+```go
+c, err := unifi.NewClient(&unifi.ClientConfig{
+	URL:            "https://unifi.example.com",
+	APIKey:         "your-api-key",
+	SkipSystemInfo: true,
+})
+```
+
+With `SkipSystemInfo: true`, construction does not contact the controller for system info, so a bad key or
+unreachable host surfaces on the **first API call** instead. This is handy in tests or when the controller
+isn't guaranteed reachable at startup.
+
+## Opting out of the Official API
+
+The client probes for [Official API](/docs/guides/official-api) support lazily. If you only use the Internal
+API and want to skip that capability entirely, set `DisableOfficialAPI: true`:
+
+```go
+c, err := unifi.NewClient(&unifi.ClientConfig{
+	URL:                "https://unifi.example.com",
+	APIKey:             "your-api-key",
+	DisableOfficialAPI: true,
+})
+if err != nil {
+	return err
+}
+
+// Any Official() call now fails fast instead of probing the controller.
+_, err = c.Official().Info().Get(ctx)
+if errors.Is(err, unifi.ErrOfficialAPIDisabled) {
+	// expected: the Official surface is turned off
+}
+```
+
+Internal resource methods are unaffected — only `c.Official()` operations short-circuit with
+`unifi.ErrOfficialAPIDisabled`.
+
+## One client, many goroutines
+
+A `unifi.Client` is **safe for concurrent use**. Build it once and share the single value across goroutines;
+don't construct one per request. (The old `UseLocking` option is a deprecated no-op.)
+
+## Next steps
+
+<Cards>
+  <Card title="Quickstart" href="/docs/getting-started/quickstart">
+    Make your first call with the client you just built.
+  </Card>
+  <Card title="Choosing a surface" href="/docs/guides/choosing-a-surface">
+    Internal vs Official — which API to call and when.
+  </Card>
+  <Card title="Error handling" href="/docs/guides/error-handling">
+    Sentinels, server errors, and how to react to them.
+  </Card>
+</Cards>

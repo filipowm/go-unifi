@@ -1,0 +1,119 @@
+---
+title: Settings
+description: Read and write site-level controller settings — the typed per-setting pairs and the generic key-based GetSetting/SetSetting.
+---
+
+UniFi groups site-wide configuration into **settings**, each identified by a string key
+(`guest_access`, `mgmt`, `usg`, …). go-unifi exposes them two ways: a **typed pair** per setting
+for compile-time safety, and a **generic** key-based pair when you need to be dynamic. Both
+operate on the site **name** (`"default"`).
+
+These examples assume a constructed client `c` and a `ctx` — see the
+[Quickstart](/docs/getting-started/quickstart).
+
+## Typed settings (recommended)
+
+Each setting has a `GetSetting<X>` / `UpdateSetting<X>` pair that returns and accepts a concrete
+struct — no key strings, no type assertions. Guest access is a typical example:
+
+```go
+func exampleGuestAccessSetting(ctx context.Context, c unifi.Client) error {
+	// Typed pair: no key string, no type assertion — you get *SettingGuestAccess.
+	ga, err := c.GetSettingGuestAccess(ctx, "default")
+	if err != nil {
+		return fmt.Errorf("get guest access setting: %w", err)
+	}
+
+	ga.PortalEnabled = true
+	ga.PortalCustomized = true
+	ga.PortalCustomizedSuccessText = "Welcome to the network!"
+
+	updated, err := c.UpdateSettingGuestAccess(ctx, "default", ga)
+	if err != nil {
+		return fmt.Errorf("update guest access setting: %w", err)
+	}
+	fmt.Printf("portal enabled: %v\n", updated.PortalEnabled)
+	return nil
+}
+```
+
+The signatures follow a fixed shape for every setting `X`:
+
+```go
+GetSettingX(ctx context.Context, site string) (*SettingX, error)
+UpdateSettingX(ctx context.Context, site string, s *SettingX) (*SettingX, error)
+```
+
+There is no create or delete — a setting always exists for a site, so you **read-modify-write**:
+fetch the current value, change the fields you care about, and pass it back to `UpdateSettingX`.
+The wrapper sets the `Key` field for you, so you never touch it.
+
+<Callout type="info">
+There are dozens of typed settings (`SettingGuestAccess`, `SettingMgmt`, `SettingUsg`,
+`SettingCountry`, …). Browse the full catalogue, each struct's fields, and its key constant in the
+[settings reference](/docs/reference/internal-api/settings).
+</Callout>
+
+## Generic settings
+
+When the key is only known at runtime — or you want to round-trip a setting you don't have a
+typed accessor for — use the generic pair. `GetSetting` returns the lightweight `*Setting`
+envelope **and** an `any` holding the concrete fields struct; assert it to the type that matches
+the key. `SetSetting` takes the modified value back.
+
+```go
+func exampleGenericSetting(ctx context.Context, c unifi.Client) error {
+	// Generic pair: GetSetting returns the *Setting envelope plus an `any`
+	// holding the concrete fields struct for the key. Assert it to use it.
+	setting, fields, err := c.GetSetting(ctx, "default", unifi.SettingGuestAccessKey)
+	if err != nil {
+		return fmt.Errorf("get setting: %w", err)
+	}
+	ga, ok := fields.(*unifi.SettingGuestAccess)
+	if !ok {
+		return fmt.Errorf("unexpected setting type %T", fields)
+	}
+	fmt.Printf("setting %s portal_enabled=%v\n", setting.Key, ga.PortalEnabled)
+
+	ga.PortalEnabled = false
+	result, err := c.SetSetting(ctx, "default", unifi.SettingGuestAccessKey, ga)
+	if err != nil {
+		return fmt.Errorf("set setting: %w", err)
+	}
+	_ = result // also the concrete fields struct as `any`
+	return nil
+}
+```
+
+The generic signatures are:
+
+```go
+GetSetting(ctx context.Context, site, key string) (*Setting, any, error)
+SetSetting(ctx context.Context, site, key string, reqBody any) (any, error)
+```
+
+The `any` returned by both calls is the **same concrete pointer** the typed accessor would give
+you (here `*unifi.SettingGuestAccess`) — go-unifi looks up the key in its generated registry and
+unmarshals into the right struct. An unknown key yields an error; a key with no matching record
+yields [`unifi.ErrNotFound`](/docs/guides/error-handling).
+
+<Callout type="warn">
+Prefer the typed pair whenever one exists — the generic API hands you an `any`, so a wrong type
+assertion is a runtime bug rather than a compile error. Reach for `GetSetting`/`SetSetting` only
+when the key is dynamic. Use the exported key constants (e.g. `unifi.SettingGuestAccessKey`)
+rather than hand-typed strings.
+</Callout>
+
+## Next steps
+
+<Cards>
+  <Card title="Settings reference" href="/docs/reference/internal-api/settings">
+    The full catalogue of typed settings, their keys, and every field.
+  </Card>
+  <Card title="Sites" href="/docs/guides/sites">
+    Settings are per-site — list sites and pick the right site name.
+  </Card>
+  <Card title="Error handling" href="/docs/guides/error-handling">
+    React to `ErrNotFound` and inspect `ServerError` validation details.
+  </Card>
+</Cards>

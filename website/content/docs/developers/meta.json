@@ -1,0 +1,12 @@
+{
+  "title": "For Library Developers",
+  "icon": "Hammer",
+  "pages": [
+    "code-generation",
+    "customizations",
+    "regenerating",
+    "testing",
+    "release-process",
+    "contributing"
+  ]
+}

@@ -1,0 +1,167 @@
+---
+title: Error Handling
+description: React to UniFi controller failures with the ErrNotFound, Official-API, and old-style sentinels, the rich ServerError, and client-side ValidationError.
+---
+
+go-unifi returns ordinary Go errors. What makes them useful is that the interesting failures are **matchable**:
+sentinel values you compare with `errors.Is`, and structured types you unwrap with `errors.As`. This page covers
+every error worth branching on.
+
+## The sentinels
+
+These package-level values let you react to a specific condition with `errors.Is`:
+
+| Sentinel | Meaning |
+| --- | --- |
+| `unifi.ErrNotFound` | The resource doesn't exist — a real HTTP 404, or a single-resource `Get` that returned empty data. List methods return an empty slice and nil error, not `ErrNotFound`. |
+| `unifi.ErrOldStyleUnsupported` | Construction-time: the target is an old-style (classic) controller. API-key auth needs UniFi Network **9.0.114+**. |
+| `unifi.ErrOfficialAPIUnavailable` | The `c.Official()` surface can't be used here — a classic controller, a failed `GET /v1/info` probe (a rejected API key surfaces here), or a controller below **10.1.78**. |
+| `unifi.ErrOfficialAPIDisabled` | The Official API was explicitly turned off via `ClientConfig.DisableOfficialAPI`. |
+
+## Not found
+
+The most common branch. `ErrNotFound` covers both a genuine `404` and the "empty result" case uniformly, so one
+check handles both:
+
+```go
+func getOne(ctx context.Context, c unifi.Client) {
+	net, err := c.GetNetwork(ctx, "default", "does-not-exist")
+	if errors.Is(err, unifi.ErrNotFound) {
+		log.Println("no such network")
+		return
+	}
+	if err != nil {
+		log.Fatal(err)
+	}
+	_ = net
+}
+```
+
+## ServerError: the full HTTP story
+
+Every non-2xx response from the controller is decoded into a
+[`*unifi.ServerError`](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#ServerError). Reach it with
+`errors.As`:
+
+```go
+func inspect(ctx context.Context, c unifi.Client) {
+	_, err := c.CreateNetwork(ctx, "default", &unifi.Network{})
+	if err == nil {
+		return
+	}
+
+	var se *unifi.ServerError
+	if errors.As(err, &se) {
+		fmt.Printf("status %d on %s %s\n", se.StatusCode, se.RequestMethod, se.RequestURL)
+		fmt.Printf("controller code=%q message=%q\n", se.ErrorCode, se.Message)
+		for _, d := range se.Details {
+			if d.ValidationError.Field != "" {
+				fmt.Printf("  field %q must match %q\n", d.ValidationError.Field, d.ValidationError.Pattern)
+			}
+		}
+		if se.StatusCode == http.StatusUnauthorized {
+			log.Fatal("API key rejected")
+		}
+		return
+	}
+	// Not a ServerError: a transport, timeout, or context error.
+	log.Printf("non-server error: %v", err)
+}
+```
+
+`ServerError` carries the request context (`StatusCode`, `RequestMethod`, `RequestURL`), the controller's own
+`ErrorCode` and `Message`, and a `Details` slice of per-field
+[`ServerErrorDetails`](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#ServerErrorDetails) (each with a
+message and a `ValidationError` field/pattern). Its `Error()` method formats all of that into a single readable
+line, so logging the error directly is already informative.
+
+<Callout type="info">
+A `*ServerError` with status `404` also satisfies `errors.Is(err, unifi.ErrNotFound)` — it implements an `Is`
+method that maps a 404 to the sentinel. So you can keep using the simple `errors.Is(err, unifi.ErrNotFound)` check
+even when the failure arrives as a structured `ServerError`. Empty-body responses (common for `401`/`403`) and
+non-JSON gateway pages still produce a fully-populated `ServerError`, never a bare decode error.
+</Callout>
+
+## ValidationError: failing before the request leaves
+
+By default the client validates request structs locally (in **soft** mode it logs; in **hard** mode it rejects).
+A rejected struct surfaces as a [`*unifi.ValidationError`](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#ValidationError),
+whose `Messages` map names each offending field:
+
+```go
+func validate(ctx context.Context, c unifi.Client) {
+	_, err := c.CreateNetwork(ctx, "default", &unifi.Network{})
+	var ve *unifi.ValidationError
+	if errors.As(err, &ve) {
+		for field, msg := range ve.Messages {
+			fmt.Printf("invalid %s: %s\n", field, msg)
+		}
+	}
+}
+```
+
+`ValidationError` also `Unwrap`s to the underlying `go-playground/validator` error, so `errors.As` against the
+validator's own types works too. See [Request validation](/docs/advanced/validation) for the modes.
+
+## Official API errors
+
+The [Official surface](/docs/guides/official-api) fails in two stages. **Before** a request is sent, the capability
+gate returns one of the `ErrOfficialAPI*` sentinels — match them with `errors.Is`:
+
+```go
+func official(ctx context.Context, c unifi.Client) {
+	info, err := c.Official().Info().Get(ctx)
+	switch {
+	case errors.Is(err, unifi.ErrOfficialAPIDisabled):
+		log.Println("Official API turned off via ClientConfig.DisableOfficialAPI")
+		return
+	case errors.Is(err, unifi.ErrOfficialAPIUnavailable):
+		log.Println("controller too old (<10.1.78), classic, or info probe failed")
+		return
+	case err != nil:
+		// Past the gate, a request failure is still a *unifi.ServerError.
+		var se *unifi.ServerError
+		if errors.As(err, &se) {
+			log.Printf("official request failed: %d %s", se.StatusCode, se.Message)
+		}
+		return
+	}
+	_ = info
+}
+```
+
+Once past the gate, an Official request that fails on the wire returns the **same** `*unifi.ServerError` as the
+Internal API — the Official package borrows the client's transport and error decoding, so you handle both surfaces
+with one `errors.As`.
+
+## Construction-time errors
+
+`NewClient` does an eager system-info round-trip (unless `SkipSystemInfo: true`), so a classic controller or a bad
+key fails *at construction*. The classic-controller case is its own sentinel:
+
+```go
+func build() {
+	_, err := unifi.NewClient(&unifi.ClientConfig{
+		URL:    "https://unifi.example.com",
+		APIKey: "your-api-key",
+	})
+	if errors.Is(err, unifi.ErrOldStyleUnsupported) {
+		log.Fatal("classic controller — upgrade to UniFi Network 9.0.114+ for API-key auth")
+	}
+	_ = err
+}
+```
+
+## Next steps
+
+<Cards>
+  <Card title="Errors reference" href="/docs/reference/errors">
+    Every exported error type and sentinel.
+  </Card>
+  <Card title="Request validation" href="/docs/advanced/validation">
+    Soft, hard, and disabled validation modes.
+  </Card>
+  <Card title="Testing" href="/docs/guides/testing">
+    Returning these errors from mocks in your tests.
+  </Card>
+</Cards>

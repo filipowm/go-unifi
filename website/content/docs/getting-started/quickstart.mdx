@@ -1,0 +1,104 @@
+---
+title: Quickstart
+description: Connect to a UniFi controller and list its networks in one runnable Go program.
+---
+
+This page gets you from nothing to a working program that talks to your UniFi controller. It assumes you have
+[installed the module](/docs/getting-started/installation) and [created an API key](/docs/getting-started/authentication).
+
+## The whole program
+
+In the module you created during [Installation](/docs/getting-started/installation) (or a new one), replace
+`main.go` with the program below. It connects to a controller and prints every network on the default site.
+
+```go title="main.go"
+package main
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"log"
+
+	"github.com/filipowm/go-unifi/v2/unifi"
+)
+
+func main() {
+	ctx := context.Background()
+
+	// 1. Build a client. NewClient verifies the connection and your API key up front.
+	c, err := unifi.NewClient(&unifi.ClientConfig{
+		URL:    "https://unifi.example.com", // your controller, no trailing /api
+		APIKey: "your-api-key",
+	})
+	if err != nil {
+		log.Fatalf("create client: %v", err)
+	}
+
+	// 2. Call the API. "default" is the site name on a single-site controller.
+	networks, err := c.ListNetwork(ctx, "default")
+	if err != nil {
+		if errors.Is(err, unifi.ErrNotFound) {
+			log.Fatal("site not found")
+		}
+		log.Fatalf("list networks: %v", err)
+	}
+
+	// 3. Use the strongly-typed result.
+	for _, n := range networks {
+		fmt.Printf("%s (%s)\n", n.Name, n.Purpose)
+	}
+}
+```
+
+Replace `https://unifi.example.com` with your controller's base URL and `your-api-key` with the key you created
+in [Authentication](/docs/getting-started/authentication).
+
+Run it:
+
+```bash
+go run .
+```
+
+With your real URL and key, you should see your networks printed, one per line.
+
+## What just happened
+
+<Steps>
+<Step>
+**You built a client.** `unifi.NewClient` takes a [`*unifi.ClientConfig`](/docs/reference/configuration-types).
+Only `URL` and `APIKey` are required. By default it makes one round-trip to the controller to confirm the URL is
+reachable and the key is valid, so a bad key fails *here* rather than on your first real call.
+</Step>
+<Step>
+**You called a resource method.** `ListNetwork(ctx, site)` is one of dozens of resource methods on the client.
+Every method takes a `context.Context` first and a **site name** (`"default"`) for the Internal API.
+</Step>
+<Step>
+**You got typed structs back.** `networks` is a `[]unifi.Network`, so fields like `Name` and `Purpose` are
+real Go fields — no `map[string]any` juggling.
+</Step>
+</Steps>
+
+<Callout type="warn">
+Using a self-signed controller certificate? `NewClient` will fail with a TLS error. Add `SkipVerifySSL: true`
+to the config to skip verification (see [Connecting to your controller](/docs/getting-started/connecting)), or
+better, trust the controller's CA.
+</Callout>
+
+## Next steps
+
+<Cards>
+  <Card title="Authentication" href="/docs/getting-started/authentication">
+    Where API keys come from and which controller versions support them.
+  </Card>
+  <Card title="Connecting to your controller" href="/docs/getting-started/connecting">
+    TLS, timeouts, and the rest of the connection options.
+  </Card>
+  <Card title="Guides" href="/docs/guides">
+    Manage networks, devices, clients, firewall rules and more.
+  </Card>
+  <Card title="Error handling" href="/docs/guides/error-handling">
+    Sentinels, server errors, and how to react to them.
+  </Card>
+</Cards>

@@ -1,0 +1,87 @@
+---
+title: Sites
+description: List sites on both surfaces and bridge the site-name (Internal) vs UUID (Official) identifier gap.
+---
+
+A UniFi controller can host multiple **sites**. Both API surfaces can list them — but they identify a site
+differently, and that difference shows up in every site-scoped call. This guide lists sites on each surface
+and shows how to bridge the two.
+
+## Internal: sites by name
+
+`c.ListSites(ctx)` (the Internal surface) returns `[]unifi.Site`. The Internal API identifies a site by its
+**name** string — the same `"default"` you pass to every Internal resource method:
+
+```go title="internal.go"
+sites, err := c.ListSites(ctx)
+if err != nil {
+	log.Fatal(err)
+}
+for _, s := range sites {
+	fmt.Printf("%s — %s\n", s.Name, s.Description)
+}
+```
+
+## Official: sites by UUID
+
+On the Official surface, `c.Official().Sites()` lists sites and each entry carries a `uuid.UUID` id. Like
+every Official list, it offers a bounded page and a lazy stream — see
+[Pagination & filtering](/docs/guides/pagination-and-filtering):
+
+```go title="official.go"
+page, err := c.Official().Sites().ListPage(ctx, nil)
+if err != nil {
+	log.Fatal(err)
+}
+for _, s := range page.Items {
+	// InternalReference is the legacy site name; ID is the Official UUID.
+	fmt.Printf("%s  name=%q  ref=%q\n", s.ID, s.Name, s.InternalReference)
+}
+```
+
+Each `official.SiteOverview` ties the two worlds together: `ID` is the Official UUID, `Name` is the display
+name, and **`InternalReference` is the legacy site name** the Internal API uses.
+
+## The site-name vs UUID duality
+
+Internal calls take the site **name**; Official calls take a **`uuid.UUID`**. To call an Official
+resource with the site you already know by name, resolve it once with `Sites().ResolveID`:
+
+```go title="duality.go"
+// Internal: the site NAME string.
+nets, err := c.ListNetwork(ctx, "default")
+if err != nil {
+	log.Fatal(err)
+}
+_ = nets
+
+// Official: the same site as a uuid.UUID, resolved from the name.
+siteID, err := c.Official().Sites().ResolveID(ctx, "default")
+if err != nil {
+	log.Fatal(err)
+}
+page, err := c.Official().Networks().ListPage(ctx, siteID, nil)
+```
+
+`ResolveID` drains the site list once, caches every `InternalReference` → UUID mapping, and returns
+`official.ErrSiteNotFound` when no site matches. If you already hold a UUID string, skip the lookup and use
+`uuid.Parse` (from `github.com/google/uuid`).
+
+<Callout type="info">
+On a single-site controller the name is almost always `"default"`. Resolve it **once** at startup and reuse
+the returned `uuid.UUID` for every Official call — `ResolveID` caches, but holding the value is simplest.
+</Callout>
+
+## Next steps
+
+<Cards>
+  <Card title="Choosing a surface" href="/docs/guides/choosing-a-surface">
+    Why the identifiers differ and which surface to pick.
+  </Card>
+  <Card title="Using the Official API" href="/docs/guides/official-api">
+    The fluent per-group surface that consumes these UUIDs.
+  </Card>
+  <Card title="Networks" href="/docs/guides/networks">
+    Manage networks on the site you just resolved.
+  </Card>
+</Cards>

@@ -1,0 +1,107 @@
+---
+title: Installation
+description: Add the go-unifi v2 module, learn its import paths, and verify the install with a tiny program.
+---
+
+go-unifi is a regular Go module. This page adds it to your project and confirms it resolved. To then make your
+first call, continue to the [Quickstart](/docs/getting-started/quickstart).
+
+## Requirements
+
+- **Go 1.26 or later.** Check yours with `go version`.
+- A module to add it to. If you are starting fresh, create one first:
+
+  ```bash
+  mkdir myapp && cd myapp
+  go mod init example.com/myapp
+  ```
+
+## Add the module
+
+```bash
+go get github.com/filipowm/go-unifi/v2
+```
+
+The `/v2` suffix is part of the path — it is how Go addresses major version 2 of the module. Always include
+it; omitting it resolves the legacy 1.x line.
+
+<Callout type="warn">
+  Coming from the original `paultyng/go-unifi`? The import path changed to `github.com/filipowm/go-unifi/v2`.
+  See [Migrating from upstream](/docs/migrating/from-paultyng).
+</Callout>
+
+## The import paths
+
+The module is split into three packages. Most programs only ever import the first.
+
+<Cards>
+  <Card title="unifi">
+    `github.com/filipowm/go-unifi/v2/unifi` — the client, the configuration, the error sentinels, and every
+    resource type. This is the package you almost always want.
+  </Card>
+  <Card title="unifi/official">
+    `github.com/filipowm/go-unifi/v2/unifi/official` — helpers for the [Official API](/docs/guides/official-api)
+    surface, such as `ListOptions`, `Page[T]`, and `Collect`.
+  </Card>
+  <Card title="unifi/features">
+    `github.com/filipowm/go-unifi/v2/unifi/features` — named constants for controller feature flags (e.g.
+    `features.ZoneBasedFirewall`), used with `c.IsFeatureEnabled`.
+  </Card>
+</Cards>
+
+A typical import block looks like this:
+
+```go
+import (
+	"github.com/filipowm/go-unifi/v2/unifi"
+)
+```
+
+## Verify the install
+
+Drop this into `main.go`. It does not touch the network — if it builds and runs, the module and its
+dependencies resolved correctly.
+
+```go title="main.go"
+package main
+
+import (
+	"fmt"
+
+	"github.com/filipowm/go-unifi/v2/unifi"
+)
+
+func main() {
+	// If this compiles and runs, the module and its dependencies resolved correctly.
+	cfg := &unifi.ClientConfig{
+		URL:    "https://unifi.example.com",
+		APIKey: "your-api-key",
+	}
+	fmt.Printf("go-unifi is installed. Auth header: %s, target: %s\n", unifi.ApiKeyHeader, cfg.URL)
+}
+```
+
+Run it:
+
+```bash
+go run .
+```
+
+You should see:
+
+```text
+go-unifi is installed. Auth header: X-Api-Key, target: https://unifi.example.com
+```
+
+If the build fails on the import path, double-check the `/v2` suffix and that your Go is 1.26+.
+
+## Next steps
+
+<Cards>
+  <Card title="Authentication" href="/docs/getting-started/authentication">
+    Create an API key — the only supported credential.
+  </Card>
+  <Card title="Quickstart" href="/docs/getting-started/quickstart">
+    Connect to your controller and list its networks.
+  </Card>
+</Cards>

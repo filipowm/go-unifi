@@ -1,0 +1,144 @@
+---
+title: Errors
+description: The go-unifi error model — ServerError, ValidationError, and the Err sentinels you match with errors.Is and errors.As.
+---
+
+go-unifi returns three kinds of error: **sentinels** you match with `errors.Is`, a structured **`ServerError`** for
+controller-side failures, and a client-side **`ValidationError`** for request bodies rejected before they are sent.
+All returned errors are wrapped with `%w`, so `errors.Is` / `errors.As` see through the wrapping. For the
+task-oriented guide see [Error handling](/docs/guides/error-handling).
+
+## Sentinels
+
+| Sentinel | Meaning |
+| --- | --- |
+| `ErrNotFound` | The resource does not exist (a real HTTP 404, or a single-resource `Get` that returned empty data). List methods return an empty slice and nil error, not `ErrNotFound`. |
+| `ErrOldStyleUnsupported` | `NewClient` targeted a classic (old-style) controller. API-key auth needs UniFi Network **9.0.114+**. |
+| `ErrOfficialAPIUnavailable` | The Official API cannot run against this controller — an old-style (classic) controller, a failed `GET /v1/info` probe (a rejected API key surfaces here), or a version below **10.1.78**. |
+| `ErrOfficialAPIDisabled` | The Official API was opted out via [`ClientConfig.DisableOfficialAPI`](/docs/reference/configuration-types). |
+
+Match them with `errors.Is`:
+
+```go
+func exampleNotFound(ctx context.Context, c unifi.Client) {
+	_, err := c.GetNetwork(ctx, "default", "nonexistent-id")
+	switch {
+	case err == nil:
+		// found
+	case errors.Is(err, unifi.ErrNotFound):
+		fmt.Println("network not found")
+	default:
+		fmt.Println("lookup failed:", err)
+	}
+}
+```
+
+<Callout type="info">
+`ErrNotFound` covers both a genuine HTTP 404 and the "empty result" case: a single-resource `Get` whose lookup
+came back empty. A list endpoint that returns no items is **not** `ErrNotFound` — it yields an empty slice and a
+`nil` error. A `*ServerError` with a 404 status also satisfies `errors.Is(err, unifi.ErrNotFound)`.
+</Callout>
+
+These surface at different points: `ErrOldStyleUnsupported` comes from `NewClient` at construction, while the two
+Official-API sentinels come from the **first `Official()` operation** — the capability gate probes lazily, so they
+never surface from `NewClient`. Classify whichever error you are holding:
+
+```go
+func exampleAPISentinels(err error) {
+	switch {
+	case errors.Is(err, unifi.ErrOldStyleUnsupported):
+		fmt.Println("classic controller; upgrade to 9.0.114+ for API-key auth")
+	case errors.Is(err, unifi.ErrOfficialAPIUnavailable):
+		fmt.Println("controller too old for the Official API (needs 10.1.78+)")
+	case errors.Is(err, unifi.ErrOfficialAPIDisabled):
+		fmt.Println("Official API disabled via DisableOfficialAPI")
+	}
+}
+```
+
+## ServerError
+
+A controller that returns a non-2xx response (or a soft `rc:"error"` envelope on a 200) yields a `*ServerError`.
+It carries the request context and any structured validation details the controller reported.
+
+<TypeTable
+  type={{
+    StatusCode: { description: 'HTTP status code of the response.', type: 'int', default: '' },
+    RequestMethod: { description: 'HTTP method of the failed request.', type: 'string', default: '' },
+    RequestURL: { description: 'Full URL of the failed request.', type: 'string', default: '' },
+    Message: { description: 'Human-readable error message from the controller (or a fallback for non-JSON bodies).', type: 'string', default: '' },
+    ErrorCode: { description: 'Controller-specific error/result code (e.g. the v1 rc value or a v2 code).', type: 'string', default: '' },
+    Details: { description: 'Per-field validation details the controller reported, if any.', type: '[]ServerErrorDetails', default: 'nil' },
+  }}
+/>
+
+`ServerError` implements `error` and an `Is` method so a 404 maps to `ErrNotFound`. Each entry in `Details` is a
+`ServerErrorDetails`:
+
+| Type | Fields |
+| --- | --- |
+| `ServerErrorDetails` | `Message string`, `ValidationError ServerValidationError` |
+| `ServerValidationError` | `Field string`, `Pattern string` |
+
+`Meta` (`RC string`, `Message string`) is a **separate** type — the raw v1 `{ "meta": { "rc", "msg" } }`
+envelope the handler parses — not a field of `Details`.
+
+Reach the structured error with `errors.As`:
+
+```go
+func exampleServerError(ctx context.Context, c unifi.Client) {
+	_, err := c.CreateNetwork(ctx, "default", &unifi.Network{})
+	var serr *unifi.ServerError
+	if errors.As(err, &serr) {
+		fmt.Printf("status=%d code=%s msg=%s\n", serr.StatusCode, serr.ErrorCode, serr.Message)
+		for _, d := range serr.Details {
+			fmt.Printf("  detail=%s field=%s pattern=%s\n",
+				d.Message, d.ValidationError.Field, d.ValidationError.Pattern)
+		}
+	}
+}
+```
+
+See the canonical definitions on
+[`ServerError`](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#ServerError).
+
+## ValidationError
+
+When [`ValidationMode`](/docs/reference/configuration-types#validationmode) is `HardValidation`, a request body that
+fails the built-in struct validation is rejected **before** any HTTP call with a `*ValidationError`. It carries the
+underlying validator error in `Root` (reachable via `Unwrap`) and a per-field map in `Messages`.
+
+| Type | Fields |
+| --- | --- |
+| `ValidationError` | `Root error`, `Messages map[string]string` |
+
+```go
+func exampleValidationError(err error) {
+	var verr *unifi.ValidationError
+	if errors.As(err, &verr) {
+		for field, msg := range verr.Messages {
+			fmt.Printf("%s: %s\n", field, msg)
+		}
+	}
+}
+```
+
+<Callout type="warn">
+`ValidationError` is a **client-side** error (the request never reached the controller); `ServerError` is the
+controller's own rejection. Under the default `SoftValidation` mode, validation failures are only logged — you get
+a `ServerError` instead if the controller rejects the body.
+</Callout>
+
+## See also
+
+<Cards>
+  <Card title="Error handling" href="/docs/guides/error-handling">
+    Task-oriented patterns: retries, not-found handling, and reacting to validation details.
+  </Card>
+  <Card title="Validation" href="/docs/advanced/validation">
+    How struct validation works and how to register custom rules.
+  </Card>
+  <Card title="Client" href="/docs/reference/client">
+    NewClient and the methods that return these errors.
+  </Card>
+</Cards>

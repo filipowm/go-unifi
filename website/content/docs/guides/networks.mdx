@@ -1,0 +1,184 @@
+---
+title: Networks
+description: Create, read, update and delete UniFi networks (VLANs, LANs, WANs) and their related routing, DHCP, DNS and port-forward resources.
+---
+
+A **network** in UniFi is a layer-3 segment — a corporate LAN, a guest VLAN, a WAN uplink or a VPN. On the
+Internal API every network is a [`unifi.Network`](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#Network),
+managed through five methods on the client: `ListNetwork`, `GetNetwork`, `CreateNetwork`, `UpdateNetwork` and
+`DeleteNetwork`.
+
+The snippets below assume you already have a connected client `c` and a `ctx` — see the
+[Quickstart](/docs/getting-started/quickstart) for the full setup. All Internal-API calls take the **site name**
+(`"default"` on a single-site controller) as their first string argument.
+
+## List and inspect networks
+
+```go
+networks, err := c.ListNetwork(ctx, "default")
+if err != nil {
+	panic(err)
+}
+
+for _, n := range networks {
+	fmt.Printf("%-20s purpose=%-10s subnet=%s vlan=%d\n", n.Name, n.Purpose, n.IPSubnet, n.VLAN)
+}
+```
+
+`ListNetwork` returns `[]unifi.Network`. The most useful fields are `Name`, `Purpose` (one of `corporate`,
+`guest`, `wan`, `vlan-only`, `vpn-client`, `remote-user-vpn`, `site-vpn`), `IPSubnet`, `VLAN` and the `DHCPD*`
+options. The struct is large because it mirrors the controller's own model — see the
+[full field list on pkg.go.dev](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#Network).
+
+To fetch a single network by its `_id`, use `GetNetwork`:
+
+```go
+n, err := c.GetNetwork(ctx, "default", id)
+if err != nil {
+	if errors.Is(err, unifi.ErrNotFound) {
+		fmt.Println("no such network")
+		return
+	}
+	panic(err)
+}
+fmt.Printf("%s (%s)\n", n.Name, n.IPSubnet)
+```
+
+## Create a network
+
+This creates an IoT VLAN on subnet `192.168.30.0/24` with its own DHCP scope:
+
+```go
+created, err := c.CreateNetwork(ctx, "default", &unifi.Network{
+	Name:         "IoT",
+	Purpose:      "corporate",
+	NetworkGroup: "LAN",
+	IPSubnet:     "192.168.30.1/24",
+	VLANEnabled:  true,
+	VLAN:         30,
+	Enabled:      true,
+	// Hand out addresses on this subnet.
+	DHCPDEnabled: true,
+	DHCPDStart:   "192.168.30.6",
+	DHCPDStop:    "192.168.30.254",
+})
+if err != nil {
+	panic(err)
+}
+fmt.Printf("created %s with id %s\n", created.Name, created.ID)
+```
+
+`CreateNetwork` returns the server's view of the object, including the generated `ID` and any defaults the
+controller filled in. `IPSubnet` is the gateway address plus its prefix length (`.1/24`), not the bare network
+address.
+
+<Callout type="info">
+`Purpose` is one of a fixed set of values (a regular VLAN uses `corporate`; a guest network uses `guest`),
+enforced by a `validate` struct tag. By default the client validates in **soft** mode — a bad value is logged as
+a warning but the request is still sent, so it surfaces as a `ServerError` (HTTP 400) from the controller. Set
+`ValidationMode: unifi.HardValidation` on the `ClientConfig` to reject invalid structs client-side before the
+request leaves. Format-only fields like `IPSubnet` and `VLAN` carry no `validate` tag and are checked only by the
+controller.
+</Callout>
+
+## Update a network
+
+There is no PATCH — updates are read-modify-write. Fetch the full object, change the fields you care about, and
+send the whole struct back so you don't blank out everything else:
+
+```go
+n, err := c.GetNetwork(ctx, "default", id)
+if err != nil {
+	panic(err)
+}
+
+n.DHCPDStop = "192.168.30.200"
+updated, err := c.UpdateNetwork(ctx, "default", n)
+if err != nil {
+	panic(err)
+}
+fmt.Printf("DHCP range now ends at %s\n", updated.DHCPDStop)
+```
+
+<Callout type="warn">
+Always update the object you got back from `GetNetwork`/`ListNetwork`. Constructing a fresh `unifi.Network` with
+only a couple of fields set and passing it to `UpdateNetwork` will overwrite the rest with zero values.
+</Callout>
+
+## Delete a network
+
+```go
+if err := c.DeleteNetwork(ctx, "default", id); err != nil {
+	panic(err)
+}
+```
+
+`DeleteNetwork` takes the network `ID` (not its name). System networks may be protected — a network with
+`NoDelete: true` cannot be removed.
+
+## Related resources
+
+Several other resources hang off the routing/L3 stack. Each follows the same `List`/`Get`/`Create`/`Update`/`Delete`
+shape and takes the site name first:
+
+| Resource | Methods | What it configures |
+| --- | --- | --- |
+| [`Routing`](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#Routing) | `ListRouting`, `GetRouting`, `CreateRouting`, `UpdateRouting`, `DeleteRouting` | Static routes (next-hop, interface, blackhole) |
+| [`DHCPOption`](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#DHCPOption) | `ListDHCPOption`, `GetDHCPOption`, `CreateDHCPOption`, `UpdateDHCPOption`, `DeleteDHCPOption` | Custom DHCP option definitions |
+| [`DNSRecord`](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#DNSRecord) | `ListDNSRecord`, `GetDNSRecord`, `CreateDNSRecord`, `UpdateDNSRecord`, `DeleteDNSRecord` | Local DNS records (A, AAAA, CNAME, MX, …) |
+| [`DynamicDNS`](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#DynamicDNS) | `ListDynamicDNS`, `GetDynamicDNS`, `CreateDynamicDNS`, `UpdateDynamicDNS`, `DeleteDynamicDNS` | Dynamic-DNS update clients |
+| [`PortForward`](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#PortForward) | `ListPortForward`, `GetPortForward`, `CreatePortForward`, `UpdatePortForward`, `DeletePortForward` | WAN → LAN port-forward rules |
+
+A static route, a local DNS record and a port-forward, created together:
+
+```go
+route, err := c.CreateRouting(ctx, "default", &unifi.Routing{
+	Name:               "to-lab",
+	Type:               "static-route",
+	StaticRouteType:    "nexthop-route",
+	StaticRouteNetwork: "10.0.50.0/24",
+	StaticRouteNexthop: "192.168.1.254",
+	Enabled:            true,
+})
+// ...
+
+rec, err := c.CreateDNSRecord(ctx, "default", &unifi.DNSRecord{
+	Key:        "nas.lan",
+	RecordType: "A",
+	Value:      "192.168.30.10",
+	Enabled:    true,
+})
+// ...
+
+fwd, err := c.CreatePortForward(ctx, "default", &unifi.PortForward{
+	Name:    "https",
+	Enabled: true,
+	Proto:   "tcp",
+	DstPort: "443",
+	Fwd:     "192.168.30.10",
+	FwdPort: "443",
+})
+```
+
+<Callout type="info">
+`GetDNSRecord` filters the full list client-side (the controller exposes no single-record DNS endpoint), so it
+costs a `ListDNSRecord` under the hood. That's transparent, but worth knowing if you fetch records in a tight
+loop — list once and index yourself instead.
+</Callout>
+
+## Next steps
+
+<Cards>
+  <Card title="Clients & users" href="/docs/guides/clients-and-users">
+    Assign clients to the networks you just created, with fixed IPs and user groups.
+  </Card>
+  <Card title="Firewall" href="/docs/guides/firewall">
+    Firewall rules, groups and zones that gate traffic between networks.
+  </Card>
+  <Card title="Error handling" href="/docs/guides/error-handling">
+    Tell ErrNotFound apart from validation and server errors.
+  </Card>
+  <Card title="Sites" href="/docs/guides/sites">
+    Work with more than one site, and where the site name comes from.
+  </Card>
+</Cards>

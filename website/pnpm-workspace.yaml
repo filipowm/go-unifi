@@ -1,0 +1,9 @@
+# Native build scripts are intentionally skipped: the docs site uses unoptimized
+# images (no sharp), esbuild ships a prebuilt platform binary, and vue-demi
+# (transitive via @scalar) is only used client-side. Setting these explicitly to
+# `false` acknowledges them so `pnpm install` exits 0 — otherwise
+# ERR_PNPM_IGNORED_BUILDS makes install exit 1, which breaks `next build`.
+allowBuilds:
+  esbuild: false
+  sharp: false
+  vue-demi: false

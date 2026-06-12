@@ -1,0 +1,259 @@
+---
+title: Wireless
+description: Manage WLANs, AP and WLAN groups, RADIUS profiles, channel plans, and the guest hotspot — including Official-API vouchers and broadcasts.
+---
+
+Wireless configuration spans several Internal-API resources — SSIDs (`WLAN`), the groups that
+scope them (`WLANGroup`, `APGroup`), authentication (`RADIUSProfile`), RF planning
+(`ChannelPlan`), and the guest hotspot (`HotspotOp`, `HotspotPackage`, `Hotspot2Conf`,
+`BroadcastGroup`). Guest **vouchers** and Wi-Fi **broadcasts** also have a modern surface on the
+[Official API](/docs/guides/official-api).
+
+All Internal examples assume a constructed client `c` and a `ctx` — see the
+[Quickstart](/docs/getting-started/quickstart).
+
+## Creating a WLAN (SSID)
+
+A `WLAN` is one SSID. At minimum set a name, a security mode, and the network and user group it
+belongs to. For WPA2-Personal, set `Security: "wpapsk"`, a `WPAMode`, and an `XPassphrase`.
+
+```go
+func exampleWLAN(ctx context.Context, c unifi.Client, networkID, userGroupID string) error {
+	wlan, err := c.CreateWLAN(ctx, "default", &unifi.WLAN{
+		Name:        "Office",
+		Enabled:     true,
+		Security:    "wpapsk", // open | wpapsk | wep | wpaeap | osen
+		WPAMode:     "wpa2",
+		XPassphrase: "super-secret-pass",
+		NetworkID:   networkID,
+		UserGroupID: userGroupID,
+		WLANBands:   []string{"2g", "5g"},
+	})
+	if err != nil {
+		return fmt.Errorf("create wlan: %w", err)
+	}
+
+	wlans, err := c.ListWLAN(ctx, "default")
+	if err != nil {
+		return fmt.Errorf("list wlans: %w", err)
+	}
+	for _, w := range wlans {
+		fmt.Printf("%s (enabled=%v)\n", w.Name, w.Enabled)
+	}
+
+	return c.DeleteWLAN(ctx, "default", wlan.ID)
+}
+```
+
+<Callout type="info">
+`CreateWLAN` initialises an empty `Schedule` for you when you leave it unset. For
+WPA-Enterprise, use `Security: "wpaeap"` and point `RADIUSProfileID` at a profile (below). The
+full field set — band steering, fast roaming, PPSK, MAC filtering, Hotspot 2.0 — is on
+[pkg.go.dev](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#WLAN).
+</Callout>
+
+## WLAN groups and AP groups
+
+A `WLANGroup` bundles SSIDs together; an `APGroup` restricts broadcasting to specific access
+points by MAC. A WLAN references them via `WLANGroupID` and `ApGroupIDs`.
+
+```go
+func exampleWLANGroupAPGroup(ctx context.Context, c unifi.Client) error {
+	wg, err := c.CreateWLANGroup(ctx, "default", &unifi.WLANGroup{Name: "guest-aps"})
+	if err != nil {
+		return fmt.Errorf("create wlan group: %w", err)
+	}
+	_ = wg
+
+	ag, err := c.CreateAPGroup(ctx, "default", &unifi.APGroup{
+		Name:       "lobby",
+		DeviceMACs: []string{"00:11:22:33:44:55"},
+	})
+	if err != nil {
+		return fmt.Errorf("create ap group: %w", err)
+	}
+	_ = ag
+	return nil
+}
+```
+
+## RADIUS profiles
+
+A `RADIUSProfile` holds the authentication and accounting servers used by WPA-Enterprise SSIDs
+and wired 802.1X. Each server is a `RADIUSProfileAuthServers` / `RADIUSProfileAcctServers` entry
+with an IP, port, and shared secret.
+
+```go
+func exampleRADIUSProfile(ctx context.Context, c unifi.Client) error {
+	p, err := c.CreateRADIUSProfile(ctx, "default", &unifi.RADIUSProfile{
+		Name:              "corp-radius",
+		AccountingEnabled: true,
+		AuthServers: []unifi.RADIUSProfileAuthServers{
+			{IP: "10.0.0.10", Port: 1812, XSecret: "shared-secret"},
+		},
+		AcctServers: []unifi.RADIUSProfileAcctServers{
+			{IP: "10.0.0.10", Port: 1813, XSecret: "shared-secret"},
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("create radius profile: %w", err)
+	}
+	// Reference p.ID from a WLAN via WLAN.RADIUSProfileID for WPA-Enterprise.
+	_ = p
+	return nil
+}
+```
+
+## Channel plans
+
+The controller's auto-RF feature produces `ChannelPlan` records — a snapshot of the channel and
+transmit-power assignment computed for each radio. They are read-mostly; list them to inspect a
+plan.
+
+```go
+func exampleChannelPlan(ctx context.Context, c unifi.Client) error {
+	plans, err := c.ListChannelPlan(ctx, "default")
+	if err != nil {
+		return fmt.Errorf("list channel plans: %w", err)
+	}
+	for _, plan := range plans {
+		fmt.Printf("plan %s computed at %s with %d radios\n", plan.ID, plan.Date, len(plan.RadioTable))
+	}
+	return nil
+}
+```
+
+## Guest hotspot
+
+The hotspot/guest portal is built from several resources: a `HotspotOp` operator account staff
+use to manage guests, `HotspotPackage` paid-access tiers, `Hotspot2Conf` (Passpoint / Hotspot
+2.0) profiles, and `BroadcastGroup`s. Each is a standard CRUD resource.
+
+```go
+func exampleHotspot(ctx context.Context, c unifi.Client) error {
+	// An operator account staff use to manage the guest portal.
+	op, err := c.CreateHotspotOp(ctx, "default", &unifi.HotspotOp{
+		Name:      "front-desk",
+		XPassword: "operator-pass",
+	})
+	if err != nil {
+		return fmt.Errorf("create hotspot operator: %w", err)
+	}
+	_ = op
+
+	// A paid-access package offered on the portal.
+	pkg, err := c.CreateHotspotPackage(ctx, "default", &unifi.HotspotPackage{
+		Name:     "1-day",
+		Amount:   5.0,
+		Currency: "USD",
+		Hours:    24,
+	})
+	if err != nil {
+		return fmt.Errorf("create hotspot package: %w", err)
+	}
+	_ = pkg
+
+	// Hotspot 2.0 (Passpoint) profiles and broadcast groups.
+	confs, err := c.ListHotspot2Conf(ctx, "default")
+	if err != nil {
+		return fmt.Errorf("list hotspot 2.0 configs: %w", err)
+	}
+	_ = confs
+
+	bg, err := c.CreateBroadcastGroup(ctx, "default", &unifi.BroadcastGroup{
+		Name:        "all-aps",
+		MemberTable: []string{},
+	})
+	if err != nil {
+		return fmt.Errorf("create broadcast group: %w", err)
+	}
+	_ = bg
+	return nil
+}
+```
+
+## Vouchers and broadcasts on the Official API
+
+Guest **vouchers** and Wi-Fi **broadcasts** also have a first-class surface on the
+[Official API](/docs/guides/official-api), reached via `c.Official()`. Unlike the Internal API,
+the Official surface keys on a site **UUID** — resolve it from the site name with
+`Sites().ResolveID`.
+
+```go
+func exampleVouchers(ctx context.Context, c unifi.Client) error {
+	siteID, err := c.Official().Sites().ResolveID(ctx, "default")
+	if err != nil {
+		return fmt.Errorf("resolve site: %w", err)
+	}
+
+	count := int32(10)
+	result, err := c.Official().Hotspot().CreateVouchers(ctx, siteID, official.HotspotVoucherCreationRequest{
+		Name:             "lobby-guests",
+		Count:            &count,
+		TimeLimitMinutes: 1440, // 24 hours of access per voucher
+	})
+	if err != nil {
+		return fmt.Errorf("create vouchers: %w", err)
+	}
+	if result.Vouchers != nil {
+		for _, v := range *result.Vouchers {
+			fmt.Printf("voucher %s code %s\n", v.Id, v.Code)
+		}
+	}
+
+	// Drain every existing voucher, paging on demand.
+	for v, err := range c.Official().Hotspot().ListVouchersAll(ctx, siteID, "") {
+		if err != nil {
+			return fmt.Errorf("list vouchers: %w", err)
+		}
+		fmt.Println(v.Code)
+	}
+	return nil
+}
+```
+
+`ListVouchersAll` returns a Go 1.23 range-over-func iterator (`iter.Seq2`) that pages on demand
+— `break` out of the loop to stop early without fetching more pages. The `filter` argument
+accepts an Official-API filter expression, or `""` for everything. See
+[Pagination and filtering](/docs/guides/pagination-and-filtering) for the paging helpers
+(`ListVouchersPage`, `official.Collect`).
+
+Wi-Fi broadcasts work the same way — `ListAll` for an iterator, `Get` for a single record by
+its UUID:
+
+```go
+func exampleWifiBroadcasts(ctx context.Context, c unifi.Client, siteID uuid.UUID) error {
+	for b, err := range c.Official().WifiBroadcasts().ListAll(ctx, siteID, "") {
+		if err != nil {
+			return fmt.Errorf("list wifi broadcasts: %w", err)
+		}
+		details, err := c.Official().WifiBroadcasts().Get(ctx, siteID, b.Id)
+		if err != nil {
+			return fmt.Errorf("get wifi broadcast: %w", err)
+		}
+		fmt.Printf("%s enabled=%v\n", details.Name, details.Enabled)
+	}
+	return nil
+}
+```
+
+<Callout type="info">
+The Official surface requires controller **10.1.78** or newer and an API key. The request and
+response models (`HotspotVoucherCreationRequest`, `WifiBroadcastCreateOrUpdate`, …) live in the
+[`official` package](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi/official); the raw
+endpoints are in the [UniFi API reference](/docs/reference/official-api/api).
+</Callout>
+
+## Next steps
+
+<Cards>
+  <Card title="Official API" href="/docs/guides/official-api">
+    Resolve site UUIDs, page through results, and choose between the two surfaces.
+  </Card>
+  <Card title="Pagination and filtering" href="/docs/guides/pagination-and-filtering">
+    Drain iterators, fetch single pages, and apply Official-API filters.
+  </Card>
+  <Card title="Resource reference" href="/docs/reference/internal-api/resources">
+    Every wireless struct and its fields, generated from the controller API.
+  </Card>
+</Cards>

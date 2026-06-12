@@ -1,0 +1,93 @@
+---
+title: Release Process
+description: How go-unifi ships — tag-driven goreleaser, automated CHANGELOG, the version markers, the daily regeneration CI, and the docs deploy.
+---
+
+go-unifi is a Go module, so a "release" is a Git tag: there are no binaries to build. Tagging triggers
+goreleaser to draft the GitHub Release, after which automation backfills the changelog. This page documents the
+pipeline end-to-end.
+
+## Cutting a release
+
+Releases are tag-driven. Pushing a `v*` tag runs `.github/workflows/release.yaml`:
+
+<Steps>
+<Step>
+**goreleaser** runs `release --clean` with an imported GPG key. Because this is a library, `builds` is
+`skip: true` — goreleaser produces the GitHub Release and notes, not artifacts.
+</Step>
+<Step>
+**Changelog backfill** (a dependent job) regenerates the release notes into `CHANGELOG.md` on `main` and pushes
+the commit.
+</Step>
+</Steps>
+
+Before each run, goreleaser's `before.hooks` run `go mod tidy` and `go generate unifi/device.go` so the tagged
+tree is tidy and the stringer is current.
+
+## Changelog generation
+
+The release notes come from the **git history**, filtered and grouped by
+[conventional commit](https://www.conventionalcommits.org/) type in `.goreleaser.yaml`:
+
+| Group | Matches |
+|---|---|
+| 🚨 Breaking Changes | any commit with a `!` marker (`feat!:`, `fix!:`) |
+| 🔒 Security | `security:` |
+| ✨ New Features | `feat:` |
+| 🔧 Bug Fixes | `fix:` |
+| ⚡ Performance | `perf:` |
+
+Maintenance noise is **excluded** from consumer-facing notes: `chore`, `ci`, `docs`, `refactor`, `style`,
+`test`, `build`, `revert`, and the `fix(docs|review|skill|tests)` scopes. Keep this in mind when writing commit
+messages — the type you choose decides whether (and where) a change is published.
+
+<Callout type="info">
+The changelog job pushes to protected `main` using a dedicated **deploy key** (`CHANGELOG_DEPLOY_KEY`). The
+GitHub Actions app cannot bypass branch rulesets on a user-owned repo, so the deploy key is registered as a
+bypass actor. It prepends a dated `## [vX.Y.Z]` section, skips prereleases, and is idempotent (a tag already in
+`CHANGELOG.md` is a no-op).
+</Callout>
+
+PR labels are applied automatically too: `conventional-release.yml` runs on PR open/edit and labels by the
+PR's conventional-commit type, feeding release tooling.
+
+## Version markers
+
+Two marker files at the repo root pin the generated surfaces. They are **written by code generation**, not
+edited by hand, and they track the generated code so a release records exactly which controller/spec versions
+it was built against:
+
+| Marker | Surface | Current |
+|---|---|---|
+| `.unifi-version` | Internal API controller version | `9.5.21` |
+| `.unifi-version-official` | Official OpenAPI spec version | `10.1.78` |
+
+See [Code generation](/docs/developers/code-generation) for the two version axes behind them.
+
+## Daily regeneration
+
+`.github/workflows/generate.yaml` runs on a daily schedule (and on demand). It runs `go generate
+unifi/codegen.go` — one pass that refreshes the committed Official OpenAPI snapshot **and** the Internal
+resources, then folds in the Official models, wrappers, interface, and mock. If anything changed it opens a PR
+titled after the new controller version.
+
+Because the Internal axis is capped at `9.5.21` and both axes are pinned to committed snapshots, this job is
+normally a deterministic **no-op** — it only produces a PR when an input snapshot actually moves.
+
+## Docs deploy
+
+`.github/workflows/docs.yaml` builds this Fumadocs site (`website/`) with pnpm and deploys it to GitHub Pages.
+It runs when `website/**`, the committed OpenAPI spec (`codegen/openapi/**`), or `.unifi-version-official`
+changes — so the API reference republishes automatically whenever a new controller spec lands.
+
+## See also
+
+<Cards>
+  <Card title="Contributing" href="/docs/developers/contributing">
+    Commit conventions that drive the changelog.
+  </Card>
+  <Card title="Code generation" href="/docs/developers/code-generation">
+    The version markers and the daily regen.
+  </Card>
+</Cards>

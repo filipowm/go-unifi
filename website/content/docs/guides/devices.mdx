@@ -1,0 +1,149 @@
+---
+title: Devices
+description: List, inspect, adopt and forget UniFi devices (APs, switches, gateways), and read their connection state.
+---
+
+A **device** is a piece of UniFi hardware managed by the controller — an access point, switch, gateway or
+camera. Each one is a [`unifi.Device`](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#Device), and the
+client exposes the usual CRUD plus two lifecycle actions: `AdoptDevice` and `ForgetDevice`.
+
+The snippets assume a connected client `c` and a `ctx` (see the [Quickstart](/docs/getting-started/quickstart)).
+Every call takes the **site name** (`"default"`) first.
+
+## List devices
+
+```go
+devices, err := c.ListDevice(ctx, "default")
+if err != nil {
+	panic(err)
+}
+
+for _, d := range devices {
+	fmt.Printf("%-18s %-16s model=%-8s state=%s\n", d.Name, d.MAC, d.Model, d.State)
+}
+```
+
+`ListDevice` returns `[]unifi.Device`. Handy fields: `Name`, `MAC`, `Model`, `Type`, `IP`, `Adopted` and
+`State`. The struct carries a great deal more (radios, ports, stats); browse the
+[full type on pkg.go.dev](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#Device).
+
+## Fetch one device — by ID or by MAC
+
+There are two lookups, and they hit **different** endpoints:
+
+```go
+// By the device's _id. This filters the full device list client-side.
+d, err := c.GetDevice(ctx, "default", id)
+if err != nil {
+	if errors.Is(err, unifi.ErrNotFound) {
+		fmt.Println("no such device")
+		return
+	}
+	panic(err)
+}
+
+// By MAC. This hits the device endpoint directly.
+byMAC, err := c.GetDeviceByMAC(ctx, "default", "00:11:22:33:44:55")
+```
+
+<Callout type="info">
+`GetDevice(ctx, site, id)` calls `ListDevice` and scans for a matching `ID`, so it pays for a full list every
+call. `GetDeviceByMAC(ctx, site, mac)` queries the controller directly and is cheaper when you already know the
+MAC. Both return `unifi.ErrNotFound` when nothing matches.
+</Callout>
+
+## Update a device
+
+Like networks, updates are read-modify-write — fetch, mutate, send the whole object back:
+
+```go
+d, err := c.GetDevice(ctx, "default", id)
+if err != nil {
+	panic(err)
+}
+
+d.Name = "Living Room AP"
+updated, err := c.UpdateDevice(ctx, "default", d)
+if err != nil {
+	panic(err)
+}
+fmt.Printf("renamed to %s\n", updated.Name)
+```
+
+## Adopt and forget
+
+`AdoptDevice` and `ForgetDevice` are command actions keyed by **MAC**, not ID. Adopting brings a
+factory-default or pending device under this controller's management; forgetting releases it back to an
+unmanaged state.
+
+```go
+// Pull a newly-seen device into this site.
+if err := c.AdoptDevice(ctx, "default", "00:11:22:33:44:55"); err != nil {
+	panic(err)
+}
+
+// Later: remove it from the controller entirely.
+if err := c.ForgetDevice(ctx, "default", "00:11:22:33:44:55"); err != nil {
+	panic(err)
+}
+```
+
+<Callout type="warn">
+Both calls are asynchronous on the controller side: a successful return means the command was accepted, not that
+adoption has finished. Poll `GetDeviceByMAC` and watch `State` to track progress (`Adopting` → `Provisioning` →
+`Connected`).
+</Callout>
+
+## Device state
+
+`Device.State` is a typed [`unifi.DeviceState`](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#DeviceState)
+enum with a `String()` method, so it prints a readable label and compares cleanly against the constants:
+
+```go
+for _, d := range devices {
+	switch d.State {
+	case unifi.DeviceStateConnected:
+		fmt.Printf("%s is online\n", d.Name)
+	case unifi.DeviceStatePending, unifi.DeviceStateAdopting:
+		fmt.Printf("%s is being adopted\n", d.Name)
+	case unifi.DeviceStateUpgrading, unifi.DeviceStateProvisioning:
+		fmt.Printf("%s is busy (%s)\n", d.Name, d.State)
+	default:
+		fmt.Printf("%s: %s\n", d.Name, d.State) // String() gives "HeartbeatMissed", etc.
+	}
+}
+```
+
+The full set of states:
+
+| Constant | Value | `String()` |
+| --- | --- | --- |
+| `DeviceStateUnknown` | 0 | `Unknown` |
+| `DeviceStateConnected` | 1 | `Connected` |
+| `DeviceStatePending` | 2 | `Pending` |
+| `DeviceStateFirmwareMismatch` | 3 | `FirmwareMismatch` |
+| `DeviceStateUpgrading` | 4 | `Upgrading` |
+| `DeviceStateProvisioning` | 5 | `Provisioning` |
+| `DeviceStateHeartbeatMissed` | 6 | `HeartbeatMissed` |
+| `DeviceStateAdopting` | 7 | `Adopting` |
+| `DeviceStateDeleting` | 8 | `Deleting` |
+| `DeviceStateInformError` | 9 | `InformError` |
+| `DeviceStateAdoptFailed` | 10 | `AdoptFailed` |
+| `DeviceStateIsolated` | 11 | `Isolated` |
+
+## Next steps
+
+<Cards>
+  <Card title="Networks" href="/docs/guides/networks">
+    The VLANs and LANs your devices serve.
+  </Card>
+  <Card title="Wireless" href="/docs/guides/wireless">
+    WLANs and radio settings on your access points.
+  </Card>
+  <Card title="Clients & users" href="/docs/guides/clients-and-users">
+    The client stations connecting through these devices.
+  </Card>
+  <Card title="Error handling" href="/docs/guides/error-handling">
+    React to ErrNotFound and server errors.
+  </Card>
+</Cards>

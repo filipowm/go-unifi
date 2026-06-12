@@ -1,0 +1,13 @@
+{
+  "title": "Reference",
+  "icon": "Braces",
+  "pages": [
+    "client",
+    "configuration-types",
+    "errors",
+    "coverage",
+    "---API surfaces---",
+    "official-api",
+    "internal-api"
+  ]
+}

@@ -1,0 +1,125 @@
+---
+title: Regenerating
+description: The exact commands to regenerate go-unifi — resources, the DeviceState stringer, the moq mock — plus how to refresh a frozen version snapshot.
+---
+
+This is the command reference for regenerating go-unifi's generated code. For *what* the pipeline does, read
+[Code generation](/docs/developers/code-generation) first. A local-only `Makefile` wraps every command below.
+
+## Regenerate everything (canonical)
+
+The one command CI runs — it regenerates **both** surfaces (Internal resources + the Official models, wrappers,
+interface, and mock) from the committed snapshots, offline:
+
+```bash
+go generate unifi/codegen.go
+```
+
+This invokes the directive in `unifi/codegen.go`, which pins both version axes explicitly
+(`-official-spec-version=10.1.78 9.5.21`), so the result is byte-for-byte reproducible. After running it,
+`git diff` should be empty unless a snapshot, template, or `customizations.yml` actually changed.
+
+## Regenerate the DeviceState stringer
+
+`DeviceState` has a generated `String()` method. Regenerate it after changing the enum:
+
+```bash
+go generate unifi/device.go
+```
+
+CI's `stringer` job runs this and fails on any diff.
+
+## The Makefile wrappers
+
+```bash
+make generate              # stringer + resources
+make generate-stringer     # just the DeviceState stringer
+make generate-resources    # just the resource types (VERSION=latest by default)
+```
+
+`make generate-resources` runs the root generator directly:
+
+```bash
+go run ./codegen/ -version-base-dir=./codegen/ -output-dir=./unifi <VERSION>
+```
+
+Override the Internal controller version with `VERSION` (default `latest`, which clamps to the `9.5.21` cap):
+
+```bash
+make generate-resources VERSION=9.3.45
+make generate VERSION=9.3.45     # stringer + resources at that version
+```
+
+<Callout type="info">
+`make generate-resources` does **not** pin `-official-spec-version`, so the Official spec auto-resolves (latest
+when the Internal version predates the Official API). For a fully reproducible regenerate that pins both axes,
+prefer `go generate unifi/codegen.go`.
+</Callout>
+
+## Regenerate the moq mock
+
+`ClientMock` (in `unifi/client_mock.generated.go`) is a [moq](https://github.com/matryer/moq)-generated double
+for the public `Client` interface. Regenerate it after changing the interface:
+
+```bash
+go generate ./unifi/...
+# equivalently:
+go run github.com/matryer/moq@latest -out client_mock.generated.go . Client
+```
+
+<Callout type="warn">
+The `@latest` form needs network access to fetch moq. Offline, run a locally-installed `moq` binary against the
+`unifi` package instead. The `.generated.go` suffix keeps the mock out of the coverage report.
+</Callout>
+
+## Pinning the Official spec version
+
+To generate against a specific Official OpenAPI snapshot independently of the Internal version, pass
+`-official-spec-version`:
+
+```bash
+go run ./codegen/ -version-base-dir=./codegen/ -output-dir=./unifi \
+  -official-spec-version=10.1.78 9.5.21
+```
+
+When the snapshot `codegen/openapi/integration-<ver>.json` is already committed, the generator uses it offline;
+otherwise it downloads and commits it.
+
+## Refreshing a frozen snapshot
+
+The Internal field inputs are frozen at `codegen/v9.5.21/` (a committed snapshot plus a `.gitignore` un-ignore
+rule), which is why daily regeneration is a deterministic no-op. To move to a new Internal snapshot:
+
+<Steps>
+<Step>Remove the old snapshot directory and its `.gitignore` exception.</Step>
+<Step>Run `make generate-resources VERSION=<x>` to download and extract the new field JSONs.</Step>
+<Step>Re-add the `!/codegen/v<x>/` `.gitignore` exception so the new snapshot is committed.</Step>
+<Step>Bump the version in `unifi/codegen.go` and `.unifi-version`.</Step>
+<Step>Regenerate (`go generate unifi/codegen.go`) and review the golden diff.</Step>
+</Steps>
+
+Refreshing the **Official** spec is simpler: bump the version in the `unifi/codegen.go` directive (or pass
+`-official-spec-version`), regenerate to download and commit the new `integration-<ver>.json`, and verify the
+diff.
+
+## Verify before committing
+
+```bash
+go build ./...
+go generate unifi/codegen.go && git diff --exit-code   # mirrors CI's test-codegen
+make check                                              # build + lint + test
+```
+
+## See also
+
+<Cards>
+  <Card title="Code generation" href="/docs/developers/code-generation">
+    The pipeline behind these commands.
+  </Card>
+  <Card title="Customizations" href="/docs/developers/customizations">
+    Edit customizations.yml, then regenerate.
+  </Card>
+  <Card title="Testing" href="/docs/developers/testing">
+    The golden/determinism tests that guard generation.
+  </Card>
+</Cards>

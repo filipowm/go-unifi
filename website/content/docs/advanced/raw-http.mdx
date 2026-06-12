@@ -1,0 +1,145 @@
+---
+title: Raw HTTP calls
+description: Reach UniFi endpoints that have no generated method using Do/Get/Post/Put/Patch/Delete, with correct path resolution.
+---
+
+Most resources have a typed method (`ListNetwork`, `CreateUser`, …). When an endpoint isn't covered — a brand-new
+controller feature, a niche setting, or an Official endpoint without a wrapper yet — the client exposes generic
+HTTP helpers. They handle URL building, JSON marshaling, authentication, interceptors, error handling, and
+response decoding for you, so you only supply a path and your own request/response types.
+
+## The helpers
+
+| Method | Does |
+| --- | --- |
+| `Do(ctx, method, path, reqBody, respBody)` | The core call: any HTTP method. The rest wrap it. |
+| `Get(ctx, path, reqBody, respBody)` | HTTP GET. |
+| `Post(ctx, path, reqBody, respBody)` | HTTP POST. |
+| `Put(ctx, path, reqBody, respBody)` | HTTP PUT. |
+| `Patch(ctx, path, reqBody, respBody)` | HTTP PATCH (partial update). |
+| `Delete(ctx, path, reqBody, respBody)` | HTTP DELETE. |
+
+`reqBody` is marshaled to JSON (pass `nil` for none); `respBody` is decoded from the JSON response (pass `nil`
+to ignore it). Both are `any`, so use anonymous structs or any existing `unifi` type. See the full signatures on
+[pkg.go.dev](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#Client).
+
+## Path resolution
+
+The `path` argument follows one rule (`buildRequestURL`):
+
+- **No leading slash (site-relative):** the path is joined under the controller's primary API prefix. On
+  new-style (UniFi OS) controllers — the **only** style supported in 2.0.0 — that prefix is
+  `/proxy/network/api`. So `"s/default/rest/networkconf"` becomes
+  `/proxy/network/api/s/default/rest/networkconf`.
+- **Leading slash or absolute URL:** used **as-is**, bypassing the prefix entirely. Use this only for paths
+  outside the standard API tree.
+
+<Callout type="warn">
+The classic `/api/...` form that worked on old-style controllers **does not work** on new-style controllers —
+use the site-relative form instead. Old-style (classic) controllers aren't supported at all in 2.0.0; the client
+[fails fast](/docs/advanced/compatibility) on them.
+</Callout>
+
+### Reading a resource
+
+```go
+var resp struct {
+    Meta unifi.Meta      `json:"meta"`
+    Data []unifi.Network `json:"data"`
+}
+// No leading slash => joined under /proxy/network/api on a new-style controller.
+if err := c.Get(ctx, "s/default/rest/networkconf", nil, &resp); err != nil {
+    log.Fatalf("raw get: %v", err)
+}
+for _, n := range resp.Data {
+    log.Printf("%s", n.Name)
+}
+```
+
+Legacy Internal endpoints wrap their payload in a `{ "meta": {...}, "data": [...] }` envelope, so decode into a
+struct with `Meta` and `Data` fields. [`unifi.Meta`](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#Meta)
+carries the `rc`/`msg` status — and the client already turns an `rc: "error"` envelope into a returned error for
+you, so a successful call means `Data` is populated.
+
+### Creating a resource
+
+```go
+payload := struct {
+    Name    string `json:"name"`
+    Purpose string `json:"purpose"`
+}{Name: "iot", Purpose: "corporate"}
+
+var resp struct {
+    Meta unifi.Meta      `json:"meta"`
+    Data []unifi.Network `json:"data"`
+}
+if err := c.Post(ctx, "s/default/rest/networkconf", payload, &resp); err != nil {
+    log.Fatalf("raw post: %v", err)
+}
+```
+
+## The v2 API tree
+
+Some newer resources (firewall zones, zone policies, AP groups, …) live under the **v2** API tree at
+`/proxy/network/v2/api`. Rather than hard-coding that, use the exported `unifi.NewStyleAPI.ApiV2Path` constant.
+Because the result starts with a slash, it is sent as-is:
+
+```go
+var zones []struct {
+    ID   string `json:"_id"`
+    Name string `json:"name"`
+}
+// Leading slash => used as-is, bypassing the primary API prefix.
+path := unifi.NewStyleAPI.ApiV2Path + "/site/default/firewall/zone"
+if err := c.Get(ctx, path, nil, &zones); err != nil {
+    log.Fatalf("list zones: %v", err)
+}
+```
+
+v2 responses are typically bare (no `meta`/`data` envelope), so decode directly into your target type.
+
+## Reaching the Official API by hand
+
+The Official UniFi OpenAPI lives under `/proxy/network/integration/v1`. Most of it is already wrapped by the
+fluent [`c.Official()`](/docs/guides/official-api) surface — prefer that. But you can hit any path directly with
+an absolute (leading-slash) path. A few Official endpoints (e.g. firewall policies) accept `PATCH` for partial
+updates; most — including networks — use `PUT`:
+
+```go
+patch := struct {
+    Name string `json:"name"`
+}{Name: "updated-name"}
+
+var resp struct {
+    ID   string `json:"id"`
+    Name string `json:"name"`
+}
+// Firewall policies are the one Official resource that accepts PATCH.
+path := "/proxy/network/integration/v1/sites/<site-id>/firewall/policies/<policy-id>"
+if err := c.Patch(ctx, path, patch, &resp); err != nil {
+    log.Fatalf("patch: %v", err)
+}
+```
+
+<Callout type="warn">
+`Patch` sends a literal HTTP `PATCH`. Only a few Official `integration/v1` endpoints (e.g. firewall policies)
+accept it — most, including Official networks, require a full `PUT`, as do legacy Internal REST resources (e.g.
+`networkconf`). Use `Put` for those, sending the complete object.
+</Callout>
+
+## See also
+
+<Cards>
+  <Card title="Official API" href="/docs/guides/official-api">
+    The fluent, typed surface for `integration/v1`.
+  </Card>
+  <Card title="UniFi API Reference" href="/docs/reference/official-api/api">
+    The Official OpenAPI rendered endpoint-by-endpoint.
+  </Card>
+  <Card title="Error handling" href="/docs/guides/error-handling">
+    `ServerError`, `ErrNotFound`, and how failures surface.
+  </Card>
+  <Card title="Interceptors" href="/docs/advanced/interceptors">
+    Observe or modify the raw requests these helpers send.
+  </Card>
+</Cards>

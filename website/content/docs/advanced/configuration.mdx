@@ -1,0 +1,189 @@
+---
+title: Configuration
+description: Tune ClientConfig beyond URL and APIKey — timeouts, User-Agent, custom HTTP transports, error handling, and custom validators.
+---
+
+Every client is built from a [`*unifi.ClientConfig`](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#ClientConfig).
+Only `URL` and `APIKey` are required (see the [Quickstart](/docs/getting-started/quickstart) and
+[Connecting](/docs/getting-started/connecting)). This page covers the fields you reach for when the defaults
+aren't enough.
+
+<TypeTable
+  type={{
+    Timeout: {
+      description: 'Per-request hard cap. Zero means no timeout — requests can hang forever.',
+      type: 'time.Duration',
+      default: '0 (unset)',
+    },
+    UserAgent: {
+      description: 'User-Agent header sent on every request.',
+      type: 'string',
+      default: 'go-unifi/<version>',
+    },
+    HttpTransportCustomizer: {
+      description: 'Mutate the default *http.Transport (idle conns, TLS, proxy).',
+      type: 'func(*http.Transport) (*http.Transport, error)',
+      default: 'nil',
+    },
+    HttpRoundTripperProvider: {
+      description: 'Replace the entire transport. Takes precedence; you own TLS.',
+      type: 'func() http.RoundTripper',
+      default: 'nil',
+    },
+    ErrorHandler: {
+      description: 'Custom mapping from an HTTP response to an error.',
+      type: 'ResponseErrorHandler',
+      default: 'default handler',
+    },
+    CustomValidators: {
+      description: 'Extra request-body validation rules.',
+      type: '[]CustomValidator',
+      default: 'nil',
+    },
+  }}
+/>
+
+For the full, exhaustive field list — including `SkipVerifySSL`, `ValidationMode`, `APIStyle`, `Logger`,
+`SkipSystemInfo`, and `DisableOfficialAPI` — see [Reference > Configuration Types](/docs/reference/configuration-types).
+
+## Timeout
+
+`Timeout` bounds how long the client waits for a controller response, end to end. The zero value means **no
+timeout** — a slow or unreachable controller can hang a goroutine indefinitely — so the client logs a `WARN` at
+build time when it is unset. Set one for any production deployment:
+
+```go
+c, err := unifi.NewClient(&unifi.ClientConfig{
+    URL:     "https://unifi.example.com",
+    APIKey:  "your-api-key",
+    Timeout: 30 * time.Second,
+})
+```
+
+Each call still takes a `context.Context` first, so you can additionally bound an individual request with
+`context.WithTimeout`. The tighter of the two deadlines wins.
+
+## User-Agent
+
+`UserAgent` overrides the header sent on every request. When unset, the client derives a default from its own
+module version (`go-unifi/<version>`):
+
+```go
+c, err := unifi.NewClient(&unifi.ClientConfig{
+    URL:       "https://unifi.example.com",
+    APIKey:    "your-api-key",
+    UserAgent: "my-app/1.0",
+})
+```
+
+## Customizing the HTTP transport
+
+There are two ways to shape the underlying `*http.Client`. You normally use one or the other; if both are set,
+`HttpRoundTripperProvider` takes precedence (see the note below):
+
+- **`HttpTransportCustomizer`** — receives the client's pre-built `*http.Transport` so you can tweak it (idle
+  connection limits, proxy, TLS) and return it (or return a fresh one).
+- **`HttpRoundTripperProvider`** — returns a complete `http.RoundTripper`, replacing the transport entirely.
+  Use this when an `*http.Transport` isn't enough (custom round-trippers, tracing wrappers, body rewriting).
+
+```go title="HttpTransportCustomizer"
+c, err := unifi.NewClient(&unifi.ClientConfig{
+    URL:    "https://unifi.example.com",
+    APIKey: "your-api-key",
+    HttpTransportCustomizer: func(t *http.Transport) (*http.Transport, error) {
+        t.MaxIdleConns = 50
+        t.IdleConnTimeout = 120 * time.Second
+        t.TLSClientConfig = &tls.Config{MinVersion: tls.VersionTLS12}
+        return t, nil
+    },
+})
+```
+
+```go title="HttpRoundTripperProvider"
+c, err := unifi.NewClient(&unifi.ClientConfig{
+    URL:    "https://unifi.example.com",
+    APIKey: "your-api-key",
+    HttpRoundTripperProvider: func() http.RoundTripper {
+        // You own the entire transport here, including TLS config.
+        return &http.Transport{
+            TLSClientConfig: &tls.Config{MinVersion: tls.VersionTLS12},
+        }
+    },
+})
+```
+
+<Callout type="warn">
+**Precedence and TLS.** If both are set, `HttpRoundTripperProvider` wins — unless it returns `nil`, in which
+case the client falls back to a default transport and applies `HttpTransportCustomizer`. When the provider
+supplies the transport, **TLS is entirely yours**: the client does no certificate validation and the
+`SkipVerifySSL` flag is ignored. The client logs a `WARN` at build time as a reminder. For self-signed certs
+without a custom transport, set [`SkipVerifySSL: true`](/docs/getting-started/connecting) instead.
+</Callout>
+
+## Custom error handling
+
+By default the client maps non-2xx responses to a [`*unifi.ServerError`](/docs/guides/error-handling). To change
+that mapping — for example to fail on any 4xx/5xx before the SDK inspects the body — implement
+`ResponseErrorHandler` and set `ErrorHandler`:
+
+```go
+type statusErrorHandler struct{}
+
+func (h *statusErrorHandler) HandleError(resp *http.Response) error {
+    if resp.StatusCode >= 400 {
+        return fmt.Errorf("controller returned HTTP %d", resp.StatusCode)
+    }
+    return nil
+}
+
+c, err := unifi.NewClient(&unifi.ClientConfig{
+    URL:          "https://unifi.example.com",
+    APIKey:       "your-api-key",
+    ErrorHandler: &statusErrorHandler{},
+})
+```
+
+<Callout type="info">
+`HandleError` runs **after** response interceptors and **before** the response body is decoded. Returning a
+non-nil error short-circuits decoding and surfaces straight to the caller. See [Interceptors](/docs/advanced/interceptors)
+for the full request/response order, and [Error handling](/docs/guides/error-handling) for the default
+`ServerError` shape.
+</Callout>
+
+## Custom validators
+
+The client validates request bodies before sending them (see [Validation](/docs/advanced/validation) for the
+`ValidationMode` settings). `CustomValidators` registers additional rules on top of the built-in set. Each
+validator's tag becomes a [`go-playground/validator`](https://pkg.go.dev/github.com/go-playground/validator/v10)
+tag name; `NewCustomRegexValidator` builds a regex-backed one:
+
+```go
+c, err := unifi.NewClient(&unifi.ClientConfig{
+    URL:            "https://unifi.example.com",
+    APIKey:         "your-api-key",
+    ValidationMode: unifi.HardValidation,
+    CustomValidators: []unifi.CustomValidator{
+        unifi.NewCustomRegexValidator("vlan_name", `^[a-z][a-z0-9-]{0,31}$`),
+    },
+})
+```
+
+The tag is then usable in a `validate:"..."` struct tag on any field you marshal through the raw
+[`Do`/`Post`/`Put`](/docs/advanced/raw-http) helpers.
+
+## See also
+
+<Cards>
+  <Card title="Configuration Types (Reference)" href="/docs/reference/configuration-types">
+    Every `ClientConfig` field, documented field-by-field.
+  </Card>
+  <Card title="Interceptors" href="/docs/advanced/interceptors">
+    Hook into requests and responses.
+  </Card>
+  <Card title="Logging" href="/docs/advanced/logging">
+    The `Logger` field and log levels.
+  </Card>
+  <Card title="Connecting" href="/docs/getting-started/connecting">
+    TLS verification, `SkipVerifySSL`, and the basics.
+  </Card>
+</Cards>

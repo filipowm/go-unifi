@@ -1,0 +1,21 @@
+{
+  "title": "Guides",
+  "icon": "BookOpen",
+  "pages": [
+    "choosing-a-surface",
+    "official-api",
+    "pagination-and-filtering",
+    "sites",
+    "networks",
+    "devices",
+    "clients-and-users",
+    "firewall",
+    "wireless",
+    "settings",
+    "feature-flags",
+    "file-uploads",
+    "traffic-flows",
+    "error-handling",
+    "testing"
+  ]
+}

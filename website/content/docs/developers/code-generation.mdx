@@ -1,0 +1,150 @@
+---
+title: Code Generation
+description: The two-pass codegen pipeline — the legacy Internal API and the Official OpenAPI surface — and the two independent version axes that pin them.
+---
+
+A single `go generate` produces all of go-unifi's `*.generated.go` files. Under the hood it runs **two
+passes** over **two independent inputs**, pinned by **two version markers**. This page explains the moving
+parts; for the exact commands to run, see [Regenerating](/docs/developers/regenerating).
+
+## One command, two passes
+
+The root generator (`codegen/main.go`, package `main`) orchestrates everything. Its `generate()` function
+resolves versions, makes the inputs available, runs both passes, and writes the version artifacts.
+
+<Steps>
+<Step>
+**Internal pass** — `codegen/internal` (`internal.Generate`). Reads the controller's field-definition JSONs
+and emits `unifi/<resource>.generated.go` (resource structs + private CRUD) and `unifi/client.generated.go`
+(the `Client`/`InternalClient` interfaces). Hand-maintained `v2/` definitions render through a dedicated
+template.
+</Step>
+<Step>
+**Official pass** — `codegen/official` (`runOfficialPass`). Reads the committed OpenAPI snapshot and emits the
+whole `unifi/official/` surface: the oapi-codegen models, the per-tag fluent wrappers, the `Client` interface,
+and the per-group mocks.
+</Step>
+<Step>
+**Version artifacts** — root writes `unifi/version.generated.go` plus both markers (`.unifi-version` and
+`.unifi-version-official`) so the generated code and the markers always move together.
+</Step>
+</Steps>
+
+### Why the Official pass is a separate module
+
+`codegen/official` carries its **own** `go.mod`. The root generator shells out to it as a subprocess
+(`go run .`) rather than importing it. That keeps the heavy `oapi-codegen` / `kin-openapi` toolchain out of the
+**published** `go.mod` graph — consumers of the library never pull those in. The subprocess runs with
+`GOFLAGS=-buildvcs=false` and reads the committed spec offline.
+
+```text
+codegen/main.go  (package main, root module)
+├── codegen/internal      Internal-API pass (in-process)
+│     └── unifi/*.generated.go, unifi/client.generated.go
+└── codegen/official      Official-API pass (separate go.mod, shelled out via `go run .`)
+      └── unifi/official/*.generated.go
+```
+
+## Two inputs, both committed snapshots
+
+Both passes read from **committed snapshots**, so generation is deterministic and fully offline by default. No
+controller download is needed for a normal regenerate.
+
+| Pass | Input | Committed location |
+|---|---|---|
+| Internal | Controller field-definition JSONs (extracted from the UniFi Network Application package) | `codegen/v<version>/` (e.g. `codegen/v9.5.21/`) |
+| Official | UniFi OpenAPI (`integration/v1`) spec | `codegen/openapi/integration-<version>.json` |
+
+The Internal field snapshot is **frozen** at `codegen/v9.5.21/` (committed, with a matching `.gitignore`
+un-ignore rule). Because the inputs are committed, the daily regeneration CI is a deterministic no-op unless a
+snapshot or template actually changes.
+
+<Callout type="info">
+If a committed snapshot is missing, the generator falls back to downloading it. `download.go` is the **only**
+remote-ingest point — HTTPS with Ubiquiti-host pinning, atomic extraction, and size caps. A package that
+predates the Official API (no `integration.json`) is skipped with a warning so the Internal pass never
+regresses.
+</Callout>
+
+## Two version axes
+
+The Internal and Official surfaces version **independently**. Each has its own marker file at the repo root and
+its own resolver in `codegen/version.go`.
+
+<TypeTable
+  type={{
+    '.unifi-version': {
+      description: 'Internal-API controller version. Capped at the classic-controller EOL; resolved by resolveInternalVersion.',
+      type: 'marker file',
+      default: '9.5.21',
+    },
+    '.unifi-version-official': {
+      description: 'Official OpenAPI spec version. Floor of 10.1.78; resolved by resolveOfficialSpecVersion.',
+      type: 'marker file',
+      default: '10.1.78',
+    },
+  }}
+/>
+
+### The Internal axis is capped at 9.5.21
+
+`9.5.21` is the **last** UniFi Network Application release that ships the internal `api/fields/*.json`
+definitions. Newer Network Application packages (`10.x` and later) dropped those files, so there is nothing to
+generate Internal resources from beyond this point — the legacy field-definition format is end-of-life there.
+(`9.5.21` and `10.x` are Network Application versions, unrelated to the console's UniFi OS version.)
+`resolveInternalVersion` enforces the cap:
+
+- `latest` resolves the newest release, then **clamps** to `min(resolved, 9.5.21)`.
+- An explicit version `≤ 9.5.21` is used as-is.
+- An explicit version `> 9.5.21` **fails loudly**, pointing you at the Official OpenAPI surface instead.
+
+### The Official axis floors at 10.1.78
+
+`10.1.78` is the first controller whose package ships `integration.json` (the Official OpenAPI spec).
+`resolveOfficialSpecVersion` decouples this from the Internal version: when set explicitly it uses exactly that
+version; otherwise it reuses the Internal version if it is `≥ 10.1.78`, and falls back to the latest release
+when the Internal version predates the Official API.
+
+The committed `go generate` directive pins **both** axes explicitly, so the canonical regenerate is fully
+reproducible:
+
+```go title="unifi/codegen.go"
+//go:generate go run ../codegen/ -version-base-dir=../codegen/ -official-spec-version=10.1.78 9.5.21
+```
+
+## Generator flags
+
+The root generator (`go run ./codegen [OPTIONS] <version>`) accepts:
+
+| Flag | Description | Default |
+|---|---|---|
+| `-version-base-dir` | Base directory for version JSON files (and the `openapi/` snapshot dir) | `.` |
+| `-output-dir` | Output directory for the generated Go code | `.` |
+| `-official-spec-version` | Pin the Official OpenAPI spec version (e.g. `10.1.78`). Empty = auto-select | _(empty)_ |
+| `-download-only` | Only fetch/build the input JSONs; do not generate | `false` |
+| `-debug` | Enable debug logging | `false` |
+| `-trace` | Enable trace logging (takes precedence over `-debug`) | `false` |
+
+The positional `<version>` argument is the Internal controller version (`latest` by default).
+
+## What guards it
+
+CI re-runs generation and fails if the working tree is not byte-identical:
+
+- `test-codegen` runs `go generate unifi/codegen.go`, then `git diff --exit-code`.
+- `test-codegen-official` runs the `codegen/official` module's own test suite.
+- The Official pass is additionally guarded by determinism / committed-surface tests in the `codegen/official`
+  module (`TestSurfaceMatchesCommitted`, `TestSurfaceDeterministic`).
+- The generated models carry a round-trip test, `models_roundtrip_test.go`, which lives in the generated
+  `unifi/official` package (not the `codegen/official` module) and runs under the normal `go test ./...` suite.
+
+## See also
+
+<Cards>
+  <Card title="Customizations" href="/docs/developers/customizations">
+    How customizations.yml steers the Internal pass.
+  </Card>
+  <Card title="Regenerating" href="/docs/developers/regenerating">
+    The exact commands and the snapshot-refresh procedure.
+  </Card>
+</Cards>

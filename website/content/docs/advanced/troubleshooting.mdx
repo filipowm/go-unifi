@@ -1,0 +1,129 @@
+---
+title: Troubleshooting
+description: Common symptoms — TLS failures, version mismatches, JSON decode errors and validation rejections — and how to fix them.
+---
+
+This page collects the failures people hit most often, the symptom you actually see, and the fix. When in doubt,
+turn the logger up to `Trace` (see [Logging](/docs/advanced/logging)) to watch URL building, interceptors, and
+decoding.
+
+## Connection and TLS
+
+<Accordions type="single">
+<Accordion title="x509: certificate signed by unknown authority">
+Your controller presents a self-signed certificate and `NewClient` fails its eager system-info round-trip with a
+TLS error. TLS verification is **on by default** in 2.0.0. For a self-signed controller cert, opt out with
+`SkipVerifySSL`:
+
+```go title="self-signed.go"
+c, err := unifi.NewClient(&unifi.ClientConfig{
+	URL:           "https://unifi.example.com",
+	APIKey:        "your-api-key",
+	SkipVerifySSL: true,
+})
+```
+
+Disabling verification logs a WARN on every client build. The more secure fix is to trust the controller's CA in
+your system or process trust store and leave `SkipVerifySSL` false. See
+[Connecting to your controller](/docs/getting-started/connecting).
+</Accordion>
+
+<Accordion title="The request hangs and never returns">
+`Timeout` defaults to zero, meaning **no timeout** — a slow or unreachable controller can hang a request
+indefinitely. The client logs a WARN at build time when `Timeout` is unset. Set one (30s is a reasonable
+default), and use a per-call `context.Context` deadline for finer control:
+
+```go
+unifi.NewClient(&unifi.ClientConfig{URL: "...", APIKey: "...", Timeout: 30 * time.Second})
+```
+</Accordion>
+</Accordions>
+
+## Version mismatches
+
+<Accordions type="single">
+<Accordion title="ErrOldStyleUnsupported at NewClient">
+You pointed the client at an **old-style (classic)** controller. API-key authentication — the only auth in
+2.0.0 — requires a new-style (UniFi OS) controller, so the client fails fast on a classic (old-style) one.
+There is no workaround other than upgrading the controller. A *new-style* controller below `9.0.114` is still
+detected as new-style and instead surfaces an authentication error from the eager system-info call, not this
+sentinel. See [Authentication](/docs/getting-started/authentication) and the
+[compatibility matrix](/docs/advanced/compatibility).
+</Accordion>
+
+<Accordion title="ErrOfficialAPIUnavailable from c.Official()">
+The Official OpenAPI surface (`c.Official()`) needs controller `10.1.78` or newer. On older controllers the
+capability probe fails and Official operations return `ErrOfficialAPIUnavailable`. The Internal surface
+(resource methods directly on the client) still works down to `9.0.114`. If you deliberately don't use the
+Official API, set `DisableOfficialAPI: true` — Official calls then fail fast with `ErrOfficialAPIDisabled` and the
+probe is skipped entirely.
+</Accordion>
+
+<Accordion title="A field is missing, renamed, or has a surprising value">
+The Internal resource types are **generated** from a frozen controller snapshot (`9.5.21` for 2.0.0). A field
+your controller version returns may not exist on the struct yet, or may have moved between releases — see the
+[compatibility changelog](/docs/advanced/compatibility) for known moves (e.g. IPS DNS-filtering fields relocating
+into `ContentFiltering`). If a field you need is genuinely absent, reach it with a
+[raw request](/docs/advanced/raw-http) and consider opening an issue.
+</Accordion>
+</Accordions>
+
+## JSON decode errors
+
+The controller is loose about scalar types: the same field can arrive as a number, a quoted string, an empty
+string, `null`, or a word like `"auto"` / `"enabled"` depending on firmware. The library smooths this over with
+custom unmarshalers in `unifi/json.go`:
+
+- **`numberOrString`** — accepts a JSON number *or* a string (e.g. a radio `channel` of `36` or `"auto"`), and
+  maps `""`/`null` to the empty string.
+- **`emptyStringInt`** — accepts an int that the controller sometimes sends as `""`; decodes empty/`null` to `0`
+  and marshals `0` back as `""` to round-trip cleanly.
+- **`booleanishString`** — tolerates `true`/`false`, `"enabled"`/`"disabled"`, `"1"`/`"0"`, and empty/`null`,
+  collapsing them to a bool (used by fields like `Device.LtePoe`).
+
+These are applied automatically on the affected fields, so you normally never see them. If you *do* hit an error
+like `json: cannot unmarshal string into Go struct field … of type int`, it usually means the controller sent a
+shape a field doesn't yet tolerate — a sign the generated types have drifted from your firmware. Capture the raw
+response (a body-logging `HttpRoundTripperProvider`, see [Interceptors](/docs/advanced/interceptors)) and
+[open an issue](https://github.com/filipowm/go-unifi/issues) with the payload.
+
+<Callout type="warn">
+Don't read `resp.Body` inside an `InterceptResponse` — the body is decoded *after* interceptors run, and draining
+it yields a silently zero-valued result. Use an `HttpRoundTripperProvider` to buffer and restore the body safely.
+</Callout>
+
+## Validation rejections
+
+In `HardValidation` mode a write can fail locally before it ever reaches the controller, surfacing a
+`*unifi.ValidationError`. The generated `validate` tags come from the controller's own API definitions and are
+occasionally **stricter** than a given firmware actually enforces.
+
+If you're confident a value is valid for your controller, you have two mitigations:
+
+- Switch to the default `SoftValidation` — the field is logged as a WARN but the request is still sent.
+- Use `DisableValidation` to skip validation entirely (last resort):
+
+```go title="disable-validation.go"
+c, err := unifi.NewClient(&unifi.ClientConfig{
+	URL:            "https://unifi.example.com",
+	APIKey:         "your-api-key",
+	ValidationMode: unifi.DisableValidation,
+})
+```
+
+See [Validation](/docs/advanced/validation) for inspecting `ValidationError.Messages` and registering custom
+validators.
+
+## Still stuck?
+
+<Cards>
+  <Card title="Logging" href="/docs/advanced/logging">
+    Turn the level up to Trace to see exactly what the client does.
+  </Card>
+  <Card title="Error handling" href="/docs/guides/error-handling">
+    Sentinels and ServerError — what each failure means.
+  </Card>
+  <Card title="Raw HTTP" href="/docs/advanced/raw-http">
+    Reach endpoints the typed methods don't cover.
+  </Card>
+</Cards>
