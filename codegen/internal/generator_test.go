@@ -5,8 +5,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/sirupsen/logrus"
-	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -103,8 +101,7 @@ func TestGenerateCode_InjectedV2BaseDir(t *testing.T) {
 	require.NoError(t, os.WriteFile(filepath.Join(fieldsDir, "Widget.json"), []byte(`{"name": ".{0,32}"}`), 0o644))  //nolint:gosec
 	require.NoError(t, os.WriteFile(filepath.Join(v2BaseDir, "Gadget.json"), []byte(`{"label": ".{0,32}"}`), 0o644)) //nolint:gosec
 
-	logger, hook := test.NewNullLogger()
-	logger.SetLevel(logrus.DebugLevel)
+	logger, records := newCaptureLogger()
 
 	err := generateCode(fieldsDir, v2BaseDir, outDir, CodeCustomizer{}, logger)
 	require.NoError(t, err)
@@ -116,7 +113,7 @@ func TestGenerateCode_InjectedV2BaseDir(t *testing.T) {
 	}
 
 	// The injected logger (not the package global) captured the pipeline output.
-	entries := hook.AllEntries()
+	entries := records()
 	debugMsgs := make([]string, 0, len(entries))
 	for _, e := range entries {
 		debugMsgs = append(debugMsgs, e.Message)

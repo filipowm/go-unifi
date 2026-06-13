@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
 	"net/url"
 	"os"
 	"os/exec"
@@ -11,34 +12,35 @@ import (
 	"testing"
 
 	"github.com/filipowm/go-unifi/v2/codegen/internal"
+	"github.com/filipowm/go-unifi/v2/codegen/shared"
 	"github.com/hashicorp/go-version"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-// TestSetupLogging asserts the level mapping on the logger RETURNED by
-// setupLogging. setupLogging no longer mutates the package-global logger (it
-// returns a fresh instance the CLI injects), so this test is now fully
-// parallel-safe and shares no state with any other test.
+// TestSetupLogging asserts the debug/trace flags map to the right slog.Level.
+// setupLogging returns a fresh slog-backed Logger the CLI injects (it never
+// mutates the package global), so this test is fully parallel-safe and shares
+// no state with any other test.
 func TestSetupLogging(t *testing.T) {
 	t.Parallel()
 
 	cases := map[string]struct {
 		debug, trace bool
-		want         logrus.Level
+		want         slog.Level
 	}{
-		"default is info":       {debug: false, trace: false, want: logrus.InfoLevel},
-		"debug enables debug":   {debug: true, trace: false, want: logrus.DebugLevel},
-		"trace enables trace":   {debug: false, trace: true, want: logrus.TraceLevel},
-		"trace wins over debug": {debug: true, trace: true, want: logrus.TraceLevel},
+		"default is info":       {debug: false, trace: false, want: slog.LevelInfo},
+		"debug enables debug":   {debug: true, trace: false, want: slog.LevelDebug},
+		"trace enables trace":   {debug: false, trace: true, want: shared.LevelTrace},
+		"trace wins over debug": {debug: true, trace: true, want: shared.LevelTrace},
 	}
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			l := setupLogging(tc.debug, tc.trace)
-			assert.Equal(t, tc.want, l.Level)
+			assert.Equal(t, tc.want, logLevel(tc.debug, tc.trace))
+			// setupLogging builds a usable Logger at that level.
+			require.NotNil(t, setupLogging(tc.debug, tc.trace))
 		})
 	}
 }

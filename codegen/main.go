@@ -5,6 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"os"
@@ -14,7 +15,6 @@ import (
 
 	"github.com/filipowm/go-unifi/v2/codegen/internal"
 	"github.com/filipowm/go-unifi/v2/codegen/shared"
-	"github.com/sirupsen/logrus"
 )
 
 // Logger is an alias for shared.Logger so existing root code (options, tests)
@@ -26,7 +26,7 @@ type Logger = shared.Logger
 // generate() calls thread an injected logger instead, so the global
 // is only the CLI fallback — it is no longer the only sink, which is what made
 // the previous output-asserting tests racy and forced them to run serially.
-var log = logrus.New()
+var log = shared.DefaultLogger()
 
 // defaultLogger returns the package-global logger, used as the fallback when a
 // pipeline component is constructed without an explicit logger.
@@ -45,26 +45,24 @@ func usage() {
 	flag.PrintDefaults()
 }
 
-// setupLogging configures and returns a *logrus.Logger at the level implied by
-// the debug/trace flags. The returned logger is what the CLI injects into
-// generate(); it intentionally does NOT mutate the package global so callers
-// (and tests) get an isolated, output-assertable instance.
-func setupLogging(debugEnabled, traceEnabled bool) *logrus.Logger {
-	l := logrus.New()
-	l.SetFormatter(&logrus.TextFormatter{
-		DisableTimestamp:       true,
-		DisableLevelTruncation: true,
-		ForceColors:            true,
-		FullTimestamp:          false,
-	})
-	if traceEnabled {
-		l.SetLevel(logrus.TraceLevel)
-	} else if debugEnabled {
-		l.SetLevel(logrus.DebugLevel)
-	} else {
-		l.SetLevel(logrus.InfoLevel)
+// logLevel maps the debug/trace flags to their slog.Level. trace wins over debug.
+func logLevel(debugEnabled, traceEnabled bool) slog.Level {
+	switch {
+	case traceEnabled:
+		return shared.LevelTrace
+	case debugEnabled:
+		return slog.LevelDebug
+	default:
+		return slog.LevelInfo
 	}
-	return l
+}
+
+// setupLogging configures and returns a slog-backed Logger at the level implied
+// by the debug/trace flags. The returned logger is what the CLI injects into
+// generate(); it intentionally does NOT mutate the package global so callers
+// (and tests) get an isolated instance.
+func setupLogging(debugEnabled, traceEnabled bool) Logger {
+	return shared.NewTextLogger(os.Stderr, logLevel(debugEnabled, traceEnabled))
 }
 
 type options struct {

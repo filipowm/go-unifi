@@ -12,8 +12,8 @@ import (
 )
 
 // Logger is the minimal logging surface the generation pipeline depends on. It
-// is satisfied by *logrus.Logger (and *logrus.Entry), so production code can
-// inject a real logger while tests inject their own instance with a local hook,
+// is backed by log/slog (see NewSlogLogger), so production code can inject a real
+// logger while tests inject their own instance with a capturing handler,
 // asserting output in parallel without mutating shared state.
 type Logger interface {
 	Tracef(format string, args ...any)

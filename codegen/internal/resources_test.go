@@ -8,8 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sirupsen/logrus"
-	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -28,19 +26,13 @@ func TestResourceWarningsUseInjectedLogger(t *testing.T) {
 	require.NoError(t, os.WriteFile(filepath.Join(tmpDir, "Dropper.json"), []byte(`{"bad": 123}`), 0o644))                  //nolint:gosec
 	require.NoError(t, os.WriteFile(filepath.Join(tmpDir, "Collider.json"), []byte(`{"id": "", "i_d": ".{0,32}"}`), 0o644)) //nolint:gosec
 
-	logger, hook := test.NewNullLogger()
-	logger.SetLevel(logrus.DebugLevel)
+	logger, records := newCaptureLogger()
 
 	resources, err := buildResourcesFromDownloadedFields(tmpDir, CodeCustomizer{}, false, logger)
 	require.NoError(t, err)
 	require.NotEmpty(t, resources)
 
-	var warns []string
-	for _, e := range hook.AllEntries() {
-		if e.Level == logrus.WarnLevel {
-			warns = append(warns, e.Message)
-		}
-	}
+	warns := warnMessages(records())
 	require.NotEmpty(t, warns, "injected logger must capture resource WARNs")
 	assertContainsSubstr(t, warns, "dropping field")
 	assertContainsSubstr(t, warns, "CamelCase collision on Go field")
