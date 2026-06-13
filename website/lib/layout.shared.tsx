@@ -1,14 +1,14 @@
 import type { BaseLayoutProps } from 'fumadocs-ui/layouts/shared';
 import { BookText } from 'lucide-react';
 import Image from 'next/image';
-import { appName, pkgGoDev, repoUrl } from './shared';
+import { appName, asset, pkgGoDev, repoUrl } from './shared';
 
 export function baseOptions(): BaseLayoutProps {
   return {
     nav: {
       title: (
         <>
-          <Image src="/logo.png" alt="" width={24} height={24} className="size-6 rounded-sm" priority />
+          <Image src={asset('/logo.png')} alt="" width={24} height={24} className="size-6 rounded-sm" priority />
           <span className="font-semibold">{appName}</span>
         </>
       ),

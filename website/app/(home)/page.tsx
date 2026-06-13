@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { repoUrl, pkgGoDev } from '@/lib/shared';
+import { repoUrl, pkgGoDev, asset } from '@/lib/shared';
 
 export default function HomePage() {
   return (
@@ -15,7 +15,7 @@ export default function HomePage() {
       />
 
       <Image
-        src="/logo.png"
+        src={asset('/logo.png')}
         alt="go-unifi logo"
         width={150}
         height={150}

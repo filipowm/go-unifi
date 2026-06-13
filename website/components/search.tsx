@@ -13,6 +13,7 @@ import {
 import { useDocsSearch } from 'fumadocs-core/search/client';
 import { create } from '@orama/orama';
 import { useI18n } from 'fumadocs-ui/contexts/i18n';
+import { asset } from '@/lib/shared';
 
 function initOrama() {
   return create({
@@ -28,6 +29,9 @@ export default function DefaultSearchDialog(props: SharedProps) {
     type: 'static',
     initOrama,
     locale,
+    // next/static-export does not prepend basePath to the search index fetch,
+    // so the default '/api/search' 404s under /go-unifi. Build the URL ourselves.
+    from: asset('/api/search'),
   });
 
   return (
