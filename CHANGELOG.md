@@ -4,6 +4,64 @@ All notable changes to this project are documented in this file. Entries are der
 [GitHub Releases](https://github.com/filipowm/go-unifi/releases) notes, generated from conventional commits;
 internal and maintenance changes are not listed.
 
+## [v2.0.0](https://github.com/filipowm/go-unifi/releases/tag/v2.0.0) (2026-06-13)
+
+### 🚨 Breaking Changes
+
+* feat!: Wave 2 P2 hardening — codegen robustness, ctx-aware interface, centralized soft-error handling
+* feat(codegen)!: generate drift-proof settings registry, expose SetSetting, drop DpiApp/DpiGroup (ARCH-08)
+* feat(unifi)!: secure-by-default TLS, fine-grained concurrency, offline apiStyle seam (ARCH-06, ARCH-04, TEST-09)
+
+### ✨ New Features
+
+* feat(client): reverse VerifySSL to SkipVerifySSL
+* feat(codegen): Official-API OpenAPI models frontend (#121)
+* feat(codegen): add Official OpenAPI spec source + committed integration.json snapshot (#121)
+* feat(codegen): emit Official API surface and fold into go generate (#121)
+* feat(codegen): track Internal and Official API versions separately (#136)
+* feat(codegen/official): emit go-playground validate tags from OpenAPI constraints (#163)
+* feat(codegen/official): replace oapi-codegen placeholder godoc on model types (#154)
+* feat(logging): decouple Logger from Client, make Logger configurable, replace logrus with slog (#167)
+* feat(official): add Official-API runtime seam + info/sites vertical (#119)
+* feat(official): bounded ListPage + lazy ListAll iterator with explicit filter (#143)
+* feat(official): fluent, per-resource-group API surface (#134)
+* feat(official): type siteId and all UUID path params as uuid.UUID; ResolveID returns uuid.UUID
+
+### 🔧 Bug Fixes
+
+* fix(auth): drop spurious InternalClientMock from generated mock (#125)
+* fix(ci): quote unquoted YAML string values to satisfy yamllint quoted-strings rule
+* fix(client): derive User-Agent from module version via debug.ReadBuildInfo, fall back to go-unifi/2
+* fix(client): emit Warn when HttpRoundTripperProvider bypasses TLS config management
+* fix(client): lower multipart upload size cap to 10 MiB
+* fix(client): reject http:// URLs — API key would be sent over plaintext; only https:// accepted
+* fix(client): return nil client on construction errors — prevents nil-panic on apiPaths dereference
+* fix(client): warn when Timeout is unset — requests can hang indefinitely with a hostile controller
+* fix(client): warn when user interceptor is silently dropped due to same-concrete-type dedup
+* fix(codegen): address PR #131 review comments (#121)
+* fix(codegen): cap internal-API generation at 9.5.21 (classic EOL); fail loud on newer versions (#129)
+* fix(codegen): decouple official spec version, test skip path, assert snapshot in TestGenerateLatest
+* fix(codegen): dedup intra-family enum twins + harden Official models frontend (#121)
+* fix(codegen): emit compiling Go for numeric optional query params
+* fix(codegen): make docFor shape-aware so list methods show auto-pagination in godoc (#121)
+* fix(codegen): remove stray brace breaking codegen/official build (#121)
+* fix(codegen): repin Official spec to 10.1.78 + address review findings
+* fix(codegen): url-escape path args in official wrappers (#121)
+* fix(codegen): write .unifi-version relative to output dir, not cwd
+* fix(codegen/official): emit optional query params (force) on Delete methods via *DeleteOptions
+* fix(codegen/official): pluralise resource qualifier in List* method names (ListRulesAll, etc.)
+* fix(json): handle JSON null in emptyStringInt.UnmarshalJSON — decode to 0 like empty string
+* fix(official): add ErrSiteNotFound sentinel + cover transport/gate/pagination edge cases (#119)
+* fix(official): rename SiteOverview.Id -> ID; cover probe-cache and 404-gate paths
+* fix(requests): cap multipart upload buffer at 512 MiB to prevent OOM on large uploads
+* fix(unifi): decode JSON null as empty in numberOrString (ARCH-07)
+* fix(unifi): make booleanishString decoding permissive (ARCH-02)
+* fix(unifi): prevent Version() self-deadlock under UseLocking (ARCH-01)
+* fix(unifi): register missing mdns/roaming_assistant/traffic_flow setting factories (ARCH-03)
+* fix(unifi): robust error handling — Unwrap, 404->ErrNotFound, preserve status on empty bodies (ARCH-22, ARCH-05)
+* fix(validation): wire CustomValidators through ClientConfig so exported API is actually usable
+* fix: escape % in codegen QuerySuffix and surface root cause in empty ValidationError
+
 ## [v1.11.1](https://github.com/filipowm/go-unifi/releases/tag/v1.11.1) (2026-06-11)
 
 ### ✨ New Features
