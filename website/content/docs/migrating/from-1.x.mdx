@@ -135,10 +135,12 @@ c.AddInterceptor(&unifi.CSRFInterceptor{}) // type is gone in 2.0.0
 
 ## Official API surface (additive, recommended)
 
-The Official API (`integration/v1`) is the surface Ubiquiti now maintains as a versioned, stable contract.
-**Prefer it over the legacy Internal API, and migrate existing Internal calls to their Official equivalents
-wherever a covered one exists.** The Internal surface stays supported for everything the Official API doesn't
-yet cover, but new code should reach for `c.Official()` first.
+The Official API (`integration/v1`) is the surface Ubiquiti now maintains as a versioned, stable contract,
+and it's the forward-looking surface to reach for on new code where it covers the resource. But the choice
+is **per-resource and deliberate** — the two surfaces use different identifiers and models, so don't
+mechanically migrate every covered call. The Internal surface stays supported for everything the Official
+API doesn't yet cover. See [Choosing a surface](/docs/guides/choosing-a-surface) for how to decide which
+surface owns which resource.
 
 **What changed.** `c.Official()` returns a fluent client for the UniFi official OpenAPI (`integration/v1`).
 This is new in 2.0.0 and is purely additive — no existing code changes.
