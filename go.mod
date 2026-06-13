@@ -11,7 +11,6 @@ require (
 	github.com/hashicorp/go-version v1.9.0
 	github.com/iancoleman/strcase v0.3.0
 	github.com/oapi-codegen/runtime v1.4.1
-	github.com/sirupsen/logrus v1.9.4
 	github.com/stretchr/testify v1.11.1
 	github.com/tj/assert v0.0.3
 	github.com/ulikunitz/xz v0.5.15

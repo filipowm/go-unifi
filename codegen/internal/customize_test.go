@@ -6,8 +6,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/sirupsen/logrus"
-	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -265,7 +263,7 @@ customizations:
 	cc, err := NewCodeCustomizer(tempFile)
 	require.NoError(t, err)
 
-	logger, hook := test.NewNullLogger()
+	logger, records := newCaptureLogger()
 	cc.logger = logger
 
 	// Unknown action is still returned (warn-and-ignore: AddResource simply never
@@ -274,12 +272,7 @@ customizations:
 	// "List" is invalid for a settings resource (only Get/Update exist).
 	assert.Equal(t, []string{"List"}, cc.ExcludedClientFunctions(&Resource{StructName: "SettingMgmt"}))
 
-	var msgs []string
-	for _, e := range hook.AllEntries() {
-		if e.Level == logrus.WarnLevel {
-			msgs = append(msgs, e.Message)
-		}
-	}
+	msgs := warnMessages(records())
 	assert.Contains(t, msgs, `excludeFunctions: unknown action "Updte" for resource Network (ignored)`)
 	assert.Contains(t, msgs, `excludeFunctions: unknown action "List" for resource SettingMgmt (ignored)`)
 }
