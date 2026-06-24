@@ -477,6 +477,15 @@ customizations:
           customUnmarshalType: ""
     Network:
       fields:
+        # `enabled` defaults to true on the controller and is absent from a healthy
+        # network's config. Without this, an absent `enabled` unmarshals to the bool
+        # zero value `false`, poisoning imported state and disabling the network on the
+        # next full-replace PUT (this caused a 2026-06-20 WAN outage). emptyBoolToTrue
+        # maps absent/empty -> true. Same fix as InternetAccessEnabled below.
+        Enabled:
+          ifFieldType: "bool"
+          customUnmarshalType: "*bool"
+          customUnmarshalFunc: "emptyBoolToTrue"
         InternetAccessEnabled:
           ifFieldType: "bool"
           customUnmarshalType: "*bool"
