@@ -275,6 +275,7 @@ func (dst *Network) UnmarshalJSON(b []byte) error {
 		DHCPDLeaseTime                 emptyStringInt `json:"dhcpd_leasetime"`
 		DHCPDTimeOffset                emptyStringInt `json:"dhcpd_time_offset"`
 		DHCPDV6LeaseTime               emptyStringInt `json:"dhcpdv6_leasetime"`
+		Enabled                        *bool          `json:"enabled"`
 		IGMPGroupmembership            emptyStringInt `json:"igmp_groupmembership"`
 		IGMPMaxresponse                emptyStringInt `json:"igmp_maxresponse"`
 		IGMPMcrtrexpiretime            emptyStringInt `json:"igmp_mcrtrexpiretime"`
@@ -285,7 +286,6 @@ func (dst *Network) UnmarshalJSON(b []byte) error {
 		IPV6RaValidLifetime            emptyStringInt `json:"ipv6_ra_valid_lifetime"`
 		InterfaceMtu                   emptyStringInt `json:"interface_mtu"`
 		InternetAccessEnabled          *bool          `json:"internet_access_enabled"`
-		Enabled                        *bool          `json:"enabled"`
 		LocalPort                      emptyStringInt `json:"local_port"`
 		OpenVPNLocalPort               emptyStringInt `json:"openvpn_local_port"`
 		OpenVPNRemotePort              emptyStringInt `json:"openvpn_remote_port"`
@@ -318,6 +318,7 @@ func (dst *Network) UnmarshalJSON(b []byte) error {
 	dst.DHCPDLeaseTime = int(aux.DHCPDLeaseTime)
 	dst.DHCPDTimeOffset = int(aux.DHCPDTimeOffset)
 	dst.DHCPDV6LeaseTime = int(aux.DHCPDV6LeaseTime)
+	dst.Enabled = emptyBoolToTrue(aux.Enabled)
 	dst.IGMPGroupmembership = int(aux.IGMPGroupmembership)
 	dst.IGMPMaxresponse = int(aux.IGMPMaxresponse)
 	dst.IGMPMcrtrexpiretime = int(aux.IGMPMcrtrexpiretime)
@@ -328,7 +329,6 @@ func (dst *Network) UnmarshalJSON(b []byte) error {
 	dst.IPV6RaValidLifetime = int(aux.IPV6RaValidLifetime)
 	dst.InterfaceMtu = int(aux.InterfaceMtu)
 	dst.InternetAccessEnabled = emptyBoolToTrue(aux.InternetAccessEnabled)
-	dst.Enabled = emptyBoolToTrue(aux.Enabled)
 	dst.LocalPort = int(aux.LocalPort)
 	dst.OpenVPNLocalPort = int(aux.OpenVPNLocalPort)
 	dst.OpenVPNRemotePort = int(aux.OpenVPNRemotePort)

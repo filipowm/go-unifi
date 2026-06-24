@@ -1,16 +1,17 @@
-package unifi
+package unifi_test
 
 import (
 	"encoding/json"
 	"testing"
+
+	"github.com/filipowm/go-unifi/v2/unifi"
 )
 
-// Regression: an absent `enabled` key must unmarshal to true (not the bool zero
-// value false). The controller omits `enabled` for an enabled network, so without
-// this `terraform import` records enabled=false and the next full-replace PUT
-// disables the network.
+// Regression: an absent `enabled` key must unmarshal to true (the controller omits
+// it for an enabled network). Without this, terraform import records enabled=false
+// and the next full-replace PUT disables the network.
 func TestNetworkEnabledAbsentDefaultsTrue(t *testing.T) {
-	cases := []struct {
+	for _, c := range []struct {
 		name string
 		in   string
 		want bool
@@ -18,11 +19,10 @@ func TestNetworkEnabledAbsentDefaultsTrue(t *testing.T) {
 		{"absent -> true", `{"name":"WAN","purpose":"wan"}`, true},
 		{"explicit false -> false", `{"enabled":false}`, false},
 		{"explicit true -> true", `{"enabled":true}`, true},
-	}
-	for _, c := range cases {
-		var n Network
+	} {
+		var n unifi.Network
 		if err := json.Unmarshal([]byte(c.in), &n); err != nil {
-			t.Fatalf("%s: unmarshal: %v", c.name, err)
+			t.Fatalf("%s: %v", c.name, err)
 		}
 		if n.Enabled != c.want {
 			t.Errorf("%s: Enabled = %v, want %v", c.name, n.Enabled, c.want)
