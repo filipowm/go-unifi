@@ -285,6 +285,7 @@ func (dst *Network) UnmarshalJSON(b []byte) error {
 		IPV6RaValidLifetime            emptyStringInt `json:"ipv6_ra_valid_lifetime"`
 		InterfaceMtu                   emptyStringInt `json:"interface_mtu"`
 		InternetAccessEnabled          *bool          `json:"internet_access_enabled"`
+		Enabled                        *bool          `json:"enabled"`
 		LocalPort                      emptyStringInt `json:"local_port"`
 		OpenVPNLocalPort               emptyStringInt `json:"openvpn_local_port"`
 		OpenVPNRemotePort              emptyStringInt `json:"openvpn_remote_port"`
@@ -327,6 +328,7 @@ func (dst *Network) UnmarshalJSON(b []byte) error {
 	dst.IPV6RaValidLifetime = int(aux.IPV6RaValidLifetime)
 	dst.InterfaceMtu = int(aux.InterfaceMtu)
 	dst.InternetAccessEnabled = emptyBoolToTrue(aux.InternetAccessEnabled)
+	dst.Enabled = emptyBoolToTrue(aux.Enabled)
 	dst.LocalPort = int(aux.LocalPort)
 	dst.OpenVPNLocalPort = int(aux.OpenVPNLocalPort)
 	dst.OpenVPNRemotePort = int(aux.OpenVPNRemotePort)
