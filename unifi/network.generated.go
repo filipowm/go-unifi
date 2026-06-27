@@ -274,6 +274,7 @@ func (dst *Network) UnmarshalJSON(b []byte) error {
 		DHCPDLeaseTime                 emptyStringInt `json:"dhcpd_leasetime"`
 		DHCPDTimeOffset                emptyStringInt `json:"dhcpd_time_offset"`
 		DHCPDV6LeaseTime               emptyStringInt `json:"dhcpdv6_leasetime"`
+		Enabled                        *bool          `json:"enabled"`
 		IGMPGroupmembership            emptyStringInt `json:"igmp_groupmembership"`
 		IGMPMaxresponse                emptyStringInt `json:"igmp_maxresponse"`
 		IGMPMcrtrexpiretime            emptyStringInt `json:"igmp_mcrtrexpiretime"`
@@ -316,6 +317,7 @@ func (dst *Network) UnmarshalJSON(b []byte) error {
 	dst.DHCPDLeaseTime = int(aux.DHCPDLeaseTime)
 	dst.DHCPDTimeOffset = int(aux.DHCPDTimeOffset)
 	dst.DHCPDV6LeaseTime = int(aux.DHCPDV6LeaseTime)
+	dst.Enabled = emptyBoolToTrue(aux.Enabled)
 	dst.IGMPGroupmembership = int(aux.IGMPGroupmembership)
 	dst.IGMPMaxresponse = int(aux.IGMPMaxresponse)
 	dst.IGMPMcrtrexpiretime = int(aux.IGMPMcrtrexpiretime)
