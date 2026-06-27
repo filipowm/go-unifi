@@ -489,6 +489,14 @@ customizations:
           customUnmarshalType: ""
     Network:
       fields:
+        # `enabled` defaults to true on the controller and is absent from a healthy
+        # network's config; without this it unmarshals to the bool zero value false,
+        # poisoning imported state and disabling the network on the next full-replace
+        # PUT. emptyBoolToTrue maps absent/empty -> true (same as InternetAccessEnabled).
+        Enabled:
+          ifFieldType: "bool"
+          customUnmarshalType: "*bool"
+          customUnmarshalFunc: "emptyBoolToTrue"
         FirewallZoneID:
           omitEmpty: true
         InternetAccessEnabled:
