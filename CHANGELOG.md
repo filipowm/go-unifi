@@ -4,6 +4,12 @@ All notable changes to this project are documented in this file. Entries are der
 [GitHub Releases](https://github.com/filipowm/go-unifi/releases) notes, generated from conventional commits;
 internal and maintenance changes are not listed.
 
+## [v2.0.1](https://github.com/filipowm/go-unifi/releases/tag/v2.0.1) (2026-06-27)
+
+### 🔧 Bug Fixes
+
+* fix(network): default absent `enabled` to true so import doesn't disable networks (#177)
+
 ## [v2.0.0](https://github.com/filipowm/go-unifi/releases/tag/v2.0.0) (2026-06-13)
 
 ### 🚨 Breaking Changes
