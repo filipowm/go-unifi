@@ -2787,6 +2787,24 @@ func (e WifiMdnsProxyPredefinedServiceName) Valid() bool {
 	}
 }
 
+// Defines values for WifiOpenSecurityConfigurationDetailEncryption.
+const (
+	ENHANCEDOPEN               WifiOpenSecurityConfigurationDetailEncryption = "ENHANCED_OPEN"
+	ENHANCEDOPENWITHTRANSITION WifiOpenSecurityConfigurationDetailEncryption = "ENHANCED_OPEN_WITH_TRANSITION"
+)
+
+// Valid indicates whether the value is a known member of the WifiOpenSecurityConfigurationDetailEncryption enum.
+func (e WifiOpenSecurityConfigurationDetailEncryption) Valid() bool {
+	switch e {
+	case ENHANCEDOPEN:
+		return true
+	case ENHANCEDOPENWITHTRANSITION:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for WifiRadiusMacAuthenticationConfigurationMacAddressFormat.
 const (
 	LOWERCASECOLONSEPARATED WifiRadiusMacAuthenticationConfigurationMacAddressFormat = "LOWERCASE_COLON_SEPARATED"
@@ -3058,12 +3076,6 @@ type ACLRuleUpdate struct {
 	union        json.RawMessage
 }
 
-// AbstractIntegrationLagMember is a generated model for the UniFi Official API.
-type AbstractIntegrationLagMember struct {
-	DeviceId openapi_types.UUID `json:"deviceId"`
-	PortIdxs []int32            `json:"portIdxs"`
-}
-
 // AccessPointFeatureOverview is a generated model for the UniFi Official API.
 type AccessPointFeatureOverview = interface{}
 
@@ -3266,6 +3278,12 @@ type DHCPConfigurationForIPv6Network struct {
 	LeaseTimeSeconds int32 `json:"leaseTimeSeconds" validate:"omitempty,gte=0,lte=31536000"`
 }
 
+// DNSAssistanceConfiguration is a generated model for the UniFi Official API.
+type DNSAssistanceConfiguration struct {
+	Mode  string `json:"mode"`
+	union json.RawMessage
+}
+
 // DNSPolicy is a generated model for the UniFi Official API.
 type DNSPolicy struct {
 	Domain   *string                   `json:"domain,omitempty"`
@@ -3353,7 +3371,7 @@ type DeviceAdoptionRequest struct {
 // DeviceFeatures is a generated model for the UniFi Official API.
 type DeviceFeatures struct {
 	AccessPoint *AccessPointFeatureOverview `json:"accessPoint,omitempty"`
-	Switching   *SwitchFeatureOverview      `json:"switching,omitempty"`
+	Switching   *SwitchingFeatureOverview   `json:"switching,omitempty"`
 }
 
 // DevicePendingAdoption is a generated model for the UniFi Official API.
@@ -4494,7 +4512,7 @@ type GatewayManagedNetworkCreateUpdate struct {
 	IsolationEnabled *bool  `json:"isolationEnabled,omitempty"`
 	Management       string `json:"management"`
 
-	// MdnsForwardingEnabled Whether this network should participate in mDNS traffic forwarding.
+	// MdnsForwardingEnabled Whether this network should participate in mDNS traffic forwarding. If null, the default from the site mDNS setting is used.
 	MdnsForwardingEnabled *bool  `json:"mdnsForwardingEnabled,omitempty"`
 	Name                  string `json:"name"`
 
@@ -4952,10 +4970,17 @@ type L2tpServerOverview = VPNServerOverview
 
 // LAGDetails is a generated model for the UniFi Official API.
 type LAGDetails struct {
-	Id      openapi_types.UUID             `json:"id"`
-	Members []AbstractIntegrationLagMember `json:"members"`
-	Type    string                         `json:"type"`
-	union   json.RawMessage
+	Id       openapi_types.UUID        `json:"id"`
+	Members  []LagMember               `json:"members"`
+	Metadata UserDefinedEntityMetadata `json:"metadata"`
+	Type     string                    `json:"type"`
+	union    json.RawMessage
+}
+
+// LagMember is a generated model for the UniFi Official API.
+type LagMember struct {
+	DeviceId openapi_types.UUID `json:"deviceId"`
+	PortIdxs []int32            `json:"portIdxs"`
 }
 
 // LagPage is a generated model for the UniFi Official API.
@@ -5031,6 +5056,16 @@ type LocalClientAccessDetails struct {
 type LocalClientAccessOverview struct {
 	Type  string `json:"type"`
 	union json.RawMessage
+}
+
+// LocalLagGlobal is a generated model for the UniFi Official API.
+type LocalLagGlobal = LAGDetails
+
+// LocalLagLocal is a generated model for the UniFi Official API.
+type LocalLagLocal struct {
+	Id       openapi_types.UUID        `json:"id"`
+	Metadata UserDefinedEntityMetadata `json:"metadata"`
+	PortIdxs []int32                   `json:"portIdxs"`
 }
 
 // MACACLRuleEndpoint is a generated model for the UniFi Official API.
@@ -5144,21 +5179,20 @@ type McLagDomainDtoPage struct {
 
 // McLagGlobal is a generated model for the UniFi Official API.
 type McLagGlobal struct {
-	Id            openapi_types.UUID  `json:"id"`
-	McLagDomainId *openapi_types.UUID `json:"mcLagDomainId,omitempty"`
-	Members       []McLagMember       `json:"members"`
-	Type          string              `json:"type"`
+	Id            openapi_types.UUID        `json:"id"`
+	McLagDomainId *openapi_types.UUID       `json:"mcLagDomainId,omitempty"`
+	Members       []LagMember               `json:"members"`
+	Metadata      UserDefinedEntityMetadata `json:"metadata"`
+	Type          string                    `json:"type"`
 	union         json.RawMessage
 }
 
 // McLagLocal is a generated model for the UniFi Official API.
 type McLagLocal struct {
-	Id      openapi_types.UUID `json:"id"`
-	Members []McLagMember      `json:"members"`
+	Id       openapi_types.UUID        `json:"id"`
+	Members  []LagMember               `json:"members"`
+	Metadata UserDefinedEntityMetadata `json:"metadata"`
 }
-
-// McLagMember is a generated model for the UniFi Official API.
-type McLagMember = AbstractIntegrationLagMember
 
 // McLagPeer is a generated model for the UniFi Official API.
 type McLagPeer struct {
@@ -5510,6 +5544,7 @@ type StandardWifiBroadcastCreateUpdate struct {
 	BssTransitionEnabled                *bool                                                          `json:"bssTransitionEnabled,omitempty"`
 	ClientFilteringPolicy               *WifiClientFilteringPolicy                                     `json:"clientFilteringPolicy,omitempty"`
 	ClientIsolationEnabled              bool                                                           `json:"clientIsolationEnabled"`
+	DnsAssistanceConfiguration          *DNSAssistanceConfiguration                                    `json:"dnsAssistanceConfiguration,omitempty"`
 	DtimPeriodByFrequencyGHzOverride    *WifiDtimPeriodConfiguration                                   `json:"dtimPeriodByFrequencyGHzOverride,omitempty"`
 	Enabled                             bool                                                           `json:"enabled"`
 	HideName                            bool                                                           `json:"hideName"`
@@ -5544,6 +5579,7 @@ type StandardWifiBroadcastDetail struct {
 	BssTransitionEnabled                *bool                                                    `json:"bssTransitionEnabled,omitempty"`
 	ClientFilteringPolicy               *WifiClientFilteringPolicy                               `json:"clientFilteringPolicy,omitempty"`
 	ClientIsolationEnabled              bool                                                     `json:"clientIsolationEnabled"`
+	DnsAssistanceConfiguration          *DNSAssistanceConfiguration                              `json:"dnsAssistanceConfiguration,omitempty"`
 	DtimPeriodByFrequencyGHzOverride    *WifiDtimPeriodConfiguration                             `json:"dtimPeriodByFrequencyGHzOverride,omitempty"`
 	Enabled                             bool                                                     `json:"enabled"`
 	HideName                            bool                                                     `json:"hideName"`
@@ -5602,9 +5638,6 @@ type SubnetIPv6Matching struct {
 	Value *string `json:"value,omitempty"`
 	union json.RawMessage
 }
-
-// SwitchFeatureOverview is a generated model for the UniFi Official API.
-type SwitchFeatureOverview = interface{}
 
 // SwitchManagedIPv4Configuration is a generated model for the UniFi Official API.
 type SwitchManagedIPv4Configuration struct {
@@ -5710,25 +5743,29 @@ type SwitchStackDtoPage struct {
 
 // SwitchStackLagGlobal is a generated model for the UniFi Official API.
 type SwitchStackLagGlobal struct {
-	Id            openapi_types.UUID     `json:"id"`
-	Members       []SwitchStackLagMember `json:"members"`
-	SwitchStackId *openapi_types.UUID    `json:"switchStackId,omitempty"`
-	Type          string                 `json:"type"`
+	Id            openapi_types.UUID        `json:"id"`
+	Members       []LagMember               `json:"members"`
+	Metadata      UserDefinedEntityMetadata `json:"metadata"`
+	SwitchStackId *openapi_types.UUID       `json:"switchStackId,omitempty"`
+	Type          string                    `json:"type"`
 	union         json.RawMessage
 }
 
 // SwitchStackLagLocal is a generated model for the UniFi Official API.
 type SwitchStackLagLocal struct {
-	Id      openapi_types.UUID     `json:"id"`
-	Members []SwitchStackLagMember `json:"members"`
+	Id       openapi_types.UUID        `json:"id"`
+	Members  []LagMember               `json:"members"`
+	Metadata UserDefinedEntityMetadata `json:"metadata"`
 }
-
-// SwitchStackLagMember is a generated model for the UniFi Official API.
-type SwitchStackLagMember = AbstractIntegrationLagMember
 
 // SwitchStackMember is a generated model for the UniFi Official API.
 type SwitchStackMember struct {
 	DeviceId openapi_types.UUID `json:"deviceId"`
+}
+
+// SwitchingFeatureOverview is a generated model for the UniFi Official API.
+type SwitchingFeatureOverview struct {
+	Lags []LocalLagLocal `json:"lags"`
 }
 
 // SystemDefinedEntityMetadata is a generated model for the UniFi Official API.
@@ -6153,6 +6190,16 @@ type WifiDevicesFilter struct {
 	union     json.RawMessage
 }
 
+// WifiDnsAssistanceAutoConfiguration is a generated model for the UniFi Official API.
+type WifiDnsAssistanceAutoConfiguration = DNSAssistanceConfiguration
+
+// WifiDnsAssistanceManualConfiguration is a generated model for the UniFi Official API.
+type WifiDnsAssistanceManualConfiguration struct {
+	Mode    string    `json:"mode"`
+	Servers *[]string `json:"servers,omitempty" validate:"omitempty,max=2"`
+	union   json.RawMessage
+}
+
 // WifiDtimPeriodConfiguration is a generated model for the UniFi Official API.
 type WifiDtimPeriodConfiguration struct {
 	N24 int32 `json:"2.4" validate:"omitempty,gte=1,lte=255"`
@@ -6251,10 +6298,15 @@ type WifiNonEnterpriseRadiusConfiguration struct {
 
 // WifiOpenSecurityConfigurationDetail is a generated model for the UniFi Official API.
 type WifiOpenSecurityConfigurationDetail struct {
-	RadiusConfiguration *WifiNonEnterpriseRadiusConfiguration `json:"radiusConfiguration,omitempty"`
-	Type                string                                `json:"type"`
+	// Encryption Encryption mode for open security. If null, plain open with no encryption.
+	Encryption          *WifiOpenSecurityConfigurationDetailEncryption `json:"encryption,omitempty" validate:"omitempty,oneof=ENHANCED_OPEN ENHANCED_OPEN_WITH_TRANSITION"`
+	RadiusConfiguration *WifiNonEnterpriseRadiusConfiguration          `json:"radiusConfiguration,omitempty"`
+	Type                string                                         `json:"type"`
 	union               json.RawMessage
 }
+
+// WifiOpenSecurityConfigurationDetailEncryption Encryption mode for open security. If null, plain open with no encryption.
+type WifiOpenSecurityConfigurationDetailEncryption string
 
 // WifiOpenSecurityConfigurationOverview is a generated model for the UniFi Official API.
 type WifiOpenSecurityConfigurationOverview = WifiSecurityConfigurationOverview
@@ -9268,6 +9320,132 @@ func (t *ClientOverview) UnmarshalJSON(b []byte) error {
 		err = json.Unmarshal(raw, &t.Type)
 		if err != nil {
 			return fmt.Errorf("error reading 'type': %w", err)
+		}
+	}
+
+	return err
+}
+
+// AsWifiDnsAssistanceAutoConfiguration returns the union data inside the DNSAssistanceConfiguration as a WifiDnsAssistanceAutoConfiguration
+func (t DNSAssistanceConfiguration) AsWifiDnsAssistanceAutoConfiguration() (WifiDnsAssistanceAutoConfiguration, error) {
+	var body WifiDnsAssistanceAutoConfiguration
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromWifiDnsAssistanceAutoConfiguration overwrites any union data inside the DNSAssistanceConfiguration as the provided WifiDnsAssistanceAutoConfiguration
+func (t *DNSAssistanceConfiguration) FromWifiDnsAssistanceAutoConfiguration(v WifiDnsAssistanceAutoConfiguration) error {
+	t.Mode = "AUTO"
+
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeWifiDnsAssistanceAutoConfiguration performs a merge with any union data inside the DNSAssistanceConfiguration, using the provided WifiDnsAssistanceAutoConfiguration
+func (t *DNSAssistanceConfiguration) MergeWifiDnsAssistanceAutoConfiguration(v WifiDnsAssistanceAutoConfiguration) error {
+	t.Mode = "AUTO"
+
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsWifiDnsAssistanceManualConfiguration returns the union data inside the DNSAssistanceConfiguration as a WifiDnsAssistanceManualConfiguration
+func (t DNSAssistanceConfiguration) AsWifiDnsAssistanceManualConfiguration() (WifiDnsAssistanceManualConfiguration, error) {
+	var body WifiDnsAssistanceManualConfiguration
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromWifiDnsAssistanceManualConfiguration overwrites any union data inside the DNSAssistanceConfiguration as the provided WifiDnsAssistanceManualConfiguration
+func (t *DNSAssistanceConfiguration) FromWifiDnsAssistanceManualConfiguration(v WifiDnsAssistanceManualConfiguration) error {
+	t.Mode = "MANUAL"
+
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeWifiDnsAssistanceManualConfiguration performs a merge with any union data inside the DNSAssistanceConfiguration, using the provided WifiDnsAssistanceManualConfiguration
+func (t *DNSAssistanceConfiguration) MergeWifiDnsAssistanceManualConfiguration(v WifiDnsAssistanceManualConfiguration) error {
+	t.Mode = "MANUAL"
+
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t DNSAssistanceConfiguration) Discriminator() (string, error) {
+	var discriminator struct {
+		Discriminator string `json:"mode"`
+	}
+	err := json.Unmarshal(t.union, &discriminator)
+	return discriminator.Discriminator, err
+}
+
+func (t DNSAssistanceConfiguration) ValueByDiscriminator() (interface{}, error) {
+	discriminator, err := t.Discriminator()
+	if err != nil {
+		return nil, err
+	}
+	switch discriminator {
+	case "AUTO":
+		return t.AsWifiDnsAssistanceAutoConfiguration()
+	case "MANUAL":
+		return t.AsWifiDnsAssistanceManualConfiguration()
+	default:
+		return nil, errors.New("unknown discriminator value: " + discriminator)
+	}
+}
+
+func (t DNSAssistanceConfiguration) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	object := make(map[string]json.RawMessage)
+	if t.union != nil {
+		err = json.Unmarshal(b, &object)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	object["mode"], err = json.Marshal(t.Mode)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'mode': %w", err)
+	}
+
+	b, err = json.Marshal(object)
+	return b, err
+}
+
+func (t *DNSAssistanceConfiguration) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	if err != nil {
+		return err
+	}
+	object := make(map[string]json.RawMessage)
+	err = json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["mode"]; found {
+		err = json.Unmarshal(raw, &t.Mode)
+		if err != nil {
+			return fmt.Errorf("error reading 'mode': %w", err)
 		}
 	}
 
@@ -35266,6 +35444,36 @@ func (t *IpV6TrafficMatchingListCreateUpdate) UnmarshalJSON(b []byte) error {
 	return err
 }
 
+// AsLocalLagGlobal returns the union data inside the LAGDetails as a LocalLagGlobal
+func (t LAGDetails) AsLocalLagGlobal() (LocalLagGlobal, error) {
+	var body LocalLagGlobal
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromLocalLagGlobal overwrites any union data inside the LAGDetails as the provided LocalLagGlobal
+func (t *LAGDetails) FromLocalLagGlobal(v LocalLagGlobal) error {
+	t.Type = "LOCAL"
+
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeLocalLagGlobal performs a merge with any union data inside the LAGDetails, using the provided LocalLagGlobal
+func (t *LAGDetails) MergeLocalLagGlobal(v LocalLagGlobal) error {
+	t.Type = "LOCAL"
+
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
 // AsMcLagGlobal returns the union data inside the LAGDetails as a McLagGlobal
 func (t LAGDetails) AsMcLagGlobal() (McLagGlobal, error) {
 	var body McLagGlobal
@@ -35340,6 +35548,8 @@ func (t LAGDetails) ValueByDiscriminator() (interface{}, error) {
 		return nil, err
 	}
 	switch discriminator {
+	case "LOCAL":
+		return t.AsLocalLagGlobal()
 	case "MULTI_CHASSIS":
 		return t.AsMcLagGlobal()
 	case "SWITCH_STACK":
@@ -35374,6 +35584,11 @@ func (t LAGDetails) MarshalJSON() ([]byte, error) {
 		}
 	}
 
+	object["metadata"], err = json.Marshal(t.Metadata)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'metadata': %w", err)
+	}
+
 	object["type"], err = json.Marshal(t.Type)
 	if err != nil {
 		return nil, fmt.Errorf("error marshaling 'type': %w", err)
@@ -35405,6 +35620,13 @@ func (t *LAGDetails) UnmarshalJSON(b []byte) error {
 		err = json.Unmarshal(raw, &t.Members)
 		if err != nil {
 			return fmt.Errorf("error reading 'members': %w", err)
+		}
+	}
+
+	if raw, found := object["metadata"]; found {
+		err = json.Unmarshal(raw, &t.Metadata)
+		if err != nil {
+			return fmt.Errorf("error reading 'metadata': %w", err)
 		}
 	}
 
@@ -36787,6 +37009,36 @@ func (t *MacAclRuleMacAddressEndpointFilter) UnmarshalJSON(b []byte) error {
 	return err
 }
 
+// AsLocalLagGlobal returns the union data inside the McLagGlobal as a LocalLagGlobal
+func (t McLagGlobal) AsLocalLagGlobal() (LocalLagGlobal, error) {
+	var body LocalLagGlobal
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromLocalLagGlobal overwrites any union data inside the McLagGlobal as the provided LocalLagGlobal
+func (t *McLagGlobal) FromLocalLagGlobal(v LocalLagGlobal) error {
+	t.Type = "LOCAL"
+
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeLocalLagGlobal performs a merge with any union data inside the McLagGlobal, using the provided LocalLagGlobal
+func (t *McLagGlobal) MergeLocalLagGlobal(v LocalLagGlobal) error {
+	t.Type = "LOCAL"
+
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
 // AsMcLagGlobal returns the union data inside the McLagGlobal as a McLagGlobal
 func (t McLagGlobal) AsMcLagGlobal() (McLagGlobal, error) {
 	var body McLagGlobal
@@ -36861,6 +37113,8 @@ func (t McLagGlobal) ValueByDiscriminator() (interface{}, error) {
 		return nil, err
 	}
 	switch discriminator {
+	case "LOCAL":
+		return t.AsLocalLagGlobal()
 	case "MULTI_CHASSIS":
 		return t.AsMcLagGlobal()
 	case "SWITCH_STACK":
@@ -36902,6 +37156,11 @@ func (t McLagGlobal) MarshalJSON() ([]byte, error) {
 		}
 	}
 
+	object["metadata"], err = json.Marshal(t.Metadata)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'metadata': %w", err)
+	}
+
 	object["type"], err = json.Marshal(t.Type)
 	if err != nil {
 		return nil, fmt.Errorf("error marshaling 'type': %w", err)
@@ -36940,6 +37199,13 @@ func (t *McLagGlobal) UnmarshalJSON(b []byte) error {
 		err = json.Unmarshal(raw, &t.Members)
 		if err != nil {
 			return fmt.Errorf("error reading 'members': %w", err)
+		}
+	}
+
+	if raw, found := object["metadata"]; found {
+		err = json.Unmarshal(raw, &t.Metadata)
+		if err != nil {
+			return fmt.Errorf("error reading 'metadata': %w", err)
 		}
 	}
 
@@ -39953,6 +40219,13 @@ func (t StandardWifiBroadcastCreateUpdate) MarshalJSON() ([]byte, error) {
 		return nil, fmt.Errorf("error marshaling 'clientIsolationEnabled': %w", err)
 	}
 
+	if t.DnsAssistanceConfiguration != nil {
+		object["dnsAssistanceConfiguration"], err = json.Marshal(t.DnsAssistanceConfiguration)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'dnsAssistanceConfiguration': %w", err)
+		}
+	}
+
 	if t.DtimPeriodByFrequencyGHzOverride != nil {
 		object["dtimPeriodByFrequencyGHzOverride"], err = json.Marshal(t.DtimPeriodByFrequencyGHzOverride)
 		if err != nil {
@@ -40112,6 +40385,13 @@ func (t *StandardWifiBroadcastCreateUpdate) UnmarshalJSON(b []byte) error {
 		err = json.Unmarshal(raw, &t.ClientIsolationEnabled)
 		if err != nil {
 			return fmt.Errorf("error reading 'clientIsolationEnabled': %w", err)
+		}
+	}
+
+	if raw, found := object["dnsAssistanceConfiguration"]; found {
+		err = json.Unmarshal(raw, &t.DnsAssistanceConfiguration)
+		if err != nil {
+			return fmt.Errorf("error reading 'dnsAssistanceConfiguration': %w", err)
 		}
 	}
 
@@ -40373,6 +40653,13 @@ func (t StandardWifiBroadcastDetail) MarshalJSON() ([]byte, error) {
 		return nil, fmt.Errorf("error marshaling 'clientIsolationEnabled': %w", err)
 	}
 
+	if t.DnsAssistanceConfiguration != nil {
+		object["dnsAssistanceConfiguration"], err = json.Marshal(t.DnsAssistanceConfiguration)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'dnsAssistanceConfiguration': %w", err)
+		}
+	}
+
 	if t.DtimPeriodByFrequencyGHzOverride != nil {
 		object["dtimPeriodByFrequencyGHzOverride"], err = json.Marshal(t.DtimPeriodByFrequencyGHzOverride)
 		if err != nil {
@@ -40542,6 +40829,13 @@ func (t *StandardWifiBroadcastDetail) UnmarshalJSON(b []byte) error {
 		err = json.Unmarshal(raw, &t.ClientIsolationEnabled)
 		if err != nil {
 			return fmt.Errorf("error reading 'clientIsolationEnabled': %w", err)
+		}
+	}
+
+	if raw, found := object["dnsAssistanceConfiguration"]; found {
+		err = json.Unmarshal(raw, &t.DnsAssistanceConfiguration)
+		if err != nil {
+			return fmt.Errorf("error reading 'dnsAssistanceConfiguration': %w", err)
 		}
 	}
 
@@ -42139,6 +42433,36 @@ func (t *SwitchManagedNetworkOverview) UnmarshalJSON(b []byte) error {
 	return err
 }
 
+// AsLocalLagGlobal returns the union data inside the SwitchStackLagGlobal as a LocalLagGlobal
+func (t SwitchStackLagGlobal) AsLocalLagGlobal() (LocalLagGlobal, error) {
+	var body LocalLagGlobal
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromLocalLagGlobal overwrites any union data inside the SwitchStackLagGlobal as the provided LocalLagGlobal
+func (t *SwitchStackLagGlobal) FromLocalLagGlobal(v LocalLagGlobal) error {
+	t.Type = "LOCAL"
+
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeLocalLagGlobal performs a merge with any union data inside the SwitchStackLagGlobal, using the provided LocalLagGlobal
+func (t *SwitchStackLagGlobal) MergeLocalLagGlobal(v LocalLagGlobal) error {
+	t.Type = "LOCAL"
+
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
 // AsMcLagGlobal returns the union data inside the SwitchStackLagGlobal as a McLagGlobal
 func (t SwitchStackLagGlobal) AsMcLagGlobal() (McLagGlobal, error) {
 	var body McLagGlobal
@@ -42213,6 +42537,8 @@ func (t SwitchStackLagGlobal) ValueByDiscriminator() (interface{}, error) {
 		return nil, err
 	}
 	switch discriminator {
+	case "LOCAL":
+		return t.AsLocalLagGlobal()
 	case "MULTI_CHASSIS":
 		return t.AsMcLagGlobal()
 	case "SWITCH_STACK":
@@ -42245,6 +42571,11 @@ func (t SwitchStackLagGlobal) MarshalJSON() ([]byte, error) {
 		if err != nil {
 			return nil, fmt.Errorf("error marshaling 'members': %w", err)
 		}
+	}
+
+	object["metadata"], err = json.Marshal(t.Metadata)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'metadata': %w", err)
 	}
 
 	if t.SwitchStackId != nil {
@@ -42285,6 +42616,13 @@ func (t *SwitchStackLagGlobal) UnmarshalJSON(b []byte) error {
 		err = json.Unmarshal(raw, &t.Members)
 		if err != nil {
 			return fmt.Errorf("error reading 'members': %w", err)
+		}
+	}
+
+	if raw, found := object["metadata"]; found {
+		err = json.Unmarshal(raw, &t.Metadata)
+		if err != nil {
+			return fmt.Errorf("error reading 'metadata': %w", err)
 		}
 	}
 
@@ -46671,6 +47009,145 @@ func (t *WifiDevicesFilter) UnmarshalJSON(b []byte) error {
 	return err
 }
 
+// AsWifiDnsAssistanceAutoConfiguration returns the union data inside the WifiDnsAssistanceManualConfiguration as a WifiDnsAssistanceAutoConfiguration
+func (t WifiDnsAssistanceManualConfiguration) AsWifiDnsAssistanceAutoConfiguration() (WifiDnsAssistanceAutoConfiguration, error) {
+	var body WifiDnsAssistanceAutoConfiguration
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromWifiDnsAssistanceAutoConfiguration overwrites any union data inside the WifiDnsAssistanceManualConfiguration as the provided WifiDnsAssistanceAutoConfiguration
+func (t *WifiDnsAssistanceManualConfiguration) FromWifiDnsAssistanceAutoConfiguration(v WifiDnsAssistanceAutoConfiguration) error {
+	t.Mode = "AUTO"
+
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeWifiDnsAssistanceAutoConfiguration performs a merge with any union data inside the WifiDnsAssistanceManualConfiguration, using the provided WifiDnsAssistanceAutoConfiguration
+func (t *WifiDnsAssistanceManualConfiguration) MergeWifiDnsAssistanceAutoConfiguration(v WifiDnsAssistanceAutoConfiguration) error {
+	t.Mode = "AUTO"
+
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsWifiDnsAssistanceManualConfiguration returns the union data inside the WifiDnsAssistanceManualConfiguration as a WifiDnsAssistanceManualConfiguration
+func (t WifiDnsAssistanceManualConfiguration) AsWifiDnsAssistanceManualConfiguration() (WifiDnsAssistanceManualConfiguration, error) {
+	var body WifiDnsAssistanceManualConfiguration
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromWifiDnsAssistanceManualConfiguration overwrites any union data inside the WifiDnsAssistanceManualConfiguration as the provided WifiDnsAssistanceManualConfiguration
+func (t *WifiDnsAssistanceManualConfiguration) FromWifiDnsAssistanceManualConfiguration(v WifiDnsAssistanceManualConfiguration) error {
+	t.Mode = "MANUAL"
+
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeWifiDnsAssistanceManualConfiguration performs a merge with any union data inside the WifiDnsAssistanceManualConfiguration, using the provided WifiDnsAssistanceManualConfiguration
+func (t *WifiDnsAssistanceManualConfiguration) MergeWifiDnsAssistanceManualConfiguration(v WifiDnsAssistanceManualConfiguration) error {
+	t.Mode = "MANUAL"
+
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t WifiDnsAssistanceManualConfiguration) Discriminator() (string, error) {
+	var discriminator struct {
+		Discriminator string `json:"mode"`
+	}
+	err := json.Unmarshal(t.union, &discriminator)
+	return discriminator.Discriminator, err
+}
+
+func (t WifiDnsAssistanceManualConfiguration) ValueByDiscriminator() (interface{}, error) {
+	discriminator, err := t.Discriminator()
+	if err != nil {
+		return nil, err
+	}
+	switch discriminator {
+	case "AUTO":
+		return t.AsWifiDnsAssistanceAutoConfiguration()
+	case "MANUAL":
+		return t.AsWifiDnsAssistanceManualConfiguration()
+	default:
+		return nil, errors.New("unknown discriminator value: " + discriminator)
+	}
+}
+
+func (t WifiDnsAssistanceManualConfiguration) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	object := make(map[string]json.RawMessage)
+	if t.union != nil {
+		err = json.Unmarshal(b, &object)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	object["mode"], err = json.Marshal(t.Mode)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'mode': %w", err)
+	}
+
+	if t.Servers != nil {
+		object["servers"], err = json.Marshal(t.Servers)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'servers': %w", err)
+		}
+	}
+	b, err = json.Marshal(object)
+	return b, err
+}
+
+func (t *WifiDnsAssistanceManualConfiguration) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	if err != nil {
+		return err
+	}
+	object := make(map[string]json.RawMessage)
+	err = json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["mode"]; found {
+		err = json.Unmarshal(raw, &t.Mode)
+		if err != nil {
+			return fmt.Errorf("error reading 'mode': %w", err)
+		}
+	}
+
+	if raw, found := object["servers"]; found {
+		err = json.Unmarshal(raw, &t.Servers)
+		if err != nil {
+			return fmt.Errorf("error reading 'servers': %w", err)
+		}
+	}
+
+	return err
+}
+
 // AsWifiCaptivePortalConfigurationDetail returns the union data inside the WifiHotspotConfiguration as a WifiCaptivePortalConfigurationDetail
 func (t WifiHotspotConfiguration) AsWifiCaptivePortalConfigurationDetail() (WifiCaptivePortalConfigurationDetail, error) {
 	var body WifiCaptivePortalConfigurationDetail
@@ -47917,6 +48394,13 @@ func (t WifiOpenSecurityConfigurationDetail) MarshalJSON() ([]byte, error) {
 		}
 	}
 
+	if t.Encryption != nil {
+		object["encryption"], err = json.Marshal(t.Encryption)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'encryption': %w", err)
+		}
+	}
+
 	if t.RadiusConfiguration != nil {
 		object["radiusConfiguration"], err = json.Marshal(t.RadiusConfiguration)
 		if err != nil {
@@ -47942,6 +48426,13 @@ func (t *WifiOpenSecurityConfigurationDetail) UnmarshalJSON(b []byte) error {
 	err = json.Unmarshal(b, &object)
 	if err != nil {
 		return err
+	}
+
+	if raw, found := object["encryption"]; found {
+		err = json.Unmarshal(raw, &t.Encryption)
+		if err != nil {
+			return fmt.Errorf("error reading 'encryption': %w", err)
+		}
 	}
 
 	if raw, found := object["radiusConfiguration"]; found {
