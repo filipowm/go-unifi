@@ -104,7 +104,7 @@ func main() {
 	debugFlag := flag.Bool("debug", false, "Enable debug logging")
 	traceFlag := flag.Bool("trace", false, "Enable trace logging")
 
-	flag.CommandLine.Init(os.Args[0], flag.PanicOnError) // set error handling to panic if parse ends with error
+	flag.CommandLine.Init(os.Args[0], flag.ExitOnError) // set error handling to panic if parse ends with error
 	flag.Parse()
 	logger := setupLogging(*debugFlag, *traceFlag)
 	legacyVersion := strings.TrimSpace(*legacyVersionFlag)
