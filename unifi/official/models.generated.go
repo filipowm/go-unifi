@@ -2277,6 +2277,24 @@ func (e LatestStatisticsForWirelessRadioFrequencyGHz) Valid() bool {
 	}
 }
 
+// Defines values for McLagPeerRole.
+const (
+	BOTTOM McLagPeerRole = "BOTTOM"
+	TOP    McLagPeerRole = "TOP"
+)
+
+// Valid indicates whether the value is a known member of the McLagPeerRole enum.
+func (e McLagPeerRole) Valid() bool {
+	switch e {
+	case BOTTOM:
+		return true
+	case TOP:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for NATOutboundAutoConfigurationIpAddressSelectionMode.
 const (
 	ALL  NATOutboundAutoConfigurationIpAddressSelectionMode = "ALL"
@@ -3038,6 +3056,12 @@ type ACLRuleUpdate struct {
 	SourceFilter interface{} `json:"sourceFilter,omitempty"`
 	Type         string      `json:"type"`
 	union        json.RawMessage
+}
+
+// AbstractIntegrationLagMember is a generated model for the UniFi Official API.
+type AbstractIntegrationLagMember struct {
+	DeviceId openapi_types.UUID `json:"deviceId"`
+	PortIdxs []int32            `json:"portIdxs"`
 }
 
 // AccessPointFeatureOverview is a generated model for the UniFi Official API.
@@ -4926,6 +4950,23 @@ type Ipv6AddressSuffixRangeSelector struct {
 // L2tpServerOverview is a generated model for the UniFi Official API.
 type L2tpServerOverview = VPNServerOverview
 
+// LAGDetails is a generated model for the UniFi Official API.
+type LAGDetails struct {
+	Id      openapi_types.UUID             `json:"id"`
+	Members []AbstractIntegrationLagMember `json:"members"`
+	Type    string                         `json:"type"`
+	union   json.RawMessage
+}
+
+// LagPage is a generated model for the UniFi Official API.
+type LagPage struct {
+	Count      int32        `json:"count"`
+	Data       []LAGDetails `json:"data"`
+	Limit      int32        `json:"limit"`
+	Offset     int64        `json:"offset"`
+	TotalCount int64        `json:"totalCount"`
+}
+
 // LatestStatisticsForADevice is a generated model for the UniFi Official API.
 type LatestStatisticsForADevice struct {
 	CpuUtilizationPct    *float64                                   `json:"cpuUtilizationPct,omitempty"`
@@ -5082,6 +5123,52 @@ type MacAclRuleMacAddressEndpointFilter struct {
 	Type         string `json:"type"`
 	union        json.RawMessage
 }
+
+// McLagDomain is a generated model for the UniFi Official API.
+type McLagDomain struct {
+	Id       openapi_types.UUID        `json:"id"`
+	Lags     []McLagLocal              `json:"lags"`
+	Metadata UserDefinedEntityMetadata `json:"metadata"`
+	Name     string                    `json:"name"`
+	Peers    []McLagPeer               `json:"peers"`
+}
+
+// McLagDomainDtoPage is a generated model for the UniFi Official API.
+type McLagDomainDtoPage struct {
+	Count      int32         `json:"count"`
+	Data       []McLagDomain `json:"data"`
+	Limit      int32         `json:"limit"`
+	Offset     int64         `json:"offset"`
+	TotalCount int64         `json:"totalCount"`
+}
+
+// McLagGlobal is a generated model for the UniFi Official API.
+type McLagGlobal struct {
+	Id            openapi_types.UUID  `json:"id"`
+	McLagDomainId *openapi_types.UUID `json:"mcLagDomainId,omitempty"`
+	Members       []McLagMember       `json:"members"`
+	Type          string              `json:"type"`
+	union         json.RawMessage
+}
+
+// McLagLocal is a generated model for the UniFi Official API.
+type McLagLocal struct {
+	Id      openapi_types.UUID `json:"id"`
+	Members []McLagMember      `json:"members"`
+}
+
+// McLagMember is a generated model for the UniFi Official API.
+type McLagMember = AbstractIntegrationLagMember
+
+// McLagPeer is a generated model for the UniFi Official API.
+type McLagPeer struct {
+	DeviceId     openapi_types.UUID `json:"deviceId"`
+	LinkPortIdxs []int32            `json:"linkPortIdxs"`
+	Role         McLagPeerRole      `json:"role" validate:"omitempty,oneof=TOP BOTTOM"`
+}
+
+// McLagPeerRole is a generated model for the UniFi Official API.
+type McLagPeerRole string
 
 // MulticastFilteringPolicy is a generated model for the UniFi Official API.
 type MulticastFilteringPolicy struct {
@@ -5601,6 +5688,47 @@ type SwitchManagedNetworkOverview struct {
 	// VlanId VLAN ID. Must be 1 for the default network and >= 2 for additional networks.
 	VlanId int32 `json:"vlanId" validate:"omitempty,gte=1,lte=4009"`
 	union  json.RawMessage
+}
+
+// SwitchStack is a generated model for the UniFi Official API.
+type SwitchStack struct {
+	Id       openapi_types.UUID        `json:"id"`
+	Lags     []SwitchStackLagLocal     `json:"lags"`
+	Members  []SwitchStackMember       `json:"members" validate:"omitempty,min=2"`
+	Metadata UserDefinedEntityMetadata `json:"metadata"`
+	Name     string                    `json:"name"`
+}
+
+// SwitchStackDtoPage is a generated model for the UniFi Official API.
+type SwitchStackDtoPage struct {
+	Count      int32         `json:"count"`
+	Data       []SwitchStack `json:"data"`
+	Limit      int32         `json:"limit"`
+	Offset     int64         `json:"offset"`
+	TotalCount int64         `json:"totalCount"`
+}
+
+// SwitchStackLagGlobal is a generated model for the UniFi Official API.
+type SwitchStackLagGlobal struct {
+	Id            openapi_types.UUID     `json:"id"`
+	Members       []SwitchStackLagMember `json:"members"`
+	SwitchStackId *openapi_types.UUID    `json:"switchStackId,omitempty"`
+	Type          string                 `json:"type"`
+	union         json.RawMessage
+}
+
+// SwitchStackLagLocal is a generated model for the UniFi Official API.
+type SwitchStackLagLocal struct {
+	Id      openapi_types.UUID     `json:"id"`
+	Members []SwitchStackLagMember `json:"members"`
+}
+
+// SwitchStackLagMember is a generated model for the UniFi Official API.
+type SwitchStackLagMember = AbstractIntegrationLagMember
+
+// SwitchStackMember is a generated model for the UniFi Official API.
+type SwitchStackMember struct {
+	DeviceId openapi_types.UUID `json:"deviceId"`
 }
 
 // SystemDefinedEntityMetadata is a generated model for the UniFi Official API.
@@ -6565,6 +6693,27 @@ type DeleteNetworkParams struct {
 
 // GetRadiusProfileOverviewPageParams holds query parameters for the UniFi Official API.
 type GetRadiusProfileOverviewPageParams struct {
+	Offset *int32  `form:"offset,omitempty" json:"offset,omitempty"`
+	Limit  *int32  `form:"limit,omitempty" json:"limit,omitempty"`
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
+}
+
+// GetLagPageParams holds query parameters for the UniFi Official API.
+type GetLagPageParams struct {
+	Offset *int32  `form:"offset,omitempty" json:"offset,omitempty"`
+	Limit  *int32  `form:"limit,omitempty" json:"limit,omitempty"`
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
+}
+
+// GetMcLagDomainPageParams holds query parameters for the UniFi Official API.
+type GetMcLagDomainPageParams struct {
+	Offset *int32  `form:"offset,omitempty" json:"offset,omitempty"`
+	Limit  *int32  `form:"limit,omitempty" json:"limit,omitempty"`
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
+}
+
+// GetSwitchStackPageParams holds query parameters for the UniFi Official API.
+type GetSwitchStackPageParams struct {
 	Offset *int32  `form:"offset,omitempty" json:"offset,omitempty"`
 	Limit  *int32  `form:"limit,omitempty" json:"limit,omitempty"`
 	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
@@ -35117,6 +35266,158 @@ func (t *IpV6TrafficMatchingListCreateUpdate) UnmarshalJSON(b []byte) error {
 	return err
 }
 
+// AsMcLagGlobal returns the union data inside the LAGDetails as a McLagGlobal
+func (t LAGDetails) AsMcLagGlobal() (McLagGlobal, error) {
+	var body McLagGlobal
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMcLagGlobal overwrites any union data inside the LAGDetails as the provided McLagGlobal
+func (t *LAGDetails) FromMcLagGlobal(v McLagGlobal) error {
+	t.Type = "MULTI_CHASSIS"
+
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMcLagGlobal performs a merge with any union data inside the LAGDetails, using the provided McLagGlobal
+func (t *LAGDetails) MergeMcLagGlobal(v McLagGlobal) error {
+	t.Type = "MULTI_CHASSIS"
+
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsSwitchStackLagGlobal returns the union data inside the LAGDetails as a SwitchStackLagGlobal
+func (t LAGDetails) AsSwitchStackLagGlobal() (SwitchStackLagGlobal, error) {
+	var body SwitchStackLagGlobal
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromSwitchStackLagGlobal overwrites any union data inside the LAGDetails as the provided SwitchStackLagGlobal
+func (t *LAGDetails) FromSwitchStackLagGlobal(v SwitchStackLagGlobal) error {
+	t.Type = "SWITCH_STACK"
+
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeSwitchStackLagGlobal performs a merge with any union data inside the LAGDetails, using the provided SwitchStackLagGlobal
+func (t *LAGDetails) MergeSwitchStackLagGlobal(v SwitchStackLagGlobal) error {
+	t.Type = "SWITCH_STACK"
+
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t LAGDetails) Discriminator() (string, error) {
+	var discriminator struct {
+		Discriminator string `json:"type"`
+	}
+	err := json.Unmarshal(t.union, &discriminator)
+	return discriminator.Discriminator, err
+}
+
+func (t LAGDetails) ValueByDiscriminator() (interface{}, error) {
+	discriminator, err := t.Discriminator()
+	if err != nil {
+		return nil, err
+	}
+	switch discriminator {
+	case "MULTI_CHASSIS":
+		return t.AsMcLagGlobal()
+	case "SWITCH_STACK":
+		return t.AsSwitchStackLagGlobal()
+	default:
+		return nil, errors.New("unknown discriminator value: " + discriminator)
+	}
+}
+
+func (t LAGDetails) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	object := make(map[string]json.RawMessage)
+	if t.union != nil {
+		err = json.Unmarshal(b, &object)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	object["id"], err = json.Marshal(t.Id)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'id': %w", err)
+	}
+
+	if t.Members != nil {
+		object["members"], err = json.Marshal(t.Members)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'members': %w", err)
+		}
+	}
+
+	object["type"], err = json.Marshal(t.Type)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'type': %w", err)
+	}
+
+	b, err = json.Marshal(object)
+	return b, err
+}
+
+func (t *LAGDetails) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	if err != nil {
+		return err
+	}
+	object := make(map[string]json.RawMessage)
+	err = json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["id"]; found {
+		err = json.Unmarshal(raw, &t.Id)
+		if err != nil {
+			return fmt.Errorf("error reading 'id': %w", err)
+		}
+	}
+
+	if raw, found := object["members"]; found {
+		err = json.Unmarshal(raw, &t.Members)
+		if err != nil {
+			return fmt.Errorf("error reading 'members': %w", err)
+		}
+	}
+
+	if raw, found := object["type"]; found {
+		err = json.Unmarshal(raw, &t.Type)
+		if err != nil {
+			return fmt.Errorf("error reading 'type': %w", err)
+		}
+	}
+
+	return err
+}
+
 // AsDefaultClientAccessDetails returns the union data inside the LocalClientAccessDetails as a DefaultClientAccessDetails
 func (t LocalClientAccessDetails) AsDefaultClientAccessDetails() (DefaultClientAccessDetails, error) {
 	var body DefaultClientAccessDetails
@@ -36473,6 +36774,172 @@ func (t *MacAclRuleMacAddressEndpointFilter) UnmarshalJSON(b []byte) error {
 		err = json.Unmarshal(raw, &t.PrefixLength)
 		if err != nil {
 			return fmt.Errorf("error reading 'prefixLength': %w", err)
+		}
+	}
+
+	if raw, found := object["type"]; found {
+		err = json.Unmarshal(raw, &t.Type)
+		if err != nil {
+			return fmt.Errorf("error reading 'type': %w", err)
+		}
+	}
+
+	return err
+}
+
+// AsMcLagGlobal returns the union data inside the McLagGlobal as a McLagGlobal
+func (t McLagGlobal) AsMcLagGlobal() (McLagGlobal, error) {
+	var body McLagGlobal
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMcLagGlobal overwrites any union data inside the McLagGlobal as the provided McLagGlobal
+func (t *McLagGlobal) FromMcLagGlobal(v McLagGlobal) error {
+	t.Type = "MULTI_CHASSIS"
+
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMcLagGlobal performs a merge with any union data inside the McLagGlobal, using the provided McLagGlobal
+func (t *McLagGlobal) MergeMcLagGlobal(v McLagGlobal) error {
+	t.Type = "MULTI_CHASSIS"
+
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsSwitchStackLagGlobal returns the union data inside the McLagGlobal as a SwitchStackLagGlobal
+func (t McLagGlobal) AsSwitchStackLagGlobal() (SwitchStackLagGlobal, error) {
+	var body SwitchStackLagGlobal
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromSwitchStackLagGlobal overwrites any union data inside the McLagGlobal as the provided SwitchStackLagGlobal
+func (t *McLagGlobal) FromSwitchStackLagGlobal(v SwitchStackLagGlobal) error {
+	t.Type = "SWITCH_STACK"
+
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeSwitchStackLagGlobal performs a merge with any union data inside the McLagGlobal, using the provided SwitchStackLagGlobal
+func (t *McLagGlobal) MergeSwitchStackLagGlobal(v SwitchStackLagGlobal) error {
+	t.Type = "SWITCH_STACK"
+
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t McLagGlobal) Discriminator() (string, error) {
+	var discriminator struct {
+		Discriminator string `json:"type"`
+	}
+	err := json.Unmarshal(t.union, &discriminator)
+	return discriminator.Discriminator, err
+}
+
+func (t McLagGlobal) ValueByDiscriminator() (interface{}, error) {
+	discriminator, err := t.Discriminator()
+	if err != nil {
+		return nil, err
+	}
+	switch discriminator {
+	case "MULTI_CHASSIS":
+		return t.AsMcLagGlobal()
+	case "SWITCH_STACK":
+		return t.AsSwitchStackLagGlobal()
+	default:
+		return nil, errors.New("unknown discriminator value: " + discriminator)
+	}
+}
+
+func (t McLagGlobal) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	object := make(map[string]json.RawMessage)
+	if t.union != nil {
+		err = json.Unmarshal(b, &object)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	object["id"], err = json.Marshal(t.Id)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'id': %w", err)
+	}
+
+	if t.McLagDomainId != nil {
+		object["mcLagDomainId"], err = json.Marshal(t.McLagDomainId)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'mcLagDomainId': %w", err)
+		}
+	}
+
+	if t.Members != nil {
+		object["members"], err = json.Marshal(t.Members)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'members': %w", err)
+		}
+	}
+
+	object["type"], err = json.Marshal(t.Type)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'type': %w", err)
+	}
+
+	b, err = json.Marshal(object)
+	return b, err
+}
+
+func (t *McLagGlobal) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	if err != nil {
+		return err
+	}
+	object := make(map[string]json.RawMessage)
+	err = json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["id"]; found {
+		err = json.Unmarshal(raw, &t.Id)
+		if err != nil {
+			return fmt.Errorf("error reading 'id': %w", err)
+		}
+	}
+
+	if raw, found := object["mcLagDomainId"]; found {
+		err = json.Unmarshal(raw, &t.McLagDomainId)
+		if err != nil {
+			return fmt.Errorf("error reading 'mcLagDomainId': %w", err)
+		}
+	}
+
+	if raw, found := object["members"]; found {
+		err = json.Unmarshal(raw, &t.Members)
+		if err != nil {
+			return fmt.Errorf("error reading 'members': %w", err)
 		}
 	}
 
@@ -41666,6 +42133,172 @@ func (t *SwitchManagedNetworkOverview) UnmarshalJSON(b []byte) error {
 		err = json.Unmarshal(raw, &t.VlanId)
 		if err != nil {
 			return fmt.Errorf("error reading 'vlanId': %w", err)
+		}
+	}
+
+	return err
+}
+
+// AsMcLagGlobal returns the union data inside the SwitchStackLagGlobal as a McLagGlobal
+func (t SwitchStackLagGlobal) AsMcLagGlobal() (McLagGlobal, error) {
+	var body McLagGlobal
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMcLagGlobal overwrites any union data inside the SwitchStackLagGlobal as the provided McLagGlobal
+func (t *SwitchStackLagGlobal) FromMcLagGlobal(v McLagGlobal) error {
+	t.Type = "MULTI_CHASSIS"
+
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMcLagGlobal performs a merge with any union data inside the SwitchStackLagGlobal, using the provided McLagGlobal
+func (t *SwitchStackLagGlobal) MergeMcLagGlobal(v McLagGlobal) error {
+	t.Type = "MULTI_CHASSIS"
+
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsSwitchStackLagGlobal returns the union data inside the SwitchStackLagGlobal as a SwitchStackLagGlobal
+func (t SwitchStackLagGlobal) AsSwitchStackLagGlobal() (SwitchStackLagGlobal, error) {
+	var body SwitchStackLagGlobal
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromSwitchStackLagGlobal overwrites any union data inside the SwitchStackLagGlobal as the provided SwitchStackLagGlobal
+func (t *SwitchStackLagGlobal) FromSwitchStackLagGlobal(v SwitchStackLagGlobal) error {
+	t.Type = "SWITCH_STACK"
+
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeSwitchStackLagGlobal performs a merge with any union data inside the SwitchStackLagGlobal, using the provided SwitchStackLagGlobal
+func (t *SwitchStackLagGlobal) MergeSwitchStackLagGlobal(v SwitchStackLagGlobal) error {
+	t.Type = "SWITCH_STACK"
+
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t SwitchStackLagGlobal) Discriminator() (string, error) {
+	var discriminator struct {
+		Discriminator string `json:"type"`
+	}
+	err := json.Unmarshal(t.union, &discriminator)
+	return discriminator.Discriminator, err
+}
+
+func (t SwitchStackLagGlobal) ValueByDiscriminator() (interface{}, error) {
+	discriminator, err := t.Discriminator()
+	if err != nil {
+		return nil, err
+	}
+	switch discriminator {
+	case "MULTI_CHASSIS":
+		return t.AsMcLagGlobal()
+	case "SWITCH_STACK":
+		return t.AsSwitchStackLagGlobal()
+	default:
+		return nil, errors.New("unknown discriminator value: " + discriminator)
+	}
+}
+
+func (t SwitchStackLagGlobal) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	object := make(map[string]json.RawMessage)
+	if t.union != nil {
+		err = json.Unmarshal(b, &object)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	object["id"], err = json.Marshal(t.Id)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'id': %w", err)
+	}
+
+	if t.Members != nil {
+		object["members"], err = json.Marshal(t.Members)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'members': %w", err)
+		}
+	}
+
+	if t.SwitchStackId != nil {
+		object["switchStackId"], err = json.Marshal(t.SwitchStackId)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'switchStackId': %w", err)
+		}
+	}
+
+	object["type"], err = json.Marshal(t.Type)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'type': %w", err)
+	}
+
+	b, err = json.Marshal(object)
+	return b, err
+}
+
+func (t *SwitchStackLagGlobal) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	if err != nil {
+		return err
+	}
+	object := make(map[string]json.RawMessage)
+	err = json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["id"]; found {
+		err = json.Unmarshal(raw, &t.Id)
+		if err != nil {
+			return fmt.Errorf("error reading 'id': %w", err)
+		}
+	}
+
+	if raw, found := object["members"]; found {
+		err = json.Unmarshal(raw, &t.Members)
+		if err != nil {
+			return fmt.Errorf("error reading 'members': %w", err)
+		}
+	}
+
+	if raw, found := object["switchStackId"]; found {
+		err = json.Unmarshal(raw, &t.SwitchStackId)
+		if err != nil {
+			return fmt.Errorf("error reading 'switchStackId': %w", err)
+		}
+	}
+
+	if raw, found := object["type"]; found {
+		err = json.Unmarshal(raw, &t.Type)
+		if err != nil {
+			return fmt.Errorf("error reading 'type': %w", err)
 		}
 	}
 

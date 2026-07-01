@@ -25,6 +25,8 @@ type Client interface {
 	Sites() SitesClient
 	// Supporting returns the Supporting resource group.
 	Supporting() SupportingClient
+	// Switching returns the Switching resource group.
+	Switching() SwitchingClient
 	// TrafficMatchingLists returns the TrafficMatchingLists resource group.
 	TrafficMatchingLists() TrafficMatchingListsClient
 	// WifiBroadcasts returns the WifiBroadcasts resource group.
@@ -46,6 +48,7 @@ type ClientMock struct {
 	NetworksFunc             func() NetworksClient
 	SitesFunc                func() SitesClient
 	SupportingFunc           func() SupportingClient
+	SwitchingFunc            func() SwitchingClient
 	TrafficMatchingListsFunc func() TrafficMatchingListsClient
 	WifiBroadcastsFunc       func() WifiBroadcastsClient
 }
@@ -90,6 +93,10 @@ func (m *ClientMock) Sites() SitesClient {
 
 func (m *ClientMock) Supporting() SupportingClient {
 	return m.SupportingFunc()
+}
+
+func (m *ClientMock) Switching() SwitchingClient {
+	return m.SwitchingFunc()
 }
 
 func (m *ClientMock) TrafficMatchingLists() TrafficMatchingListsClient {
