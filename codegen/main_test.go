@@ -189,14 +189,14 @@ func TestGenerateLatest(t *testing.T) {
 
 	versionGo, err := os.ReadFile(filepath.Join(opts.outputDir, "version.generated.go"))
 	r.NoError(err)
-	assert.Contains(t, string(versionGo), `"`+internalVersion+`"`, "internal marker must match version.generated.go UnifiVersion")
+	assert.Contains(t, string(versionGo), `LegacyUnifiVersion = "`+internalVersion+`"`, "internal marker must match version.generated.go LegacyUnifiVersion")
 
 	// Official marker is also written beside outDir and its const is in version.generated.go.
 	officialMarker, err := os.ReadFile(filepath.Join(root, ".unifi-version-official"))
 	r.NoError(err)
 	officialVersion := strings.TrimSpace(string(officialMarker))
 	r.NotEmpty(officialVersion)
-	assert.Contains(t, string(versionGo), `OfficialAPIVersion = "`+officialVersion+`"`, "official marker must match version.generated.go OfficialAPIVersion")
+	assert.Contains(t, string(versionGo), `UnifiVersion = "`+officialVersion+`"`, "official marker must match version.generated.go UnifiVersion")
 
 	// Assert that generate() commits the Official OpenAPI spec snapshot.
 	specGlob := filepath.Join(opts.versionBaseDir, "openapi", "integration-*.json")

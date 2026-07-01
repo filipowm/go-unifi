@@ -4851,7 +4851,18 @@ type IpAclRuleCreateUpdate struct {
 type IpAclRuleNetworkEndpointFilter struct {
 	// NetworkIds Network IDs
 	NetworkIds *[]openapi_types.UUID `json:"networkIds,omitempty"`
-	Type       string                `json:"type"`
+
+	// PortFilter Ports this ACL rule will be applied to. If null, the rule will be applied to all ports.
+	PortFilter *[]int32 `json:"portFilter,omitempty"`
+	Type       string   `json:"type"`
+	union      json.RawMessage
+}
+
+// IpAclRulePortEndpointFilter is a generated model for the UniFi Official API.
+type IpAclRulePortEndpointFilter struct {
+	// PortFilter Ports this ACL rule will be applied to.
+	PortFilter *[]int32 `json:"portFilter,omitempty"`
+	Type       string   `json:"type"`
 	union      json.RawMessage
 }
 
@@ -31899,6 +31910,36 @@ func (t *IPACLRuleEndpoint) MergeIpAclRuleNetworkEndpointFilter(v IpAclRuleNetwo
 	return err
 }
 
+// AsIpAclRulePortEndpointFilter returns the union data inside the IPACLRuleEndpoint as a IpAclRulePortEndpointFilter
+func (t IPACLRuleEndpoint) AsIpAclRulePortEndpointFilter() (IpAclRulePortEndpointFilter, error) {
+	var body IpAclRulePortEndpointFilter
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromIpAclRulePortEndpointFilter overwrites any union data inside the IPACLRuleEndpoint as the provided IpAclRulePortEndpointFilter
+func (t *IPACLRuleEndpoint) FromIpAclRulePortEndpointFilter(v IpAclRulePortEndpointFilter) error {
+	t.Type = "PORTS"
+
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeIpAclRulePortEndpointFilter performs a merge with any union data inside the IPACLRuleEndpoint, using the provided IpAclRulePortEndpointFilter
+func (t *IPACLRuleEndpoint) MergeIpAclRulePortEndpointFilter(v IpAclRulePortEndpointFilter) error {
+	t.Type = "PORTS"
+
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
 // AsIpAclRuleSubnetEndpointFilter returns the union data inside the IPACLRuleEndpoint as a IpAclRuleSubnetEndpointFilter
 func (t IPACLRuleEndpoint) AsIpAclRuleSubnetEndpointFilter() (IpAclRuleSubnetEndpointFilter, error) {
 	var body IpAclRuleSubnetEndpointFilter
@@ -31947,6 +31988,8 @@ func (t IPACLRuleEndpoint) ValueByDiscriminator() (interface{}, error) {
 		return t.AsIpAclRuleSubnetEndpointFilter()
 	case "NETWORKS":
 		return t.AsIpAclRuleNetworkEndpointFilter()
+	case "PORTS":
+		return t.AsIpAclRulePortEndpointFilter()
 	default:
 		return nil, errors.New("unknown discriminator value: " + discriminator)
 	}
@@ -33800,6 +33843,36 @@ func (t *IpAclRuleNetworkEndpointFilter) MergeIpAclRuleNetworkEndpointFilter(v I
 	return err
 }
 
+// AsIpAclRulePortEndpointFilter returns the union data inside the IpAclRuleNetworkEndpointFilter as a IpAclRulePortEndpointFilter
+func (t IpAclRuleNetworkEndpointFilter) AsIpAclRulePortEndpointFilter() (IpAclRulePortEndpointFilter, error) {
+	var body IpAclRulePortEndpointFilter
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromIpAclRulePortEndpointFilter overwrites any union data inside the IpAclRuleNetworkEndpointFilter as the provided IpAclRulePortEndpointFilter
+func (t *IpAclRuleNetworkEndpointFilter) FromIpAclRulePortEndpointFilter(v IpAclRulePortEndpointFilter) error {
+	t.Type = "PORTS"
+
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeIpAclRulePortEndpointFilter performs a merge with any union data inside the IpAclRuleNetworkEndpointFilter, using the provided IpAclRulePortEndpointFilter
+func (t *IpAclRuleNetworkEndpointFilter) MergeIpAclRulePortEndpointFilter(v IpAclRulePortEndpointFilter) error {
+	t.Type = "PORTS"
+
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
 // AsIpAclRuleSubnetEndpointFilter returns the union data inside the IpAclRuleNetworkEndpointFilter as a IpAclRuleSubnetEndpointFilter
 func (t IpAclRuleNetworkEndpointFilter) AsIpAclRuleSubnetEndpointFilter() (IpAclRuleSubnetEndpointFilter, error) {
 	var body IpAclRuleSubnetEndpointFilter
@@ -33848,6 +33921,8 @@ func (t IpAclRuleNetworkEndpointFilter) ValueByDiscriminator() (interface{}, err
 		return t.AsIpAclRuleSubnetEndpointFilter()
 	case "NETWORKS":
 		return t.AsIpAclRuleNetworkEndpointFilter()
+	case "PORTS":
+		return t.AsIpAclRulePortEndpointFilter()
 	default:
 		return nil, errors.New("unknown discriminator value: " + discriminator)
 	}
@@ -33870,6 +33945,13 @@ func (t IpAclRuleNetworkEndpointFilter) MarshalJSON() ([]byte, error) {
 		object["networkIds"], err = json.Marshal(t.NetworkIds)
 		if err != nil {
 			return nil, fmt.Errorf("error marshaling 'networkIds': %w", err)
+		}
+	}
+
+	if t.PortFilter != nil {
+		object["portFilter"], err = json.Marshal(t.PortFilter)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'portFilter': %w", err)
 		}
 	}
 
@@ -33897,6 +33979,185 @@ func (t *IpAclRuleNetworkEndpointFilter) UnmarshalJSON(b []byte) error {
 		err = json.Unmarshal(raw, &t.NetworkIds)
 		if err != nil {
 			return fmt.Errorf("error reading 'networkIds': %w", err)
+		}
+	}
+
+	if raw, found := object["portFilter"]; found {
+		err = json.Unmarshal(raw, &t.PortFilter)
+		if err != nil {
+			return fmt.Errorf("error reading 'portFilter': %w", err)
+		}
+	}
+
+	if raw, found := object["type"]; found {
+		err = json.Unmarshal(raw, &t.Type)
+		if err != nil {
+			return fmt.Errorf("error reading 'type': %w", err)
+		}
+	}
+
+	return err
+}
+
+// AsIpAclRuleNetworkEndpointFilter returns the union data inside the IpAclRulePortEndpointFilter as a IpAclRuleNetworkEndpointFilter
+func (t IpAclRulePortEndpointFilter) AsIpAclRuleNetworkEndpointFilter() (IpAclRuleNetworkEndpointFilter, error) {
+	var body IpAclRuleNetworkEndpointFilter
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromIpAclRuleNetworkEndpointFilter overwrites any union data inside the IpAclRulePortEndpointFilter as the provided IpAclRuleNetworkEndpointFilter
+func (t *IpAclRulePortEndpointFilter) FromIpAclRuleNetworkEndpointFilter(v IpAclRuleNetworkEndpointFilter) error {
+	t.Type = "NETWORKS"
+
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeIpAclRuleNetworkEndpointFilter performs a merge with any union data inside the IpAclRulePortEndpointFilter, using the provided IpAclRuleNetworkEndpointFilter
+func (t *IpAclRulePortEndpointFilter) MergeIpAclRuleNetworkEndpointFilter(v IpAclRuleNetworkEndpointFilter) error {
+	t.Type = "NETWORKS"
+
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsIpAclRulePortEndpointFilter returns the union data inside the IpAclRulePortEndpointFilter as a IpAclRulePortEndpointFilter
+func (t IpAclRulePortEndpointFilter) AsIpAclRulePortEndpointFilter() (IpAclRulePortEndpointFilter, error) {
+	var body IpAclRulePortEndpointFilter
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromIpAclRulePortEndpointFilter overwrites any union data inside the IpAclRulePortEndpointFilter as the provided IpAclRulePortEndpointFilter
+func (t *IpAclRulePortEndpointFilter) FromIpAclRulePortEndpointFilter(v IpAclRulePortEndpointFilter) error {
+	t.Type = "PORTS"
+
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeIpAclRulePortEndpointFilter performs a merge with any union data inside the IpAclRulePortEndpointFilter, using the provided IpAclRulePortEndpointFilter
+func (t *IpAclRulePortEndpointFilter) MergeIpAclRulePortEndpointFilter(v IpAclRulePortEndpointFilter) error {
+	t.Type = "PORTS"
+
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsIpAclRuleSubnetEndpointFilter returns the union data inside the IpAclRulePortEndpointFilter as a IpAclRuleSubnetEndpointFilter
+func (t IpAclRulePortEndpointFilter) AsIpAclRuleSubnetEndpointFilter() (IpAclRuleSubnetEndpointFilter, error) {
+	var body IpAclRuleSubnetEndpointFilter
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromIpAclRuleSubnetEndpointFilter overwrites any union data inside the IpAclRulePortEndpointFilter as the provided IpAclRuleSubnetEndpointFilter
+func (t *IpAclRulePortEndpointFilter) FromIpAclRuleSubnetEndpointFilter(v IpAclRuleSubnetEndpointFilter) error {
+	t.Type = "IP_ADDRESSES_OR_SUBNETS"
+
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeIpAclRuleSubnetEndpointFilter performs a merge with any union data inside the IpAclRulePortEndpointFilter, using the provided IpAclRuleSubnetEndpointFilter
+func (t *IpAclRulePortEndpointFilter) MergeIpAclRuleSubnetEndpointFilter(v IpAclRuleSubnetEndpointFilter) error {
+	t.Type = "IP_ADDRESSES_OR_SUBNETS"
+
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t IpAclRulePortEndpointFilter) Discriminator() (string, error) {
+	var discriminator struct {
+		Discriminator string `json:"type"`
+	}
+	err := json.Unmarshal(t.union, &discriminator)
+	return discriminator.Discriminator, err
+}
+
+func (t IpAclRulePortEndpointFilter) ValueByDiscriminator() (interface{}, error) {
+	discriminator, err := t.Discriminator()
+	if err != nil {
+		return nil, err
+	}
+	switch discriminator {
+	case "IP_ADDRESSES_OR_SUBNETS":
+		return t.AsIpAclRuleSubnetEndpointFilter()
+	case "NETWORKS":
+		return t.AsIpAclRuleNetworkEndpointFilter()
+	case "PORTS":
+		return t.AsIpAclRulePortEndpointFilter()
+	default:
+		return nil, errors.New("unknown discriminator value: " + discriminator)
+	}
+}
+
+func (t IpAclRulePortEndpointFilter) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	object := make(map[string]json.RawMessage)
+	if t.union != nil {
+		err = json.Unmarshal(b, &object)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if t.PortFilter != nil {
+		object["portFilter"], err = json.Marshal(t.PortFilter)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'portFilter': %w", err)
+		}
+	}
+
+	object["type"], err = json.Marshal(t.Type)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'type': %w", err)
+	}
+
+	b, err = json.Marshal(object)
+	return b, err
+}
+
+func (t *IpAclRulePortEndpointFilter) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	if err != nil {
+		return err
+	}
+	object := make(map[string]json.RawMessage)
+	err = json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["portFilter"]; found {
+		err = json.Unmarshal(raw, &t.PortFilter)
+		if err != nil {
+			return fmt.Errorf("error reading 'portFilter': %w", err)
 		}
 	}
 
@@ -33929,6 +34190,36 @@ func (t *IpAclRuleSubnetEndpointFilter) FromIpAclRuleNetworkEndpointFilter(v IpA
 // MergeIpAclRuleNetworkEndpointFilter performs a merge with any union data inside the IpAclRuleSubnetEndpointFilter, using the provided IpAclRuleNetworkEndpointFilter
 func (t *IpAclRuleSubnetEndpointFilter) MergeIpAclRuleNetworkEndpointFilter(v IpAclRuleNetworkEndpointFilter) error {
 	t.Type = "NETWORKS"
+
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsIpAclRulePortEndpointFilter returns the union data inside the IpAclRuleSubnetEndpointFilter as a IpAclRulePortEndpointFilter
+func (t IpAclRuleSubnetEndpointFilter) AsIpAclRulePortEndpointFilter() (IpAclRulePortEndpointFilter, error) {
+	var body IpAclRulePortEndpointFilter
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromIpAclRulePortEndpointFilter overwrites any union data inside the IpAclRuleSubnetEndpointFilter as the provided IpAclRulePortEndpointFilter
+func (t *IpAclRuleSubnetEndpointFilter) FromIpAclRulePortEndpointFilter(v IpAclRulePortEndpointFilter) error {
+	t.Type = "PORTS"
+
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeIpAclRulePortEndpointFilter performs a merge with any union data inside the IpAclRuleSubnetEndpointFilter, using the provided IpAclRulePortEndpointFilter
+func (t *IpAclRuleSubnetEndpointFilter) MergeIpAclRulePortEndpointFilter(v IpAclRulePortEndpointFilter) error {
+	t.Type = "PORTS"
 
 	b, err := json.Marshal(v)
 	if err != nil {
@@ -33988,6 +34279,8 @@ func (t IpAclRuleSubnetEndpointFilter) ValueByDiscriminator() (interface{}, erro
 		return t.AsIpAclRuleSubnetEndpointFilter()
 	case "NETWORKS":
 		return t.AsIpAclRuleNetworkEndpointFilter()
+	case "PORTS":
+		return t.AsIpAclRulePortEndpointFilter()
 	default:
 		return nil, errors.New("unknown discriminator value: " + discriminator)
 	}

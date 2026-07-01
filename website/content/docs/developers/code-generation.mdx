@@ -59,6 +59,12 @@ The Internal field snapshot is **frozen** at `codegen/v9.5.21/` (committed, with
 un-ignore rule). Because the inputs are committed, the daily regeneration CI is a deterministic no-op unless a
 snapshot or template actually changes.
 
+**Multiple Official snapshots may coexist** under `codegen/openapi/`: bumping the spec keeps the older
+`integration-<ver>.json` alongside the new one. The Official pass generates the Go surface from the **pinned**
+version (the positional argument / `.unifi-version-official`); the [docs website](/docs) always renders the
+**newest** committed snapshot by version order. If the pinned snapshot already exists, the generator uses it
+offline and skips the download.
+
 <Callout type="info">
 If a committed snapshot is missing, the generator falls back to downloading it. `download.go` is the **only**
 remote-ingest point — HTTPS with Ubiquiti-host pinning, atomic extraction, and size caps. A package that
@@ -81,7 +87,7 @@ its own resolver in `codegen/version.go`.
     '.unifi-version-official': {
       description: 'Official OpenAPI spec version. Floor of 10.1.78; resolved by resolveOfficialSpecVersion.',
       type: 'marker file',
-      default: '10.1.78',
+      default: '10.1.85',
     },
   }}
 />
@@ -101,31 +107,33 @@ generate Internal resources from beyond this point — the legacy field-definiti
 ### The Official axis floors at 10.1.78
 
 `10.1.78` is the first controller whose package ships `integration.json` (the Official OpenAPI spec).
-`resolveOfficialSpecVersion` decouples this from the Internal version: when set explicitly it uses exactly that
-version; otherwise it reuses the Internal version if it is `≥ 10.1.78`, and falls back to the latest release
-when the Internal version predates the Official API.
+`resolveOfficialSpecVersion` decouples this from the Internal version: when set explicitly (the **positional
+argument**) it uses exactly that version; otherwise it reuses the Internal version if it is `≥ 10.1.78`, and
+falls back to the latest release when the Internal version predates the Official API.
 
 The committed `go generate` directive pins **both** axes explicitly, so the canonical regenerate is fully
-reproducible:
+reproducible. The positional argument is the **Official spec version**; `-legacy-version` pins the Internal
+controller version:
 
 ```go title="unifi/codegen.go"
-//go:generate go run ../codegen/ -version-base-dir=../codegen/ -official-spec-version=10.1.78 9.5.21
+//go:generate go run ../codegen/ -version-base-dir=../codegen/ -legacy-version=9.5.21 10.1.85
 ```
 
 ## Generator flags
 
-The root generator (`go run ./codegen [OPTIONS] <version>`) accepts:
+The root generator (`go run ./codegen [OPTIONS] [official-spec-version]`) accepts:
 
 | Flag | Description | Default |
 |---|---|---|
 | `-version-base-dir` | Base directory for version JSON files (and the `openapi/` snapshot dir) | `.` |
 | `-output-dir` | Output directory for the generated Go code | `.` |
-| `-official-spec-version` | Pin the Official OpenAPI spec version (e.g. `10.1.78`). Empty = auto-select | _(empty)_ |
+| `-legacy-version` | Pin the Internal/legacy controller version (capped at `9.5.21`) | `latest` |
 | `-download-only` | Only fetch/build the input JSONs; do not generate | `false` |
 | `-debug` | Enable debug logging | `false` |
 | `-trace` | Enable trace logging (takes precedence over `-debug`) | `false` |
 
-The positional `<version>` argument is the Internal controller version (`latest` by default).
+The positional `[official-spec-version]` argument pins the Official OpenAPI spec version (e.g. `10.1.85`); leave
+it empty to auto-select (the Internal version when `≥ 10.1.78`, otherwise the latest release).
 
 ## What guards it
 

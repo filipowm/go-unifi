@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
@@ -172,15 +174,133 @@ func normalizeHeader(code string) (string, error) {
 	return banner + "\n\n" + body, nil
 }
 
-// ResolveSnapshot returns the single committed integration-<ver>.json snapshot in
-// dir, failing loudly on zero or multiple so the pinned version is unambiguous.
-func ResolveSnapshot(dir string) (string, error) {
-	matches, err := filepath.Glob(filepath.Join(dir, "integration-*.json"))
+// specNameRe matches a committed OpenAPI snapshot filename, capturing its version.
+var specNameRe = regexp.MustCompile(`^integration-(.+)\.json$`)
+
+// specFile is a committed OpenAPI snapshot with its parsed version.
+type specFile struct {
+	path    string
+	version string
+	parts   []int
+}
+
+// listSpecs returns every committed integration-<ver>.json snapshot in dir,
+// sorted ascending by numeric version so the newest is last. Supporting multiple
+// snapshots lets the codegen pin one version while the website renders latest.
+func listSpecs(dir string) ([]specFile, error) {
+	entries, err := os.ReadDir(dir)
 	if err != nil {
-		return "", fmt.Errorf("glob integration snapshots in %s: %w", dir, err)
+		return nil, fmt.Errorf("reading openapi dir %s: %w", dir, err)
 	}
-	if len(matches) != 1 {
-		return "", fmt.Errorf("expected exactly one integration-*.json in %s, found %d", dir, len(matches))
+	var specs []specFile
+	for _, e := range entries {
+		if e.IsDir() {
+			continue
+		}
+		m := specNameRe.FindStringSubmatch(e.Name())
+		if m == nil {
+			continue
+		}
+		specs = append(specs, specFile{
+			path:    filepath.Join(dir, e.Name()),
+			version: m[1],
+			parts:   parseVersionParts(m[1]),
+		})
 	}
-	return matches[0], nil
+	sort.Slice(specs, func(i, j int) bool {
+		return compareVersionParts(specs[i].parts, specs[j].parts) < 0
+	})
+	return specs, nil
+}
+
+// parseVersionParts splits a version string into its numeric components,
+// tolerating any non-digit separator. Non-numeric tail segments (e.g. "-rc1")
+// contribute nothing, mirroring the website's numeric-collation ordering.
+func parseVersionParts(v string) []int {
+	fields := strings.FieldsFunc(v, func(r rune) bool { return r < '0' || r > '9' })
+	parts := make([]int, len(fields))
+	for i, f := range fields {
+		parts[i], _ = strconv.Atoi(f)
+	}
+	return parts
+}
+
+// compareVersionParts orders two version-component slices: shorter sorts first
+// when a common prefix is equal (10.1 < 10.1.5).
+func compareVersionParts(a, b []int) int {
+	for i := 0; i < len(a) && i < len(b); i++ {
+		if a[i] != b[i] {
+			if a[i] < b[i] {
+				return -1
+			}
+			return 1
+		}
+	}
+	switch {
+	case len(a) < len(b):
+		return -1
+	case len(a) > len(b):
+		return 1
+	default:
+		return 0
+	}
+}
+
+// ResolveSnapshot returns the committed integration-<ver>.json snapshot in dir to
+// generate from. Multiple snapshots may be committed side by side; version selects
+// which one:
+//   - non-empty: the exact integration-<version>.json (fails loudly if absent),
+//   - empty: the newest committed snapshot by numeric version — the same choice
+//     the website makes, so a standalone default reproduces latest.
+func ResolveSnapshot(dir, version string) (string, error) {
+	specs, err := listSpecs(dir)
+	if err != nil {
+		return "", err
+	}
+	if len(specs) == 0 {
+		return "", fmt.Errorf("no integration-*.json OpenAPI spec found in %s", dir)
+	}
+	if version == "" {
+		return specs[len(specs)-1].path, nil
+	}
+	for _, s := range specs {
+		if s.version == version {
+			return s.path, nil
+		}
+	}
+	available := make([]string, len(specs))
+	for i, s := range specs {
+		available[i] = s.version
+	}
+	return "", fmt.Errorf("no committed OpenAPI spec for version %s in %s (available: %s)", version, dir, strings.Join(available, ", "))
+}
+
+// pinnedOfficialVersion walks up from dir to find the repo's
+// .unifi-version-official marker and returns its trimmed contents, or "" (no
+// error) when it cannot be located — callers then fall back to the newest snapshot.
+func pinnedOfficialVersion(dir string) string {
+	d, err := filepath.Abs(dir)
+	if err != nil {
+		return ""
+	}
+	for {
+		if b, err := os.ReadFile(filepath.Join(d, ".unifi-version-official")); err == nil {
+			return strings.TrimSpace(string(b))
+		}
+		parent := filepath.Dir(d)
+		if parent == d {
+			return ""
+		}
+		d = parent
+	}
+}
+
+// resolveSnapshotVersion picks the snapshot version to generate from: the explicit
+// flag when set, else the committed .unifi-version-official pin, else "" so
+// ResolveSnapshot selects the newest snapshot.
+func resolveSnapshotVersion(openapiDir, explicit string) string {
+	if explicit != "" {
+		return explicit
+	}
+	return pinnedOfficialVersion(openapiDir)
 }

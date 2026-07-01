@@ -2,6 +2,6 @@
 
 package unifi
 
-const UnifiVersion = "9.5.21"
+const LegacyUnifiVersion = "9.5.21"
 
-const OfficialAPIVersion = "10.1.78"
+const UnifiVersion = "10.1.85"

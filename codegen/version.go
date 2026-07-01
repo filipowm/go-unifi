@@ -83,8 +83,8 @@ func resolveInternalVersion(p UnifiVersionProvider, marker string) (*UnifiVersio
 					"reached end-of-life at %s and UOS packages (>= 10.x) no longer ship the "+
 					"internal api/fields/*.json definitions required for resource code generation; "+
 					"to target the Official OpenAPI surface use the Official frontend (GitHub issue #121) "+
-					"with -official-spec-version <version> (minimum supported: %s); "+
-					"to generate Internal resources pin to a version <= %s (e.g. make generate VERSION=%s)",
+					"by passing the spec version as the positional argument (minimum supported: %s); "+
+					"to generate Internal resources pin -legacy-version to a version <= %s (e.g. make generate VERSION=%s)",
 				explicit.Core(), maxInternalVersion, minOfficialSpecVersion,
 				maxInternalVersion, maxInternalVersion,
 			)
@@ -225,9 +225,9 @@ func writeVersionFile(internalVersion *version.Version, officialVersion *version
 
 package unifi
 
-const UnifiVersion = %q
+const LegacyUnifiVersion = %q
 
-const OfficialAPIVersion = %q
+const UnifiVersion = %q
 `, internalVersion.Core(), officialVersion.Core())
 
 	versionGo, err := format.Source(versionGo)

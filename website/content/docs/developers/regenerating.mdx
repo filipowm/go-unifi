@@ -16,8 +16,9 @@ go generate unifi/codegen.go
 ```
 
 This invokes the directive in `unifi/codegen.go`, which pins both version axes explicitly
-(`-official-spec-version=10.1.78 9.5.21`), so the result is byte-for-byte reproducible. After running it,
-`git diff` should be empty unless a snapshot, template, or `customizations.yml` actually changed.
+(`-legacy-version=9.5.21 10.1.85` — the positional argument is the Official spec version), so the result is
+byte-for-byte reproducible. After running it, `git diff` should be empty unless a snapshot, template, or
+`customizations.yml` actually changed.
 
 ## Regenerate the DeviceState stringer
 
@@ -37,23 +38,24 @@ make generate-stringer     # just the DeviceState stringer
 make generate-resources    # just the resource types (VERSION=latest by default)
 ```
 
-`make generate-resources` runs the root generator directly:
+`make generate-resources` runs the root generator directly, passing `VERSION` as the positional
+Official-spec-version argument:
 
 ```bash
 go run ./codegen/ -version-base-dir=./codegen/ -output-dir=./unifi <VERSION>
 ```
 
-Override the Internal controller version with `VERSION` (default `latest`, which clamps to the `9.5.21` cap):
+`VERSION` pins the **Official spec version** (default `latest`); override the **Internal** controller version
+with `-legacy-version` (default `latest`, which clamps to the `9.5.21` cap):
 
 ```bash
-make generate-resources VERSION=9.3.45
-make generate VERSION=9.3.45     # stringer + resources at that version
+make generate-resources VERSION=10.1.85
+make generate VERSION=10.1.85     # stringer + resources at that spec version
 ```
 
 <Callout type="info">
-`make generate-resources` does **not** pin `-official-spec-version`, so the Official spec auto-resolves (latest
-when the Internal version predates the Official API). For a fully reproducible regenerate that pins both axes,
-prefer `go generate unifi/codegen.go`.
+When `VERSION` is empty the Official spec auto-resolves (latest when the Internal version predates the Official
+API). For a fully reproducible regenerate that pins both axes, prefer `go generate unifi/codegen.go`.
 </Callout>
 
 ## Regenerate the moq mock
@@ -74,16 +76,18 @@ The `@latest` form needs network access to fetch moq. Offline, run a locally-ins
 
 ## Pinning the Official spec version
 
-To generate against a specific Official OpenAPI snapshot independently of the Internal version, pass
-`-official-spec-version`:
+The Official OpenAPI spec version is the **positional argument**; `-legacy-version` pins the Internal version
+independently:
 
 ```bash
 go run ./codegen/ -version-base-dir=./codegen/ -output-dir=./unifi \
-  -official-spec-version=10.1.78 9.5.21
+  -legacy-version=9.5.21 10.1.85
 ```
 
-When the snapshot `codegen/openapi/integration-<ver>.json` is already committed, the generator uses it offline;
-otherwise it downloads and commits it.
+Multiple snapshots may be committed side by side under `codegen/openapi/` — the positional version selects which
+one the Go surface is generated from. When the snapshot `codegen/openapi/integration-<ver>.json` is already
+committed, the generator uses it offline; otherwise it downloads and commits it (keeping any existing
+snapshots). The [docs website](/docs) always renders the newest committed snapshot.
 
 ## Refreshing a frozen snapshot
 
@@ -98,9 +102,9 @@ rule), which is why daily regeneration is a deterministic no-op. To move to a ne
 <Step>Regenerate (`go generate unifi/codegen.go`) and review the golden diff.</Step>
 </Steps>
 
-Refreshing the **Official** spec is simpler: bump the version in the `unifi/codegen.go` directive (or pass
-`-official-spec-version`), regenerate to download and commit the new `integration-<ver>.json`, and verify the
-diff.
+Refreshing the **Official** spec is simpler: bump the positional version in the `unifi/codegen.go` directive
+(the older `integration-<ver>.json` can stay committed alongside the new one), regenerate to download and commit
+the new snapshot, and verify the diff.
 
 ## Verify before committing
 

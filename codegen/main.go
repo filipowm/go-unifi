@@ -40,8 +40,11 @@ func orDefaultLogger(logger Logger) Logger {
 }
 
 func usage() {
-	fmt.Printf("Usage: %s [OPTIONS] version\n", path.Base(os.Args[0]))
-	fmt.Printf("version can be a specific version or '%s' (default) for the latest UniFi Controller version\n", LatestVersionMarker)
+	fmt.Printf("Usage: %s [OPTIONS] [official-spec-version]\n", path.Base(os.Args[0]))
+	fmt.Printf("official-spec-version pins the Official-API OpenAPI spec (e.g. 10.1.85); empty auto-selects "+
+		"(same as -legacy-version when >=%s, else latest)\n", minOfficialSpecVersion)
+	fmt.Printf("-legacy-version pins the Internal/legacy controller version for resource generation "+
+		"(default '%s', capped at %s)\n", LatestVersionMarker, maxInternalVersion)
 	flag.PrintDefaults()
 }
 
@@ -97,23 +100,24 @@ func main() {
 	versionBaseDirFlag := flag.String("version-base-dir", ".", "The base directory for version JSON files")
 	outputDirFlag := flag.String("output-dir", ".", "The output directory of the generated Go code")
 	downloadOnly := flag.Bool("download-only", false, "Only download and build the API structures JSON directory, do not generate")
-	officialSpecVersionFlag := flag.String("official-spec-version", "", "Official-API OpenAPI spec version (default: same as controller when >=10.1.78, else latest)")
+	legacyVersionFlag := flag.String("legacy-version", LatestVersionMarker, "Internal/legacy controller version for resource generation (default: latest, capped at 9.5.21)")
 	debugFlag := flag.Bool("debug", false, "Enable debug logging")
 	traceFlag := flag.Bool("trace", false, "Enable trace logging")
 
 	flag.CommandLine.Init(os.Args[0], flag.PanicOnError) // set error handling to panic if parse ends with error
 	flag.Parse()
 	logger := setupLogging(*debugFlag, *traceFlag)
-	specifiedVersion := strings.TrimSpace(flag.Arg(0))
-	if specifiedVersion == "" {
-		specifiedVersion = LatestVersionMarker // default to latest version
+	legacyVersion := strings.TrimSpace(*legacyVersionFlag)
+	if legacyVersion == "" {
+		legacyVersion = LatestVersionMarker // default to latest version
 	}
+	// The positional argument is the Official-API spec version; empty auto-selects.
 	err := generate(options{
 		versionBaseDir:      *versionBaseDirFlag,
 		outputDir:           *outputDirFlag,
 		downloadOnly:        *downloadOnly,
-		version:             specifiedVersion,
-		officialSpecVersion: *officialSpecVersionFlag,
+		version:             legacyVersion,
+		officialSpecVersion: strings.TrimSpace(flag.Arg(0)),
 		firmwareUpdateApi:   defaultFirmwareUpdateApi,
 		customizationsPath:  "customizations.yml",
 		logger:              logger,
@@ -201,7 +205,7 @@ func generate(opts options) error {
 	// Second pass: fold in the Official-API frontend so one `go generate` emits
 	// both the Internal resources and the Official models + wrappers + interface
 	// + mock. The frontend reads the committed spec snapshot offline.
-	if err = runOfficialPass(versionBaseDir, outDir, logger); err != nil {
+	if err = runOfficialPass(versionBaseDir, outDir, officialVersion.Version.Core().String(), logger); err != nil {
 		return err
 	}
 

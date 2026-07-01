@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -14,10 +15,12 @@ const (
 	committedFile = "../../unifi/official/models.generated.go"
 )
 
-// loadSnapshot reads the committed Official OpenAPI snapshot bytes.
+// loadSnapshot reads the committed Official OpenAPI snapshot bytes for the pinned
+// version — the same resolution the standalone frontend uses, so the bytes match
+// the committed generated surface even when multiple snapshots are committed.
 func loadSnapshot(t *testing.T) []byte {
 	t.Helper()
-	path, err := ResolveSnapshot(snapshotDir)
+	path, err := ResolveSnapshot(snapshotDir, resolveSnapshotVersion(snapshotDir, ""))
 	require.NoError(t, err)
 	raw, err := os.ReadFile(path)
 	require.NoError(t, err)
@@ -97,10 +100,58 @@ func TestGeneratedSurface(t *testing.T) {
 
 func TestResolveSnapshot(t *testing.T) {
 	t.Parallel()
-	path, err := ResolveSnapshot(snapshotDir)
+
+	// Committed dir: empty version resolves to the pinned/newest snapshot.
+	path, err := ResolveSnapshot(snapshotDir, "")
 	require.NoError(t, err)
 	assert.True(t, strings.HasSuffix(path, ".json"))
 
-	_, err = ResolveSnapshot(t.TempDir())
+	// Empty dir: no snapshots is an error.
+	_, err = ResolveSnapshot(t.TempDir(), "")
 	require.Error(t, err)
+}
+
+// TestResolveSnapshotMultiple proves multiple committed snapshots coexist: an
+// empty version selects the newest by numeric order (not lexicographic), and an
+// explicit version selects exactly that one.
+func TestResolveSnapshotMultiple(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	for _, v := range []string{"10.1.78", "10.1.85", "9.5.21", "10.1.9"} {
+		require.NoError(t, os.WriteFile(filepath.Join(dir, "integration-"+v+".json"), []byte("{}"), 0o644))
+	}
+
+	// Empty version -> newest by numeric version (10.1.85, not 10.1.9 or 9.x).
+	latest, err := ResolveSnapshot(dir, "")
+	require.NoError(t, err)
+	assert.Equal(t, filepath.Join(dir, "integration-10.1.85.json"), latest)
+
+	// Explicit version -> that exact snapshot, even when it is not the newest.
+	pinned, err := ResolveSnapshot(dir, "10.1.78")
+	require.NoError(t, err)
+	assert.Equal(t, filepath.Join(dir, "integration-10.1.78.json"), pinned)
+
+	// Explicit version with no committed snapshot fails loudly, listing what exists.
+	_, err = ResolveSnapshot(dir, "10.2.0")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "10.1.85")
+}
+
+// TestResolveSnapshotVersionPin proves the standalone default follows the
+// .unifi-version-official pin when one is present, so regeneration reproduces the
+// committed surface rather than silently jumping to a newer committed snapshot.
+func TestResolveSnapshotVersionPin(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	specDir := filepath.Join(root, "openapi")
+	require.NoError(t, os.MkdirAll(specDir, 0o755))
+	for _, v := range []string{"10.1.78", "10.1.85"} {
+		require.NoError(t, os.WriteFile(filepath.Join(specDir, "integration-"+v+".json"), []byte("{}"), 0o644))
+	}
+	require.NoError(t, os.WriteFile(filepath.Join(root, ".unifi-version-official"), []byte("10.1.78\n"), 0o644))
+
+	// Pin present: default resolution picks the pinned version, not the newest.
+	assert.Equal(t, "10.1.78", resolveSnapshotVersion(specDir, ""))
+	// Explicit flag always wins over the pin.
+	assert.Equal(t, "10.1.85", resolveSnapshotVersion(specDir, "10.1.85"))
 }

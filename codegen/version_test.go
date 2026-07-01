@@ -279,8 +279,8 @@ func TestWriteVersionFile(t *testing.T) {
 
 	content, err := os.ReadFile(filepath.Join(tmpDir, "version.generated.go"))
 	require.NoError(t, err)
-	a.Contains(string(content), `const UnifiVersion = "7.3.83"`)
-	a.Contains(string(content), `const OfficialAPIVersion = "10.1.78"`)
+	a.Contains(string(content), `const LegacyUnifiVersion = "7.3.83"`)
+	a.Contains(string(content), `const UnifiVersion = "10.1.78"`)
 }
 
 func TestWriteVersionFile_BothConstsDistinct(t *testing.T) {
@@ -297,8 +297,8 @@ func TestWriteVersionFile_BothConstsDistinct(t *testing.T) {
 	content, err := os.ReadFile(filepath.Join(tmpDir, "version.generated.go"))
 	require.NoError(t, err)
 	// Internal and Official versions legitimately diverge — verify each pin is written.
-	assert.Contains(t, string(content), `const UnifiVersion = "9.5.21"`)
-	assert.Contains(t, string(content), `const OfficialAPIVersion = "10.1.78"`)
+	assert.Contains(t, string(content), `const LegacyUnifiVersion = "9.5.21"`)
+	assert.Contains(t, string(content), `const UnifiVersion = "10.1.78"`)
 }
 
 func TestWriteVersionRepoMarkerFile(t *testing.T) {
@@ -395,8 +395,8 @@ func TestWriteVersionFile_EmptyVersion(t *testing.T) {
 
 	content, err := os.ReadFile(filepath.Join(tmpDir, "version.generated.go"))
 	require.NoError(t, err)
+	assert.Contains(t, string(content), `const LegacyUnifiVersion = "0.0.0"`)
 	assert.Contains(t, string(content), `const UnifiVersion = "0.0.0"`)
-	assert.Contains(t, string(content), `const OfficialAPIVersion = "0.0.0"`)
 }
 
 func TestWriteVersionRepoMarkerFile_Permissions(t *testing.T) {
@@ -721,7 +721,7 @@ func TestResolveInternalVersion_ExplicitNewerFails(t *testing.T) {
 	require.ErrorContains(t, err, maxInternalVersion.String())
 	require.ErrorContains(t, err, "end-of-life")
 	require.ErrorContains(t, err, "Official")
-	require.ErrorContains(t, err, "-official-spec-version")
+	require.ErrorContains(t, err, "-legacy-version")
 	require.ErrorContains(t, err, "#121")
 	assert.False(t, rec.byMarkerCalled)
 }
@@ -737,7 +737,7 @@ func TestResolveInternalVersion_ExplicitMuchNewerFails(t *testing.T) {
 	require.Error(t, err)
 	require.ErrorContains(t, err, "11.0.0")
 	require.ErrorContains(t, err, maxInternalVersion.String())
-	require.ErrorContains(t, err, "-official-spec-version")
+	require.ErrorContains(t, err, "-legacy-version")
 	require.ErrorContains(t, err, "#121")
 	assert.False(t, rec.byMarkerCalled)
 }

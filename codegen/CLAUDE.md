@@ -17,10 +17,12 @@ After changing client templates, regenerate `client.generated.go` **and** `clien
 
 | Pin | Controls | Resolver |
 |---|---|---|
-| `.unifi-version` / `go:generate` arg | Internal resources, **capped at 9.5.21** (classic EOL — fail loud past it) | `resolveInternalVersion` |
-| committed `codegen/openapi/integration-<ver>.json` | Official OpenAPI snapshot (≥ 10.1.78) | `resolveOfficialSpecVersion` |
+| `.unifi-version` / `-legacy-version` arg | Internal resources, **capped at 9.5.21** (classic EOL — fail loud past it) | `resolveInternalVersion` |
+| committed `codegen/openapi/integration-<ver>.json` / **positional** `go:generate` arg | Official OpenAPI snapshot (≥ 10.1.78) | `resolveOfficialSpecVersion` |
 
-Legacy fields are frozen at `codegen/v9.5.21/` (committed snapshot + `.gitignore` unignore), so daily CI is a deterministic offline no-op. To refresh: remove the old snapshot dir + its gitignore exception, `make generate-resources VERSION=<x>`, re-add `!/codegen/v<x>/`, bump `unifi/codegen.go` + `.unifi-version`, regenerate, verify the golden diff.
+The positional codegen argument is the **Official spec version**; `-legacy-version` pins the Internal version (`make generate-resources` maps `VERSION`→official, `LEGACY_VERSION`→internal). Multiple `integration-<ver>.json` snapshots may coexist under `codegen/openapi/`: the Go surface is generated from the pinned version (`ResolveSnapshot`), while the docs website renders the newest committed snapshot.
+
+Legacy fields are frozen at `codegen/v9.5.21/` (committed snapshot + `.gitignore` unignore), so daily CI is a deterministic offline no-op. To refresh: remove the old snapshot dir + its gitignore exception, `make generate-resources LEGACY_VERSION=<x>`, re-add `!/codegen/v<x>/`, bump `unifi/codegen.go` + `.unifi-version`, regenerate, verify the golden diff.
 
 ## Official surface
 

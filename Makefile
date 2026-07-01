@@ -16,8 +16,11 @@ RUN  ?=
 ARGS ?=
 RUN_FLAG := $(if $(RUN),-run $(RUN),)
 
-# Controller version for codegen; `latest` resolves the newest release.
-VERSION ?= latest
+# Codegen versions. VERSION is the Official OpenAPI spec version (positional arg);
+# LEGACY_VERSION is the Internal/legacy controller version (capped at 9.5.21).
+# `latest` resolves the newest release for each.
+VERSION        ?= latest
+LEGACY_VERSION ?= latest
 
 .DEFAULT_GOAL := help
 
@@ -78,8 +81,8 @@ generate-stringer: ## Regenerate DeviceState stringer.
 	$(GO) generate unifi/device.go
 
 .PHONY: generate-resources
-generate-resources: ## Regenerate resource types (VERSION=latest|9.3.45|...; downloads the controller).
-	$(GO) run ./codegen/ -version-base-dir=./codegen/ -output-dir=./unifi $(VERSION)
+generate-resources: ## Regenerate resource types (VERSION=official spec, LEGACY_VERSION=internal; downloads if not committed).
+	$(GO) run ./codegen/ -version-base-dir=./codegen/ -output-dir=./unifi -legacy-version=$(LEGACY_VERSION) $(VERSION)
 
 ##@ Housekeeping
 

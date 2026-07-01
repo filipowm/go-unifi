@@ -23,7 +23,7 @@ go generate unifi/device.go                                # regenerate DeviceSt
 ```
 
 A local-only `Makefile` wraps these: `make build|test|test-fast|cover|lint|fmt|check|generate`.
-Codegen version is overridable: `make generate-resources VERSION=9.3.45` (default `latest`); `make generate` accepts the same `VERSION`.
+Codegen versions are overridable (both default `latest`): `VERSION` pins the Official OpenAPI spec version (the positional codegen arg) and `LEGACY_VERSION` pins the Internal/legacy controller version — e.g. `make generate-resources VERSION=10.1.85 LEGACY_VERSION=9.5.21`; `make generate` accepts the same vars.
 
 ## Layout
 
