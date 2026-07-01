@@ -5534,29 +5534,36 @@ type SpecificIPAddressSelector struct {
 // StandardWifiBroadcastCreateUpdate is a generated model for the UniFi Official API.
 type StandardWifiBroadcastCreateUpdate struct {
 	// AdvertiseDeviceName Indicates whether the device name is advertised in beacon frames.
-	AdvertiseDeviceName                 *bool                                                          `json:"advertiseDeviceName,omitempty"`
-	ArpProxyEnabled                     *bool                                                          `json:"arpProxyEnabled,omitempty"`
-	BandSteeringEnabled                 *bool                                                          `json:"bandSteeringEnabled,omitempty"`
-	BasicDataRateKbpsByFrequencyGHz     *WifiBasicDataRateConfiguration                                `json:"basicDataRateKbpsByFrequencyGHz,omitempty"`
-	BlackoutScheduleConfiguration       *BlackoutScheduleConfiguration                                 `json:"blackoutScheduleConfiguration,omitempty"`
-	BroadcastingDeviceFilter            *BroadcastingDeviceFilter                                      `json:"broadcastingDeviceFilter,omitempty"`
-	BroadcastingFrequenciesGHz          *[]StandardWifiBroadcastCreateUpdateBroadcastingFrequenciesGHz `json:"broadcastingFrequenciesGHz,omitempty"`
-	BssTransitionEnabled                *bool                                                          `json:"bssTransitionEnabled,omitempty"`
-	ClientFilteringPolicy               *WifiClientFilteringPolicy                                     `json:"clientFilteringPolicy,omitempty"`
-	ClientIsolationEnabled              bool                                                           `json:"clientIsolationEnabled"`
-	DnsAssistanceConfiguration          *DNSAssistanceConfiguration                                    `json:"dnsAssistanceConfiguration,omitempty"`
-	DtimPeriodByFrequencyGHzOverride    *WifiDtimPeriodConfiguration                                   `json:"dtimPeriodByFrequencyGHzOverride,omitempty"`
-	Enabled                             bool                                                           `json:"enabled"`
-	HideName                            bool                                                           `json:"hideName"`
-	HotspotConfiguration                *WifiHotspotConfiguration                                      `json:"hotspotConfiguration,omitempty"`
-	MdnsProxyConfiguration              *MDNSFilteringConfiguration                                    `json:"mdnsProxyConfiguration,omitempty"`
-	MloEnabled                          *bool                                                          `json:"mloEnabled,omitempty"`
-	MulticastFilteringPolicy            *MulticastFilteringPolicy                                      `json:"multicastFilteringPolicy,omitempty"`
-	MulticastToUnicastConversionEnabled bool                                                           `json:"multicastToUnicastConversionEnabled"`
-	Name                                string                                                         `json:"name"`
-	Network                             *WifiNetworkReference                                          `json:"network,omitempty"`
-	SecurityConfiguration               WifiSecurityConfigurationDetailObject                          `json:"securityConfiguration"`
-	Type                                string                                                         `json:"type"`
+	AdvertiseDeviceName             *bool                                                          `json:"advertiseDeviceName,omitempty"`
+	ArpProxyEnabled                 *bool                                                          `json:"arpProxyEnabled,omitempty"`
+	BandSteeringEnabled             *bool                                                          `json:"bandSteeringEnabled,omitempty"`
+	BasicDataRateKbpsByFrequencyGHz *WifiBasicDataRateConfiguration                                `json:"basicDataRateKbpsByFrequencyGHz,omitempty"`
+	BlackoutScheduleConfiguration   *BlackoutScheduleConfiguration                                 `json:"blackoutScheduleConfiguration,omitempty"`
+	BroadcastingDeviceFilter        *BroadcastingDeviceFilter                                      `json:"broadcastingDeviceFilter,omitempty"`
+	BroadcastingFrequenciesGHz      *[]StandardWifiBroadcastCreateUpdateBroadcastingFrequenciesGHz `json:"broadcastingFrequenciesGHz,omitempty"`
+	BssTransitionEnabled            *bool                                                          `json:"bssTransitionEnabled,omitempty"`
+
+	// Channel2gLockedTo6 Locks 2.4GHz radio channel to 6 on all broadcasting devices
+	Channel2gLockedTo6         bool                        `json:"channel2gLockedTo6"`
+	ClientFilteringPolicy      *WifiClientFilteringPolicy  `json:"clientFilteringPolicy,omitempty"`
+	ClientIsolationEnabled     bool                        `json:"clientIsolationEnabled"`
+	DnsAssistanceConfiguration *DNSAssistanceConfiguration `json:"dnsAssistanceConfiguration,omitempty"`
+
+	// DtimPeriod2gLockedTo3 Locks DTIM period to 3 for 2.4GHz radio
+	DtimPeriod2gLockedTo3               bool                                  `json:"dtimPeriod2gLockedTo3"`
+	DtimPeriodByFrequencyGHzOverride    *WifiDtimPeriodConfiguration          `json:"dtimPeriodByFrequencyGHzOverride,omitempty"`
+	Enabled                             bool                                  `json:"enabled"`
+	HandoffSuggestionsConfiguration     *WifiHandoffSuggestionsConfiguration  `json:"handoffSuggestionsConfiguration,omitempty"`
+	HideName                            bool                                  `json:"hideName"`
+	HotspotConfiguration                *WifiHotspotConfiguration             `json:"hotspotConfiguration,omitempty"`
+	MdnsProxyConfiguration              *MDNSFilteringConfiguration           `json:"mdnsProxyConfiguration,omitempty"`
+	MloEnabled                          *bool                                 `json:"mloEnabled,omitempty"`
+	MulticastFilteringPolicy            *MulticastFilteringPolicy             `json:"multicastFilteringPolicy,omitempty"`
+	MulticastToUnicastConversionEnabled bool                                  `json:"multicastToUnicastConversionEnabled"`
+	Name                                string                                `json:"name"`
+	Network                             *WifiNetworkReference                 `json:"network,omitempty"`
+	SecurityConfiguration               WifiSecurityConfigurationDetailObject `json:"securityConfiguration"`
+	Type                                string                                `json:"type"`
 
 	// UapsdEnabled Indicates whether Unscheduled Automatic Power Save Delivery (U-APSD) is enabled
 	UapsdEnabled bool `json:"uapsdEnabled"`
@@ -5569,31 +5576,38 @@ type StandardWifiBroadcastCreateUpdateBroadcastingFrequenciesGHz float32
 // StandardWifiBroadcastDetail is a generated model for the UniFi Official API.
 type StandardWifiBroadcastDetail struct {
 	// AdvertiseDeviceName Indicates whether the device name is advertised in beacon frames.
-	AdvertiseDeviceName                 *bool                                                    `json:"advertiseDeviceName,omitempty"`
-	ArpProxyEnabled                     *bool                                                    `json:"arpProxyEnabled,omitempty"`
-	BandSteeringEnabled                 *bool                                                    `json:"bandSteeringEnabled,omitempty"`
-	BasicDataRateKbpsByFrequencyGHz     *WifiBasicDataRateConfiguration                          `json:"basicDataRateKbpsByFrequencyGHz,omitempty"`
-	BlackoutScheduleConfiguration       *BlackoutScheduleConfiguration                           `json:"blackoutScheduleConfiguration,omitempty"`
-	BroadcastingDeviceFilter            *BroadcastingDeviceFilter                                `json:"broadcastingDeviceFilter,omitempty"`
-	BroadcastingFrequenciesGHz          *[]StandardWifiBroadcastDetailBroadcastingFrequenciesGHz `json:"broadcastingFrequenciesGHz,omitempty"`
-	BssTransitionEnabled                *bool                                                    `json:"bssTransitionEnabled,omitempty"`
-	ClientFilteringPolicy               *WifiClientFilteringPolicy                               `json:"clientFilteringPolicy,omitempty"`
-	ClientIsolationEnabled              bool                                                     `json:"clientIsolationEnabled"`
-	DnsAssistanceConfiguration          *DNSAssistanceConfiguration                              `json:"dnsAssistanceConfiguration,omitempty"`
-	DtimPeriodByFrequencyGHzOverride    *WifiDtimPeriodConfiguration                             `json:"dtimPeriodByFrequencyGHzOverride,omitempty"`
-	Enabled                             bool                                                     `json:"enabled"`
-	HideName                            bool                                                     `json:"hideName"`
-	HotspotConfiguration                *WifiHotspotConfiguration                                `json:"hotspotConfiguration,omitempty"`
-	Id                                  openapi_types.UUID                                       `json:"id"`
-	MdnsProxyConfiguration              *MDNSFilteringConfiguration                              `json:"mdnsProxyConfiguration,omitempty"`
-	Metadata                            UserOrDerivedOrOrchestratedEntityMetadata                `json:"metadata"`
-	MloEnabled                          *bool                                                    `json:"mloEnabled,omitempty"`
-	MulticastFilteringPolicy            *MulticastFilteringPolicy                                `json:"multicastFilteringPolicy,omitempty"`
-	MulticastToUnicastConversionEnabled bool                                                     `json:"multicastToUnicastConversionEnabled"`
-	Name                                string                                                   `json:"name"`
-	Network                             *WifiNetworkReference                                    `json:"network,omitempty"`
-	SecurityConfiguration               WifiSecurityConfigurationDetailObject                    `json:"securityConfiguration"`
-	Type                                string                                                   `json:"type"`
+	AdvertiseDeviceName             *bool                                                    `json:"advertiseDeviceName,omitempty"`
+	ArpProxyEnabled                 *bool                                                    `json:"arpProxyEnabled,omitempty"`
+	BandSteeringEnabled             *bool                                                    `json:"bandSteeringEnabled,omitempty"`
+	BasicDataRateKbpsByFrequencyGHz *WifiBasicDataRateConfiguration                          `json:"basicDataRateKbpsByFrequencyGHz,omitempty"`
+	BlackoutScheduleConfiguration   *BlackoutScheduleConfiguration                           `json:"blackoutScheduleConfiguration,omitempty"`
+	BroadcastingDeviceFilter        *BroadcastingDeviceFilter                                `json:"broadcastingDeviceFilter,omitempty"`
+	BroadcastingFrequenciesGHz      *[]StandardWifiBroadcastDetailBroadcastingFrequenciesGHz `json:"broadcastingFrequenciesGHz,omitempty"`
+	BssTransitionEnabled            *bool                                                    `json:"bssTransitionEnabled,omitempty"`
+
+	// Channel2gLockedTo6 Locks 2.4GHz radio channel to 6 on all broadcasting devices
+	Channel2gLockedTo6         bool                        `json:"channel2gLockedTo6"`
+	ClientFilteringPolicy      *WifiClientFilteringPolicy  `json:"clientFilteringPolicy,omitempty"`
+	ClientIsolationEnabled     bool                        `json:"clientIsolationEnabled"`
+	DnsAssistanceConfiguration *DNSAssistanceConfiguration `json:"dnsAssistanceConfiguration,omitempty"`
+
+	// DtimPeriod2gLockedTo3 Locks DTIM period to 3 for 2.4GHz radio
+	DtimPeriod2gLockedTo3               bool                                      `json:"dtimPeriod2gLockedTo3"`
+	DtimPeriodByFrequencyGHzOverride    *WifiDtimPeriodConfiguration              `json:"dtimPeriodByFrequencyGHzOverride,omitempty"`
+	Enabled                             bool                                      `json:"enabled"`
+	HandoffSuggestionsConfiguration     *WifiHandoffSuggestionsConfiguration      `json:"handoffSuggestionsConfiguration,omitempty"`
+	HideName                            bool                                      `json:"hideName"`
+	HotspotConfiguration                *WifiHotspotConfiguration                 `json:"hotspotConfiguration,omitempty"`
+	Id                                  openapi_types.UUID                        `json:"id"`
+	MdnsProxyConfiguration              *MDNSFilteringConfiguration               `json:"mdnsProxyConfiguration,omitempty"`
+	Metadata                            UserOrDerivedOrOrchestratedEntityMetadata `json:"metadata"`
+	MloEnabled                          *bool                                     `json:"mloEnabled,omitempty"`
+	MulticastFilteringPolicy            *MulticastFilteringPolicy                 `json:"multicastFilteringPolicy,omitempty"`
+	MulticastToUnicastConversionEnabled bool                                      `json:"multicastToUnicastConversionEnabled"`
+	Name                                string                                    `json:"name"`
+	Network                             *WifiNetworkReference                     `json:"network,omitempty"`
+	SecurityConfiguration               WifiSecurityConfigurationDetailObject     `json:"securityConfiguration"`
+	Type                                string                                    `json:"type"`
 
 	// UapsdEnabled Indicates whether Unscheduled Automatic Power Save Delivery (U-APSD) is enabled
 	UapsdEnabled bool `json:"uapsdEnabled"`
@@ -6087,11 +6101,17 @@ type WifiBlackoutScheduleConfigurationTimeRange struct {
 
 // WifiBroadcastCreateOrUpdate is a generated model for the UniFi Official API.
 type WifiBroadcastCreateOrUpdate struct {
-	BasicDataRateKbpsByFrequencyGHz     *WifiBasicDataRateConfiguration       `json:"basicDataRateKbpsByFrequencyGHz,omitempty"`
-	BlackoutScheduleConfiguration       *BlackoutScheduleConfiguration        `json:"blackoutScheduleConfiguration,omitempty"`
-	BroadcastingDeviceFilter            *BroadcastingDeviceFilter             `json:"broadcastingDeviceFilter,omitempty"`
-	ClientFilteringPolicy               *WifiClientFilteringPolicy            `json:"clientFilteringPolicy,omitempty"`
-	ClientIsolationEnabled              bool                                  `json:"clientIsolationEnabled"`
+	BasicDataRateKbpsByFrequencyGHz *WifiBasicDataRateConfiguration `json:"basicDataRateKbpsByFrequencyGHz,omitempty"`
+	BlackoutScheduleConfiguration   *BlackoutScheduleConfiguration  `json:"blackoutScheduleConfiguration,omitempty"`
+	BroadcastingDeviceFilter        *BroadcastingDeviceFilter       `json:"broadcastingDeviceFilter,omitempty"`
+
+	// Channel2gLockedTo6 Locks 2.4GHz radio channel to 6 on all broadcasting devices
+	Channel2gLockedTo6     bool                       `json:"channel2gLockedTo6"`
+	ClientFilteringPolicy  *WifiClientFilteringPolicy `json:"clientFilteringPolicy,omitempty"`
+	ClientIsolationEnabled bool                       `json:"clientIsolationEnabled"`
+
+	// DtimPeriod2gLockedTo3 Locks DTIM period to 3 for 2.4GHz radio
+	DtimPeriod2gLockedTo3               bool                                  `json:"dtimPeriod2gLockedTo3"`
 	Enabled                             bool                                  `json:"enabled"`
 	HideName                            bool                                  `json:"hideName"`
 	MdnsProxyConfiguration              *MDNSFilteringConfiguration           `json:"mdnsProxyConfiguration,omitempty"`
@@ -6109,11 +6129,17 @@ type WifiBroadcastCreateOrUpdate struct {
 
 // WifiBroadcastDetails is a generated model for the UniFi Official API.
 type WifiBroadcastDetails struct {
-	BasicDataRateKbpsByFrequencyGHz     *WifiBasicDataRateConfiguration           `json:"basicDataRateKbpsByFrequencyGHz,omitempty"`
-	BlackoutScheduleConfiguration       *BlackoutScheduleConfiguration            `json:"blackoutScheduleConfiguration,omitempty"`
-	BroadcastingDeviceFilter            *BroadcastingDeviceFilter                 `json:"broadcastingDeviceFilter,omitempty"`
-	ClientFilteringPolicy               *WifiClientFilteringPolicy                `json:"clientFilteringPolicy,omitempty"`
-	ClientIsolationEnabled              bool                                      `json:"clientIsolationEnabled"`
+	BasicDataRateKbpsByFrequencyGHz *WifiBasicDataRateConfiguration `json:"basicDataRateKbpsByFrequencyGHz,omitempty"`
+	BlackoutScheduleConfiguration   *BlackoutScheduleConfiguration  `json:"blackoutScheduleConfiguration,omitempty"`
+	BroadcastingDeviceFilter        *BroadcastingDeviceFilter       `json:"broadcastingDeviceFilter,omitempty"`
+
+	// Channel2gLockedTo6 Locks 2.4GHz radio channel to 6 on all broadcasting devices
+	Channel2gLockedTo6     bool                       `json:"channel2gLockedTo6"`
+	ClientFilteringPolicy  *WifiClientFilteringPolicy `json:"clientFilteringPolicy,omitempty"`
+	ClientIsolationEnabled bool                       `json:"clientIsolationEnabled"`
+
+	// DtimPeriod2gLockedTo3 Locks DTIM period to 3 for 2.4GHz radio
+	DtimPeriod2gLockedTo3               bool                                      `json:"dtimPeriod2gLockedTo3"`
 	Enabled                             bool                                      `json:"enabled"`
 	HideName                            bool                                      `json:"hideName"`
 	Id                                  openapi_types.UUID                        `json:"id"`
@@ -6202,6 +6228,7 @@ type WifiDnsAssistanceManualConfiguration struct {
 
 // WifiDtimPeriodConfiguration is a generated model for the UniFi Official API.
 type WifiDtimPeriodConfiguration struct {
+	// N24 DTIM period for 2.4GHz band must be 3 when dtimPeriod2gLockedTo3 is enabled.
 	N24 int32 `json:"2.4" validate:"omitempty,gte=1,lte=255"`
 	N5  int32 `json:"5" validate:"omitempty,gte=1,lte=255"`
 	N6  int32 `json:"6" validate:"omitempty,gte=1,lte=255"`
@@ -6212,6 +6239,15 @@ type WifiEnterpriseRadiusConfiguration struct {
 	MacAuthenticationConfiguration *WifiRadiusMacAuthenticationConfiguration `json:"macAuthenticationConfiguration,omitempty"`
 	NasId                          WifiRadiusNASIDConfiguration              `json:"nasId"`
 	ProfileId                      openapi_types.UUID                        `json:"profileId"`
+}
+
+// WifiHandoffSuggestionsConfiguration is a generated model for the UniFi Official API.
+type WifiHandoffSuggestionsConfiguration struct {
+	// Band5GHzRssiThreshold RSSI threshold (dBm) for the 5 GHz band. If null, then it is disabled.
+	Band5GHzRssiThreshold *int32 `json:"band5GHzRssiThreshold,omitempty" validate:"omitempty,gte=-80,lte=-60"`
+
+	// Band6GHzRssiThreshold RSSI threshold (dBm) for the 6 GHz band. If null, then it is disabled.
+	Band6GHzRssiThreshold *int32 `json:"band6GHzRssiThreshold,omitempty" validate:"omitempty,gte=-90,lte=-70"`
 }
 
 // WifiHotspotConfiguration is a generated model for the UniFi Official API.
@@ -40207,6 +40243,11 @@ func (t StandardWifiBroadcastCreateUpdate) MarshalJSON() ([]byte, error) {
 		}
 	}
 
+	object["channel2gLockedTo6"], err = json.Marshal(t.Channel2gLockedTo6)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'channel2gLockedTo6': %w", err)
+	}
+
 	if t.ClientFilteringPolicy != nil {
 		object["clientFilteringPolicy"], err = json.Marshal(t.ClientFilteringPolicy)
 		if err != nil {
@@ -40226,6 +40267,11 @@ func (t StandardWifiBroadcastCreateUpdate) MarshalJSON() ([]byte, error) {
 		}
 	}
 
+	object["dtimPeriod2gLockedTo3"], err = json.Marshal(t.DtimPeriod2gLockedTo3)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'dtimPeriod2gLockedTo3': %w", err)
+	}
+
 	if t.DtimPeriodByFrequencyGHzOverride != nil {
 		object["dtimPeriodByFrequencyGHzOverride"], err = json.Marshal(t.DtimPeriodByFrequencyGHzOverride)
 		if err != nil {
@@ -40236,6 +40282,13 @@ func (t StandardWifiBroadcastCreateUpdate) MarshalJSON() ([]byte, error) {
 	object["enabled"], err = json.Marshal(t.Enabled)
 	if err != nil {
 		return nil, fmt.Errorf("error marshaling 'enabled': %w", err)
+	}
+
+	if t.HandoffSuggestionsConfiguration != nil {
+		object["handoffSuggestionsConfiguration"], err = json.Marshal(t.HandoffSuggestionsConfiguration)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'handoffSuggestionsConfiguration': %w", err)
+		}
 	}
 
 	object["hideName"], err = json.Marshal(t.HideName)
@@ -40374,6 +40427,13 @@ func (t *StandardWifiBroadcastCreateUpdate) UnmarshalJSON(b []byte) error {
 		}
 	}
 
+	if raw, found := object["channel2gLockedTo6"]; found {
+		err = json.Unmarshal(raw, &t.Channel2gLockedTo6)
+		if err != nil {
+			return fmt.Errorf("error reading 'channel2gLockedTo6': %w", err)
+		}
+	}
+
 	if raw, found := object["clientFilteringPolicy"]; found {
 		err = json.Unmarshal(raw, &t.ClientFilteringPolicy)
 		if err != nil {
@@ -40395,6 +40455,13 @@ func (t *StandardWifiBroadcastCreateUpdate) UnmarshalJSON(b []byte) error {
 		}
 	}
 
+	if raw, found := object["dtimPeriod2gLockedTo3"]; found {
+		err = json.Unmarshal(raw, &t.DtimPeriod2gLockedTo3)
+		if err != nil {
+			return fmt.Errorf("error reading 'dtimPeriod2gLockedTo3': %w", err)
+		}
+	}
+
 	if raw, found := object["dtimPeriodByFrequencyGHzOverride"]; found {
 		err = json.Unmarshal(raw, &t.DtimPeriodByFrequencyGHzOverride)
 		if err != nil {
@@ -40406,6 +40473,13 @@ func (t *StandardWifiBroadcastCreateUpdate) UnmarshalJSON(b []byte) error {
 		err = json.Unmarshal(raw, &t.Enabled)
 		if err != nil {
 			return fmt.Errorf("error reading 'enabled': %w", err)
+		}
+	}
+
+	if raw, found := object["handoffSuggestionsConfiguration"]; found {
+		err = json.Unmarshal(raw, &t.HandoffSuggestionsConfiguration)
+		if err != nil {
+			return fmt.Errorf("error reading 'handoffSuggestionsConfiguration': %w", err)
 		}
 	}
 
@@ -40641,6 +40715,11 @@ func (t StandardWifiBroadcastDetail) MarshalJSON() ([]byte, error) {
 		}
 	}
 
+	object["channel2gLockedTo6"], err = json.Marshal(t.Channel2gLockedTo6)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'channel2gLockedTo6': %w", err)
+	}
+
 	if t.ClientFilteringPolicy != nil {
 		object["clientFilteringPolicy"], err = json.Marshal(t.ClientFilteringPolicy)
 		if err != nil {
@@ -40660,6 +40739,11 @@ func (t StandardWifiBroadcastDetail) MarshalJSON() ([]byte, error) {
 		}
 	}
 
+	object["dtimPeriod2gLockedTo3"], err = json.Marshal(t.DtimPeriod2gLockedTo3)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'dtimPeriod2gLockedTo3': %w", err)
+	}
+
 	if t.DtimPeriodByFrequencyGHzOverride != nil {
 		object["dtimPeriodByFrequencyGHzOverride"], err = json.Marshal(t.DtimPeriodByFrequencyGHzOverride)
 		if err != nil {
@@ -40670,6 +40754,13 @@ func (t StandardWifiBroadcastDetail) MarshalJSON() ([]byte, error) {
 	object["enabled"], err = json.Marshal(t.Enabled)
 	if err != nil {
 		return nil, fmt.Errorf("error marshaling 'enabled': %w", err)
+	}
+
+	if t.HandoffSuggestionsConfiguration != nil {
+		object["handoffSuggestionsConfiguration"], err = json.Marshal(t.HandoffSuggestionsConfiguration)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'handoffSuggestionsConfiguration': %w", err)
+		}
 	}
 
 	object["hideName"], err = json.Marshal(t.HideName)
@@ -40818,6 +40909,13 @@ func (t *StandardWifiBroadcastDetail) UnmarshalJSON(b []byte) error {
 		}
 	}
 
+	if raw, found := object["channel2gLockedTo6"]; found {
+		err = json.Unmarshal(raw, &t.Channel2gLockedTo6)
+		if err != nil {
+			return fmt.Errorf("error reading 'channel2gLockedTo6': %w", err)
+		}
+	}
+
 	if raw, found := object["clientFilteringPolicy"]; found {
 		err = json.Unmarshal(raw, &t.ClientFilteringPolicy)
 		if err != nil {
@@ -40839,6 +40937,13 @@ func (t *StandardWifiBroadcastDetail) UnmarshalJSON(b []byte) error {
 		}
 	}
 
+	if raw, found := object["dtimPeriod2gLockedTo3"]; found {
+		err = json.Unmarshal(raw, &t.DtimPeriod2gLockedTo3)
+		if err != nil {
+			return fmt.Errorf("error reading 'dtimPeriod2gLockedTo3': %w", err)
+		}
+	}
+
 	if raw, found := object["dtimPeriodByFrequencyGHzOverride"]; found {
 		err = json.Unmarshal(raw, &t.DtimPeriodByFrequencyGHzOverride)
 		if err != nil {
@@ -40850,6 +40955,13 @@ func (t *StandardWifiBroadcastDetail) UnmarshalJSON(b []byte) error {
 		err = json.Unmarshal(raw, &t.Enabled)
 		if err != nil {
 			return fmt.Errorf("error reading 'enabled': %w", err)
+		}
+	}
+
+	if raw, found := object["handoffSuggestionsConfiguration"]; found {
+		err = json.Unmarshal(raw, &t.HandoffSuggestionsConfiguration)
+		if err != nil {
+			return fmt.Errorf("error reading 'handoffSuggestionsConfiguration': %w", err)
 		}
 	}
 
@@ -45852,6 +45964,11 @@ func (t WifiBroadcastCreateOrUpdate) MarshalJSON() ([]byte, error) {
 		}
 	}
 
+	object["channel2gLockedTo6"], err = json.Marshal(t.Channel2gLockedTo6)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'channel2gLockedTo6': %w", err)
+	}
+
 	if t.ClientFilteringPolicy != nil {
 		object["clientFilteringPolicy"], err = json.Marshal(t.ClientFilteringPolicy)
 		if err != nil {
@@ -45862,6 +45979,11 @@ func (t WifiBroadcastCreateOrUpdate) MarshalJSON() ([]byte, error) {
 	object["clientIsolationEnabled"], err = json.Marshal(t.ClientIsolationEnabled)
 	if err != nil {
 		return nil, fmt.Errorf("error marshaling 'clientIsolationEnabled': %w", err)
+	}
+
+	object["dtimPeriod2gLockedTo3"], err = json.Marshal(t.DtimPeriod2gLockedTo3)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'dtimPeriod2gLockedTo3': %w", err)
 	}
 
 	object["enabled"], err = json.Marshal(t.Enabled)
@@ -45956,6 +46078,13 @@ func (t *WifiBroadcastCreateOrUpdate) UnmarshalJSON(b []byte) error {
 		}
 	}
 
+	if raw, found := object["channel2gLockedTo6"]; found {
+		err = json.Unmarshal(raw, &t.Channel2gLockedTo6)
+		if err != nil {
+			return fmt.Errorf("error reading 'channel2gLockedTo6': %w", err)
+		}
+	}
+
 	if raw, found := object["clientFilteringPolicy"]; found {
 		err = json.Unmarshal(raw, &t.ClientFilteringPolicy)
 		if err != nil {
@@ -45967,6 +46096,13 @@ func (t *WifiBroadcastCreateOrUpdate) UnmarshalJSON(b []byte) error {
 		err = json.Unmarshal(raw, &t.ClientIsolationEnabled)
 		if err != nil {
 			return fmt.Errorf("error reading 'clientIsolationEnabled': %w", err)
+		}
+	}
+
+	if raw, found := object["dtimPeriod2gLockedTo3"]; found {
+		err = json.Unmarshal(raw, &t.DtimPeriod2gLockedTo3)
+		if err != nil {
+			return fmt.Errorf("error reading 'dtimPeriod2gLockedTo3': %w", err)
 		}
 	}
 
@@ -46160,6 +46296,11 @@ func (t WifiBroadcastDetails) MarshalJSON() ([]byte, error) {
 		}
 	}
 
+	object["channel2gLockedTo6"], err = json.Marshal(t.Channel2gLockedTo6)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'channel2gLockedTo6': %w", err)
+	}
+
 	if t.ClientFilteringPolicy != nil {
 		object["clientFilteringPolicy"], err = json.Marshal(t.ClientFilteringPolicy)
 		if err != nil {
@@ -46170,6 +46311,11 @@ func (t WifiBroadcastDetails) MarshalJSON() ([]byte, error) {
 	object["clientIsolationEnabled"], err = json.Marshal(t.ClientIsolationEnabled)
 	if err != nil {
 		return nil, fmt.Errorf("error marshaling 'clientIsolationEnabled': %w", err)
+	}
+
+	object["dtimPeriod2gLockedTo3"], err = json.Marshal(t.DtimPeriod2gLockedTo3)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'dtimPeriod2gLockedTo3': %w", err)
 	}
 
 	object["enabled"], err = json.Marshal(t.Enabled)
@@ -46274,6 +46420,13 @@ func (t *WifiBroadcastDetails) UnmarshalJSON(b []byte) error {
 		}
 	}
 
+	if raw, found := object["channel2gLockedTo6"]; found {
+		err = json.Unmarshal(raw, &t.Channel2gLockedTo6)
+		if err != nil {
+			return fmt.Errorf("error reading 'channel2gLockedTo6': %w", err)
+		}
+	}
+
 	if raw, found := object["clientFilteringPolicy"]; found {
 		err = json.Unmarshal(raw, &t.ClientFilteringPolicy)
 		if err != nil {
@@ -46285,6 +46438,13 @@ func (t *WifiBroadcastDetails) UnmarshalJSON(b []byte) error {
 		err = json.Unmarshal(raw, &t.ClientIsolationEnabled)
 		if err != nil {
 			return fmt.Errorf("error reading 'clientIsolationEnabled': %w", err)
+		}
+	}
+
+	if raw, found := object["dtimPeriod2gLockedTo3"]; found {
+		err = json.Unmarshal(raw, &t.DtimPeriod2gLockedTo3)
+		if err != nil {
+			return fmt.Errorf("error reading 'dtimPeriod2gLockedTo3': %w", err)
 		}
 	}
 
