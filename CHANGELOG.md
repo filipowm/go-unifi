@@ -4,6 +4,12 @@ All notable changes to this project are documented in this file. Entries are der
 [GitHub Releases](https://github.com/filipowm/go-unifi/releases) notes, generated from conventional commits;
 internal and maintenance changes are not listed.
 
+## [v2.2.0](https://github.com/filipowm/go-unifi/releases/tag/v2.2.0) (2026-07-01)
+
+### ✨ New Features
+
+* feat: bump UnifiVersion to 10.3.58 and update related code generation
+
 ## [v2.1.0](https://github.com/filipowm/go-unifi/releases/tag/v2.1.0) (2026-07-01)
 
 ### ✨ New Features
