@@ -31,7 +31,7 @@ jobs:
           github.event.workflow_run.conclusion == 'success' }}
     steps:
       # Checks out the BASE repository (trusted) only to read .octocov.yml.
-      - uses: 'actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0'  # v7.0.0
+      - uses: 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1'  # v7.0.1
 
       - name: "Download coverage artifact"
         uses: 'actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c'  # v8.0.1
@@ -52,7 +52,7 @@ jobs:
         run: 'echo "number=$(cat pr-number.txt)" >> "$GITHUB_OUTPUT"'
 
       - name: "Comment coverage report"
-        uses: 'k1LoW/octocov-action@b3b6ee60482a667950f87553abf1df63217235d9'  # v1.5.1
+        uses: 'k1LoW/octocov-action@a167dc0dee441b7ffc45e1b862ab55ec0d87f278'  # v1.5.2
         env:
           # github.event.workflow_run.pull_requests is empty for fork PRs, so the
           # PR number is carried across the boundary via the artifact and injected
