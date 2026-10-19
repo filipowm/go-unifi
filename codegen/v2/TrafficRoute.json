@@ -1,0 +1,36 @@
+{
+    "description": "",
+    "domains": [{
+        "domain": "",
+        "port_ranges": [{
+            "port_start": "^[0-9]+$",
+            "port_stop": "^[0-9]+$"
+        }],
+        "ports": ["^[0-9]+$"]
+    }],
+    "enabled": "true|false",
+    "ip_addresses": [{
+        "ip_or_subnet": "",
+        "ip_version": "v4|v6",
+        "port_ranges": [{
+            "port_start": "^[0-9]+$",
+            "port_stop": "^[0-9]+$"
+        }],
+        "ports": ["^[0-9]+$"]
+    }],
+    "ip_ranges": [{
+        "ip_start": "",
+        "ip_stop": "",
+        "ip_version": "v4|v6"
+    }],
+    "kill_switch_enabled": "true|false",
+    "matching_target": "INTERNET|DOMAIN|IP|REGION",
+    "network_id": "",
+    "next_hop": "",
+    "regions": [""],
+    "target_devices": [{
+        "client_mac": "^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$",
+        "network_id": "",
+        "type": "ALL_CLIENTS|CLIENT|NETWORK"
+    }]
+}
