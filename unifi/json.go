@@ -13,6 +13,15 @@ func emptyBoolToTrue(b *bool) bool {
 	return *b
 }
 
+// emptyIfNil lets a non-omitempty slice field marshal a cleared (nil) value as []
+// instead of null, so a full-replace PUT unambiguously empties it on the controller.
+func emptyIfNil[T any](s []T) []T {
+	if s == nil {
+		return []T{}
+	}
+	return s
+}
+
 // numberOrString handles strings that can also accept JSON numbers.
 // For example a field may contain a number or the string "auto".
 type numberOrString string

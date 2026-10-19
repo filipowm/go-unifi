@@ -1055,6 +1055,25 @@ type InternalClient interface {
 	// GetTrafficFlows fetches traffic flows using the provided request payload.
 	GetTrafficFlows(ctx context.Context, site string, req *TrafficFlowsRequest) (*TrafficFlowsResponse, error)
 
+	// ==== client methods for TrafficRoute resource ====
+
+	// CreateTrafficRoute creates a resource
+	CreateTrafficRoute(ctx context.Context, site string, t *TrafficRoute) (*TrafficRoute, error)
+
+	// DeleteTrafficRoute deletes a resource
+	DeleteTrafficRoute(ctx context.Context, site string, id string) error
+
+	// GetTrafficRoute retrieves a resource
+	GetTrafficRoute(ctx context.Context, site string, id string) (*TrafficRoute, error)
+
+	// ListTrafficRoute lists the resources
+	ListTrafficRoute(ctx context.Context, site string) ([]TrafficRoute, error)
+
+	// UpdateTrafficRoute updates a resource
+	UpdateTrafficRoute(ctx context.Context, site string, t *TrafficRoute) (*TrafficRoute, error)
+
+	// ==== end of client methods for TrafficRoute resource ====
+
 	// ==== client methods for User resource ====
 
 	BlockUserByMAC(ctx context.Context, site string, mac string) error

@@ -128,6 +128,7 @@ shape and takes the site name first:
 | [`DNSRecord`](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#DNSRecord) | `ListDNSRecord`, `GetDNSRecord`, `CreateDNSRecord`, `UpdateDNSRecord`, `DeleteDNSRecord` | Local DNS records (A, AAAA, CNAME, MX, …) |
 | [`DynamicDNS`](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#DynamicDNS) | `ListDynamicDNS`, `GetDynamicDNS`, `CreateDynamicDNS`, `UpdateDynamicDNS`, `DeleteDynamicDNS` | Dynamic-DNS update clients |
 | [`PortForward`](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#PortForward) | `ListPortForward`, `GetPortForward`, `CreatePortForward`, `UpdatePortForward`, `DeletePortForward` | WAN → LAN port-forward rules |
+| [`TrafficRoute`](https://pkg.go.dev/github.com/filipowm/go-unifi/v2/unifi#TrafficRoute) | `ListTrafficRoute`, `GetTrafficRoute`, `CreateTrafficRoute`, `UpdateTrafficRoute`, `DeleteTrafficRoute` | Policy-based routes: send matching traffic out a chosen WAN/VPN network |
 
 A static route, a local DNS record and a port-forward, created together:
 
@@ -165,6 +166,31 @@ fwd, err := c.CreatePortForward(ctx, "default", &unifi.PortForward{
 costs a `ListDNSRecord` under the hood. That's transparent, but worth knowing if you fetch records in a tight
 loop — list once and index yourself instead.
 </Callout>
+
+### Traffic routes
+
+A traffic route (UniFi OS: Settings → Routing → Traffic Routes, v2 `trafficroutes` endpoint) sends the traffic
+it matches out through `NetworkID`, a WAN or VPN-client network. `MatchingTarget` picks what is matched
+(`INTERNET`, `DOMAIN`, `IP` or `REGION`), and `TargetDevices` picks whose traffic (`ALL_CLIENTS`, one `CLIENT` by
+MAC, or a whole `NETWORK`):
+
+```go
+tr, err := c.CreateTrafficRoute(ctx, "default", &unifi.TrafficRoute{
+	Description:       "example.com via VPN",
+	Enabled:           true,
+	MatchingTarget:    "DOMAIN",
+	NetworkID:         vpnNetworkID,
+	Domains:           []unifi.TrafficRouteDomains{{Domain: "example.com"}},
+	TargetDevices:     []unifi.TrafficRouteTargetDevices{{Type: "CLIENT", ClientMAC: "00:00:5e:00:53:01"}},
+	KillSwitchEnabled: true, // drop the traffic rather than fall back to another WAN
+})
+```
+
+`UpdateTrafficRoute` is a full-replace `PUT`, so every list and `Description`/`NextHop` is always sent: a `nil` or
+empty slice goes out as `[]` and clears the value on the controller. This holds when the route is marshalled as a
+`*TrafficRoute` (which every client method does); a `TrafficRoute` marshalled by value would emit `null` for nil lists.
+Like `GetDNSRecord`, `GetTrafficRoute` filters
+`ListTrafficRoute` client-side.
 
 ## Next steps
 

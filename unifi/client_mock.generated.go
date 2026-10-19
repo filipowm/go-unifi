@@ -119,6 +119,9 @@ var _ Client = &ClientMock{}
 //			CreateTagFunc: func(ctx context.Context, site string, t *Tag) (*Tag, error) {
 //				panic("mock out the CreateTag method")
 //			},
+//			CreateTrafficRouteFunc: func(ctx context.Context, site string, t *TrafficRoute) (*TrafficRoute, error) {
+//				panic("mock out the CreateTrafficRoute method")
+//			},
 //			CreateUserFunc: func(ctx context.Context, site string, u *User) (*User, error) {
 //				panic("mock out the CreateUser method")
 //			},
@@ -229,6 +232,9 @@ var _ Client = &ClientMock{}
 //			},
 //			DeleteTagFunc: func(ctx context.Context, site string, id string) error {
 //				panic("mock out the DeleteTag method")
+//			},
+//			DeleteTrafficRouteFunc: func(ctx context.Context, site string, id string) error {
+//				panic("mock out the DeleteTrafficRoute method")
 //			},
 //			DeleteUserFunc: func(ctx context.Context, site string, id string) error {
 //				panic("mock out the DeleteUser method")
@@ -497,6 +503,9 @@ var _ Client = &ClientMock{}
 //			GetTrafficFlowsFunc: func(ctx context.Context, site string, req *TrafficFlowsRequest) (*TrafficFlowsResponse, error) {
 //				panic("mock out the GetTrafficFlows method")
 //			},
+//			GetTrafficRouteFunc: func(ctx context.Context, site string, id string) (*TrafficRoute, error) {
+//				panic("mock out the GetTrafficRoute method")
+//			},
 //			GetUserFunc: func(ctx context.Context, site string, id string) (*User, error) {
 //				panic("mock out the GetUser method")
 //			},
@@ -622,6 +631,9 @@ var _ Client = &ClientMock{}
 //			},
 //			ListTagFunc: func(ctx context.Context, site string) ([]Tag, error) {
 //				panic("mock out the ListTag method")
+//			},
+//			ListTrafficRouteFunc: func(ctx context.Context, site string) ([]TrafficRoute, error) {
+//				panic("mock out the ListTrafficRoute method")
 //			},
 //			ListUserFunc: func(ctx context.Context, site string) ([]User, error) {
 //				panic("mock out the ListUser method")
@@ -887,6 +899,9 @@ var _ Client = &ClientMock{}
 //			UpdateTagFunc: func(ctx context.Context, site string, t *Tag) (*Tag, error) {
 //				panic("mock out the UpdateTag method")
 //			},
+//			UpdateTrafficRouteFunc: func(ctx context.Context, site string, t *TrafficRoute) (*TrafficRoute, error) {
+//				panic("mock out the UpdateTrafficRoute method")
+//			},
 //			UpdateUserFunc: func(ctx context.Context, site string, u *User) (*User, error) {
 //				panic("mock out the UpdateUser method")
 //			},
@@ -1020,6 +1035,9 @@ type ClientMock struct {
 	// CreateTagFunc mocks the CreateTag method.
 	CreateTagFunc func(ctx context.Context, site string, t *Tag) (*Tag, error)
 
+	// CreateTrafficRouteFunc mocks the CreateTrafficRoute method.
+	CreateTrafficRouteFunc func(ctx context.Context, site string, t *TrafficRoute) (*TrafficRoute, error)
+
 	// CreateUserFunc mocks the CreateUser method.
 	CreateUserFunc func(ctx context.Context, site string, u *User) (*User, error)
 
@@ -1130,6 +1148,9 @@ type ClientMock struct {
 
 	// DeleteTagFunc mocks the DeleteTag method.
 	DeleteTagFunc func(ctx context.Context, site string, id string) error
+
+	// DeleteTrafficRouteFunc mocks the DeleteTrafficRoute method.
+	DeleteTrafficRouteFunc func(ctx context.Context, site string, id string) error
 
 	// DeleteUserFunc mocks the DeleteUser method.
 	DeleteUserFunc func(ctx context.Context, site string, id string) error
@@ -1398,6 +1419,9 @@ type ClientMock struct {
 	// GetTrafficFlowsFunc mocks the GetTrafficFlows method.
 	GetTrafficFlowsFunc func(ctx context.Context, site string, req *TrafficFlowsRequest) (*TrafficFlowsResponse, error)
 
+	// GetTrafficRouteFunc mocks the GetTrafficRoute method.
+	GetTrafficRouteFunc func(ctx context.Context, site string, id string) (*TrafficRoute, error)
+
 	// GetUserFunc mocks the GetUser method.
 	GetUserFunc func(ctx context.Context, site string, id string) (*User, error)
 
@@ -1523,6 +1547,9 @@ type ClientMock struct {
 
 	// ListTagFunc mocks the ListTag method.
 	ListTagFunc func(ctx context.Context, site string) ([]Tag, error)
+
+	// ListTrafficRouteFunc mocks the ListTrafficRoute method.
+	ListTrafficRouteFunc func(ctx context.Context, site string) ([]TrafficRoute, error)
 
 	// ListUserFunc mocks the ListUser method.
 	ListUserFunc func(ctx context.Context, site string) ([]User, error)
@@ -1787,6 +1814,9 @@ type ClientMock struct {
 
 	// UpdateTagFunc mocks the UpdateTag method.
 	UpdateTagFunc func(ctx context.Context, site string, t *Tag) (*Tag, error)
+
+	// UpdateTrafficRouteFunc mocks the UpdateTrafficRoute method.
+	UpdateTrafficRouteFunc func(ctx context.Context, site string, t *TrafficRoute) (*TrafficRoute, error)
 
 	// UpdateUserFunc mocks the UpdateUser method.
 	UpdateUserFunc func(ctx context.Context, site string, u *User) (*User, error)
@@ -2105,6 +2135,15 @@ type ClientMock struct {
 			Site string
 			// T is the t argument value.
 			T *Tag
+		}
+		// CreateTrafficRoute holds details about calls to the CreateTrafficRoute method.
+		CreateTrafficRoute []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Site is the site argument value.
+			Site string
+			// T is the t argument value.
+			T *TrafficRoute
 		}
 		// CreateUser holds details about calls to the CreateUser method.
 		CreateUser []struct {
@@ -2432,6 +2471,15 @@ type ClientMock struct {
 		}
 		// DeleteTag holds details about calls to the DeleteTag method.
 		DeleteTag []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Site is the site argument value.
+			Site string
+			// ID is the id argument value.
+			ID string
+		}
+		// DeleteTrafficRoute holds details about calls to the DeleteTrafficRoute method.
+		DeleteTrafficRoute []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 			// Site is the site argument value.
@@ -3146,6 +3194,15 @@ type ClientMock struct {
 			// Req is the req argument value.
 			Req *TrafficFlowsRequest
 		}
+		// GetTrafficRoute holds details about calls to the GetTrafficRoute method.
+		GetTrafficRoute []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Site is the site argument value.
+			Site string
+			// ID is the id argument value.
+			ID string
+		}
 		// GetUser holds details about calls to the GetUser method.
 		GetUser []struct {
 			// Ctx is the ctx argument value.
@@ -3445,6 +3502,13 @@ type ClientMock struct {
 		}
 		// ListTag holds details about calls to the ListTag method.
 		ListTag []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Site is the site argument value.
+			Site string
+		}
+		// ListTrafficRoute holds details about calls to the ListTrafficRoute method.
+		ListTrafficRoute []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 			// Site is the site argument value.
@@ -4232,6 +4296,15 @@ type ClientMock struct {
 			// T is the t argument value.
 			T *Tag
 		}
+		// UpdateTrafficRoute holds details about calls to the UpdateTrafficRoute method.
+		UpdateTrafficRoute []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Site is the site argument value.
+			Site string
+			// T is the t argument value.
+			T *TrafficRoute
+		}
 		// UpdateUser holds details about calls to the UpdateUser method.
 		UpdateUser []struct {
 			// Ctx is the ctx argument value.
@@ -4339,6 +4412,7 @@ type ClientMock struct {
 	lockCreateSite                       sync.RWMutex
 	lockCreateSpatialRecord              sync.RWMutex
 	lockCreateTag                        sync.RWMutex
+	lockCreateTrafficRoute               sync.RWMutex
 	lockCreateUser                       sync.RWMutex
 	lockCreateUserGroup                  sync.RWMutex
 	lockCreateVirtualDevice              sync.RWMutex
@@ -4376,6 +4450,7 @@ type ClientMock struct {
 	lockDeleteSite                       sync.RWMutex
 	lockDeleteSpatialRecord              sync.RWMutex
 	lockDeleteTag                        sync.RWMutex
+	lockDeleteTrafficRoute               sync.RWMutex
 	lockDeleteUser                       sync.RWMutex
 	lockDeleteUserByMAC                  sync.RWMutex
 	lockDeleteUserGroup                  sync.RWMutex
@@ -4465,6 +4540,7 @@ type ClientMock struct {
 	lockGetSystemInformationContext      sync.RWMutex
 	lockGetTag                           sync.RWMutex
 	lockGetTrafficFlows                  sync.RWMutex
+	lockGetTrafficRoute                  sync.RWMutex
 	lockGetUser                          sync.RWMutex
 	lockGetUserByMAC                     sync.RWMutex
 	lockGetUserGroup                     sync.RWMutex
@@ -4507,6 +4583,7 @@ type ClientMock struct {
 	lockListSites                        sync.RWMutex
 	lockListSpatialRecord                sync.RWMutex
 	lockListTag                          sync.RWMutex
+	lockListTrafficRoute                 sync.RWMutex
 	lockListUser                         sync.RWMutex
 	lockListUserGroup                    sync.RWMutex
 	lockListVirtualDevice                sync.RWMutex
@@ -4595,6 +4672,7 @@ type ClientMock struct {
 	lockUpdateSite                       sync.RWMutex
 	lockUpdateSpatialRecord              sync.RWMutex
 	lockUpdateTag                        sync.RWMutex
+	lockUpdateTrafficRoute               sync.RWMutex
 	lockUpdateUser                       sync.RWMutex
 	lockUpdateUserGroup                  sync.RWMutex
 	lockUpdateVirtualDevice              sync.RWMutex
@@ -5906,6 +5984,46 @@ func (mock *ClientMock) CreateTagCalls() []struct {
 	mock.lockCreateTag.RLock()
 	calls = mock.calls.CreateTag
 	mock.lockCreateTag.RUnlock()
+	return calls
+}
+
+// CreateTrafficRoute calls CreateTrafficRouteFunc.
+func (mock *ClientMock) CreateTrafficRoute(ctx context.Context, site string, t *TrafficRoute) (*TrafficRoute, error) {
+	if mock.CreateTrafficRouteFunc == nil {
+		panic("ClientMock.CreateTrafficRouteFunc: method is nil but Client.CreateTrafficRoute was just called")
+	}
+	callInfo := struct {
+		Ctx  context.Context
+		Site string
+		T    *TrafficRoute
+	}{
+		Ctx:  ctx,
+		Site: site,
+		T:    t,
+	}
+	mock.lockCreateTrafficRoute.Lock()
+	mock.calls.CreateTrafficRoute = append(mock.calls.CreateTrafficRoute, callInfo)
+	mock.lockCreateTrafficRoute.Unlock()
+	return mock.CreateTrafficRouteFunc(ctx, site, t)
+}
+
+// CreateTrafficRouteCalls gets all the calls that were made to CreateTrafficRoute.
+// Check the length with:
+//
+//	len(mockedClient.CreateTrafficRouteCalls())
+func (mock *ClientMock) CreateTrafficRouteCalls() []struct {
+	Ctx  context.Context
+	Site string
+	T    *TrafficRoute
+} {
+	var calls []struct {
+		Ctx  context.Context
+		Site string
+		T    *TrafficRoute
+	}
+	mock.lockCreateTrafficRoute.RLock()
+	calls = mock.calls.CreateTrafficRoute
+	mock.lockCreateTrafficRoute.RUnlock()
 	return calls
 }
 
@@ -7386,6 +7504,46 @@ func (mock *ClientMock) DeleteTagCalls() []struct {
 	mock.lockDeleteTag.RLock()
 	calls = mock.calls.DeleteTag
 	mock.lockDeleteTag.RUnlock()
+	return calls
+}
+
+// DeleteTrafficRoute calls DeleteTrafficRouteFunc.
+func (mock *ClientMock) DeleteTrafficRoute(ctx context.Context, site string, id string) error {
+	if mock.DeleteTrafficRouteFunc == nil {
+		panic("ClientMock.DeleteTrafficRouteFunc: method is nil but Client.DeleteTrafficRoute was just called")
+	}
+	callInfo := struct {
+		Ctx  context.Context
+		Site string
+		ID   string
+	}{
+		Ctx:  ctx,
+		Site: site,
+		ID:   id,
+	}
+	mock.lockDeleteTrafficRoute.Lock()
+	mock.calls.DeleteTrafficRoute = append(mock.calls.DeleteTrafficRoute, callInfo)
+	mock.lockDeleteTrafficRoute.Unlock()
+	return mock.DeleteTrafficRouteFunc(ctx, site, id)
+}
+
+// DeleteTrafficRouteCalls gets all the calls that were made to DeleteTrafficRoute.
+// Check the length with:
+//
+//	len(mockedClient.DeleteTrafficRouteCalls())
+func (mock *ClientMock) DeleteTrafficRouteCalls() []struct {
+	Ctx  context.Context
+	Site string
+	ID   string
+} {
+	var calls []struct {
+		Ctx  context.Context
+		Site string
+		ID   string
+	}
+	mock.lockDeleteTrafficRoute.RLock()
+	calls = mock.calls.DeleteTrafficRoute
+	mock.lockDeleteTrafficRoute.RUnlock()
 	return calls
 }
 
@@ -10760,6 +10918,46 @@ func (mock *ClientMock) GetTrafficFlowsCalls() []struct {
 	return calls
 }
 
+// GetTrafficRoute calls GetTrafficRouteFunc.
+func (mock *ClientMock) GetTrafficRoute(ctx context.Context, site string, id string) (*TrafficRoute, error) {
+	if mock.GetTrafficRouteFunc == nil {
+		panic("ClientMock.GetTrafficRouteFunc: method is nil but Client.GetTrafficRoute was just called")
+	}
+	callInfo := struct {
+		Ctx  context.Context
+		Site string
+		ID   string
+	}{
+		Ctx:  ctx,
+		Site: site,
+		ID:   id,
+	}
+	mock.lockGetTrafficRoute.Lock()
+	mock.calls.GetTrafficRoute = append(mock.calls.GetTrafficRoute, callInfo)
+	mock.lockGetTrafficRoute.Unlock()
+	return mock.GetTrafficRouteFunc(ctx, site, id)
+}
+
+// GetTrafficRouteCalls gets all the calls that were made to GetTrafficRoute.
+// Check the length with:
+//
+//	len(mockedClient.GetTrafficRouteCalls())
+func (mock *ClientMock) GetTrafficRouteCalls() []struct {
+	Ctx  context.Context
+	Site string
+	ID   string
+} {
+	var calls []struct {
+		Ctx  context.Context
+		Site string
+		ID   string
+	}
+	mock.lockGetTrafficRoute.RLock()
+	calls = mock.calls.GetTrafficRoute
+	mock.lockGetTrafficRoute.RUnlock()
+	return calls
+}
+
 // GetUser calls GetUserFunc.
 func (mock *ClientMock) GetUser(ctx context.Context, site string, id string) (*User, error) {
 	if mock.GetUserFunc == nil {
@@ -12288,6 +12486,42 @@ func (mock *ClientMock) ListTagCalls() []struct {
 	mock.lockListTag.RLock()
 	calls = mock.calls.ListTag
 	mock.lockListTag.RUnlock()
+	return calls
+}
+
+// ListTrafficRoute calls ListTrafficRouteFunc.
+func (mock *ClientMock) ListTrafficRoute(ctx context.Context, site string) ([]TrafficRoute, error) {
+	if mock.ListTrafficRouteFunc == nil {
+		panic("ClientMock.ListTrafficRouteFunc: method is nil but Client.ListTrafficRoute was just called")
+	}
+	callInfo := struct {
+		Ctx  context.Context
+		Site string
+	}{
+		Ctx:  ctx,
+		Site: site,
+	}
+	mock.lockListTrafficRoute.Lock()
+	mock.calls.ListTrafficRoute = append(mock.calls.ListTrafficRoute, callInfo)
+	mock.lockListTrafficRoute.Unlock()
+	return mock.ListTrafficRouteFunc(ctx, site)
+}
+
+// ListTrafficRouteCalls gets all the calls that were made to ListTrafficRoute.
+// Check the length with:
+//
+//	len(mockedClient.ListTrafficRouteCalls())
+func (mock *ClientMock) ListTrafficRouteCalls() []struct {
+	Ctx  context.Context
+	Site string
+} {
+	var calls []struct {
+		Ctx  context.Context
+		Site string
+	}
+	mock.lockListTrafficRoute.RLock()
+	calls = mock.calls.ListTrafficRoute
+	mock.lockListTrafficRoute.RUnlock()
 	return calls
 }
 
@@ -15786,6 +16020,46 @@ func (mock *ClientMock) UpdateTagCalls() []struct {
 	mock.lockUpdateTag.RLock()
 	calls = mock.calls.UpdateTag
 	mock.lockUpdateTag.RUnlock()
+	return calls
+}
+
+// UpdateTrafficRoute calls UpdateTrafficRouteFunc.
+func (mock *ClientMock) UpdateTrafficRoute(ctx context.Context, site string, t *TrafficRoute) (*TrafficRoute, error) {
+	if mock.UpdateTrafficRouteFunc == nil {
+		panic("ClientMock.UpdateTrafficRouteFunc: method is nil but Client.UpdateTrafficRoute was just called")
+	}
+	callInfo := struct {
+		Ctx  context.Context
+		Site string
+		T    *TrafficRoute
+	}{
+		Ctx:  ctx,
+		Site: site,
+		T:    t,
+	}
+	mock.lockUpdateTrafficRoute.Lock()
+	mock.calls.UpdateTrafficRoute = append(mock.calls.UpdateTrafficRoute, callInfo)
+	mock.lockUpdateTrafficRoute.Unlock()
+	return mock.UpdateTrafficRouteFunc(ctx, site, t)
+}
+
+// UpdateTrafficRouteCalls gets all the calls that were made to UpdateTrafficRoute.
+// Check the length with:
+//
+//	len(mockedClient.UpdateTrafficRouteCalls())
+func (mock *ClientMock) UpdateTrafficRouteCalls() []struct {
+	Ctx  context.Context
+	Site string
+	T    *TrafficRoute
+} {
+	var calls []struct {
+		Ctx  context.Context
+		Site string
+		T    *TrafficRoute
+	}
+	mock.lockUpdateTrafficRoute.RLock()
+	calls = mock.calls.UpdateTrafficRoute
+	mock.lockUpdateTrafficRoute.RUnlock()
 	return calls
 }
 
