@@ -21,6 +21,8 @@ func (dst *TrafficRoute) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&aux)
 }
 
+// MarshalJSON sends nil ports and port_ranges as [] rather than null, for the same reason and with the
+// same pointer-receiver scope as TrafficRoute.MarshalJSON.
 func (dst *TrafficRouteDomains) MarshalJSON() ([]byte, error) {
 	type Alias TrafficRouteDomains
 	aux := Alias(*dst)
@@ -29,6 +31,8 @@ func (dst *TrafficRouteDomains) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&aux)
 }
 
+// MarshalJSON sends nil ports and port_ranges as [] rather than null, for the same reason and with the
+// same pointer-receiver scope as TrafficRoute.MarshalJSON.
 func (dst *TrafficRouteIPAddresses) MarshalJSON() ([]byte, error) {
 	type Alias TrafficRouteIPAddresses
 	aux := Alias(*dst)
@@ -37,12 +41,14 @@ func (dst *TrafficRouteIPAddresses) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&aux)
 }
 
+// ListTrafficRoute returns every traffic route on the site.
 func (c *client) ListTrafficRoute(ctx context.Context, site string) ([]TrafficRoute, error) {
 	return c.listTrafficRoute(ctx, site)
 }
 
+// GetTrafficRoute returns the route with the given ID, or ErrNotFound if the site has none. It filters
+// the list, because GET /trafficroutes/<id> is not a documented endpoint (some controllers answer 405).
 func (c *client) GetTrafficRoute(ctx context.Context, site, id string) (*TrafficRoute, error) {
-	// GET /trafficroutes/<id> is not a documented endpoint (some controllers answer 405), so filter the list.
 	routes, err := c.listTrafficRoute(ctx, site)
 	if err != nil {
 		return nil, err
@@ -55,14 +61,19 @@ func (c *client) GetTrafficRoute(ctx context.Context, site, id string) (*Traffic
 	return nil, ErrNotFound
 }
 
+// DeleteTrafficRoute deletes the route with the given ID. A route that is already gone is an error:
+// the controller answers 404.
 func (c *client) DeleteTrafficRoute(ctx context.Context, site, id string) error {
 	return c.deleteTrafficRoute(ctx, site, id)
 }
 
+// CreateTrafficRoute creates d on the site and returns the route as the controller stored it.
 func (c *client) CreateTrafficRoute(ctx context.Context, site string, d *TrafficRoute) (*TrafficRoute, error) {
 	return c.createTrafficRoute(ctx, site, d)
 }
 
+// UpdateTrafficRoute replaces the route d.ID with d. The controller treats the PUT body as the complete
+// object, so every field d leaves empty is cleared, as is any key TrafficRoute does not model.
 func (c *client) UpdateTrafficRoute(ctx context.Context, site string, d *TrafficRoute) (*TrafficRoute, error) {
 	return c.updateTrafficRoute(ctx, site, d)
 }

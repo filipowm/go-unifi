@@ -58,14 +58,18 @@ const controllerShapeTrafficRouteJSON = `{
 	"target_devices": []
 }`
 
+// trafficRoutesPath is the full request path of the traffic routes collection on trafficRouteSite.
 func trafficRoutesPath() string {
 	return apiV2("site/" + trafficRouteSite + "/trafficroutes")
 }
 
+// trafficRouteByIDPath is the full request path of the route trafficRouteID.
 func trafficRouteByIDPath() string {
 	return trafficRoutesPath() + "/" + trafficRouteID
 }
 
+// TestTrafficRouteJSONRoundTrip checks that decoding and re-encoding keeps every field, including the
+// shape an 11.x controller returns and ports sent as strings.
 func TestTrafficRouteJSONRoundTrip(t *testing.T) {
 	t.Parallel()
 
@@ -118,6 +122,7 @@ func TestTrafficRouteJSONRoundTrip(t *testing.T) {
 	}
 }
 
+// TestTrafficRouteUnmarshalFields checks that every JSON key decodes into its struct field.
 func TestTrafficRouteUnmarshalFields(t *testing.T) {
 	t.Parallel()
 
@@ -277,6 +282,7 @@ func TestTrafficRouteMarshalPointerReceiver(t *testing.T) {
 	})
 }
 
+// TestListTrafficRoute checks that ListTrafficRoute GETs the collection and returns every route.
 func TestListTrafficRoute(t *testing.T) {
 	t.Parallel()
 
@@ -315,6 +321,8 @@ func TestListTrafficRoute(t *testing.T) {
 	}
 }
 
+// TestGetTrafficRoute checks that GetTrafficRoute only calls the list endpoint, returns the matching
+// route, returns ErrNotFound when no route matches, and surfaces server errors.
 func TestGetTrafficRoute(t *testing.T) {
 	t.Parallel()
 
@@ -385,6 +393,7 @@ func TestGetTrafficRoute(t *testing.T) {
 	}
 }
 
+// TestCreateTrafficRoute checks that CreateTrafficRoute POSTs the full body and returns the stored route.
 func TestCreateTrafficRoute(t *testing.T) {
 	t.Parallel()
 
@@ -452,6 +461,8 @@ func TestCreateTrafficRoute(t *testing.T) {
 	}
 }
 
+// TestCreateTrafficRouteHardValidation checks that, with hard validation on, an invalid
+// matching_target is rejected before any request reaches the controller.
 func TestCreateTrafficRouteHardValidation(t *testing.T) {
 	t.Parallel()
 
@@ -486,6 +497,8 @@ func TestCreateTrafficRouteHardValidation(t *testing.T) {
 	}
 }
 
+// TestUpdateTrafficRoute checks that UpdateTrafficRoute PUTs the complete object to the route's path,
+// including cleared fields and cleared nested lists.
 func TestUpdateTrafficRoute(t *testing.T) {
 	t.Parallel()
 
@@ -567,6 +580,8 @@ func TestUpdateTrafficRoute(t *testing.T) {
 	}
 }
 
+// TestDeleteTrafficRoute checks that DeleteTrafficRoute calls DELETE on the route's path and returns an
+// error for a 500 or a 404.
 func TestDeleteTrafficRoute(t *testing.T) {
 	t.Parallel()
 
