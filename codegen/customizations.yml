@@ -517,6 +517,33 @@ customizations:
         DateEnd:
           fieldType: "string"
           customUnmarshalType: ""
+    TrafficRoute:
+      resourcePath: "trafficroutes"
+      fields:
+        # PUT is a full replace, so anything a caller can clear must serialize its
+        # empty value ("" / []) rather than be dropped and silently keep the old one.
+        Description:
+          omitEmpty: false
+        NextHop:
+          omitEmpty: false
+        Domains:
+          omitEmpty: false
+        IPAddresses:
+          omitEmpty: false
+        IPRanges:
+          omitEmpty: false
+        Regions:
+          omitEmpty: false
+        TargetDevices:
+          omitEmpty: false
+        Ports:
+          omitEmpty: false
+        PortRanges:
+          omitEmpty: false
+        # Shared by the route's egress network_id (required, never cleared) and
+        # target_devices[].network_id (only set on NETWORK targets), so omit when empty.
+        NetworkID:
+          omitEmpty: true
     Network:
       fields:
         # `enabled` defaults to true on the controller and is absent from a healthy
