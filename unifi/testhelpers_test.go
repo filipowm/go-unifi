@@ -2,6 +2,7 @@ package unifi //nolint: testpackage
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -210,4 +211,29 @@ func apiV1Path(rel string) string {
 // apiV2 returns the full new-style v2 request path for a v2-relative path.
 func apiV2(rel string) string {
 	return NewStyleAPI.ApiV2Path + "/" + rel
+}
+
+// staticJSONStatus replies with status and body (as JSON) for every request.
+func staticJSONStatus(status int, body string) http.HandlerFunc {
+	return func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(status)
+		_, _ = w.Write([]byte(body))
+	}
+}
+
+// staticJSON replies with body for every request (200 OK).
+func staticJSON(body string) http.HandlerFunc {
+	return staticJSONStatus(http.StatusOK, body)
+}
+
+// echoJSON replies with the request body, the way the v2 API returns the stored object.
+func echoJSON(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var raw json.RawMessage
+	if err := json.NewDecoder(r.Body).Decode(&raw); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	_, _ = w.Write(raw)
 }
