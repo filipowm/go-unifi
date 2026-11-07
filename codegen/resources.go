@@ -425,7 +425,7 @@ func customizeBaseType(resource *Resource) {
 		baseType.Fields["Type"] = NewFieldInfo("Type", "type", "string", "", "", true, false, "")
 	case resource.StructName == "User":
 		baseType.Fields[" IP"] = NewFieldInfo("IP", "ip", "string", createValidations(false, validation{v: ip}), "non-generated field", true, false, "")
-		baseType.Fields[" DevIdOverride"] = NewFieldInfo("DevIdOverride", "dev_id_override", "int", "", "non-generated field", true, false, "")
+		baseType.Fields[" DevIdOverride"] = NewFieldInfo("DevIdOverride", "dev_id_override", "int", "", "non-generated field", true, false, "emptyStringInt")
 	case resource.StructName == "WLAN":
 		// this field removed in v6, retaining for backwards compatibility
 		baseType.Fields["WLANGroupID"] = NewFieldInfo("WLANGroupID", "wlangroup_id", "string", "", "", false, false, "")

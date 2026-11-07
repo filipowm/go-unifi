@@ -48,7 +48,7 @@ func (e *emptyStringInt) UnmarshalJSON(b []byte) error {
 		return nil
 	}
 	s := string(b)
-	if s == `""` {
+	if s == `""` || s == "null" {
 		*e = 0
 		return nil
 	}
