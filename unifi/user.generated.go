@@ -52,7 +52,8 @@ func (dst *User) UnmarshalJSON(b []byte) error {
 	aux := &struct {
 		*Alias
 
-		LastSeen emptyStringInt `json:"last_seen"`
+		DevIdOverride emptyStringInt `json:"dev_id_override"`
+		LastSeen      emptyStringInt `json:"last_seen"`
 	}{
 		Alias: (*Alias)(dst),
 	}
@@ -61,6 +62,7 @@ func (dst *User) UnmarshalJSON(b []byte) error {
 	if err != nil {
 		return fmt.Errorf("unable to unmarshal alias: %w", err)
 	}
+	dst.DevIdOverride = int(aux.DevIdOverride)
 	dst.LastSeen = int(aux.LastSeen)
 
 	return nil
