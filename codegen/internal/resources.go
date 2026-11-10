@@ -585,6 +585,12 @@ func customizeBaseType(resource *Resource) {
 			// Removed in v7, retaining for backwards compatibility
 			baseType.Fields["MdnsEnabled"] = NewFieldInfo("MdnsEnabled", "mdns_enabled", "bool", "", "", false, false, "")
 		}
+		if resource.StructName == "SettingMdns" {
+			// Network selection of the mDNS reflector, absent from the frozen
+			// legacy field snapshot but returned by current controllers.
+			baseType.Fields["EnabledFor"] = NewFieldInfo("EnabledFor", "enabled_for", "string", createValidations(false, validation{v: oneOf, params: []string{"all", "some"}}), "all|some", true, false, "")
+			baseType.Fields["EnabledForNetworkIds"] = NewFieldInfo("EnabledForNetworkIds", "enabled_for_network_ids", "string", "", "", true, true, "")
+		}
 	case resource.StructName == "Device":
 		baseType.Fields[" MAC"] = NewFieldInfo("MAC", "mac", "string", createValidations(false, validation{v: mac}), "", true, false, "")
 		baseType.Fields["Adopted"] = NewFieldInfo("Adopted", "adopted", "bool", "", "", false, false, "")

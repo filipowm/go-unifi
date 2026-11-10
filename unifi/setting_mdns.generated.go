@@ -36,9 +36,11 @@ type SettingMdns struct {
 
 	Key string `json:"key"`
 
-	CustomServices     []SettingMdnsCustomServices     `json:"custom_services,omitempty"`
-	Mode               string                          `json:"mode,omitempty" validate:"omitempty,oneof=all auto custom"` // all|auto|custom
-	PredefinedServices []SettingMdnsPredefinedServices `json:"predefined_services,omitempty"`
+	CustomServices       []SettingMdnsCustomServices     `json:"custom_services,omitempty"`
+	EnabledFor           string                          `json:"enabled_for,omitempty" validate:"omitempty,oneof=all some"` // all|some
+	EnabledForNetworkIds []string                        `json:"enabled_for_network_ids,omitempty"`
+	Mode                 string                          `json:"mode,omitempty" validate:"omitempty,oneof=all auto custom"` // all|auto|custom
+	PredefinedServices   []SettingMdnsPredefinedServices `json:"predefined_services,omitempty"`
 }
 
 func (dst *SettingMdns) UnmarshalJSON(b []byte) error {

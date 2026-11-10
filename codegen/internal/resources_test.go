@@ -720,12 +720,21 @@ func TestCustomizeBaseType(t *testing.T) {
 			},
 			absent: []string{"ip", "mac", "wlangroup_id"},
 		},
+		"SettingMdns injects enabled_for/enabled_for_network_ids": {
+			structName: "SettingMdns",
+			present: []expectedField{
+				{"key", "Key", "string"},
+				{"enabled_for", "EnabledFor", "string"},
+				{"enabled_for_network_ids", "EnabledForNetworkIds", "string"},
+			},
+			absent: []string{"mdns_enabled", "ip", "mac", "wlangroup_id"},
+		},
 		"other Setting injects key but not mdns_enabled": {
 			structName: "SettingMgmt",
 			present: []expectedField{
 				{"key", "Key", "string"},
 			},
-			absent: []string{"mdns_enabled", "ip", "mac", "wlangroup_id"},
+			absent: []string{"mdns_enabled", "enabled_for", "enabled_for_network_ids", "ip", "mac", "wlangroup_id"},
 		},
 	}
 
