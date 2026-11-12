@@ -1,5 +1,5 @@
 {{ define "field" }}
-	{{ .FieldName }} {{ if .IsArray }}[]{{end}}{{ .FieldType }} `json:"{{ .JSONName }}{{ if .OmitEmpty }},omitempty{{ end }}"{{if .FieldValidation }} {{ .FieldValidation }}{{ end }}` {{ if .FieldValidationComment }}// {{ .FieldValidationComment }}{{ end }} {{- end }}
+	{{ .FieldName }} {{ if .IsArray }}[]{{end}}{{ .FieldType }} `json:"{{ .JSONName }}{{ if .OmitEmpty }},omitempty{{ else if .OmitZero }},omitzero{{ end }}"{{if .FieldValidation }} {{ .FieldValidation }}{{ end }}` {{ if .FieldValidationComment }}// {{ .FieldValidationComment }}{{ end }} {{- end }}
 {{ define "field-customUnmarshalType" }}
 	{{- if eq .CustomUnmarshalType "" }}{{else}}
 			{{ .FieldName }} {{ if .IsArray }}[]{{end}}{{ .CustomUnmarshalType }} `json:"{{ .JSONName }}"`{{ end }} {{- end }}

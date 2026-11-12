@@ -803,6 +803,19 @@ func TestCustomizeBaseTypeValidations(t *testing.T) {
 	}
 }
 
+// TestSettingMdnsNetworkIdsOmitZero pins the omitzero tag that lets an explicit
+// empty network selection reach the controller while a nil one is omitted.
+func TestSettingMdnsNetworkIdsOmitZero(t *testing.T) {
+	t.Parallel()
+
+	resource := NewResource("SettingMdns", "path")
+	customizeBaseType(resource)
+
+	code, err := resource.GenerateCode()
+	require.NoError(t, err)
+	assert.Contains(t, collapseSpaces(code), "EnabledForNetworkIds []string `json:\"enabled_for_network_ids,omitzero\"`")
+}
+
 // TestCustomizeResourceFieldProcessor pins the FieldProcessor side-effects that
 // customizeResource installs for the special-cased settings resources. These
 // rewrites are backwards-compat-critical and easy to break in a refactor.

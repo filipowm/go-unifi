@@ -202,6 +202,9 @@ type FieldInfo struct {
 	Fields                 map[string]*FieldInfo
 	CustomUnmarshalType    string
 	CustomUnmarshalFunc    string
+	// OmitZero omits only the zero value (a nil slice) while still sending an
+	// empty one as []; ignored when OmitEmpty is set.
+	OmitZero bool
 }
 
 func NewFieldInfo(fieldName, jsonName, fieldType, fieldValidation, fieldValidationComment string, omitempty bool, isArray bool, customUnmarshalType string) *FieldInfo {
@@ -575,6 +578,8 @@ func buildCustomResources(dir string, customizer CodeCustomizer, v2 bool, logger
 	return buildResourcesFromDownloadedFields(dir, customizer, v2, logger)
 }
 
+// customizeBaseType adds fields the controller returns but the frozen legacy
+// field snapshot lacks.
 func customizeBaseType(resource *Resource) {
 	baseType := resource.BaseType()
 	switch {
@@ -589,7 +594,10 @@ func customizeBaseType(resource *Resource) {
 			// Network selection of the mDNS reflector, absent from the frozen
 			// legacy field snapshot but returned by current controllers.
 			baseType.Fields["EnabledFor"] = NewFieldInfo("EnabledFor", "enabled_for", "string", createValidations(false, validation{v: oneOf, params: []string{"all", "some"}}), "all|some", true, false, "")
-			baseType.Fields["EnabledForNetworkIds"] = NewFieldInfo("EnabledForNetworkIds", "enabled_for_network_ids", "string", "", "", true, true, "")
+			// omitzero, not omitempty: an explicit [] must reach the controller to clear the selection.
+			networkIDs := NewFieldInfo("EnabledForNetworkIds", "enabled_for_network_ids", "string", "", "", false, true, "")
+			networkIDs.OmitZero = true
+			baseType.Fields["EnabledForNetworkIds"] = networkIDs
 		}
 	case resource.StructName == "Device":
 		baseType.Fields[" MAC"] = NewFieldInfo("MAC", "mac", "string", createValidations(false, validation{v: mac}), "", true, false, "")
