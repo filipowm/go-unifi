@@ -720,12 +720,21 @@ func TestCustomizeBaseType(t *testing.T) {
 			},
 			absent: []string{"ip", "mac", "wlangroup_id"},
 		},
+		"SettingMdns injects enabled_for/enabled_for_network_ids": {
+			structName: "SettingMdns",
+			present: []expectedField{
+				{"key", "Key", "string"},
+				{"enabled_for", "EnabledFor", "string"},
+				{"enabled_for_network_ids", "EnabledForNetworkIds", "string"},
+			},
+			absent: []string{"mdns_enabled", "ip", "mac", "wlangroup_id"},
+		},
 		"other Setting injects key but not mdns_enabled": {
 			structName: "SettingMgmt",
 			present: []expectedField{
 				{"key", "Key", "string"},
 			},
-			absent: []string{"mdns_enabled", "ip", "mac", "wlangroup_id"},
+			absent: []string{"mdns_enabled", "enabled_for", "enabled_for_network_ids", "ip", "mac", "wlangroup_id"},
 		},
 	}
 
@@ -792,6 +801,19 @@ func TestCustomizeBaseTypeValidations(t *testing.T) {
 			a.Equal(tc.wantOmitEmpty, f.OmitEmpty)
 		})
 	}
+}
+
+// TestSettingMdnsNetworkIdsOmitZero pins the omitzero tag that lets an explicit
+// empty network selection reach the controller while a nil one is omitted.
+func TestSettingMdnsNetworkIdsOmitZero(t *testing.T) {
+	t.Parallel()
+
+	resource := NewResource("SettingMdns", "path")
+	customizeBaseType(resource)
+
+	code, err := resource.GenerateCode()
+	require.NoError(t, err)
+	assert.Contains(t, collapseSpaces(code), "EnabledForNetworkIds []string `json:\"enabled_for_network_ids,omitzero\"`")
 }
 
 // TestCustomizeResourceFieldProcessor pins the FieldProcessor side-effects that
