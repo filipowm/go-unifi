@@ -1,8 +1,12 @@
-package unifi
+package unifi_test
 
 import (
 	"encoding/json"
 	"testing"
+
+	"github.com/filipowm/go-unifi/v2/unifi"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestUserUnmarshalDevIdOverride(t *testing.T) {
@@ -23,13 +27,9 @@ func TestUserUnmarshalDevIdOverride(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			var u User
-			if err := json.Unmarshal([]byte(tc.body), &u); err != nil {
-				t.Fatalf("unmarshal %s: %v", tc.body, err)
-			}
-			if u.DevIdOverride != tc.want {
-				t.Fatalf("DevIdOverride = %d, want %d", u.DevIdOverride, tc.want)
-			}
+			var u unifi.User
+			require.NoError(t, json.Unmarshal([]byte(tc.body), &u))
+			assert.Equal(t, tc.want, u.DevIdOverride)
 		})
 	}
 }
